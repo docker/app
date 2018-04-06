@@ -2,8 +2,8 @@ package packager
 
 import (
     "fmt"
-    "github.com/shin-/lunchbox/types"
-    "github.com/shin-/lunchbox/utils"
+    "github.com/docker/lunchbox/types"
+    "github.com/docker/lunchbox/utils"
     "gopkg.in/yaml.v2"
     "log"
     "os"

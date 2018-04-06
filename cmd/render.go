@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/shin-/lunchbox/packager"
+	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
