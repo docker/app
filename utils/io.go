@@ -1,6 +1,7 @@
 package utils
 
 import (
+    "bufio"
     "os"
 )
 
@@ -14,4 +15,15 @@ func CreateFileWithData(fileName string, data []byte) error {
     defer f.Close()
     _, err = f.Write(data)
     return err
+}
+
+// ReadNewlineSeparatedList reads data from stdin until reaching EOF and
+// returns a slice with data from each line
+func ReadNewlineSeparatedList() ([]string, error) {
+    scanner := bufio.NewScanner(os.Stdin)
+    var into []string
+    for scanner.Scan() {
+        into = append(into, scanner.Text())
+    }
+    return into, scanner.Err()
 }

@@ -15,13 +15,20 @@ import (
 // Init is the entrypoint initialization function.
 // It generates a new application package based on the provided parameters.
 func Init(name string, composeFiles []string) error {
-    if err := os.Mkdir(appDirName(name), 0755); err != nil {
+    dirName := appDirName(name)
+    if err := os.Mkdir(dirName, 0755); err != nil {
+        return err
+    }
+    if err := writeMetadataFile(name, dirName); err != nil {
         return err
     }
 
     if len(composeFiles) == 0 {
         if _, err := os.Stat("./docker-compose.yml"); os.IsNotExist(err) {
+            log.Println("no compose file detected")
             return initFromScratch(name)
+        } else if err != nil {
+            return err
         }
         return initFromComposeFiles(name, []string{"./docker-compose.yml"})
     }
@@ -30,12 +37,21 @@ func Init(name string, composeFiles []string) error {
 
 func initFromScratch(name string) error {
     log.Println("init from scratch")
-
-    dirName := appDirName(name)
-    if err := writeMetadataFile(name, dirName); err != nil {
+    fmt.Println(`
+Please indicate a list of services that will be used by your application, one per line.
+Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...
+    `)
+    services, err := utils.ReadNewlineSeparatedList()
+    if err != nil {
         return err
     }
-    if err := utils.CreateFileWithData(path.Join(dirName, "services.yml"), []byte{'\n'}); err != nil {
+    composeData, err := composeFileFromScratch(services)
+    if err != nil {
+        return err
+    }
+
+    dirName := appDirName(name)
+    if err := utils.CreateFileWithData(path.Join(dirName, "services.yml"), composeData); err != nil {
         return err
     }
     return utils.CreateFileWithData(path.Join(dirName, "settings.yml"), []byte{'\n'})
@@ -43,10 +59,8 @@ func initFromScratch(name string) error {
 
 func initFromComposeFiles(name string, composeFiles []string) error {
     log.Println("init from compose")
+
     dirName := appDirName(name)
-    if err := writeMetadataFile(name, dirName); err != nil {
-        return err
-    }
     composeConfig, err := mergeComposeConfig(composeFiles)
     if err != nil {
         return err
@@ -70,6 +84,18 @@ func mergeComposeConfig(composeFiles []string) ([]byte, error) {
         log.Fatalln(string(err.(*exec.ExitError).Stderr))
     }
     return out, err
+}
+
+func composeFileFromScratch(services []string) ([]byte, error) {
+    fileStruct := types.NewInitialComposeFile()
+    serviceMap := *fileStruct.Services
+    for _, svc := range services {
+        svcData := utils.MatchService(svc)
+        serviceMap[svcData.ServiceName] = types.InitialService{
+            Image: svcData.ServiceImage,
+        }
+    }
+    return yaml.Marshal(fileStruct)
 }
 
 func appDirName(name string) string {
