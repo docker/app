@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # This file is used to auto-generate Dockerfiles for making debs via 'make deb'
@@ -36,7 +36,7 @@ for version in "${versions[@]}"; do
 
 	EOF
 
-	extraBuildTags='pkcs11'
+	extraBuildTags=
 	runcBuildTags=
 
 	# this list is sorted alphabetically; please keep it that way
@@ -53,9 +53,7 @@ for version in "${versions[@]}"; do
 		git # for "git commit" info in "docker -v"
 		libapparmor-dev # for "sys/apparmor.h"
 		libdevmapper-dev # for "libdevmapper.h"
-		libltdl-dev # for pkcs11 "ltdl.h"
 		libseccomp-dev  # for "seccomp.h" & "libseccomp.so"
-		libsqlite3-dev # for "sqlite3.h"
 		pkg-config # for detecting things like libsystemd-journal dynamically
 		libsystemd-dev
 		vim-common # tini dep
@@ -78,7 +76,7 @@ for version in "${versions[@]}"; do
 
 	echo >> "$version/Dockerfile"
 
-	awk '$1 == "ENV" && $2 == "GO_VERSION" { print; exit }' ../../../../Dockerfile >> "$version/Dockerfile"
+	awk '$1 == "ENV" && $2 == "GO_VERSION" { print; exit }' ../../../../Dockerfile.s390x >> "$version/Dockerfile"
 	echo 'RUN curl -fSL "https://golang.org/dl/go${GO_VERSION}.linux-s390x.tar.gz" | tar xzC /usr/local' >> "$version/Dockerfile"
 	echo 'ENV PATH $PATH:/usr/local/go/bin' >> "$version/Dockerfile"
 

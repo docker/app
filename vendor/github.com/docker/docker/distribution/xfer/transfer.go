@@ -1,4 +1,4 @@
-package xfer
+package xfer // import "github.com/docker/docker/distribution/xfer"
 
 import (
 	"runtime"
@@ -300,7 +300,7 @@ func NewTransferManager(concurrencyLimit int) TransferManager {
 	}
 }
 
-// SetConcurrency set the concurrencyLimit
+// SetConcurrency sets the concurrencyLimit
 func (tm *transferManager) SetConcurrency(concurrency int) {
 	tm.mu.Lock()
 	tm.concurrencyLimit = concurrency

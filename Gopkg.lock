@@ -10,7 +10,7 @@
 [[projects]]
   name = "github.com/docker/docker"
   packages = ["api/types","api/types/blkiodev","api/types/container","api/types/filters","api/types/mount","api/types/network","api/types/registry","api/types/strslice","api/types/swarm","api/types/versions"]
-  revision = "092cba3727bb9b4a2f0e922cd6c0f93ea270e363"
+  revision = "ed7b6428c133e7c59404251a09b7d6b02fa83cc2"
   version = "v1.13.1"
 
 [[projects]]
@@ -89,7 +89,7 @@
   branch = "master"
   name = "github.com/xeipuuv/gojsonschema"
   packages = ["."]
-  revision = "ea20b1274b189eeb1bd77d1de59a51059dffb219"
+  revision = "93e72a773fade158921402d6a24c819b48aba29d"
 
 [[projects]]
   branch = "master"

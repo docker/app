@@ -1,16 +1,16 @@
-package client
+package client // import "github.com/docker/docker/client"
 
 import (
 	"encoding/json"
 	"net/url"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"golang.org/x/net/context"
 )
 
 // ContainerDiff shows differences in a container filesystem since it was started.
-func (cli *Client) ContainerDiff(ctx context.Context, containerID string) ([]types.ContainerChange, error) {
-	var changes []types.ContainerChange
+func (cli *Client) ContainerDiff(ctx context.Context, containerID string) ([]container.ContainerChangeResponseItem, error) {
+	var changes []container.ContainerChangeResponseItem
 
 	serverResp, err := cli.get(ctx, "/containers/"+containerID+"/changes", url.Values{}, nil)
 	if err != nil {

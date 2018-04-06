@@ -1,18 +1,18 @@
-// +build windows
-
-package daemon
+package daemon // import "github.com/docker/docker/daemon"
 
 import (
 	"sort"
 
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/container"
+	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/volume"
 )
 
 // setupMounts configures the mount points for a container by appending each
 // of the configured mounts on the container to the OCI mount structure
 // which will ultimately be passed into the oci runtime during container creation.
-// It also ensures each of the mounts are lexographically sorted.
+// It also ensures each of the mounts are lexicographically sorted.
 
 // BUGBUG TODO Windows containerd. This would be much better if it returned
 // an array of runtime spec mounts, not container mounts. Then no need to
@@ -24,7 +24,7 @@ func (daemon *Daemon) setupMounts(c *container.Container) ([]container.Mount, er
 		if err := daemon.lazyInitializeVolume(c.ID, mount); err != nil {
 			return nil, err
 		}
-		s, err := mount.Setup(c.MountLabel, 0, 0)
+		s, err := mount.Setup(c.MountLabel, idtools.IDPair{0, 0}, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -44,4 +44,8 @@ func (daemon *Daemon) setupMounts(c *container.Container) ([]container.Mount, er
 // Windows.
 func setBindModeIfNull(bind *volume.MountPoint) {
 	return
+}
+
+func (daemon *Daemon) validateBindDaemonRoot(m mount.Mount) (bool, error) {
+	return false, nil
 }

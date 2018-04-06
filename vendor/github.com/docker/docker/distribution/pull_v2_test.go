@@ -1,4 +1,4 @@
-package distribution
+package distribution // import "github.com/docker/docker/distribution"
 
 import (
 	"encoding/json"
@@ -8,9 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/distribution/digest"
 	"github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/docker/reference"
+	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/internal/testutil"
+	"github.com/opencontainers/go-digest"
 )
 
 // TestFixManifestLayers checks that fixManifestLayers removes a duplicate
@@ -102,9 +103,8 @@ func TestFixManifestLayersBadParent(t *testing.T) {
 		},
 	}
 
-	if err := fixManifestLayers(&duplicateLayerManifest); err == nil || !strings.Contains(err.Error(), "Invalid parent ID.") {
-		t.Fatalf("expected an invalid parent ID error from fixManifestLayers")
-	}
+	err := fixManifestLayers(&duplicateLayerManifest)
+	testutil.ErrorContains(t, err, "invalid parent ID")
 }
 
 // TestValidateManifest verifies the validateManifest function
@@ -113,7 +113,7 @@ func TestValidateManifest(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Needs fixing on Windows")
 	}
-	expectedDigest, err := reference.ParseNamed("repo@sha256:02fee8c3220ba806531f606525eceb83f4feb654f62b207191b1c9209188dedd")
+	expectedDigest, err := reference.ParseNormalizedNamed("repo@sha256:02fee8c3220ba806531f606525eceb83f4feb654f62b207191b1c9209188dedd")
 	if err != nil {
 		t.Fatal("could not parse reference")
 	}

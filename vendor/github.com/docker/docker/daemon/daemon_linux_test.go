@@ -1,10 +1,18 @@
 // +build linux
 
-package daemon
+package daemon // import "github.com/docker/docker/daemon"
 
 import (
 	"strings"
 	"testing"
+
+	containertypes "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/container"
+	"github.com/docker/docker/oci"
+	"github.com/docker/docker/pkg/idtools"
+	"github.com/docker/docker/pkg/mount"
+	"github.com/gotestyourself/gotestyourself/assert"
+	is "github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
 const mountsFixture = `142 78 0:38 / / rw,relatime - aufs none rw,si=573b861da0b3a05b,dio
@@ -62,7 +70,7 @@ func TestCleanupMounts(t *testing.T) {
 	d.cleanupMountsFromReaderByID(strings.NewReader(mountsFixture), "", unmount)
 
 	if unmounted != 1 {
-		t.Fatalf("Expected to unmount the shm (and the shm only)")
+		t.Fatal("Expected to unmount the shm (and the shm only)")
 	}
 }
 
@@ -83,7 +91,7 @@ func TestCleanupMountsByID(t *testing.T) {
 	d.cleanupMountsFromReaderByID(strings.NewReader(mountsFixture), "03ca4b49e71f1e49a41108829f4d5c70ac95934526e2af8984a1f65f1de0715d", unmount)
 
 	if unmounted != 1 {
-		t.Fatalf("Expected to unmount the auf root (and that only)")
+		t.Fatal("Expected to unmount the auf root (and that only)")
 	}
 }
 
@@ -99,6 +107,124 @@ func TestNotCleanupMounts(t *testing.T) {
 	mountInfo := `234 232 0:59 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,size=65536k`
 	d.cleanupMountsFromReaderByID(strings.NewReader(mountInfo), "", unmount)
 	if unmounted {
-		t.Fatalf("Expected not to clean up /dev/shm")
+		t.Fatal("Expected not to clean up /dev/shm")
+	}
+}
+
+// TestTmpfsDevShmSizeOverride checks that user-specified /dev/tmpfs mount
+// size is not overriden by the default shmsize (that should only be used
+// for default /dev/shm (as in "shareable" and "private" ipc modes).
+// https://github.com/moby/moby/issues/35271
+func TestTmpfsDevShmSizeOverride(t *testing.T) {
+	size := "777m"
+	mnt := "/dev/shm"
+
+	d := Daemon{
+		idMappings: &idtools.IDMappings{},
+	}
+	c := &container.Container{
+		HostConfig: &containertypes.HostConfig{
+			ShmSize: 48 * 1024, // size we should NOT end up with
+		},
+	}
+	ms := []container.Mount{
+		{
+			Source:      "tmpfs",
+			Destination: mnt,
+			Data:        "size=" + size,
+		},
+	}
+
+	// convert ms to spec
+	spec := oci.DefaultSpec()
+	err := setMounts(&d, &spec, c, ms)
+	assert.Check(t, err)
+
+	// Check the resulting spec for the correct size
+	found := false
+	for _, m := range spec.Mounts {
+		if m.Destination == mnt {
+			for _, o := range m.Options {
+				if !strings.HasPrefix(o, "size=") {
+					continue
+				}
+				t.Logf("%+v\n", m.Options)
+				assert.Check(t, is.Equal("size="+size, o))
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Fatal("/dev/shm not found in spec, or size option missing")
+	}
+}
+
+func TestValidateContainerIsolationLinux(t *testing.T) {
+	d := Daemon{}
+
+	_, err := d.verifyContainerSettings("linux", &containertypes.HostConfig{Isolation: containertypes.IsolationHyperV}, nil, false)
+	assert.Check(t, is.Error(err, "invalid isolation 'hyperv' on linux"))
+}
+
+func TestShouldUnmountRoot(t *testing.T) {
+	for _, test := range []struct {
+		desc   string
+		root   string
+		info   *mount.Info
+		expect bool
+	}{
+		{
+			desc:   "root is at /",
+			root:   "/docker",
+			info:   &mount.Info{Root: "/docker", Mountpoint: "/docker"},
+			expect: true,
+		},
+		{
+			desc:   "not a mountpoint",
+			root:   "/docker",
+			info:   nil,
+			expect: false,
+		},
+		{
+			desc:   "root is at in a submount from `/`",
+			root:   "/foo/docker",
+			info:   &mount.Info{Root: "/docker", Mountpoint: "/foo/docker"},
+			expect: true,
+		},
+		{
+			desc:   "root is mounted in from a parent mount namespace same root dir", // dind is an example of this
+			root:   "/docker",
+			info:   &mount.Info{Root: "/docker/volumes/1234657/_data", Mountpoint: "/docker"},
+			expect: false,
+		},
+		{
+			desc:   "root is mounted in from a parent mount namespace different root dir",
+			root:   "/foo/bar",
+			info:   &mount.Info{Root: "/docker/volumes/1234657/_data", Mountpoint: "/foo/bar"},
+			expect: false,
+		},
+	} {
+		t.Run(test.desc, func(t *testing.T) {
+			for _, options := range []struct {
+				desc     string
+				Optional string
+				expect   bool
+			}{
+				{desc: "shared", Optional: "shared:", expect: true},
+				{desc: "slave", Optional: "slave:", expect: false},
+				{desc: "private", Optional: "private:", expect: false},
+			} {
+				t.Run(options.desc, func(t *testing.T) {
+					expect := options.expect
+					if expect {
+						expect = test.expect
+					}
+					if test.info != nil {
+						test.info.Optional = options.Optional
+					}
+					assert.Check(t, is.Equal(expect, shouldUnmountRoot(test.root, test.info)))
+				})
+			}
+		})
 	}
 }

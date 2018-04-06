@@ -29,24 +29,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"math/big"
 	"reflect"
 	"strconv"
 )
 
-func isKind(what interface{}, kinds ...reflect.Kind) bool {
-	target := what
-	if isJsonNumber(what) {
-		// JSON Numbers are strings!
-		target = *mustBeNumber(what)
-	}
-	targetKind := reflect.ValueOf(target).Kind()
-	for _, kind := range kinds {
-		if targetKind == kind {
-			return true
-		}
-	}
-	return false
+func isKind(what interface{}, kind reflect.Kind) bool {
+	return reflect.ValueOf(what).Kind() == kind
 }
 
 func existsMapKey(m map[string]interface{}, k string) bool {
@@ -74,28 +62,6 @@ func marshalToJsonString(value interface{}) (*string, error) {
 	return &sBytes, nil
 }
 
-func marshalWithoutNumber(value interface{}) (*string, error) {
-
-	// The JSON is decoded using https://golang.org/pkg/encoding/json/#Decoder.UseNumber
-	// This means the numbers are internally still represented as strings and therefore 1.00 is unequal to 1
-	// One way to eliminate these differences is to decode and encode the JSON one more time without Decoder.UseNumber
-	// so that these differences in representation are removed
-
-	jsonString, err := marshalToJsonString(value)
-	if err != nil {
-		return nil, err
-	}
-
-	var document interface{}
-
-	err = json.Unmarshal([]byte(*jsonString), &document)
-	if err != nil {
-		return nil, err
-	}
-
-	return marshalToJsonString(document)
-}
-
 func isJsonNumber(what interface{}) bool {
 
 	switch what.(type) {
@@ -111,14 +77,13 @@ func checkJsonNumber(what interface{}) (isValidFloat64 bool, isValidInt64 bool, 
 
 	jsonNumber := what.(json.Number)
 
-	f64, errFloat64 := jsonNumber.Float64()
-	s64 := strconv.FormatFloat(f64, 'f', -1, 64)
-	_, errInt64 := strconv.ParseInt(s64, 10, 64)
+	_, errFloat64 := jsonNumber.Float64()
+	_, errInt64 := jsonNumber.Int64()
 
 	isValidFloat64 = errFloat64 == nil
 	isValidInt64 = errInt64 == nil
 
-	_, errInt32 := strconv.ParseInt(s64, 10, 32)
+	_, errInt32 := strconv.ParseInt(jsonNumber.String(), 10, 32)
 	isValidInt32 = isValidInt64 && errInt32 == nil
 
 	return
@@ -167,13 +132,15 @@ func mustBeInteger(what interface{}) *int {
 	return nil
 }
 
-func mustBeNumber(what interface{}) *big.Float {
+func mustBeNumber(what interface{}) *float64 {
 
 	if isJsonNumber(what) {
+
 		number := what.(json.Number)
-		float64Value, success := new(big.Float).SetString(string(number))
-		if success {
-			return float64Value
+		float64Value, err := number.Float64()
+
+		if err == nil {
+			return &float64Value
 		} else {
 			return nil
 		}

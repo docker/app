@@ -1,21 +1,23 @@
-package plugingetter
+package plugingetter // import "github.com/docker/docker/pkg/plugingetter"
 
-import "github.com/docker/docker/pkg/plugins"
-
-const (
-	// LOOKUP doesn't update RefCount
-	LOOKUP = 0
-	// ACQUIRE increments RefCount
-	ACQUIRE = 1
-	// RELEASE decrements RefCount
-	RELEASE = -1
+import (
+	"github.com/docker/docker/pkg/plugins"
 )
 
-// CompatPlugin is a abstraction to handle both v2(new) and v1(legacy) plugins.
+const (
+	// Lookup doesn't update RefCount
+	Lookup = 0
+	// Acquire increments RefCount
+	Acquire = 1
+	// Release decrements RefCount
+	Release = -1
+)
+
+// CompatPlugin is an abstraction to handle both v2(new) and v1(legacy) plugins.
 type CompatPlugin interface {
 	Client() *plugins.Client
 	Name() string
-	BasePath() string
+	ScopedPath(string) string
 	IsV1() bool
 }
 

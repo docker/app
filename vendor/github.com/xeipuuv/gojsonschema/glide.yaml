@@ -7,7 +7,6 @@ import:
 
 - package: github.com/xeipuuv/gojsonreference
 
-testImport:
-- package: github.com/stretchr/testify
-  subpackages:
-  - assert
+- package: github.com/stretchr/testify/assert
+  version: ^1.1.3
+

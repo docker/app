@@ -1,4 +1,4 @@
-package logger
+package logger // import "github.com/docker/docker/daemon/logger"
 
 import (
 	"bytes"
@@ -6,12 +6,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	bufSize  = 16 * 1024
+	// readSize is the maximum bytes read during a single read
+	// operation.
 	readSize = 2 * 1024
+
+	// defaultBufSize provides a reasonable default for loggers that do
+	// not have an external limit to impose on log line size.
+	defaultBufSize = 16 * 1024
 )
 
 // Copier can copy logs from specified sources to Logger and attach Timestamp.
@@ -44,10 +49,15 @@ func (c *Copier) Run() {
 
 func (c *Copier) copySrc(name string, src io.Reader) {
 	defer c.copyJobs.Done()
+
+	bufSize := defaultBufSize
+	if sizedLogger, ok := c.dst.(SizedLogger); ok {
+		bufSize = sizedLogger.BufSize()
+	}
 	buf := make([]byte, bufSize)
+
 	n := 0
 	eof := false
-	msg := &Message{Source: name}
 
 	for {
 		select {
@@ -77,14 +87,16 @@ func (c *Copier) copySrc(name string, src io.Reader) {
 			}
 			// Break up the data that we've buffered up into lines, and log each in turn.
 			p := 0
-			for q := bytes.Index(buf[p:n], []byte{'\n'}); q >= 0; q = bytes.Index(buf[p:n], []byte{'\n'}) {
-				msg.Line = buf[p : p+q]
-				msg.Timestamp = time.Now().UTC()
-				msg.Partial = false
+			for q := bytes.IndexByte(buf[p:n], '\n'); q >= 0; q = bytes.IndexByte(buf[p:n], '\n') {
 				select {
 				case <-c.closed:
 					return
 				default:
+					msg := NewMessage()
+					msg.Source = name
+					msg.Timestamp = time.Now().UTC()
+					msg.Line = append(msg.Line, buf[p:p+q]...)
+
 					if logErr := c.dst.Log(msg); logErr != nil {
 						logrus.Errorf("Failed to log msg %q for logger %s: %s", msg.Line, c.dst.Name(), logErr)
 					}
@@ -96,9 +108,12 @@ func (c *Copier) copySrc(name string, src io.Reader) {
 			// noting that it's a partial log line.
 			if eof || (p == 0 && n == len(buf)) {
 				if p < n {
-					msg.Line = buf[p:n]
+					msg := NewMessage()
+					msg.Source = name
 					msg.Timestamp = time.Now().UTC()
+					msg.Line = append(msg.Line, buf[p:n]...)
 					msg.Partial = true
+
 					if logErr := c.dst.Log(msg); logErr != nil {
 						logrus.Errorf("Failed to log msg %q for logger %s: %s", msg.Line, c.dst.Name(), logErr)
 					}

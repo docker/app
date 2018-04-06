@@ -1,4 +1,4 @@
-package client
+package client // import "github.com/docker/docker/client"
 
 import (
 	"net/url"
@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// SwarmLeave leaves the Swarm.
+// SwarmLeave leaves the swarm.
 func (cli *Client) SwarmLeave(ctx context.Context, force bool) error {
 	query := url.Values{}
 	if force {
