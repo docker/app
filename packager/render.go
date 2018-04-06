@@ -18,7 +18,7 @@ func inject(in map[interface{}]interface{}, out map[string]string, prefix string
 		case string:
 			out[prefix + kk] = vv
 		case map[interface{}]interface{}:
-			inject(vv, out, prefix + kk + "_")
+			inject(vv, out, prefix + kk + ".")
 		default:
 			out[prefix + kk] = fmt.Sprintf("%v", v)
 		}
