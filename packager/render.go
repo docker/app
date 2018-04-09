@@ -1,33 +1,58 @@
 package packager
 
 import (
-    "fmt"
-    "io/ioutil"
-    "path"
+	"bytes"
+	"fmt"
+	"io/ioutil"
+	"path"
+	"strings"
+	"text/template"
 
-    "github.com/docker/cli/cli/compose/loader"
-    composetypes "github.com/docker/cli/cli/compose/types"
-    "gopkg.in/yaml.v2"
+	"github.com/docker/cli/cli/compose/loader"
+	composetypes "github.com/docker/cli/cli/compose/types"
+	"gopkg.in/yaml.v2"
 )
 
-// inject flattens a structure: foo.bar.baz -> foo_bar_baz
-func inject(in map[interface{}]interface{}, out map[string]string, prefix string) {
+// flatten flattens a structure: foo.bar.baz -> foo_bar_baz
+func flatten(in map[string]interface{}, out map[string]string, prefix string) {
 	for k, v := range in {
-		kk := k.(string)
 		switch vv := v.(type) {
 		case string:
-			out[prefix + kk] = vv
-		case map[interface{}]interface{}:
-			inject(vv, out, prefix + kk + ".")
+			out[prefix + k] = vv
+		case map[string]interface{}:
+			flatten(vv, out, prefix + k + ".")
 		default:
-			out[prefix + kk] = fmt.Sprintf("%v", v)
+			out[prefix + k] = fmt.Sprintf("%v", v)
+		}
+	}
+}
+
+func merge(res map[string]interface{}, src map[interface{}]interface{}) {
+	for k, v := range src {
+		kk, ok := k.(string)
+		if !ok {
+			panic(fmt.Sprintf("DAFUCK, key %v in %#v is not a string", k, src))
+		}
+		eval, ok := res[kk]
+		switch vv := v.(type) {
+		case map[interface{}]interface{}:
+			if !ok {
+				res[kk] = make(map[string]interface{})
+			} else {
+				if _, ok2 := eval.(map[string]interface{}); !ok2 {
+					res[kk] = make(map[string]interface{})
+				}
+			}
+			merge(res[kk].(map[string]interface{}), vv)
+		default:
+				res[kk] = fmt.Sprintf("%v", v)
 		}
 	}
 }
 
 // load a set of settings file and produce a property dictionary
-func loadSettings(files []string) (map[string]string, error) {
-	res := make(map[string]string)
+func loadSettings(files []string) (map[string]interface{}, error) {
+	res := make(map[string]interface{})
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
 		if err != nil {
@@ -38,7 +63,7 @@ func loadSettings(files []string) (map[string]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		inject(s, res, "")
+		merge(res, s)
 	}
 	return res, nil
 }
@@ -53,7 +78,8 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	// prepend the app settings to the argument settings
 	sf := []string { path.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
-	finalEnv, err := loadSettings(sf)
+	// load the settings into a struct
+	settings, err := loadSettings(sf)
 	// inject our metadata
 	metaFile := path.Join(appname, "metadata.yml")
 	meta := make(map[interface{}]interface{})
@@ -65,25 +91,41 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	if err != nil {
 		return "", err
 	}
-	inject(meta, finalEnv, "app.")
-	for k, v := range(env) {
-		finalEnv[k] = v
+	metaPrefixed := make(map[interface{}]interface{})
+	metaPrefixed["app"] = meta
+	merge(settings, metaPrefixed)
+	// inject the user-provided env
+	for k, v := range env {
+		ss := strings.Split(k, ".")
+		valroot := make(map[interface{}]interface{})
+		val := valroot
+		for _, s := range ss[:len(ss)-1] {
+			val[s] = make(map[interface{}]interface{})
+			val = val[s].(map[interface{}]interface{})
+		}
+		val[ss[len(ss)-1]] = v
+		merge(settings, valroot)
 	}
-	mainCompose, err := ioutil.ReadFile(path.Join(appname, "services.yml"))
-	if err != nil {
-		return "", err
-	}
-	mainParsed, err := loader.ParseYAML(mainCompose)
-	if err != nil {
-		return "", err
-	}
-	configFiles := []composetypes.ConfigFile{ {Config: mainParsed}}
-	for _, c := range composeFiles {
+	// flatten settings for variable expension
+	finalEnv := make(map[string]string)
+	flatten(settings, finalEnv, "")
+	// prepend our app compose file to the list
+	composes := []string { path.Join(appname, "services.yml")}
+	composes = append(composes, composeFiles...)
+	// go-template, then parse, then expand the compose files
+	configFiles := []composetypes.ConfigFile{}
+	for _, c := range composes {
 		data, err := ioutil.ReadFile(c)
 		if err != nil {
 			return "", err
 		}
-		parsed, err := loader.ParseYAML(data)
+		tmpl, err := template.New("compose").Parse(string(data))
+		if err != nil {
+			return "", err
+		}
+		yaml := bytes.NewBuffer(nil)
+		err = tmpl.Execute(yaml, settings)
+		parsed, err := loader.ParseYAML([]byte(yaml.String()))
 		if err != nil {
 			return "", err
 		}
