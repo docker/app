@@ -69,7 +69,11 @@ func recursiveInterpolate(value interface{}, path Path, opts Options) (interface
 			if err != nil {
 				return nil, err
 			}
-			out[key] = interpolatedElem
+			interpolatedKey, err := template.Substitute(key, template.Mapping(opts.LookupValue))
+			if err != nil {
+				return nil, err
+			}
+			out[interpolatedKey] = interpolatedElem
 		}
 		return out, nil
 

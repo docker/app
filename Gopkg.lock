@@ -5,11 +5,12 @@
   branch = "master"
   name = "github.com/docker/cli"
   packages = ["cli/compose/interpolation","cli/compose/loader","cli/compose/schema","cli/compose/template","cli/compose/types","opts"]
-  revision = "fe83feeb7280fb8c23274ff9e08f4dde4a4747b8"
+  revision = "7d895833e576764ed40f8829be5fa578880f8495"
+  source = "github.com/mnottale/cli"
 
 [[projects]]
   name = "github.com/docker/docker"
-  packages = ["api/types","api/types/blkiodev","api/types/container","api/types/filters","api/types/mount","api/types/network","api/types/registry","api/types/strslice","api/types/swarm","api/types/versions"]
+  packages = ["api/types","api/types/blkiodev","api/types/container","api/types/filters","api/types/mount","api/types/network","api/types/registry","api/types/strslice","api/types/swarm","api/types/swarm/runtime","api/types/versions"]
   revision = "ed7b6428c133e7c59404251a09b7d6b02fa83cc2"
   version = "v1.13.1"
 
@@ -24,6 +25,12 @@
   packages = ["."]
   revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
   version = "v0.3.2"
+
+[[projects]]
+  name = "github.com/gogo/protobuf"
+  packages = ["proto"]
+  revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/imdario/mergo"
@@ -48,6 +55,18 @@
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
+
+[[projects]]
+  name = "github.com/opencontainers/go-digest"
+  packages = ["."]
+  revision = "279bed98673dd5bef374d3b6e4b09e2af76183bf"
+  version = "v1.0.0-rc1"
+
+[[projects]]
+  name = "github.com/opencontainers/image-spec"
+  packages = ["specs-go","specs-go/v1"]
+  revision = "d60099175f88c47cd379c4738d158884749ed235"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -112,6 +131,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "28f0b879265109bc2f3dceba0df91dd168f5153c06cd5c91fbebd800890f8df9"
+  inputs-digest = "182e6576d67d719a2320d1ba87175090c984d136d38f14560d9ded7b917f62f8"
   solver-name = "gps-cdcl"
   solver-version = 1

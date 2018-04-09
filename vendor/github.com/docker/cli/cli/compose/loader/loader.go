@@ -40,6 +40,40 @@ func ParseYAML(source []byte) (map[string]interface{}, error) {
 	return converted.(map[string]interface{}), nil
 }
 
+func processEnabled(configDict map[string]interface{}) bool {
+       if v, ok := configDict["enabled"]; ok {
+               e := fmt.Sprintf("%v", v)
+               e = strings.Trim(e, " ")
+               reverse := len(e) != 0 && e[0] == '!'
+               if reverse {
+                       e = strings.Trim(e[1:], " ")
+               }
+               disabled := e == "" || e == "0" || e == "false" || e == "FALSE";
+               if reverse {
+                       disabled = !disabled
+               }
+               if disabled {
+                       return false
+               }
+               delete(configDict, "enabled")
+       }
+       for k, v := range configDict {
+               if m, ok := v.(map[string]interface{}); ok {
+                       if ! processEnabled(m) {
+                               delete(configDict, k)
+                       }
+               }
+       }
+       return true
+}
+
+func resolveEnabled(configDict map[string]interface{}) (map[string]interface{}, error) {
+       if ! processEnabled(configDict) {
+               return map[string]interface{}{}, nil
+       }
+       return configDict, nil
+}
+
 // Load reads a ConfigDetails and returns a fully loaded configuration
 func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	if len(configDetails.ConfigFiles) < 1 {
@@ -67,7 +101,10 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-
+		configDict, err = resolveEnabled(configDict)
+		if err != nil {
+			return nil, err
+		}
 		if err := schema.Validate(configDict, configDetails.Version); err != nil {
 			return nil, err
 		}
