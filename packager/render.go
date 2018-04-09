@@ -54,6 +54,18 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	sf := []string { path.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
 	finalEnv, err := loadSettings(sf)
+	// inject our metadata
+	metaFile := path.Join(appname, "metadata.yml")
+	meta := make(map[interface{}]interface{})
+	metaContent, err := ioutil.ReadFile(metaFile)
+	if err != nil {
+		return "", err
+	}
+	err = yaml.Unmarshal(metaContent, &meta)
+	if err != nil {
+		return "", err
+	}
+	inject(meta, finalEnv, "app.")
 	for k, v := range(env) {
 		finalEnv[k] = v
 	}
