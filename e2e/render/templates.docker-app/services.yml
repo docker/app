@@ -1,0 +1,13 @@
+version: "3.4"
+services:
+{{if .myapp.enable}}
+  enabledservice:
+    image: alpine:{{.myapp.alpine_version}}
+    command: bash -c {{.myapp.command1}} {{.myapp.command2}} {{.myapp.command3}}
+{{end}}
+{{if .myapp.disable}}
+  disabledservice:
+    image: nginx
+{{end}}
+  other:
+    image: nginx
