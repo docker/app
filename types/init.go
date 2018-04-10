@@ -2,21 +2,21 @@ package types
 
 // InitialComposeFile TODO
 type InitialComposeFile struct {
-    Version  string
-    Services *map[string]InitialService
+	Version  string
+	Services *map[string]InitialService
 }
 
 // InitialService TODO
 type InitialService struct {
-    Image string
+	Image string
 }
 
 // NewInitialComposeFile returns an empty InitialComposeFile object
 func NewInitialComposeFile() InitialComposeFile {
-    services := make(map[string]InitialService)
+	services := make(map[string]InitialService)
 
-    return InitialComposeFile{
-        Version:  "3.6",
-        Services: &services,
-    }
+	return InitialComposeFile{
+		Version:  "3.6",
+		Services: &services,
+	}
 }

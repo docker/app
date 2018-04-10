@@ -18,11 +18,11 @@ func flatten(in map[string]interface{}, out map[string]string, prefix string) {
 	for k, v := range in {
 		switch vv := v.(type) {
 		case string:
-			out[prefix + k] = vv
+			out[prefix+k] = vv
 		case map[string]interface{}:
-			flatten(vv, out, prefix + k + ".")
+			flatten(vv, out, prefix+k+".")
 		default:
-			out[prefix + k] = fmt.Sprintf("%v", v)
+			out[prefix+k] = fmt.Sprintf("%v", v)
 		}
 	}
 }
@@ -45,7 +45,7 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 			}
 			merge(res[kk].(map[string]interface{}), vv)
 		default:
-				res[kk] = vv
+			res[kk] = vv
 		}
 	}
 }
@@ -76,7 +76,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	}
 	defer cleanup()
 	// prepend the app settings to the argument settings
-	sf := []string { path.Join(appname, "settings.yml")}
+	sf := []string{path.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
 	// load the settings into a struct
 	settings, err := loadSettings(sf)
@@ -115,7 +115,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	finalEnv := make(map[string]string)
 	flatten(settings, finalEnv, "")
 	// prepend our app compose file to the list
-	composes := []string { path.Join(appname, "services.yml")}
+	composes := []string{path.Join(appname, "services.yml")}
 	composes = append(composes, composeFiles...)
 	// go-template, then parse, then expand the compose files
 	configFiles := []composetypes.ConfigFile{}
@@ -138,10 +138,10 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	}
 	//fmt.Printf("ENV: %v\n", finalEnv)
 	//fmt.Printf("MAPENV: %#v\n", settings)
-	rendered, err := loader.Load(composetypes.ConfigDetails {
-			WorkingDir: ".",
-			ConfigFiles: configFiles,
-			Environment: finalEnv,
+	rendered, err := loader.Load(composetypes.ConfigDetails{
+		WorkingDir:  ".",
+		ConfigFiles: configFiles,
+		Environment: finalEnv,
 	})
 	if err != nil {
 		return "", err

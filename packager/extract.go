@@ -27,11 +27,11 @@ func Extract(appname string) (string, func(), error) {
 	// not a dir: probably a tarball package, extract that in a temp dir
 	f, err := os.Open(appname)
 	if err != nil {
-		return "", func(){}, err
+		return "", func() {}, err
 	}
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
-		return "", func(){}, err
+		return "", func() {}, err
 	}
 	tarReader := tar.NewReader(f)
 	for {
@@ -40,20 +40,20 @@ func Extract(appname string) (string, func(), error) {
 			break
 		}
 		if err != nil {
-			return "", func(){}, err
+			return "", func() {}, err
 		}
 		tempDir = tempDir + "/"
 		switch header.Typeflag {
 		case tar.TypeDir: // = directory
-			os.Mkdir(tempDir + header.Name, 0755)
+			os.Mkdir(tempDir+header.Name, 0755)
 		case tar.TypeReg: // = regular file
 			data := make([]byte, header.Size)
 			_, err := tarReader.Read(data)
 			if err != nil {
-				return "", func(){}, err
+				return "", func() {}, err
 			}
-			ioutil.WriteFile(tempDir + header.Name, data, 0755)
+			ioutil.WriteFile(tempDir+header.Name, data, 0755)
 		}
 	}
-	return tempDir, func() {os.RemoveAll(tempDir)}, nil
+	return tempDir, func() { os.RemoveAll(tempDir) }, nil
 }

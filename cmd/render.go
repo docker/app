@@ -14,7 +14,7 @@ var renderCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		d := make(map[string]string)
-		for _, v := range(renderEnv) {
+		for _, v := range renderEnv {
 			kv := strings.SplitN(v, "=", 2)
 			if len(kv) != 2 {
 				fmt.Printf("Malformed env input: '%s'\n", v)

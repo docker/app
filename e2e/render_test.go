@@ -59,7 +59,7 @@ func TestRender(t *testing.T) {
 				t.Error("Missing 'expected.txt' file")
 			} else {
 				if string(expectedRender) != result {
-					t.Errorf("Rendering mismatch.\n--Expected--\n%s\n--Effective--\n%s", expectedRender, result) 
+					t.Errorf("Rendering mismatch.\n--Expected--\n%s\n--Effective--\n%s", expectedRender, result)
 				}
 			}
 		}
