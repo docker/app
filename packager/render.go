@@ -45,7 +45,7 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 			}
 			merge(res[kk].(map[string]interface{}), vv)
 		default:
-				res[kk] = fmt.Sprintf("%v", v)
+				res[kk] = vv
 		}
 	}
 }
@@ -103,7 +103,12 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 			val[s] = make(map[interface{}]interface{})
 			val = val[s].(map[interface{}]interface{})
 		}
-		val[ss[len(ss)-1]] = v
+		var converted interface{}
+		err = yaml.Unmarshal([]byte(v), &converted)
+		if err != nil {
+			return "", err
+		}
+		val[ss[len(ss)-1]] = converted
 		merge(settings, valroot)
 	}
 	// flatten settings for variable expension
@@ -131,7 +136,8 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		}
 		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
 	}
-	fmt.Printf("ENV: %v\n", finalEnv)
+	//fmt.Printf("ENV: %v\n", finalEnv)
+	//fmt.Printf("MAPENV: %#v\n", settings)
 	rendered, err := loader.Load(composetypes.ConfigDetails {
 			WorkingDir: ".",
 			ConfigFiles: configFiles,
