@@ -44,7 +44,6 @@ func TestRender(t *testing.T) {
 		}
 		// run the render
 		result, resultErr := packager.Render(path.Join("render", app.Name()), overrides, settings, env)
-		t.Logf("Render gave %v %v", resultErr, result)
 		if resultErr != nil {
 			expectedErr, err := ioutil.ReadFile(path.Join("render", app.Name(), "expectedError.txt"))
 			assert.NilError(t, err, "unexpected render error: %q", resultErr)

@@ -80,6 +80,9 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	sf = append(sf, settingsFile...)
 	// load the settings into a struct
 	settings, err := loadSettings(sf)
+	if err != nil {
+		return "", err
+	}
 	// inject our metadata
 	metaFile := path.Join(appname, "metadata.yml")
 	meta := make(map[interface{}]interface{})
@@ -130,7 +133,10 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		}
 		yaml := bytes.NewBuffer(nil)
 		err = tmpl.Execute(yaml, settings)
-		parsed, err := loader.ParseYAML([]byte(yaml.String()))
+		if err != nil {
+			return "", err
+		}
+		parsed, err := loader.ParseYAML(yaml.Bytes())
 		if err != nil {
 			return "", err
 		}

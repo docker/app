@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // initCmd represents the init command

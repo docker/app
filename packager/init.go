@@ -2,14 +2,15 @@ package packager
 
 import (
 	"fmt"
-	"github.com/docker/lunchbox/types"
-	"github.com/docker/lunchbox/utils"
-	"gopkg.in/yaml.v2"
 	"log"
 	"os"
 	"os/exec"
 	"os/user"
 	"path"
+
+	"github.com/docker/lunchbox/types"
+	"github.com/docker/lunchbox/utils"
+	"gopkg.in/yaml.v2"
 )
 
 // Init is the entrypoint initialization function.

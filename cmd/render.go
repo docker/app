@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/docker/lunchbox/packager"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/docker/lunchbox/packager"
+	"github.com/spf13/cobra"
 )
 
 var renderCmd = &cobra.Command{
