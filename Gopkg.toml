@@ -33,3 +33,7 @@
   name = "github.com/docker/cli"
   branch = "master"
   source = "github.com/mnottale/cli"
+
+[[constraint]]
+  name = "github.com/gotestyourself/gotestyourself"
+  branch = "master"

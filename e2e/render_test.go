@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	"github.com/docker/lunchbox/packager"
+
+	"github.com/gotestyourself/gotestyourself/assert"
 	"gopkg.in/yaml.v2"
 )
 
 func TestRender(t *testing.T) {
 	apps, err := ioutil.ReadDir("render")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
 		t.Log("testing", app.Name())
 		var (
@@ -23,6 +23,7 @@ func TestRender(t *testing.T) {
 			settings  []string
 		)
 		content, err := ioutil.ReadDir(path.Join("render", app.Name()))
+		assert.NilError(t, err, "unable to get app: %q", app.Name())
 		// look for overrides and settings file to inject in the rendering process
 		for _, f := range content {
 			split := strings.SplitN(f.Name(), "-", 2)
@@ -37,31 +38,21 @@ func TestRender(t *testing.T) {
 		env := make(map[string]string)
 		if _, err = os.Stat(path.Join("render", app.Name(), "env.yml")); err == nil {
 			envRaw, err := ioutil.ReadFile(path.Join("render", app.Name(), "env.yml"))
-			if err != nil {
-				t.Error(err)
-			}
+			assert.NilError(t, err, "unable to read file")
 			err = yaml.Unmarshal(envRaw, &env)
+			assert.NilError(t, err, "unable to unmarshal env")
 		}
 		// run the render
 		result, resultErr := packager.Render(path.Join("render", app.Name()), overrides, settings, env)
 		t.Logf("Render gave %v %v", resultErr, result)
 		if resultErr != nil {
-			if expectedErr, err := ioutil.ReadFile(path.Join("render", app.Name(), "expectedError.txt")); err == nil {
-				if string(expectedErr) != resultErr.Error() {
-					t.Errorf("Error message mismatch: expected '%s', got '%s'", expectedErr, resultErr)
-				}
-			} else {
-				t.Errorf("Unexpected render error: '%s'", resultErr)
-			}
+			expectedErr, err := ioutil.ReadFile(path.Join("render", app.Name(), "expectedError.txt"))
+			assert.NilError(t, err, "unexpected render error: %q", resultErr)
+			assert.ErrorContains(t, resultErr, string(expectedErr))
 		} else {
 			expectedRender, err := ioutil.ReadFile(path.Join("render", app.Name(), "expected.txt"))
-			if err != nil {
-				t.Error("Missing 'expected.txt' file")
-			} else {
-				if string(expectedRender) != result {
-					t.Errorf("Rendering mismatch.\n--Expected--\n%s\n--Effective--\n%s", expectedRender, result)
-				}
-			}
+			assert.NilError(t, err, "missing 'expected.txt' file")
+			assert.Equal(t, string(expectedRender), result, "rendering missmatch")
 		}
 	}
 }
