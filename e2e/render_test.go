@@ -45,13 +45,19 @@ func TestRender(t *testing.T) {
 		// run the render
 		result, resultErr := packager.Render(path.Join("render", app.Name()), overrides, settings, env)
 		if resultErr != nil {
-			expectedErr, err := ioutil.ReadFile(path.Join("render", app.Name(), "expectedError.txt"))
-			assert.NilError(t, err, "unexpected render error: %q", resultErr)
-			assert.ErrorContains(t, resultErr, string(expectedErr))
+			expectedErr := readFile(t, path.Join("render", app.Name(), "expectedError.txt"))
+			assert.ErrorContains(t, resultErr, expectedErr)
 		} else {
-			expectedRender, err := ioutil.ReadFile(path.Join("render", app.Name(), "expected.txt"))
-			assert.NilError(t, err, "missing 'expected.txt' file")
+			expectedRender := readFile(t, path.Join("render", app.Name(), "expected.txt"))
 			assert.Equal(t, string(expectedRender), result, "rendering missmatch")
 		}
 	}
+}
+
+// readFile returns the content of the file at the designated path normalizing
+// line endings by removing any \r.
+func readFile(t *testing.T, path string) string {
+	content, err := ioutil.ReadFile(path)
+	assert.NilError(t, err, "missing '"+path+"' file")
+	return strings.Replace(string(content), "\r", "", -1)
 }
