@@ -43,7 +43,13 @@ func TestRender(t *testing.T) {
 			assert.NilError(t, err, "unable to unmarshal env")
 		}
 		// run the render
-		result, resultErr := packager.Render(path.Join("render", app.Name()), overrides, settings, env)
+		config, resultErr := packager.Render(path.Join("render", app.Name()), overrides, settings, env)
+		var result string
+		if resultErr == nil {
+			var bytes []byte
+			bytes, resultErr = yaml.Marshal(config)
+			result = string(bytes)
+		}
 		if resultErr != nil {
 			expectedErr := readFile(t, path.Join("render", app.Name(), "expectedError.txt"))
 			assert.ErrorContains(t, resultErr, expectedErr)

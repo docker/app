@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var renderCmd = &cobra.Command{
@@ -23,12 +24,17 @@ var renderCmd = &cobra.Command{
 			}
 			d[kv[0]] = kv[1]
 		}
-		res, err := packager.Render(args[0], renderComposeFiles, renderSettingsFile, d)
+		rendered, err := packager.Render(args[0], renderComposeFiles, renderSettingsFile, d)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println(res)
+		res, err := yaml.Marshal(rendered)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(string(res))
 	},
 }
 
