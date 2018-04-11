@@ -40,9 +40,8 @@ func initFromScratch(name string) error {
 	log.Println("init from scratch")
 	fmt.Println(`
 Please indicate a list of services that will be used by your application, one per line.
-Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...
-    `)
-	services, err := utils.ReadNewlineSeparatedList()
+Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...`)
+	services, err := utils.ReadNewlineSeparatedList(os.Stdin)
 	if err != nil {
 		return err
 	}

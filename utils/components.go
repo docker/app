@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -62,9 +63,14 @@ func MatchService(inputName string) ServiceConfig {
 		imgName = keywords["default"]
 	}
 	return ServiceConfig{
-		ServiceName:  strings.Replace(inputName, " ", "_", -1),
+		ServiceName:  sanitizeServiceName(inputName),
 		ServiceImage: imgName,
 	}
+}
+
+func sanitizeServiceName(inputName string) string {
+	invalidChars, _ := regexp.Compile("[^a-z_-]")
+	return invalidChars.ReplaceAllLiteralString(inputName, "_")
 }
 
 // ServiceConfig is a stub containing basic information about a service component

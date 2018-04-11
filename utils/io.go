@@ -2,7 +2,9 @@ package utils
 
 import (
 	"bufio"
+	"io"
 	"os"
+	"strings"
 )
 
 // CreateFileWithData creates a new file at the given path and writes
@@ -17,13 +19,17 @@ func CreateFileWithData(fileName string, data []byte) error {
 	return err
 }
 
-// ReadNewlineSeparatedList reads data from stdin until reaching EOF and
-// returns a slice with data from each line
-func ReadNewlineSeparatedList() ([]string, error) {
-	scanner := bufio.NewScanner(os.Stdin)
+// ReadNewlineSeparatedList reads data from the reader interface until
+// reaching EOF and returns a slice with data from each line
+func ReadNewlineSeparatedList(rd io.Reader) ([]string, error) {
+	scanner := bufio.NewScanner(rd)
 	var into []string
 	for scanner.Scan() {
-		into = append(into, scanner.Text())
+		token := strings.TrimSpace(scanner.Text())
+		if token == "" {
+			continue
+		}
+		into = append(into, token)
 	}
 	return into, scanner.Err()
 }
