@@ -1,6 +1,8 @@
 PKG_NAME := github.com/docker/lunchbox
 BIN_NAME := docker-app
 
+TAG := ${shell git describe --always --dirty}
+
 IMAGE_NAME := docker-app
 
 GO_VERSION := 1.10
@@ -26,6 +28,15 @@ CHECK_GO_ENV:
 bin: CHECK_GO_ENV
 	@echo "Building _build/bin/$(BIN_NAME)$(EXEC_EXT)..."
 	@go build -ldflags=$(LDFLAGS) -i -o _build/bin/$(BIN_NAME)$(EXEC_EXT) ./
+
+bin-all: CHECK_GO_ENV
+	@echo "Building for all archs in _build/$(TAG)"
+	GOOS=windows go build -ldflags=$(LDFLAGS) -i -o _build/$(TAG)/$(BIN_NAME)-windows.exe ./
+	GOOS=linux go build -ldflags=$(LDFLAGS) -i -o _build/$(TAG)/$(BIN_NAME)-linux ./
+	GOOS=darwin go build -ldflags=$(LDFLAGS) -i -o _build/$(TAG)/$(BIN_NAME)-macos ./
+
+release:
+	gsutil cp -r _build/$(TAG) gs://docker_app
 
 image:
 	@docker build -t $(IMAGE_NAME) $(IMAGE_BUILD_ARGS) . --target run
