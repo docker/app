@@ -1,0 +1,26 @@
+environment:
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      PATH: C:\msys64\usr\bin;%PATH%
+      ROOT: C:\projects\lunchbox
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      ROOT: /home/appveyor/projects/lunchbox
+
+stack: go 1.10, docker
+
+clone_folder: $(ROOT)/src/github.com/docker/lunchbox
+
+install:
+  - sh: GOPATH=$ROOT
+  - ps: $GOPATH=$ROOT
+
+build_script:
+  - go env
+  - make bin
+
+test_script:
+  - make test
+
+artifacts:
+  - path: _build/bin/*
+    name: lunchbox
