@@ -2,8 +2,9 @@ package utils
 
 import (
 	"fmt"
-	"github.com/gotestyourself/gotestyourself/assert"
 	"testing"
+
+	"github.com/gotestyourself/gotestyourself/assert"
 )
 
 func TestValidateAppName(t *testing.T) {

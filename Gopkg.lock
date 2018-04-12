@@ -179,7 +179,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/gotestyourself/gotestyourself"
-  packages = ["assert","assert/cmp","internal/difflib","internal/format","internal/source"]
+  packages = ["assert","assert/cmp","fs","internal/difflib","internal/format","internal/source","x/subtest"]
   revision = "f2728c79a87095c99f7a496701a81d3eae9fe3df"
 
 [[projects]]
@@ -388,6 +388,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8b9250610b24f700ab5fd14d8ad2b73cbf3201f753625e38339c561efd03b61e"
+  inputs-digest = "134288a9ad5baae9ca275e502372a0c9209c72584452f85b7c9ac0d76f857cf6"
   solver-name = "gps-cdcl"
   solver-version = 1

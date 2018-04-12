@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/gotestyourself/gotestyourself/assert"
 	"testing"
+
+	"github.com/gotestyourself/gotestyourself/assert"
 )
 
 func TestMatchService(t *testing.T) {

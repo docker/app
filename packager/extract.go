@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+
+	"github.com/docker/lunchbox/utils"
 )
 
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.

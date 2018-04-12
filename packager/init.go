@@ -19,7 +19,7 @@ func Init(name string, composeFiles []string) error {
 	if err := utils.ValidateAppName(name); err != nil {
 		return err
 	}
-	dirName := utils.DirnameFromAppName(name)
+	dirName := utils.DirNameFromAppName(name)
 	if err := os.Mkdir(dirName, 0755); err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...`)
 		return err
 	}
 
-	dirName := utils.DirnameFromAppName(name)
+	dirName := utils.DirNameFromAppName(name)
 	if err := utils.CreateFileWithData(path.Join(dirName, "services.yml"), composeData); err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...`)
 func initFromComposeFiles(name string, composeFiles []string) error {
 	log.Println("init from compose")
 
-	dirName := utils.DirnameFromAppName(name)
+	dirName := utils.DirNameFromAppName(name)
 	composeConfig, err := mergeComposeConfig(composeFiles)
 	if err != nil {
 		return err
