@@ -41,7 +41,7 @@ release:
 image:
 	@docker build -t $(IMAGE_NAME) $(IMAGE_BUILD_ARGS) . --target run
 
-test: lint e2e-test
+test: lint unit-test e2e-test
 
 lint:
 	@echo "Linting..."
@@ -52,8 +52,12 @@ e2e-test:
 	@echo "Running e2e tests..."
 	@go test ./e2e/
 
+unit-test:
+	@echo "Running unit tests..."
+	@go test $(shell go list ./... | grep -vE '/vendor/|/e2e')
+
 clean:
 	rm -Rf ./_build
 
-.PHONEY: bin image test lint e2e-test clean
+.PHONY: bin image test lint e2e-test unit-test clean
 .DEFAULT: all
