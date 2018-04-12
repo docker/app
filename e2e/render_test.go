@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/lunchbox/packager"
+	"github.com/docker/lunchbox/renderer"
 
 	"github.com/gotestyourself/gotestyourself/assert"
 	"gopkg.in/yaml.v2"
@@ -43,7 +43,7 @@ func TestRender(t *testing.T) {
 			assert.NilError(t, err, "unable to unmarshal env")
 		}
 		// run the render
-		config, resultErr := packager.Render(path.Join("render", app.Name()), overrides, settings, env)
+		config, resultErr := renderer.Render(path.Join("render", app.Name()), overrides, settings, env)
 		var result string
 		if resultErr == nil {
 			var bytes []byte
