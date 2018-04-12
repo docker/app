@@ -1,6 +1,8 @@
 package packager
 
 import (
+	"github.com/docker/lunchbox/utils"
+
 	"archive/tar"
 	"fmt"
 	"io"
@@ -13,7 +15,7 @@ import (
 )
 
 func appName(appname string) string {
-	return strings.TrimSuffix(path.Base(appname), ".docker-app")
+	return utils.AppNameFromDir(appname)
 }
 
 // Save saves an app to docker

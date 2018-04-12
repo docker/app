@@ -14,7 +14,7 @@ func Extract(appname string) (string, func(), error) {
 	s, err := os.Stat(appname)
 	if err != nil {
 		// try appending our extension
-		appname = appname + ".docker-app"
+		appname = utils.DirNameFromAppName(appname)
 		s, err = os.Stat(appname)
 	}
 	if err != nil {

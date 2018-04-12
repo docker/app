@@ -16,7 +16,10 @@ import (
 // Init is the entrypoint initialization function.
 // It generates a new application package based on the provided parameters.
 func Init(name string, composeFiles []string) error {
-	dirName := appDirName(name)
+	if err := utils.ValidateAppName(name); err != nil {
+		return err
+	}
+	dirName := utils.DirnameFromAppName(name)
 	if err := os.Mkdir(dirName, 0755); err != nil {
 		return err
 	}
@@ -50,7 +53,7 @@ Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...`)
 		return err
 	}
 
-	dirName := appDirName(name)
+	dirName := utils.DirnameFromAppName(name)
 	if err := utils.CreateFileWithData(path.Join(dirName, "services.yml"), composeData); err != nil {
 		return err
 	}
@@ -60,7 +63,7 @@ Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...`)
 func initFromComposeFiles(name string, composeFiles []string) error {
 	log.Println("init from compose")
 
-	dirName := appDirName(name)
+	dirName := utils.DirnameFromAppName(name)
 	composeConfig, err := mergeComposeConfig(composeFiles)
 	if err != nil {
 		return err
@@ -96,10 +99,6 @@ func composeFileFromScratch(services []string) ([]byte, error) {
 		}
 	}
 	return yaml.Marshal(fileStruct)
-}
-
-func appDirName(name string) string {
-	return fmt.Sprintf("%s.docker-app", name)
 }
 
 func writeMetadataFile(name, dirName string) error {
