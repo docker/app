@@ -27,6 +27,7 @@ func Init(name string, composeFiles []string) error {
 		return err
 	}
 
+	merger := NewPythonComposeConfigMerger()
 	if len(composeFiles) == 0 {
 		if _, err := os.Stat("./docker-compose.yml"); os.IsNotExist(err) {
 			log.Println("no compose file detected")
@@ -34,9 +35,9 @@ func Init(name string, composeFiles []string) error {
 		} else if err != nil {
 			return err
 		}
-		return initFromComposeFiles(name, []string{"./docker-compose.yml"})
+		return initFromComposeFiles(name, []string{"./docker-compose.yml"}, merger)
 	}
-	return initFromComposeFiles(name, composeFiles)
+	return initFromComposeFiles(name, composeFiles, merger)
 }
 
 func initFromScratch(name string) error {
@@ -60,11 +61,11 @@ Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...`)
 	return utils.CreateFileWithData(path.Join(dirName, "settings.yml"), []byte{'\n'})
 }
 
-func initFromComposeFiles(name string, composeFiles []string) error {
+func initFromComposeFiles(name string, composeFiles []string, merger ComposeConfigMerger) error {
 	log.Println("init from compose")
 
 	dirName := utils.DirNameFromAppName(name)
-	composeConfig, err := mergeComposeConfig(composeFiles)
+	composeConfig, err := merger.MergeComposeConfig(composeFiles)
 	if err != nil {
 		return err
 	}
@@ -72,21 +73,6 @@ func initFromComposeFiles(name string, composeFiles []string) error {
 		return err
 	}
 	return utils.CreateFileWithData(path.Join(dirName, "settings.yml"), []byte{'\n'})
-}
-
-func mergeComposeConfig(composeFiles []string) ([]byte, error) {
-	var args []string
-	for _, filename := range composeFiles {
-		args = append(args, fmt.Sprintf("--file=%v", filename))
-	}
-	args = append(args, "config")
-	cmd := exec.Command("docker-compose", args...)
-	cmd.Stderr = nil
-	out, err := cmd.Output()
-	if err != nil {
-		log.Fatalln(string(err.(*exec.ExitError).Stderr))
-	}
-	return out, err
 }
 
 func composeFileFromScratch(services []string) ([]byte, error) {
@@ -129,4 +115,36 @@ func newMetadata(name string) types.AppMetadata {
 		Targets:     target,
 		Application: info,
 	}
+}
+
+// ComposeConfigMerger is an interface exposing methods to merge
+// multiple compose files into one configuration
+type ComposeConfigMerger interface {
+	MergeComposeConfig(composeFiles []string) ([]byte, error)
+}
+
+// PythonComposeConfigMerger implements the ComposeConfigMerger interface and
+// executes a `docker-compose` command to merge configs
+type PythonComposeConfigMerger struct{}
+
+// NewPythonComposeConfigMerger returns a ComposeConfigMerger implementor
+func NewPythonComposeConfigMerger() ComposeConfigMerger {
+	return &PythonComposeConfigMerger{}
+}
+
+// MergeComposeConfig takes a list of paths and merges the Compose files
+// at those paths into a single configuration
+func (m *PythonComposeConfigMerger) MergeComposeConfig(composeFiles []string) ([]byte, error) {
+	var args []string
+	for _, filename := range composeFiles {
+		args = append(args, fmt.Sprintf("--file=%v", filename))
+	}
+	args = append(args, "config")
+	cmd := exec.Command("docker-compose", args...)
+	cmd.Stderr = nil
+	out, err := cmd.Output()
+	if err != nil {
+		log.Fatalln(string(err.(*exec.ExitError).Stderr))
+	}
+	return out, err
 }

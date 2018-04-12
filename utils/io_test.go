@@ -24,8 +24,7 @@ func TestCreateFileWithData(t *testing.T) {
 			fs.WithMode(0644),
 		),
 	)
-	comp := fs.Equal(tmpdir.Path(), manifest)()
-	assert.Assert(t, comp.Success())
+	assert.Assert(t, fs.Equal(tmpdir.Path(), manifest))
 }
 
 func TestCreateFileWithDataOverride(t *testing.T) {
