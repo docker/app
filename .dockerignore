@@ -1,2 +1,4 @@
+.git
 *.docker-app
+*.tar.gz
 _build/
