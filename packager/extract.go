@@ -44,6 +44,7 @@ func extract(appname, outputDir string) error {
 		return err
 	}
 	tarReader := tar.NewReader(f)
+	outputDir = outputDir + "/"
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -52,7 +53,6 @@ func extract(appname, outputDir string) error {
 		if err != nil {
 			return err
 		}
-		outputDir = outputDir + "/"
 		switch header.Typeflag {
 		case tar.TypeDir: // = directory
 			os.Mkdir(outputDir+header.Name, 0755)
@@ -62,7 +62,10 @@ func extract(appname, outputDir string) error {
 			if err != nil {
 				return err
 			}
-			ioutil.WriteFile(outputDir+header.Name, data, 0644)
+			err = ioutil.WriteFile(outputDir+header.Name, data, 0644)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

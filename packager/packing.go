@@ -12,6 +12,35 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+func tarAdd(tarout *tar.Writer, path, file string) error {
+	payload, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	h := &tar.Header{
+		Name:     path,
+		Size:     int64(len(payload)),
+		Mode:     0644,
+		Typeflag: tar.TypeReg,
+	}
+	err = tarout.WriteHeader(h)
+	if err != nil {
+		return err
+	}
+	_, err = tarout.Write(payload)
+	return err
+}
+
+func tarAddDir(tarout *tar.Writer, path string) error {
+	h := &tar.Header{
+		Name:     path,
+		Size:     0,
+		Typeflag: tar.TypeDir,
+		Mode:     0755,
+	}
+	return tarout.WriteHeader(h)
+}
+
 // Pack packs the app as a single file
 func Pack(appname, output string) error {
 	if output == "-" && terminal.IsTerminal(int(os.Stdout.Fd())) {
@@ -34,21 +63,31 @@ func Pack(appname, output string) error {
 	tarout := tar.NewWriter(target)
 	files := []string{"metadata.yml", "services.yml", "settings.yml"}
 	for _, f := range files {
-		payload, err := ioutil.ReadFile(path.Join(appname, f))
+		err = tarAdd(tarout, f, path.Join(appname, f))
 		if err != nil {
 			return err
 		}
-		h := &tar.Header{
-			Name: f,
-			Size: int64(len(payload)),
-		}
-		err = tarout.WriteHeader(h)
+	}
+	// check for images
+	_, err = os.Stat(path.Join(appname, "images"))
+	if err == nil {
+		err = tarAddDir(tarout, "images")
 		if err != nil {
 			return err
 		}
-		_, err = tarout.Write(payload)
+		imageDir, err := os.Open(path.Join(appname, "images"))
 		if err != nil {
 			return err
+		}
+		images, err := imageDir.Readdirnames(0)
+		if err != nil {
+			return err
+		}
+		for _, i := range images {
+			err = tarAdd(tarout, path.Join("images", i), path.Join(appname, "images", i))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return tarout.Close()
