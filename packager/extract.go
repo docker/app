@@ -9,6 +9,10 @@ import (
 	"github.com/docker/lunchbox/utils"
 )
 
+var (
+	noop = func() {}
+)
+
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.
 // It returns effective app name, and cleanup function
 func Extract(appname string) (string, func(), error) {
@@ -20,20 +24,20 @@ func Extract(appname string) (string, func(), error) {
 		s, err = os.Stat(appname)
 	}
 	if err != nil {
-		return "", func() {}, err
+		return "", noop, err
 	}
 	if s.IsDir() {
 		// directory: already decompressed
-		return appname, func() {}, nil
+		return appname, noop, nil
 	}
 	// not a dir: probably a tarball package, extract that in a temp dir
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
-		return "", func() {}, err
+		return "", noop, err
 	}
 	err = extract(appname, tempDir)
 	if err != nil {
-		return "", func() {}, err
+		return "", noop, err
 	}
 	return tempDir, func() { os.RemoveAll(tempDir) }, nil
 }
