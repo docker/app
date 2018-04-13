@@ -3,9 +3,10 @@
   "Deadline": "2m",
   "Sort": ["linter", "severity", "path", "line"],
   "Exclude": [
-      "cli/compose/schema/bindata.go",
-      "cli/command/stack/kubernetes/api/openapi",
-      "cli/command/stack/kubernetes/api/client",
+      "vendor/github.com/docker/cli/cli/compose/schema/bindata.go",
+      "vendor/github.com/docker/cli/cli/command/stack/kubernetes/api/openapi",
+      "vendor/github.com/docker/cli/cli/command/stack/kubernetes/api/client",
+      "vendor/k8s.io",
       ".*generated.*",
       "parameter .* always receives"
   ],
