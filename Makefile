@@ -2,6 +2,7 @@ PKG_NAME := github.com/docker/lunchbox
 BIN_NAME := docker-app
 
 TAG ?= $(shell git describe --always --dirty)
+COMMIT ?= $(shell git rev-parse --short HEAD)
 
 IMAGE_NAME := docker-app
 
@@ -12,9 +13,12 @@ IMAGE_BUILD_ARGS := \
     --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
     --build-arg GO_VERSION=$(GO_VERSION) \
     --build-arg BIN_NAME=$(BIN_NAME) \
+    --build-arg COMMIT=$(COMMIT) \
     --build-arg TAG=$(TAG)
 
-LDFLAGS := "-s -w"
+LDFLAGS := "-s -w \
+	-X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
+	-X $(PKG_NAME)/internal.Version=$(TAG)"
 
 #####################
 # Local Development #
@@ -59,7 +63,7 @@ unit-test:
 	go test $(shell go list ./... | grep -vE '/vendor/|/e2e')
 
 clean:
-	rm -Rf ./_build
+	rm -Rf ./_build docker-app-*.tar.gz
 
 ######
 # CI #
