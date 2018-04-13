@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/lunchbox/packager"
+	"github.com/docker/lunchbox/renderer"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -24,7 +24,7 @@ var renderCmd = &cobra.Command{
 			}
 			d[kv[0]] = kv[1]
 		}
-		rendered, err := packager.Render(args[0], renderComposeFiles, renderSettingsFile, d)
+		rendered, err := renderer.Render(args[0], renderComposeFiles, renderSettingsFile, d)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

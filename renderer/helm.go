@@ -1,4 +1,4 @@
-package packager
+package renderer
 
 import (
 	"io/ioutil"
@@ -7,7 +7,9 @@ import (
 
 	conversion "github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
+	"github.com/docker/lunchbox/packager"
 	"github.com/docker/lunchbox/types"
+	"github.com/docker/lunchbox/utils"
 	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,7 +38,7 @@ func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
 
 // Helm renders an app as an Helm Chart
 func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string) error {
-	appname, cleanup, err := Extract(appname)
+	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
 		return err
 	}
@@ -55,7 +57,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	targetDir := appName(appname) + ".helm"
+	targetDir := utils.AppNameFromDir(appname) + ".helm"
 	os.Mkdir(targetDir, 0755)
 	hmeta, err := toHelmMeta(&meta)
 	if err != nil {
@@ -77,7 +79,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 			APIVersion: "v1beta2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName(appname),
+			Name:      utils.AppNameFromDir(appname),
 			Namespace: "default", // FIXME
 		},
 		Spec: stackSpec,

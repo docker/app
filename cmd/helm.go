@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/lunchbox/packager"
+	"github.com/docker/lunchbox/renderer"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +23,7 @@ var helmCmd = &cobra.Command{
 			}
 			d[kv[0]] = kv[1]
 		}
-		err := packager.Helm(args[0], helmComposeFiles, helmSettingsFile, d)
+		err := renderer.Helm(args[0], helmComposeFiles, helmSettingsFile, d)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

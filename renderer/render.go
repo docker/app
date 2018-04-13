@@ -1,4 +1,4 @@
-package packager
+package renderer
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
+	"github.com/docker/lunchbox/packager"
 	"gopkg.in/yaml.v2"
 )
 
@@ -70,7 +71,7 @@ func loadSettings(files []string) (map[string]interface{}, error) {
 
 // Render renders the composefile for this app, merging in settings files, other compose files, end env
 func Render(appname string, composeFiles []string, settingsFile []string, env map[string]string) (*composetypes.Config, error) {
-	appname, cleanup, err := Extract(appname)
+	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
 		return nil, err
 	}
