@@ -8,7 +8,7 @@ Usage:
   docker-app [command]
 
 Available Commands:
-  build       Compile an app package from locally available data.
+  build       Compile an app package from locally available data
   deploy      Deploy the specified app on the connected cluster
   helm        Render the composefile for this app as an Helm package
   help        Help about any command
