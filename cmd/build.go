@@ -9,7 +9,7 @@ import (
 // buildCmd represents the build command
 var buildCmd = &cobra.Command{
 	Use:   "build <app-name>",
-	Short: "Compile an app package from locally available data.",
+	Short: "Compile an app package from locally available data",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("build called")
 	},
