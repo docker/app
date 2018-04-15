@@ -11,7 +11,7 @@ import (
 
 var helmCmd = &cobra.Command{
 	Use:   "helm <app-name> [-c <compose-files>...] [-e key=value...] [-f settings-file...]",
-	Short: "Render the composefile for this app as an Helm package",
+	Short: "Render the Compose file for this app as an Helm package",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		d := make(map[string]string)

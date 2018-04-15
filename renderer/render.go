@@ -69,7 +69,7 @@ func loadSettings(files []string) (map[string]interface{}, error) {
 	return res, nil
 }
 
-// Render renders the composefile for this app, merging in settings files, other compose files, end env
+// Render renders the Compose file for this app, merging in settings files, other compose files, end env
 func Render(appname string, composeFiles []string, settingsFile []string, env map[string]string) (*composetypes.Config, error) {
 	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
