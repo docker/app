@@ -51,8 +51,8 @@ test check: lint unit-test e2e-test
 
 lint:
 	@echo "Linting..."
-	@tar -c Dockerfile.lint gometalinter.json | docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint - > /dev/null
-	@docker run --rm -v $(dir $(realpath $(lastword $(MAKEFILE_LIST)))):/go/src/$(PKG_NAME) $(IMAGE_NAME)-lint
+	@tar -c Dockerfile.lint gometalinter.json | docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint - --target=lint-volume > /dev/null
+	@docker run --rm -v $(dir $(realpath $(lastword $(MAKEFILE_LIST)))):/go/src/$(PKG_NAME):ro $(IMAGE_NAME)-lint
 
 e2e-test:
 	@echo "Running e2e tests..."
@@ -69,9 +69,13 @@ clean:
 # CI #
 ######
 
-ci-lint: lint
+ci-lint:
+	@echo "Linting..."
+	docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint . --target=lint-image
+	docker run --rm $(IMAGE_NAME)-lint
 
 ci-test:
+	@echo "Testing..."
 	docker build -t $(IMAGE_NAME)-test $(IMAGE_BUILD_ARGS) . --target=test
 
 ci-bin-%:
