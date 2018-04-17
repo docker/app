@@ -1,8 +1,7 @@
-ARG GO_VERSION=1.10
+ARG GO_VERSION=1.10.1
 ARG RUN_BASE_TAG=3.7
-ARG BUILD_BASE_TAG=${GO_VERSION}-alpine${RUN_BASE_TAG}
 
-FROM golang:${BUILD_BASE_TAG}
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS lint-base
 RUN apk add --no-cache \
     curl \
     git
@@ -26,4 +25,9 @@ ENV CGO_ENABLED=0
 ENV DISABLE_WARN_OUTSIDE_CONTAINER=1
 ENTRYPOINT ["/usr/local/bin/gometalinter"]
 CMD ["--config=gometalinter.json", "./..."]
+
+FROM lint-base AS lint-volume
 VOLUME ["/go/src/github.com/docker/lunchbox"]
+
+FROM lint-base AS lint-image
+COPY . .
