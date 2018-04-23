@@ -27,7 +27,7 @@ func Save(appname, prefix, tag string) error {
 	defer cleanup()
 	dockerfile := `
 FROM scratch
-COPY services.yml settings.yml metadata.yml /
+COPY docker-compose.yml settings.yml metadata.yml /
 `
 	df := path.Join(appname, "__Dockerfile-docker-app__")
 	ioutil.WriteFile(df, []byte(dockerfile), 0644)
