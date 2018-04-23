@@ -28,7 +28,7 @@ func ValidateAppName(appName string) error {
 		return nil
 	}
 	return fmt.Errorf(
-		"invalid app name: %s ; app names must match the following regexp: %q",
+		"invalid app name: %s ; app names must start with a letter, and must contain only letters, numbers, '-' and '_' (regexp: %q)",
 		appName,
 		appNameRe.String(),
 	)
