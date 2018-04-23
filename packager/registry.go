@@ -1,8 +1,6 @@
 package packager
 
 import (
-	"github.com/docker/lunchbox/utils"
-
 	"archive/tar"
 	"fmt"
 	"io"
@@ -12,6 +10,9 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+
+	"github.com/docker/lunchbox/utils"
+	"github.com/pkg/errors"
 )
 
 func appName(appname string) string {
@@ -47,6 +48,7 @@ func Load(repotag string) error {
 	cmd := exec.Command("docker", "save", "-o", file, repotag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println("Error from docker save command:")
 		fmt.Println(string(output))
 		return err
 	}
@@ -62,17 +64,17 @@ func Load(repotag string) error {
 			break
 		}
 		if err != nil {
-			return err
+			return errors.Wrap(err, "error reading next tar header")
 		}
 		if path.Base(header.Name) == "layer.tar" {
 			data := make([]byte, header.Size)
 			_, err := tarReader.Read(data)
-			if err != nil {
-				return err
+			if err != nil && err != io.EOF {
+				return errors.Wrap(err, "error reading tar data")
 			}
 			repo := strings.Split(repotag, ":")[0]
 			err = ioutil.WriteFile(appName(repo)+".docker-app", data, 0644)
-			return err
+			return errors.Wrap(err, "error writing output file")
 		}
 	}
 	return fmt.Errorf("failed to find our layer in tarball")

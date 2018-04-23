@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/docker/lunchbox/utils"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -55,7 +56,7 @@ func extract(appname, outputDir string) error {
 			break
 		}
 		if err != nil {
-			return err
+			return errors.Wrap(err, "error reading from tar header")
 		}
 		switch header.Typeflag {
 		case tar.TypeDir: // = directory
@@ -63,12 +64,12 @@ func extract(appname, outputDir string) error {
 		case tar.TypeReg: // = regular file
 			data := make([]byte, header.Size)
 			_, err := tarReader.Read(data)
-			if err != nil {
-				return err
+			if err != nil && err != io.EOF {
+				return errors.Wrap(err, "error reading from tar data")
 			}
 			err = ioutil.WriteFile(outputDir+header.Name, data, 0644)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "error writing output file")
 			}
 		}
 	}
