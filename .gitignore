@@ -1,3 +1,4 @@
 *.tar.gz
 *.docker-app
 _build/
+!examples/simple/*.docker-app
