@@ -1,11 +1,10 @@
 version: 0.0.1
-application:
-  name: myapp
-  description: ""
-  tag: ""
-  labels:
-  - alpha
-  author: bearclaw
+name: myapp
+description: ""
+tag: ""
+labels:
+- alpha
+author: bearclaw
 targets:
   swarm: true
   kubernetes: true

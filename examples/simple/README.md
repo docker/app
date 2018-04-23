@@ -137,13 +137,12 @@ services:
 ```yaml
 # docker-app inspect simple
 version: 0.1.0
-application:
-  name: simple
-  description: ""
-  tag: ""
-  labels:
-  - alpha
-  author: sakuya.izayoi
+name: simple
+description: ""
+tag: ""
+labels:
+- alpha
+author: sakuya.izayoi
 targets:
   swarm: true
   kubernetes: true
