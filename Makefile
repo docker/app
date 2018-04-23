@@ -35,16 +35,16 @@ endif
 
 all: bin test
 
-CHECK_GO_ENV:
+check_go_env:
 	@test $$(go list) = "$(PKG_NAME)" || \
 		(echo "Invalid Go environment" && false)
 
-bin: CHECK_GO_ENV
+bin: check_go_env
 	@echo "Building _build/$(BIN_NAME)$(EXEC_EXT)..."
 	go build -ldflags=$(LDFLAGS) -i -o _build/$(BIN_NAME)$(EXEC_EXT)
 
 OS_LIST ?= darwin linux windows
-bin-all: CHECK_GO_ENV
+bin-all: check_go_env
 	@echo "Building for all platforms..."
 	$(foreach OS, $(OS_LIST), GOOS=$(OS) go build -ldflags=$(LDFLAGS) -i -o _build/$(TAG)/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) || exit 1;)
 
