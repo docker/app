@@ -28,11 +28,11 @@ type helmMeta struct {
 
 func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
 	return &helmMeta{
-		Name:        meta.Application.Name,
+		Name:        meta.Name,
 		Version:     meta.Version,
-		Description: meta.Application.Description,
-		Keywords:    meta.Application.Labels,
-		Maintainers: []helmMaintainer{{Name: meta.Application.Author}},
+		Description: meta.Description,
+		Keywords:    meta.Labels,
+		Maintainers: []helmMaintainer{{Name: meta.Author}},
 	}, nil
 }
 

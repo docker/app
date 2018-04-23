@@ -105,15 +105,12 @@ func newMetadata(name string) types.AppMetadata {
 	if userData != nil {
 		userName = userData.Username
 	}
-	info := types.ApplicationInfo{
-		Name:   name,
-		Labels: []string{"alpha"},
-		Author: userName,
-	}
 	return types.AppMetadata{
-		Version:     "0.1.0",
-		Targets:     target,
-		Application: info,
+		Version: "0.1.0",
+		Targets: target,
+		Name:    name,
+		Labels:  []string{"alpha"},
+		Author:  userName,
 	}
 }
 
