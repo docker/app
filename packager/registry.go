@@ -28,14 +28,17 @@ func Save(appname, prefix, tag string) error {
 	defer cleanup()
 	dockerfile := `
 FROM scratch
-COPY docker-compose.yml settings.yml metadata.yml /
+COPY / /
 `
 	df := path.Join(appname, "__Dockerfile-docker-app__")
 	ioutil.WriteFile(df, []byte(dockerfile), 0644)
+	di := path.Join(appname, ".dockerignore")
+	ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644)
 	args := []string{"build", "-t", prefix + appName(appname) + ".docker-app" + ":" + tag, "-f", df, appname}
 	cmd := exec.Command("docker", args...)
 	output, err := cmd.CombinedOutput()
 	os.Remove(df)
+	os.Remove(di)
 	if err != nil {
 		fmt.Println(string(output))
 	}
