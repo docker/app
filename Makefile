@@ -52,7 +52,7 @@ test check: lint unit-test e2e-test
 lint:
 	@echo "Linting..."
 	@tar -c Dockerfile.lint gometalinter.json | docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint - --target=lint-volume > /dev/null
-	@docker run --rm -v $(dir $(realpath $(lastword $(MAKEFILE_LIST)))):/go/src/$(PKG_NAME):ro $(IMAGE_NAME)-lint
+	@docker run --rm -v $(dir $(realpath $(lastword $(MAKEFILE_LIST)))):/go/src/$(PKG_NAME):ro,cached $(IMAGE_NAME)-lint
 
 e2e-test:
 	@echo "Running e2e tests..."
