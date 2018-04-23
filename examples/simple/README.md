@@ -136,7 +136,7 @@ services:
 
 ```yaml
 # docker-app inspect simple
-version: 0.0.1
+version: 0.1.0
 application:
   name: simple
   description: ""
