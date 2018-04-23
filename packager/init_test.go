@@ -78,7 +78,7 @@ func TestInitFromComposeFiles(t *testing.T) {
 	manifest := fs.Expected(
 		t,
 		fs.WithMode(0755),
-		fs.WithFile("services.yml", dummyComposeData, fs.WithMode(0644)),
+		fs.WithFile("docker-compose.yml", dummyComposeData, fs.WithMode(0644)),
 		fs.WithFile("settings.yml", "\n", fs.WithMode(0644)),
 	)
 

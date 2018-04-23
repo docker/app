@@ -119,7 +119,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	finalEnv := make(map[string]string)
 	flatten(settings, finalEnv, "")
 	// prepend our app compose file to the list
-	composes := []string{path.Join(appname, "services.yml")}
+	composes := []string{path.Join(appname, "docker-compose.yml")}
 	composes = append(composes, composeFiles...)
 	// go-template, then parse, then expand the compose files
 	configFiles := []composetypes.ConfigFile{}

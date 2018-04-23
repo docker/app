@@ -188,14 +188,14 @@ $ rm -rf simple.docker-app
 $ docker-app load simple.docker-app
 $ tar -tf simple.docker-app  # TODO: should unpack automatically?
 metadata.yml
-services.yml
+docker-compose.yml
 settings.yml
 $ mv simple.docker-app simple  # TODO: fix UX
 $ docker-app unpack simple
 $ tree simple.docker-app
 ./simple.docker-app/
 ├── metadata.yml
-├── services.yml
+├── docker-compose.yml
 └── settings.yml
 
 0 directories, 3 files
@@ -209,7 +209,7 @@ $ tree simple.docker-app
 $ docker-app pack simple -o myapp.tar
 $ tar -tf myapp.tar
 metadata.yml
-services.yml
+docker-compose.yml
 settings.yml
 ```
 

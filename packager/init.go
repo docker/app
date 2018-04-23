@@ -55,7 +55,7 @@ Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...`)
 	}
 
 	dirName := utils.DirNameFromAppName(name)
-	if err := utils.CreateFileWithData(path.Join(dirName, "services.yml"), composeData); err != nil {
+	if err := utils.CreateFileWithData(path.Join(dirName, "docker-compose.yml"), composeData); err != nil {
 		return err
 	}
 	return utils.CreateFileWithData(path.Join(dirName, "settings.yml"), []byte{'\n'})
@@ -69,7 +69,7 @@ func initFromComposeFiles(name string, composeFiles []string, merger ComposeConf
 	if err != nil {
 		return err
 	}
-	if err = utils.CreateFileWithData(path.Join(dirName, "services.yml"), composeConfig); err != nil {
+	if err = utils.CreateFileWithData(path.Join(dirName, "docker-compose.yml"), composeConfig); err != nil {
 		return err
 	}
 	return utils.CreateFileWithData(path.Join(dirName, "settings.yml"), []byte{'\n'})

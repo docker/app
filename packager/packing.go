@@ -61,7 +61,7 @@ func Pack(appname, output string) error {
 		}
 	}
 	tarout := tar.NewWriter(target)
-	files := []string{"metadata.yml", "services.yml", "settings.yml"}
+	files := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
 	for _, f := range files {
 		err = tarAdd(tarout, f, path.Join(appname, f))
 		if err != nil {
