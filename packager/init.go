@@ -42,14 +42,7 @@ func Init(name string, composeFiles []string) error {
 
 func initFromScratch(name string) error {
 	log.Println("init from scratch")
-	fmt.Println(`
-Please indicate a list of services that will be used by your application, one per line.
-Examples of possible values: java, mysql, redis, ruby, postgres, rabbitmq...`)
-	services, err := utils.ReadNewlineSeparatedList(os.Stdin)
-	if err != nil {
-		return err
-	}
-	composeData, err := composeFileFromScratch(services)
+	composeData, err := composeFileFromScratch()
 	if err != nil {
 		return err
 	}
@@ -75,15 +68,8 @@ func initFromComposeFiles(name string, composeFiles []string, merger ComposeConf
 	return utils.CreateFileWithData(path.Join(dirName, "settings.yml"), []byte{'\n'})
 }
 
-func composeFileFromScratch(services []string) ([]byte, error) {
+func composeFileFromScratch() ([]byte, error) {
 	fileStruct := types.NewInitialComposeFile()
-	serviceMap := *fileStruct.Services
-	for _, svc := range services {
-		svcData := utils.MatchService(svc)
-		serviceMap[svcData.ServiceName] = types.InitialService{
-			Image: svcData.ServiceImage,
-		}
-	}
 	return yaml.Marshal(fileStruct)
 }
 
