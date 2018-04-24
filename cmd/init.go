@@ -10,21 +10,21 @@ import (
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
-	Use:   "init <app-name> [-c <compose-files>...]",
+	Use:   "init <app-name> [-c <compose-file>]",
 	Short: "Initialize an app package in the current working directory",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("init called")
-		if err := packager.Init(args[0], composeFiles); err != nil {
+		if err := packager.Init(args[0], composeFile); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
 	},
 }
 
-var composeFiles []string
+var composeFile string
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-	initCmd.Flags().StringArrayVarP(&composeFiles, "compose-files", "c", []string{}, "Initial Compose files (optional)")
+	initCmd.Flags().StringVarP(&composeFile, "compose-file", "c", "", "Initial Compose file (optional)")
 }
