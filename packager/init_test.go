@@ -3,8 +3,9 @@ package packager
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/gotestyourself/gotestyourself/assert"
@@ -23,43 +24,33 @@ func randomName(prefix string) string {
 	return prefix + hex.EncodeToString(b)
 }
 
-type DummyConfigMerger struct{}
-
-func NewDummyConfigMerger() ComposeConfigMerger {
-	return &DummyConfigMerger{}
-}
-
-var dummyComposeData = `
-version: '3.6'
-services:
-  foo:
-    image: bar
-    command: baz
+func TestInitFromComposeFile(t *testing.T) {
+	composeData := `services:
+  nginx:
+    image: nginx:${NGINX_VERSION}
+    command: nginx $NGINX_ARGS
 `
+	envData := "# some comment\nNGINX_VERSION=latest"
+	inputDir := randomName("app_input_")
+	os.Mkdir(inputDir, 0755)
+	ioutil.WriteFile(path.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
+	ioutil.WriteFile(path.Join(inputDir, ".env"), []byte(envData), 0644)
+	defer os.RemoveAll(inputDir)
 
-func (m *DummyConfigMerger) MergeComposeConfig(composeFiles []string) ([]byte, error) {
-	if composeFiles[0] == "doesnotexist" {
-		return []byte{}, fmt.Errorf("no file named %q", composeFiles[0])
-	}
-	return []byte(dummyComposeData), nil
-}
-
-func TestInitFromComposeFiles(t *testing.T) {
 	testAppName := randomName("app_")
-	merger := NewDummyConfigMerger()
 	dirName := utils.DirNameFromAppName(testAppName)
 	err := os.Mkdir(dirName, 0755)
 	assert.NilError(t, err)
 	defer os.RemoveAll(dirName)
 
-	err = initFromComposeFiles(testAppName, []string{"docker-compose.yml"}, merger)
+	err = initFromComposeFile(testAppName, path.Join(inputDir, "docker-compose.yml"))
 	assert.NilError(t, err)
 
 	manifest := fs.Expected(
 		t,
 		fs.WithMode(0755),
-		fs.WithFile("docker-compose.yml", dummyComposeData, fs.WithMode(0644)),
-		fs.WithFile("settings.yml", "\n", fs.WithMode(0644)),
+		fs.WithFile("docker-compose.yml", composeData, fs.WithMode(0644)),
+		fs.WithFile("settings.yml", "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
 	)
 
 	assert.Assert(t, fs.Equal(dirName, manifest))
@@ -67,14 +58,13 @@ func TestInitFromComposeFiles(t *testing.T) {
 
 func TestInitFromInvalidComposeFile(t *testing.T) {
 	testAppName := randomName("app_")
-	merger := NewDummyConfigMerger()
 	dirName := utils.DirNameFromAppName(testAppName)
 	err := os.Mkdir(dirName, 0755)
 	assert.NilError(t, err)
 	defer os.RemoveAll(dirName)
 
-	err = initFromComposeFiles(testAppName, []string{"doesnotexist"}, merger)
-	assert.ErrorContains(t, err, "no file named \"doesnotexist\"")
+	err = initFromComposeFile(testAppName, "doesnotexist")
+	assert.ErrorContains(t, err, "failed to read")
 }
 
 func TestWriteMetadataFile(t *testing.T) {
