@@ -10,7 +10,6 @@ import (
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/fs"
 
-	"github.com/docker/lunchbox/types"
 	"github.com/docker/lunchbox/utils"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -43,25 +42,6 @@ func (m *DummyConfigMerger) MergeComposeConfig(composeFiles []string) ([]byte, e
 		return []byte{}, fmt.Errorf("no file named %q", composeFiles[0])
 	}
 	return []byte(dummyComposeData), nil
-}
-
-func TestComposeFileFromScratch(t *testing.T) {
-	services := []string{
-		"redis", "mysql", "python",
-	}
-
-	result, err := composeFileFromScratch(services)
-	assert.NilError(t, err)
-
-	expected := types.NewInitialComposeFile()
-	expected.Services = &map[string]types.InitialService{
-		"redis":  {Image: "redis"},
-		"mysql":  {Image: "mysql"},
-		"python": {Image: "python"},
-	}
-	expectedBytes, err := yaml.Marshal(expected)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, result, expectedBytes)
 }
 
 func TestInitFromComposeFiles(t *testing.T) {
