@@ -71,17 +71,17 @@ clean:
 
 ci-lint:
 	@echo "Linting..."
-	docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint . --target=lint-image
-	docker run --rm $(IMAGE_NAME)-lint
+	docker build -t $(IMAGE_NAME)-lint:$(TAG) $(IMAGE_BUILD_ARGS) -f Dockerfile.lint . --target=lint-image
+	docker run --rm $(IMAGE_NAME)-lint:$(TAG)
 
 ci-test:
 	@echo "Testing..."
-	docker build -t $(IMAGE_NAME)-test $(IMAGE_BUILD_ARGS) . --target=test
+	docker build -t $(IMAGE_NAME)-test:$(TAG) $(IMAGE_BUILD_ARGS) . --target=test
 
 ci-bin-%:
 	@echo "Building tarball for $*..."
-	docker build -t $(IMAGE_NAME)-bin-all $(IMAGE_BUILD_ARGS) . --target=bin-build
-	docker run --rm $(IMAGE_NAME)-bin-all tar -cz $(BIN_NAME)-$*$(if $(filter windows, $*),.exe,) -C /go/src/$(PKG_NAME)/_build/$(TAG)/ > $(BIN_NAME)-$*-$(TAG).tar.gz
+	docker build -t $(IMAGE_NAME)-bin-all:$(TAG) $(IMAGE_BUILD_ARGS) . --target=bin-build
+	docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) tar -cz $(BIN_NAME)-$*$(if $(filter windows, $*),.exe,) -C /go/src/$(PKG_NAME)/_build/$(TAG)/ > $(BIN_NAME)-$*-$(TAG).tar.gz
 
 .PHONY: bin bin-all release test check lint e2e-test unit-test clean ci-lint ci-test
 .DEFAULT: all
