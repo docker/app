@@ -1,13 +1,11 @@
 {
   "Vendor": true,
   "Deadline": "10m",
+  "Debug": true,
   "Sort": ["linter", "severity", "path", "line"],
   "Exclude": [
       "templateloader",
-      "vendor/github.com/docker/cli/cli/compose/schema/bindata.go",
-      "vendor/github.com/docker/cli/cli/command/stack/kubernetes/api/openapi",
-      "vendor/github.com/docker/cli/cli/command/stack/kubernetes/api/client",
-      "vendor/k8s.io",
+      "vendor",
       ".*generated.*",
       "parameter .* always receives"
   ],
