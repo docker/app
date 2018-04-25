@@ -10,7 +10,3 @@ services:
     image: alpine:latest
   other:
     image: nginx
-networks: {}
-volumes: {}
-secrets: {}
-configs: {}
