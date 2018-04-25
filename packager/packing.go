@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/docker/lunchbox/constants"
 	"github.com/docker/lunchbox/utils"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -107,7 +108,7 @@ func Unpack(appname, targetDir string) error {
 	if s.IsDir() {
 		return fmt.Errorf("app already extracted")
 	}
-	out := path.Join(targetDir, utils.AppNameFromDir(appname)+".docker-app")
+	out := path.Join(targetDir, utils.AppNameFromDir(appname)+constants.AppExtension)
 	err = os.Mkdir(out, 0755)
 	if err != nil {
 		return err

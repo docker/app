@@ -172,24 +172,24 @@ objectmeta:
 
 ```
 $ docker-app save simple
-$ docker images simple.docker-app
+$ docker images simple.dockerapp
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-simple.docker-app   latest              61f8cafb7762        4 minutes ago       1.2kB
+simple.dockerapp   latest              61f8cafb7762        4 minutes ago       1.2kB
 ```
 
 The package can later be retrieved using `docker-app load`:
 
 ```
-$ rm -rf simple.docker-app
-$ docker-app load simple.docker-app
-$ tar -tf simple.docker-app  # TODO: should unpack automatically?
+$ rm -rf simple.dockerapp
+$ docker-app load simple.dockerapp
+$ tar -tf simple.dockerapp  # TODO: should unpack automatically?
 metadata.yml
 docker-compose.yml
 settings.yml
-$ mv simple.docker-app simple  # TODO: fix UX
+$ mv simple.dockerapp simple  # TODO: fix UX
 $ docker-app unpack simple
-$ tree simple.docker-app
-./simple.docker-app/
+$ tree simple.dockerapp
+./simple.dockerapp/
 ├── metadata.yml
 ├── docker-compose.yml
 └── settings.yml
