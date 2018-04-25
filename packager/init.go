@@ -25,7 +25,13 @@ func Init(name string, composeFile string) error {
 	if err := os.Mkdir(dirName, 0755); err != nil {
 		return err
 	}
-	if err := writeMetadataFile(name, dirName); err != nil {
+	var err error
+	defer func() {
+		if err != nil {
+			os.RemoveAll(dirName)
+		}
+	}()
+	if err = writeMetadataFile(name, dirName); err != nil {
 		return err
 	}
 
@@ -35,9 +41,11 @@ func Init(name string, composeFile string) error {
 		}
 	}
 	if composeFile == "" {
-		return initFromScratch(name)
+		err = initFromScratch(name)
+	} else {
+		err = initFromComposeFile(name, composeFile)
 	}
-	return initFromComposeFile(name, composeFile)
+	return err
 }
 
 func initFromScratch(name string) error {
