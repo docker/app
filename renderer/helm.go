@@ -31,7 +31,6 @@ func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
 		Name:        meta.Name,
 		Version:     meta.Version,
 		Description: meta.Description,
-		Keywords:    meta.Labels,
 		Maintainers: []helmMaintainer{{Name: meta.Author}},
 	}, nil
 }

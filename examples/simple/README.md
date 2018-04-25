@@ -139,9 +139,6 @@ services:
 version: 0.1.0
 name: simple
 description: ""
-tag: ""
-labels:
-- alpha
 author: sakuya.izayoi
 targets:
   swarm: true

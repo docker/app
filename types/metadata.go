@@ -5,8 +5,6 @@ type AppMetadata struct {
 	Version     string
 	Name        string
 	Description string
-	Tag         string
-	Labels      []string
 	Author      string
 	Targets     ApplicationTarget
 }
