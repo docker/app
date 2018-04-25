@@ -183,6 +183,12 @@
   version = "v0.3.3"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/docker/yatee"
+  packages = ["yatee"]
+  revision = "ab05b26f6a5737ef57da102caae5c761ab1161a3"
+
+[[projects]]
   name = "github.com/emicklei/go-restful"
   packages = [
     ".",
@@ -686,6 +692,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fc0ad9ac25598874bfbe0b483e7b8d8fb1ed145919e5d2c649dfcf99696c6b61"
+  inputs-digest = "a15f5574f2bce4f2287a08cbfc4319c6f0ec0c53570768acdadc6b6559ef8cef"
   solver-name = "gps-cdcl"
   solver-version = 1

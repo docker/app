@@ -5,6 +5,9 @@ E2E_NAME := $(BIN_NAME)-e2e
 # Enable experimental features. "on" or "off"
 EXPERIMENTAL := off
 
+# Comma-separated list of renderers
+RENDERERS := gotemplate
+
 TAG ?= $(shell git describe --always --dirty)
 COMMIT ?= $(shell git rev-parse --short HEAD)
 
@@ -22,7 +25,8 @@ IMAGE_BUILD_ARGS := \
 LDFLAGS := "-s -w \
 	-X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
 	-X $(PKG_NAME)/internal.Version=$(TAG)      \
-	-X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL)"
+	-X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL) \
+	-X $(PKG_NAME)/internal.Renderers=$(RENDERERS)"
 
 GO_BUILD := CGO_ENABLED=0 go build
 GO_TEST := CGO_ENABLED=0 go test

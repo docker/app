@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
+	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/packager"
+	"github.com/docker/yatee/yatee"
 	"gopkg.in/yaml.v2"
 )
 
@@ -69,6 +72,44 @@ func loadSettings(files []string) (map[string]interface{}, error) {
 	return res, nil
 }
 
+func applyRenderers(data []byte, renderers []string, settings map[string]interface{}) ([]byte, error) {
+	for _, r := range renderers {
+		switch r {
+		case "gotemplate":
+			tmpl, err := template.New("compose").Parse(string(data))
+			if err != nil {
+				return nil, err
+			}
+			yaml := bytes.NewBuffer(nil)
+			err = tmpl.Execute(yaml, settings)
+			if err != nil {
+				return nil, err
+			}
+			data = yaml.Bytes()
+		case "yatee":
+			yateed, err := yatee.Process(string(data), settings)
+			if err != nil {
+				return nil, err
+			}
+			m, err := yaml.Marshal(yateed)
+			if err != nil {
+				return nil, err
+			}
+			data = []byte(strings.Replace(string(m), "$", "$$", -1))
+		}
+	}
+	return data, nil
+}
+
+func contains(list []string, needle string) bool {
+	for _, e := range list {
+		if e == needle {
+			return true
+		}
+	}
+	return false
+}
+
 // Render renders the Compose file for this app, merging in settings files, other compose files, end env
 func Render(appname string, composeFiles []string, settingsFile []string, env map[string]string) (*composetypes.Config, error) {
 	appname, cleanup, err := packager.Extract(appname)
@@ -121,6 +162,16 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	// prepend our app compose file to the list
 	composes := []string{filepath.Join(appname, "docker-compose.yml")}
 	composes = append(composes, composeFiles...)
+	renderers := strings.Split(internal.Renderers, ",")
+	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
+		rl := strings.Split(r, ",")
+		for _, r := range rl {
+			if !contains(renderers, r) {
+				return nil, fmt.Errorf("renderer '%s' not found", r)
+			}
+		}
+		renderers = rl
+	}
 	// go-template, then parse, then expand the compose files
 	configFiles := []composetypes.ConfigFile{}
 	for _, c := range composes {
@@ -128,16 +179,11 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		if err != nil {
 			return nil, err
 		}
-		tmpl, err := template.New("compose").Parse(string(data))
+		data, err = applyRenderers(data, renderers, settings)
 		if err != nil {
 			return nil, err
 		}
-		yaml := bytes.NewBuffer(nil)
-		err = tmpl.Execute(yaml, settings)
-		if err != nil {
-			return nil, err
-		}
-		parsed, err := loader.ParseYAML(yaml.Bytes())
+		parsed, err := loader.ParseYAML(data)
 		if err != nil {
 			return nil, err
 		}
