@@ -30,6 +30,11 @@ func Init(name string, composeFile string) error {
 	}
 
 	if composeFile == "" {
+		if _, err := os.Stat("docker-compose.yml"); err == nil {
+			composeFile = "docker-compose.yml"
+		}
+	}
+	if composeFile == "" {
 		return initFromScratch(name)
 	}
 	return initFromComposeFile(name, composeFile)
