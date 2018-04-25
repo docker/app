@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
 )
@@ -30,7 +31,9 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(saveCmd)
-	saveCmd.Flags().StringVarP(&savePrefix, "prefix", "p", "", "prefix to use")
-	saveCmd.Flags().StringVarP(&saveTag, "tag", "t", "latest", "tag to use")
+	if internal.Experimental == "on" {
+		rootCmd.AddCommand(saveCmd)
+		saveCmd.Flags().StringVarP(&savePrefix, "prefix", "p", "", "prefix to use")
+		saveCmd.Flags().StringVarP(&saveTag, "tag", "t", "latest", "tag to use")
+	}
 }
