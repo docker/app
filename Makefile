@@ -82,10 +82,9 @@ ci-test:
 	@echo "Testing..."
 	docker build -t $(IMAGE_NAME)-test:$(TAG) $(IMAGE_BUILD_ARGS) . --target=test
 
-ci-bin-%:
-	@echo "Building tarball for $*..."
+ci-bin-all:
 	docker build -t $(IMAGE_NAME)-bin-all:$(TAG) $(IMAGE_BUILD_ARGS) . --target=bin-build
-	docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) tar -cz $(BIN_NAME)-$*$(if $(filter windows, $*),.exe,) -C /go/src/$(PKG_NAME)/_build/$(TAG)/ > $(BIN_NAME)-$*-$(TAG).tar.gz
+	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) tar -cz $(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) -C /go/src/$(PKG_NAME)/_build/$(TAG)/ > $(BIN_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 
-.PHONY: bin bin-all release test check lint e2e-test unit-test clean ci-lint ci-test
+.PHONY: bin bin-all release test check lint e2e-test unit-test clean ci-lint ci-test ci-bin-all
 .DEFAULT: all
