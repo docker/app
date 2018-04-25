@@ -1,9 +1,6 @@
 version: 0.1.0
 name: myapp
 description: ""
-tag: ""
-labels:
-- alpha
 author: bearclaw
 targets:
   swarm: true

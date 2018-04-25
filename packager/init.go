@@ -212,7 +212,6 @@ func newMetadata(name string) types.AppMetadata {
 		Version: "0.1.0",
 		Targets: target,
 		Name:    name,
-		Labels:  []string{"alpha"},
 		Author:  userName,
 	}
 }
