@@ -5,6 +5,8 @@ import (
 	"path"
 	"regexp"
 	"strings"
+
+	"github.com/docker/lunchbox/constants"
 )
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
@@ -12,13 +14,13 @@ var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
 // AppNameFromDir takes a path to an app directory and returns
 // the application's name
 func AppNameFromDir(dirName string) string {
-	return strings.TrimSuffix(path.Base(dirName), ".docker-app")
+	return strings.TrimSuffix(path.Base(dirName), constants.AppExtension)
 }
 
 // DirNameFromAppName takes an application name and returns the
 // corresponding directory name
 func DirNameFromAppName(appName string) string {
-	return fmt.Sprintf("%s.docker-app", appName)
+	return fmt.Sprintf("%s%s", appName, constants.AppExtension)
 }
 
 // ValidateAppName takes an app name and returns an error if it doesn't

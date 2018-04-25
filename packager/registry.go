@@ -11,6 +11,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/docker/lunchbox/constants"
 	"github.com/docker/lunchbox/utils"
 	"github.com/pkg/errors"
 )
@@ -34,7 +35,7 @@ COPY / /
 	ioutil.WriteFile(df, []byte(dockerfile), 0644)
 	di := path.Join(appname, ".dockerignore")
 	ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644)
-	args := []string{"build", "-t", prefix + appName(appname) + ".docker-app" + ":" + tag, "-f", df, appname}
+	args := []string{"build", "-t", prefix + appName(appname) + constants.AppExtension + ":" + tag, "-f", df, appname}
 	cmd := exec.Command("docker", args...)
 	output, err := cmd.CombinedOutput()
 	os.Remove(df)
@@ -76,7 +77,7 @@ func Load(repotag string) error {
 				return errors.Wrap(err, "error reading tar data")
 			}
 			repo := strings.Split(repotag, ":")[0]
-			err = ioutil.WriteFile(appName(repo)+".docker-app", data, 0644)
+			err = ioutil.WriteFile(appName(repo)+constants.AppExtension, data, 0644)
 			return errors.Wrap(err, "error writing output file")
 		}
 	}
@@ -89,7 +90,7 @@ func Push(appname, prefix, tag string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("docker", "push", prefix+appName(appname)+".docker-app"+":"+tag)
+	cmd := exec.Command("docker", "push", prefix+appName(appname)+constants.AppExtension+":"+tag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(string(output))
