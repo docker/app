@@ -38,11 +38,27 @@
   name = "github.com/gotestyourself/gotestyourself"
   branch = "master"
 
-[[constraint]]
+[[override]]
   name = "k8s.io/kubernetes"
   revision = "v1.8.2"
 
-[[constraint]]
+[[override]]
   name = "k8s.io/apimachinery"
   revision = "kubernetes-1.8.2"
 
+[[override]]
+  name = "github.com/xeipuuv/gojsonschema"
+  revision = "93e72a773fade158921402d6a24c819b48aba29d"
+
+[[override]]
+  name = "github.com/docker/go-metrics"
+  revision = "d466d4f6fd960e01820085bd7e1a24426ee7ef18"
+
+[[override]]
+  name = "github.com/docker/distribution"
+  revision = "edc3ab29cdff8694dd6feb85cfeb4b5f1b38ed9c"
+
+[prune]
+  non-go = true
+  unused-packages = true
+  go-tests = true
