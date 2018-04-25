@@ -1,6 +1,9 @@
 PKG_NAME := github.com/docker/lunchbox
 BIN_NAME := docker-app
 
+# Enable experimental features. "on" or "off"
+EXPERIMENTAL := off
+
 TAG ?= $(shell git describe --always --dirty)
 COMMIT ?= $(shell git rev-parse --short HEAD)
 
@@ -18,7 +21,8 @@ IMAGE_BUILD_ARGS := \
 
 LDFLAGS := "-s -w \
 	-X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
-	-X $(PKG_NAME)/internal.Version=$(TAG)"
+	-X $(PKG_NAME)/internal.Version=$(TAG)      \
+	-X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL)"
 
 #####################
 # Local Development #

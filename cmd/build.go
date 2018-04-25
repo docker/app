@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/docker/lunchbox/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -16,5 +17,7 @@ var buildCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(buildCmd)
+	if internal.Experimental == "on" {
+		rootCmd.AddCommand(buildCmd)
+	}
 }

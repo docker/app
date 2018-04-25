@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/docker/lunchbox/image"
+	"github.com/docker/lunchbox/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -35,8 +36,10 @@ var imageAddSettingsFile []string
 var imageAddEnv []string
 
 func init() {
-	rootCmd.AddCommand(imageAddCmd)
-	imageAddCmd.Flags().StringArrayVarP(&imageAddComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
-	imageAddCmd.Flags().StringArrayVarP(&imageAddSettingsFile, "settings-files", "s", []string{}, "Override settings files")
-	imageAddCmd.Flags().StringArrayVarP(&imageAddEnv, "env", "e", []string{}, "Override environment values")
+	if internal.Experimental == "on" {
+		rootCmd.AddCommand(imageAddCmd)
+		imageAddCmd.Flags().StringArrayVarP(&imageAddComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
+		imageAddCmd.Flags().StringArrayVarP(&imageAddSettingsFile, "settings-files", "s", []string{}, "Override settings files")
+		imageAddCmd.Flags().StringArrayVarP(&imageAddEnv, "env", "e", []string{}, "Override environment values")
+	}
 }

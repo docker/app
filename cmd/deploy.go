@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/docker/lunchbox/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,9 @@ var deployCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(deployCmd)
+	if internal.Experimental == "on" {
+		rootCmd.AddCommand(deployCmd)
+	}
 
 	// Here you will define your flags and configuration settings.
 

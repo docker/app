@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/docker/lunchbox/image"
+	"github.com/docker/lunchbox/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -22,5 +23,7 @@ var imageLoadCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(imageLoadCmd)
+	if internal.Experimental == "on" {
+		rootCmd.AddCommand(imageLoadCmd)
+	}
 }
