@@ -6,7 +6,3 @@ services:
     - -c
     - cat bar bam
     image: alpine:latest
-networks: {}
-volumes: {}
-secrets: {}
-configs: {}
