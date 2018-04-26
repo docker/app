@@ -13,35 +13,54 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+func gather(t *testing.T, dir string) ([]string, []string, map[string]string) {
+	var (
+		overrides []string
+		settings  []string
+	)
+	content, err := ioutil.ReadDir(dir)
+	assert.NilError(t, err, "unable to get app: %q", dir)
+	// look for overrides and settings file to inject in the rendering process
+	for _, f := range content {
+		split := strings.SplitN(f.Name(), "-", 2)
+		if split[0] == "settings" {
+			settings = append(settings, path.Join(dir, f.Name()))
+		}
+		if split[0] == "override" {
+			overrides = append(overrides, path.Join(dir, f.Name()))
+		}
+	}
+	// look for emulated command line env
+	env := make(map[string]string)
+	if _, err = os.Stat(path.Join(dir, "env.yml")); err == nil {
+		envRaw, err := ioutil.ReadFile(path.Join(dir, "env.yml"))
+		assert.NilError(t, err, "unable to read file")
+		err = yaml.Unmarshal(envRaw, &env)
+		assert.NilError(t, err, "unable to unmarshal env")
+	}
+	return settings, overrides, env
+}
+
+func checkResult(t *testing.T, result string, resultErr error, dir string) {
+	if resultErr != nil {
+		ee := path.Join(dir, "expectedError.txt")
+		if _, err := os.Stat(ee); err != nil {
+			assert.NilError(t, resultErr, "unexpected render error")
+		}
+		expectedErr := readFile(t, ee)
+		assert.ErrorContains(t, resultErr, expectedErr)
+	} else {
+		expectedRender := readFile(t, path.Join(dir, "expected.txt"))
+		assert.Equal(t, string(expectedRender), result, "rendering missmatch")
+	}
+}
+
 func TestRender(t *testing.T) {
 	apps, err := ioutil.ReadDir("render")
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
 		t.Log("testing", app.Name())
-		var (
-			overrides []string
-			settings  []string
-		)
-		content, err := ioutil.ReadDir(path.Join("render", app.Name()))
-		assert.NilError(t, err, "unable to get app: %q", app.Name())
-		// look for overrides and settings file to inject in the rendering process
-		for _, f := range content {
-			split := strings.SplitN(f.Name(), "-", 2)
-			if split[0] == "settings" {
-				settings = append(settings, path.Join("render", app.Name(), f.Name()))
-			}
-			if split[0] == "override" {
-				overrides = append(overrides, path.Join("render", app.Name(), f.Name()))
-			}
-		}
-		// look for emulated command line env
-		env := make(map[string]string)
-		if _, err = os.Stat(path.Join("render", app.Name(), "env.yml")); err == nil {
-			envRaw, err := ioutil.ReadFile(path.Join("render", app.Name(), "env.yml"))
-			assert.NilError(t, err, "unable to read file")
-			err = yaml.Unmarshal(envRaw, &env)
-			assert.NilError(t, err, "unable to unmarshal env")
-		}
+		settings, overrides, env := gather(t, path.Join("render", app.Name()))
 		// run the render
 		config, resultErr := renderer.Render(path.Join("render", app.Name()), overrides, settings, env)
 		var result string
@@ -50,13 +69,7 @@ func TestRender(t *testing.T) {
 			bytes, resultErr = yaml.Marshal(config)
 			result = string(bytes)
 		}
-		if resultErr != nil {
-			expectedErr := readFile(t, path.Join("render", app.Name(), "expectedError.txt"))
-			assert.ErrorContains(t, resultErr, expectedErr)
-		} else {
-			expectedRender := readFile(t, path.Join("render", app.Name(), "expected.txt"))
-			assert.Equal(t, string(expectedRender), result, "rendering missmatch")
-		}
+		checkResult(t, result, resultErr, path.Join("render", app.Name()))
 	}
 }
 

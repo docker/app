@@ -44,7 +44,7 @@ Override is provided in three different ways:
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println(string(res))
+		fmt.Printf("%s", string(res))
 	},
 }
 
