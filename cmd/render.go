@@ -18,10 +18,10 @@ Override is provided in three different ways:
 - External Compose files or template Compose files can be specified with the -c flag.
   (Repeat the flag for multiple files). These files will be merged in order with
   the app's own Compose file.
-- External YAML settings files can be specified with the -s flag. All settings
+- External YAML settings files can be specified with the -f flag. All settings
   files are merged in order, the app's settings coming first.
 - Individual settings values can be passed directly on the command line with the
-  -e flag. These value takes precedence over all settings files.
+  -s flag. These value takes precedence over all settings files.
 `,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -29,7 +29,11 @@ Override is provided in three different ways:
 		for _, v := range renderEnv {
 			kv := strings.SplitN(v, "=", 2)
 			if len(kv) != 2 {
-				fmt.Printf("Malformed env input: '%s'\n", v)
+				fmt.Printf("Missing '=' in setting '%s', expected KEY=VALUE\n", v)
+				os.Exit(1)
+			}
+			if _, ok := d[kv[0]]; ok {
+				fmt.Printf("Duplicate command line setting: '%s'\n", kv[0])
 				os.Exit(1)
 			}
 			d[kv[0]] = kv[1]
@@ -55,6 +59,6 @@ var renderEnv []string
 func init() {
 	rootCmd.AddCommand(renderCmd)
 	renderCmd.Flags().StringArrayVarP(&renderComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
-	renderCmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "s", []string{}, "Override settings files")
-	renderCmd.Flags().StringArrayVarP(&renderEnv, "env", "e", []string{}, "Override settings values")
+	renderCmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "f", []string{}, "Override settings files")
+	renderCmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
 }

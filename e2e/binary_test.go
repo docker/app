@@ -61,13 +61,13 @@ func TestRenderBinary(t *testing.T) {
 			path.Join("render", app.Name()),
 		}
 		for _, s := range settings {
-			args = append(args, "-s", s)
+			args = append(args, "-f", s)
 		}
 		for _, c := range overrides {
 			args = append(args, "-c", c)
 		}
 		for k, v := range env {
-			args = append(args, "-e", fmt.Sprintf("%s=%s", k, v))
+			args = append(args, "-s", fmt.Sprintf("%s=%s", k, v))
 		}
 		t.Logf("executing with %v", args)
 		cmd := exec.Command(dockerApp, args...)
