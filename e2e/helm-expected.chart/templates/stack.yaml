@@ -1,0 +1,64 @@
+typemeta:
+  kind: stacks.compose.docker.com
+  apiversion: v1beta2
+objectmeta:
+  name: helm
+  generatename: ""
+  namespace: default
+  selflink: ""
+  uid: ""
+  resourceversion: ""
+  generation: 0
+  creationtimestamp: "0001-01-01T00:00:00Z"
+  deletiontimestamp: null
+  deletiongraceperiodseconds: null
+  labels: {}
+  annotations: {}
+  ownerreferences: []
+  initializers: null
+  finalizers: []
+  clustername: ""
+spec:
+  services:
+  - name: nginx
+    capadd: []
+    capdrop: []
+    command:
+    - nginx
+    - run
+    - "{{.app.name}}"
+    configs: []
+    deploy:
+      mode: ""
+      replicas: null
+      labels: {}
+      updateconfig: null
+      resources:
+        limits: null
+        reservations: null
+      restartpolicy: null
+      placement:
+        constraints: null
+    entrypoint: []
+    environment: {}
+    extrahosts: []
+    hostname: ""
+    healthcheck: null
+    image: nginx:{{.myapp.nginx_version}}
+    ipc: ""
+    labels: {}
+    pid: ""
+    ports: []
+    privileged: false
+    readonly: false
+    secrets: []
+    stdinopen: false
+    stopgraceperiod: null
+    tmpfs: []
+    tty: false
+    user: null
+    volumes: []
+    workingdir: ""
+  secrets: {}
+  configs: {}
+status: null

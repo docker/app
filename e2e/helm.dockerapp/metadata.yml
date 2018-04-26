@@ -1,0 +1,7 @@
+version: 0.1.0
+name: helm
+description: ""
+author: bearclaw
+targets:
+  swarm: true
+  kubernetes: true

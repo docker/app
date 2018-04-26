@@ -1,0 +1,6 @@
+app:
+  name: helm
+myapp:
+  nginx_version: 2
+  preserved: 2
+preserved: 1

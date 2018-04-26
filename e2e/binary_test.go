@@ -127,3 +127,27 @@ func TestInitBinary(t *testing.T) {
 
 	assert.Assert(t, fs.Equal(dirName, manifest))
 }
+
+func TestHelmBinary(t *testing.T) {
+	getBinary(t)
+	cmd := exec.Command(dockerApp, "helm", "helm", "-t", "-s", "myapp.nginx_version=2")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	assert.NilError(t, err)
+	chart, _ := ioutil.ReadFile("helm-expected.chart/Chart.yaml")
+	values, _ := ioutil.ReadFile("helm-expected.chart/values.yaml")
+	stack, _ := ioutil.ReadFile("helm-expected.chart/templates/stack.yaml")
+	manifest := fs.Expected(
+		t,
+		fs.WithMode(0775),
+		fs.WithFile("Chart.yaml", string(chart), fs.WithMode(0664)),
+		fs.WithFile("values.yaml", string(values), fs.WithMode(0664)),
+		fs.WithDir("templates",
+			fs.WithMode(0775),
+			fs.WithFile("stack.yaml", string(stack), fs.WithMode(0664)),
+		),
+	)
+	assert.Assert(t, fs.Equal("helm.chart", manifest))
+}

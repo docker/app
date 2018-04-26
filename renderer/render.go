@@ -71,9 +71,15 @@ func loadSettings(files []string) (map[string]interface{}, error) {
 
 // Render renders the Compose file for this app, merging in settings files, other compose files, end env
 func Render(appname string, composeFiles []string, settingsFile []string, env map[string]string) (*composetypes.Config, error) {
+	comp, _, _, err := RenderEx(appname, composeFiles, settingsFile, env, false)
+	return comp, err
+}
+
+// RenderEx is like Render, but returns the final env and can escape variables
+func RenderEx(appname string, composeFiles []string, settingsFile []string, env map[string]string, escape bool) (*composetypes.Config, map[string]string, map[string]interface{}, error) {
 	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	defer cleanup()
 	// prepend the app settings to the argument settings
@@ -82,18 +88,18 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	// load the settings into a struct
 	settings, err := loadSettings(sf)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	// inject our metadata
 	metaFile := path.Join(appname, "metadata.yml")
 	meta := make(map[interface{}]interface{})
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	err = yaml.Unmarshal(metaContent, &meta)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	metaPrefixed := make(map[interface{}]interface{})
 	metaPrefixed["app"] = meta
@@ -110,7 +116,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		var converted interface{}
 		err = yaml.Unmarshal([]byte(v), &converted)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		val[ss[len(ss)-1]] = converted
 		merge(settings, valroot)
@@ -126,20 +132,23 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	for _, c := range composes {
 		data, err := ioutil.ReadFile(c)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
+		}
+		if escape {
+			data = []byte(strings.Replace(string(data), "$", "$$", -1))
 		}
 		tmpl, err := template.New("compose").Parse(string(data))
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		yaml := bytes.NewBuffer(nil)
 		err = tmpl.Execute(yaml, settings)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		parsed, err := loader.ParseYAML(yaml.Bytes())
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
 	}
@@ -150,5 +159,5 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		ConfigFiles: configFiles,
 		Environment: finalEnv,
 	})
-	return rendered, err
+	return rendered, finalEnv, settings, err
 }
