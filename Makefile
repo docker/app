@@ -24,6 +24,9 @@ LDFLAGS := "-s -w \
 	-X $(PKG_NAME)/internal.Version=$(TAG)      \
 	-X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL)"
 
+GO_BUILD := CGO_ENABLED=0 go build
+GO_TEST := go test
+
 #####################
 # Local Development #
 #####################
@@ -41,12 +44,12 @@ check_go_env:
 
 bin: check_go_env
 	@echo "Building _build/$(BIN_NAME)$(EXEC_EXT)..."
-	go build -ldflags=$(LDFLAGS) -i -o _build/$(BIN_NAME)$(EXEC_EXT)
+	$(GO_BUILD) -ldflags=$(LDFLAGS) -i -o _build/$(BIN_NAME)$(EXEC_EXT)
 
 OS_LIST ?= darwin linux windows
 bin-all: check_go_env
 	@echo "Building for all platforms..."
-	$(foreach OS, $(OS_LIST), GOOS=$(OS) go build -ldflags=$(LDFLAGS) -i -o _build/$(TAG)/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) || exit 1;)
+	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_BUILD) -ldflags=$(LDFLAGS) -i -o _build/$(TAG)/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) || exit 1;)
 
 release:
 	gsutil cp -r _build/$(TAG) gs://docker_app
@@ -60,11 +63,11 @@ lint:
 
 e2e-test:
 	@echo "Running e2e tests..."
-	go test ./e2e/
+	$(GO_TEST) ./e2e/
 
 unit-test:
 	@echo "Running unit tests..."
-	go test $(shell go list ./... | grep -vE '/vendor/|/e2e')
+	$(GO_TEST) $(shell go list ./... | grep -vE '/vendor/|/e2e')
 
 clean:
 	rm -Rf ./_build docker-app-*.tar.gz
