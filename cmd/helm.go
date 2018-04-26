@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/renderer"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +19,11 @@ var helmCmd = &cobra.Command{
 		for _, v := range helmEnv {
 			kv := strings.SplitN(v, "=", 2)
 			if len(kv) != 2 {
-				fmt.Printf("Malformed env input: '%s'\n", v)
+				fmt.Printf("Missing '=' in setting '%s', expected KEY=VALUE\n", v)
+				os.Exit(1)
+			}
+			if _, ok := d[kv[0]]; ok {
+				fmt.Printf("Duplicate command line setting: '%s'\n", kv[0])
 				os.Exit(1)
 			}
 			d[kv[0]] = kv[1]
@@ -37,7 +42,9 @@ var helmEnv []string
 
 func init() {
 	rootCmd.AddCommand(helmCmd)
-	helmCmd.Flags().StringArrayVarP(&helmComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
-	helmCmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "s", []string{}, "Override settings files")
-	helmCmd.Flags().StringArrayVarP(&helmEnv, "env", "e", []string{}, "Override environment values")
+	if internal.Experimental == "on" {
+		helmCmd.Flags().StringArrayVarP(&helmComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
+	}
+	helmCmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
+	helmCmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override environment values")
 }
