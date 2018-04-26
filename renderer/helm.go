@@ -57,13 +57,26 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	targetDir := utils.AppNameFromDir(oAppname) + ".helm"
+	targetDir := utils.AppNameFromDir(oAppname) + ".chart"
 	os.Mkdir(targetDir, 0755)
 	hmeta, err := toHelmMeta(&meta)
 	if err != nil {
 		return err
 	}
-	hmetadata, err := yaml.Marshal(hmeta)
+	chart := make(map[interface{}]interface{})
+	prevChartRaw, err := ioutil.ReadFile(path.Join(targetDir, "Chart.yaml"))
+	if err == nil {
+		err = yaml.Unmarshal(prevChartRaw, chart)
+		if err != nil {
+			return err
+		}
+	}
+	chart["name"] = hmeta.Name
+	chart["version"] = hmeta.Version
+	chart["description"] = hmeta.Description
+	chart["keywords"] = hmeta.Keywords
+	chart["maintainers"] = hmeta.Maintainers
+	hmetadata, err := yaml.Marshal(chart)
 	if err != nil {
 		return err
 	}
