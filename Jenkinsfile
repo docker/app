@@ -6,7 +6,7 @@ pipeline {
     }
 
     options {
-        checkoutToSubdirectory('src/github.com/docker/lunchbox')
+        skipDefaultCheckout(true)
     }
 
     stages {
