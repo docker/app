@@ -14,7 +14,7 @@ var helmCmd = &cobra.Command{
 	Use:   "helm <app-name> [-c <compose-files>...] [-e key=value...] [-f settings-file...]",
 	Short: "Render the Compose file for this app as an Helm package",
 	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		d := make(map[string]string)
 		for _, v := range helmEnv {
 			kv := strings.SplitN(v, "=", 2)
@@ -32,11 +32,7 @@ var helmCmd = &cobra.Command{
 		if len(args) > 0 {
 			app = args[0]
 		}
-		err := renderer.Helm(app, helmComposeFiles, helmSettingsFile, d)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
-		}
+		return renderer.Helm(app, helmComposeFiles, helmSettingsFile, d)
 	},
 }
 

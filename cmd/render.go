@@ -22,7 +22,7 @@ Override is provided in different ways:
   -s flag. These value takes precedence over all settings files.
 `,
 	Args: cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		d := make(map[string]string)
 		for _, v := range renderEnv {
 			kv := strings.SplitN(v, "=", 2)
@@ -42,15 +42,14 @@ Override is provided in different ways:
 		}
 		rendered, err := renderer.Render(app, renderComposeFiles, renderSettingsFile, d)
 		if err != nil {
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
+			return err
 		}
 		res, err := yaml.Marshal(rendered)
 		if err != nil {
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
+			return err
 		}
 		fmt.Printf("%s", string(res))
+		return nil
 	},
 }
 

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
@@ -13,12 +12,9 @@ var initCmd = &cobra.Command{
 	Use:   "init <app-name> [-c <compose-file>]",
 	Short: "Initialize an app package in the current working directory",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("init called")
-		if err := packager.Init(args[0], composeFile); err != nil {
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
-		}
+		return packager.Init(args[0], composeFile)
 	},
 }
 

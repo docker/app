@@ -14,7 +14,7 @@ var imageAddCmd = &cobra.Command{
 	Use:   "image-add <app-name> [services...]",
 	Short: "Add images for given services (default: all) to the app package",
 	Args:  cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		d := make(map[string]string)
 		for _, v := range imageAddEnv {
 			kv := strings.SplitN(v, "=", 2)
@@ -24,11 +24,7 @@ var imageAddCmd = &cobra.Command{
 			}
 			d[kv[0]] = kv[1]
 		}
-		err := image.Add(args[0], args[1:], imageAddComposeFiles, imageAddSettingsFile, d)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
-		}
+		return image.Add(args[0], args[1:], imageAddComposeFiles, imageAddSettingsFile, d)
 	},
 }
 var imageAddComposeFiles []string
