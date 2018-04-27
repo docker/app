@@ -12,12 +12,16 @@ import (
 var pushCmd = &cobra.Command{
 	Use:   "push <app-name>",
 	Short: "Push the application to a registry",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if pushTag == "" {
 			pushTag = "latest"
 		}
-		err := packager.Push(args[0], pushPrefix, pushTag)
+		app := ""
+		if len(args) > 0 {
+			app = args[0]
+		}
+		err := packager.Push(app, pushPrefix, pushTag)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

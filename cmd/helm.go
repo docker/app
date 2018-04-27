@@ -13,7 +13,7 @@ import (
 var helmCmd = &cobra.Command{
 	Use:   "helm <app-name> [-c <compose-files>...] [-e key=value...] [-f settings-file...]",
 	Short: "Render the Compose file for this app as an Helm package",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		d := make(map[string]string)
 		for _, v := range helmEnv {
@@ -28,7 +28,11 @@ var helmCmd = &cobra.Command{
 			}
 			d[kv[0]] = kv[1]
 		}
-		err := renderer.Helm(args[0], helmComposeFiles, helmSettingsFile, d)
+		app := ""
+		if len(args) > 0 {
+			app = args[0]
+		}
+		err := renderer.Helm(app, helmComposeFiles, helmSettingsFile, d)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

@@ -21,7 +21,7 @@ Override is provided in different ways:
 - Individual settings values can be passed directly on the command line with the
   -s flag. These value takes precedence over all settings files.
 `,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		d := make(map[string]string)
 		for _, v := range renderEnv {
@@ -36,7 +36,11 @@ Override is provided in different ways:
 			}
 			d[kv[0]] = kv[1]
 		}
-		rendered, err := renderer.Render(args[0], renderComposeFiles, renderSettingsFile, d)
+		app := ""
+		if len(args) > 0 {
+			app = args[0]
+		}
+		rendered, err := renderer.Render(app, renderComposeFiles, renderSettingsFile, d)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

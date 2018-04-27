@@ -12,9 +12,13 @@ import (
 var loadCmd = &cobra.Command{
 	Use:   "load <repotag>",
 	Short: "Load an app from docker",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := packager.Load(args[0])
+		app := ""
+		if len(args) > 0 {
+			app = args[0]
+		}
+		err := packager.Load(app)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

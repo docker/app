@@ -12,9 +12,13 @@ import (
 var inspectCmd = &cobra.Command{
 	Use:   "inspect <app-name>",
 	Short: "Retrieve metadata for a given app package",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := packager.Inspect(args[0])
+		app := ""
+		if len(args) > 0 {
+			app = args[0]
+		}
+		err := packager.Inspect(app)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
