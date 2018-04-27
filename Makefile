@@ -24,6 +24,9 @@ LDFLAGS := "-s -w \
 	-X $(PKG_NAME)/internal.Version=$(TAG)      \
 	-X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL)"
 
+GO_BUILD := CGO_ENABLED=0 go build
+GO_TEST := go test
+
 #####################
 # Local Development #
 #####################
@@ -35,18 +38,18 @@ endif
 
 all: bin test
 
-CHECK_GO_ENV:
+check_go_env:
 	@test $$(go list) = "$(PKG_NAME)" || \
 		(echo "Invalid Go environment" && false)
 
-bin: CHECK_GO_ENV
+bin: check_go_env
 	@echo "Building _build/$(BIN_NAME)$(EXEC_EXT)..."
-	go build -ldflags=$(LDFLAGS) -i -o _build/$(BIN_NAME)$(EXEC_EXT)
+	$(GO_BUILD) -ldflags=$(LDFLAGS) -i -o _build/$(BIN_NAME)$(EXEC_EXT)
 
 OS_LIST ?= darwin linux windows
-bin-all: CHECK_GO_ENV
+bin-all: check_go_env
 	@echo "Building for all platforms..."
-	$(foreach OS, $(OS_LIST), GOOS=$(OS) go build -ldflags=$(LDFLAGS) -i -o _build/$(TAG)/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) || exit 1;)
+	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_BUILD) -ldflags=$(LDFLAGS) -i -o _build/$(TAG)/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) || exit 1;)
 
 release:
 	gsutil cp -r _build/$(TAG) gs://docker_app
@@ -60,11 +63,11 @@ lint:
 
 e2e-test: bin
 	@echo "Running e2e tests..."
-	go test ./e2e/
+	$(GO_TEST) ./e2e/
 
 unit-test:
 	@echo "Running unit tests..."
-	go test $(shell go list ./... | grep -vE '/vendor/|/e2e')
+	$(GO_TEST) $(shell go list ./... | grep -vE '/vendor/|/e2e')
 
 clean:
 	rm -Rf ./_build docker-app-*.tar.gz
@@ -82,10 +85,9 @@ ci-test:
 	@echo "Testing..."
 	docker build -t $(IMAGE_NAME)-test:$(TAG) $(IMAGE_BUILD_ARGS) . --target=test
 
-ci-bin-%:
-	@echo "Building tarball for $*..."
+ci-bin-all:
 	docker build -t $(IMAGE_NAME)-bin-all:$(TAG) $(IMAGE_BUILD_ARGS) . --target=bin-build
-	docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) tar -cz $(BIN_NAME)-$*$(if $(filter windows, $*),.exe,) -C /go/src/$(PKG_NAME)/_build/$(TAG)/ > $(BIN_NAME)-$*-$(TAG).tar.gz
+	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) tar -cz $(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) -C /go/src/$(PKG_NAME)/_build/$(TAG)/ > $(BIN_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 
-.PHONY: bin bin-all release test check lint e2e-test unit-test clean ci-lint ci-test
+.PHONY: bin bin-all release test check lint e2e-test unit-test clean ci-lint ci-test ci-bin-all
 .DEFAULT: all
