@@ -52,8 +52,7 @@ func findApp() (string, error) {
 func Extract(appname string) (string, func(), error) {
 	if appname == "" {
 		var err error
-		appname, err = findApp()
-		if err != nil {
+		if appname, err = findApp(); err != nil {
 			return "", nil, err
 		}
 	}
@@ -76,8 +75,7 @@ func Extract(appname string) (string, func(), error) {
 	if err != nil {
 		return "", noop, err
 	}
-	err = extract(appname, tempDir)
-	if err != nil {
+	if err = extract(appname, tempDir); err != nil {
 		return "", noop, err
 	}
 	return tempDir, func() { os.RemoveAll(tempDir) }, nil
