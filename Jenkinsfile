@@ -19,13 +19,16 @@ pipeline {
                     script {
                         try {
                             checkout scm
-                            sh 'rm -f *.tar.gz'
+                            sh 'rm -rf *.tar.gz stash'
                             sh 'docker image prune -f'
                             sh 'make ci-lint'
                             sh 'make ci-test'
                             sh 'make ci-bin-all'
-                            sh 'ls *.tar.gz | xargs -i tar xf {}'
-                            stash name: "binaries", includes: "docker-app-*", excludes: "*.tar.gz"
+                            sh 'mkdir stash'
+                            sh 'ls *.tar.gz | xargs -i tar -xf {} -C stash'
+                            dir('stash') {
+                                stash name: 'e2e'
+                            }
                             archiveArtifacts '*.tar.gz'
                         } finally {
                             def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm/
@@ -43,8 +46,10 @@ pipeline {
                     }
                     steps  {
                         dir('src/github.com/docker/lunchbox') {
-                            unstash "binaries"
-                            sh './docker-app-linux version'
+                            deleteDir()
+                            unstash 'e2e'
+                            sh 'ls -la'
+                            sh './docker-app-e2e-linux'
                         }
                     }
                 }
@@ -54,8 +59,10 @@ pipeline {
                     }
                     steps {
                         dir('src/github.com/docker/lunchbox') {
-                            unstash "binaries"
-                            sh './docker-app-darwin version'
+                            deleteDir()
+                            unstash 'e2e'
+                            sh 'ls -la'
+                            sh './docker-app-e2e-darwin'
                         }
                     }
                 }
@@ -65,8 +72,10 @@ pipeline {
                     }
                     steps {
                         dir('src/github.com/docker/lunchbox') {
-                            unstash "binaries"
-                            bat 'docker-app-windows.exe version'
+                            deleteDir()
+                            unstash "e2e"
+                            bat 'dir'
+                            bat 'docker-app-e2e-windows.exe'
                         }
                     }
                 }

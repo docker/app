@@ -13,9 +13,9 @@ COPY . .
 FROM build AS bin-build
 ARG COMMIT
 ARG TAG
-RUN make COMMIT=${COMMIT} TAG=${TAG} bin-all
+RUN make COMMIT=${COMMIT} TAG=${TAG} bin-all e2e-all
 
 FROM build AS test
 ARG COMMIT
 ARG TAG
-RUN make COMMIT=${COMMIT} TAG=${TAG} unit-test e2e-test
+RUN make COMMIT=${COMMIT} TAG=${TAG} unit-test
