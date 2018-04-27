@@ -2,10 +2,14 @@ package packager
 
 import (
 	"archive/tar"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
+	"strings"
 
+	"github.com/docker/lunchbox/constants"
 	"github.com/docker/lunchbox/utils"
 	"github.com/pkg/errors"
 )
@@ -14,9 +18,45 @@ var (
 	noop = func() {}
 )
 
+// findApp looks for an app in CWD or subdirs
+func findApp() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", errors.Wrap(err, "cannot resolve current working directory")
+	}
+	if strings.HasSuffix(cwd, constants.AppExtension) {
+		return cwd, nil
+	}
+	content, err := ioutil.ReadDir(cwd)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read current working directory")
+	}
+	hit := ""
+	for _, c := range content {
+		if strings.HasSuffix(c.Name(), constants.AppExtension) {
+			if hit != "" {
+				return "", fmt.Errorf("multiple apps found in current directory, specify the app on the command line")
+			}
+			hit = c.Name()
+		}
+	}
+	if hit == "" {
+		return "", fmt.Errorf("no app found in current directory")
+	}
+	return path.Join(cwd, hit), nil
+}
+
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.
 // It returns effective app name, and cleanup function
+// If appname is empty, it looks into cwd, and all subdirs for a single matching .dockerapp
 func Extract(appname string) (string, func(), error) {
+	if appname == "" {
+		var err error
+		appname, err = findApp()
+		if err != nil {
+			return "", nil, err
+		}
+	}
 	// try verbatim first
 	s, err := os.Stat(appname)
 	if err != nil {

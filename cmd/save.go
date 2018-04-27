@@ -12,12 +12,16 @@ import (
 var saveCmd = &cobra.Command{
 	Use:   "save <app-name>",
 	Short: "Save the application to docker (in preparation for push)",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if saveTag == "" {
 			saveTag = "latest"
 		}
-		err := packager.Save(args[0], savePrefix, saveTag)
+		app := ""
+		if len(args) > 0 {
+			app = args[0]
+		}
+		err := packager.Save(app, savePrefix, saveTag)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

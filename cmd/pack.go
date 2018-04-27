@@ -12,9 +12,13 @@ import (
 var packCmd = &cobra.Command{
 	Use:   "pack <app-name> [-o output_file]",
 	Short: "Pack this app as a single file",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := packager.Pack(args[0], packOutputFile)
+		app := ""
+		if len(args) > 0 {
+			app = args[0]
+		}
+		err := packager.Pack(app, packOutputFile)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

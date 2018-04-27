@@ -12,9 +12,13 @@ import (
 var unpackCmd = &cobra.Command{
 	Use:   "unpack <app-name> [-o output_dir]",
 	Short: "Unpack the app to expose the content",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := packager.Unpack(args[0], unpackOutputDir)
+		app := ""
+		if len(args) > 0 {
+			app = args[0]
+		}
+		err := packager.Unpack(app, unpackOutputDir)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
