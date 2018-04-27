@@ -12,11 +12,7 @@ var inspectCmd = &cobra.Command{
 	Short: "Retrieve metadata for a given app package",
 	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		app := ""
-		if len(args) > 0 {
-			app = args[0]
-		}
-		return packager.Inspect(app)
+		return packager.Inspect(firstOrEmpty(args))
 	},
 }
 

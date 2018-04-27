@@ -29,11 +29,7 @@ var helmCmd = &cobra.Command{
 			}
 			d[kv[0]] = kv[1]
 		}
-		app := ""
-		if len(args) > 0 {
-			app = args[0]
-		}
-		return renderer.Helm(app, helmComposeFiles, helmSettingsFile, d)
+		return renderer.Helm(firstOrEmpty(args), helmComposeFiles, helmSettingsFile, d)
 	},
 }
 

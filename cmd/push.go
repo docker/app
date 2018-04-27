@@ -15,11 +15,7 @@ var pushCmd = &cobra.Command{
 		if pushTag == "" {
 			pushTag = "latest"
 		}
-		app := ""
-		if len(args) > 0 {
-			app = args[0]
-		}
-		return packager.Push(app, pushPrefix, pushTag)
+		return packager.Push(firstOrEmpty(args), pushPrefix, pushTag)
 	},
 }
 
