@@ -14,11 +14,7 @@ var saveCmd = &cobra.Command{
 		if saveTag == "" {
 			saveTag = "latest"
 		}
-		app := ""
-		if len(args) > 0 {
-			app = args[0]
-		}
-		return packager.Save(app, savePrefix, saveTag)
+		return packager.Save(firstOrEmpty(args), savePrefix, saveTag)
 	},
 }
 

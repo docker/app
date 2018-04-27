@@ -36,11 +36,7 @@ Override is provided in different ways:
 			}
 			d[kv[0]] = kv[1]
 		}
-		app := ""
-		if len(args) > 0 {
-			app = args[0]
-		}
-		rendered, err := renderer.Render(app, renderComposeFiles, renderSettingsFile, d)
+		rendered, err := renderer.Render(firstOrEmpty(args), renderComposeFiles, renderSettingsFile, d)
 		if err != nil {
 			return err
 		}

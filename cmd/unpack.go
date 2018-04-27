@@ -11,11 +11,7 @@ var unpackCmd = &cobra.Command{
 	Short: "Unpack the app to expose the content",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		app := ""
-		if len(args) > 0 {
-			app = args[0]
-		}
-		return packager.Unpack(app, unpackOutputDir)
+		return packager.Unpack(firstOrEmpty(args), unpackOutputDir)
 	},
 }
 

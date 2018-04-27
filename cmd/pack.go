@@ -11,11 +11,7 @@ var packCmd = &cobra.Command{
 	Short: "Pack this app as a single file",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		app := ""
-		if len(args) > 0 {
-			app = args[0]
-		}
-		return packager.Pack(app, packOutputFile)
+		return packager.Pack(firstOrEmpty(args), packOutputFile)
 	},
 }
 

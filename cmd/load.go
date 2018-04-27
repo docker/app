@@ -11,11 +11,7 @@ var loadCmd = &cobra.Command{
 	Short: "Load an app from docker",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		app := ""
-		if len(args) > 0 {
-			app = args[0]
-		}
-		return packager.Load(app)
+		return packager.Load(firstOrEmpty(args))
 	},
 }
 
