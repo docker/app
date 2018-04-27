@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/docker/cli/cli"
 	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
@@ -9,7 +10,7 @@ import (
 var loadCmd = &cobra.Command{
 	Use:   "load <repotag>",
 	Short: "Load an app from docker",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		app := ""
 		if len(args) > 0 {

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/docker/cli/cli"
 	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/renderer"
 	"github.com/spf13/cobra"
@@ -21,7 +22,7 @@ Override is provided in different ways:
 - Individual settings values can be passed directly on the command line with the
   -s flag. These value takes precedence over all settings files.
 `,
-	Args: cobra.MaximumNArgs(1),
+	Args: cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		d := make(map[string]string)
 		for _, v := range renderEnv {
