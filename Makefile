@@ -58,7 +58,7 @@ lint:
 	@tar -c Dockerfile.lint gometalinter.json | docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint - --target=lint-volume > /dev/null
 	@docker run --rm -v $(dir $(realpath $(lastword $(MAKEFILE_LIST)))):/go/src/$(PKG_NAME):ro,cached $(IMAGE_NAME)-lint
 
-e2e-test:
+e2e-test: bin
 	@echo "Running e2e tests..."
 	go test ./e2e/
 
