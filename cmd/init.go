@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/docker/cli/cli"
 	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
 )
@@ -11,7 +12,7 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init <app-name> [-c <compose-file>]",
 	Short: "Initialize an app package in the current working directory",
-	Args:  cobra.ExactArgs(1),
+	Args:  cli.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("init called")
 		return packager.Init(args[0], composeFile)

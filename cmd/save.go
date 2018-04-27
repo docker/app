@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/docker/cli/cli"
 	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
@@ -9,7 +10,7 @@ import (
 var saveCmd = &cobra.Command{
 	Use:   "save <app-name>",
 	Short: "Save the application to docker (in preparation for push)",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if saveTag == "" {
 			saveTag = "latest"
