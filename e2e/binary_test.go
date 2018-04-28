@@ -25,28 +25,38 @@ func getBinary(t *testing.T) string {
 	if dockerApp != "" {
 		return dockerApp
 	}
-	dockerApp = os.Getenv("DOCKERAPP_BINARY")
-	if dockerApp == "" {
-		binName := "docker-app"
-		if runtime.GOOS == "windows" {
-			binName += ".exe"
-		}
-		locations := []string{".", "../_build"}
-		for _, l := range locations {
-			b := path.Join(l, binName)
-			if _, err := os.Stat(b); err == nil {
-				dockerApp = b
-				break
-			}
-		}
-	}
-	if dockerApp == "" {
+	binName := findBinary()
+	if binName == "" {
 		t.Error("cannot locate docker-app binary")
 	}
-	cmd := exec.Command(dockerApp, "version")
-	_, err := cmd.CombinedOutput()
-	assert.NilError(t, err, "failed to execute docker-app binary")
+	cmd := exec.Command(binName, "version")
+	err := cmd.Run()
+	assert.NilError(t, err, "failed to execute %s", binName)
+	dockerApp = binName
 	return dockerApp
+}
+
+func findBinary() string {
+	binNames := []string{
+		os.Getenv("DOCKERAPP_BINARY"),
+		"./docker-app-" + runtime.GOOS + binExt(),
+		"./docker-app" + binExt(),
+		"../_build/docker-app-" + runtime.GOOS + binExt(),
+		"../_build/docker_app" + binExt(),
+	}
+	for _, binName := range binNames {
+		if _, err := os.Stat(binName); err == nil {
+			return binName
+		}
+	}
+	return ""
+}
+
+func binExt() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
 }
 
 func TestRenderBinary(t *testing.T) {
