@@ -14,6 +14,7 @@ import (
 
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/fs"
+	"github.com/gotestyourself/gotestyourself/icmd"
 
 	"github.com/docker/lunchbox/utils"
 )
@@ -31,6 +32,9 @@ func getBinary(t *testing.T) (string, bool) {
 	if binName == "" {
 		t.Error("cannot locate docker-app binary")
 	}
+	var err error
+	binName, err = filepath.Abs(binName)
+	assert.NilError(t, err, "failed to convert dockerApp path to absolute")
 	cmd := exec.Command(binName, "version")
 	output, err := cmd.CombinedOutput()
 	assert.NilError(t, err, "failed to execute %s", binName)
@@ -139,4 +143,36 @@ func TestInitBinary(t *testing.T) {
 	)
 
 	assert.Assert(t, fs.Equal(dirName, manifest))
+}
+
+func TestPackBinary(t *testing.T) {
+	dockerApp, hasExperimental := getBinary(t)
+	if !hasExperimental {
+		t.Skip("experimental mode needed for this test")
+	}
+	tempDir, err := ioutil.TempDir("", "dockerapp")
+	assert.NilError(t, err)
+	defer os.RemoveAll(tempDir)
+	result := icmd.RunCommand(dockerApp, "pack", "helm", "-o", filepath.Join(tempDir, "test.dockerapp"))
+	result.Assert(t, icmd.Success)
+	// check that our commands run on the packed version
+	result = icmd.RunCommand(dockerApp, "inspect", filepath.Join(tempDir, "test"))
+	result.Assert(t, icmd.Success)
+	assert.Assert(t, strings.Contains(result.Stdout(), "name: helm"))
+	result = icmd.RunCommand(dockerApp, "render", filepath.Join(tempDir, "test"))
+	result.Assert(t, icmd.Success)
+	assert.Assert(t, strings.Contains(result.Stdout(), "nginx"))
+	cwd, err := os.Getwd()
+	assert.NilError(t, err)
+	os.Chdir(tempDir)
+	result = icmd.RunCommand(dockerApp, "helm", "test")
+	result.Assert(t, icmd.Success)
+	_, err = os.Stat("test.chart/Chart.yaml")
+	assert.NilError(t, err)
+	os.Mkdir("output", 0755)
+	result = icmd.RunCommand(dockerApp, "unpack", "test", "-o", "output")
+	result.Assert(t, icmd.Success)
+	_, err = os.Stat("output/test.dockerapp/docker-compose.yml")
+	assert.NilError(t, err)
+	os.Chdir(cwd)
 }
