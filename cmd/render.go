@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/docker/cli/cli"
@@ -28,12 +27,10 @@ Override is provided in different ways:
 		for _, v := range renderEnv {
 			kv := strings.SplitN(v, "=", 2)
 			if len(kv) != 2 {
-				fmt.Printf("Missing '=' in setting '%s', expected KEY=VALUE\n", v)
-				os.Exit(1)
+				return fmt.Errorf("Missing '=' in setting '%s', expected KEY=VALUE", v)
 			}
 			if _, ok := d[kv[0]]; ok {
-				fmt.Printf("Duplicate command line setting: '%s'\n", kv[0])
-				os.Exit(1)
+				return fmt.Errorf("Duplicate command line setting: '%s'", kv[0])
 			}
 			d[kv[0]] = kv[1]
 		}
@@ -45,7 +42,7 @@ Override is provided in different ways:
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s", string(res))
+		fmt.Print(string(res))
 		return nil
 	},
 }

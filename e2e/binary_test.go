@@ -42,7 +42,7 @@ func findBinary() string {
 		"./docker-app-" + runtime.GOOS + binExt(),
 		"./docker-app" + binExt(),
 		"../_build/docker-app-" + runtime.GOOS + binExt(),
-		"../_build/docker_app" + binExt(),
+		"../_build/docker-app" + binExt(),
 	}
 	for _, binName := range binNames {
 		if _, err := os.Stat(binName); err == nil {
@@ -122,7 +122,7 @@ func TestInitBinary(t *testing.T) {
 	cmd := exec.Command(dockerApp, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(string(output))
+		fmt.Println(output)
 	}
 	assert.NilError(t, err)
 	meta, err := ioutil.ReadFile(filepath.Join(dirName, "metadata.yml"))

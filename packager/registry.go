@@ -52,9 +52,7 @@ func Load(repotag string) error {
 	cmd := exec.Command("docker", "save", "-o", file, repotag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Error from docker save command:")
-		fmt.Println(string(output))
-		return err
+		return errors.Wrapf(err, "error from docker save command: %s", string(output))
 	}
 	defer os.Remove(file)
 	f, err := os.Open(file)
@@ -93,9 +91,9 @@ func Push(appname, prefix, tag string) error {
 	cmd := exec.Command("docker", "push", prefix+appName(appname)+constants.AppExtension+":"+tag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(string(output))
+		return errors.Wrapf(err, "error from docker push command: %s", string(output))
 	}
-	return err
+	return nil
 }
 
 // Pull pulls an app from a registry
@@ -103,8 +101,7 @@ func Pull(repotag string) error {
 	cmd := exec.Command("docker", "pull", repotag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(string(output))
-		return err
+		return errors.Wrapf(err, "error from docker pull command: %s", string(output))
 	}
 	return Load(repotag)
 }
