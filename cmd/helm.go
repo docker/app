@@ -29,10 +29,11 @@ var helmCmd = &cobra.Command{
 			}
 			d[kv[0]] = kv[1]
 		}
-		return renderer.Helm(firstOrEmpty(args), helmComposeFiles, helmSettingsFile, d)
+		return renderer.Helm(firstOrEmpty(args), helmComposeFiles, helmSettingsFile, d, helmTemplated)
 	},
 }
 
+var helmTemplated bool
 var helmComposeFiles []string
 var helmSettingsFile []string
 var helmEnv []string
@@ -44,4 +45,5 @@ func init() {
 	}
 	helmCmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	helmCmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override environment values")
+	helmCmd.Flags().BoolVarP(&helmTemplated, "templated", "t", false, "Attempt to propagate templated variables")
 }
