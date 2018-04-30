@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/gotestyourself/gotestyourself/assert"
@@ -18,22 +19,24 @@ import (
 )
 
 var (
-	dockerApp = ""
+	dockerApp       = ""
+	hasExperimental = false
 )
 
-func getBinary(t *testing.T) string {
+func getBinary(t *testing.T) (string, bool) {
 	if dockerApp != "" {
-		return dockerApp
+		return dockerApp, hasExperimental
 	}
 	binName := findBinary()
 	if binName == "" {
 		t.Error("cannot locate docker-app binary")
 	}
 	cmd := exec.Command(binName, "version")
-	err := cmd.Run()
+	output, err := cmd.CombinedOutput()
 	assert.NilError(t, err, "failed to execute %s", binName)
 	dockerApp = binName
-	return dockerApp
+	hasExperimental = strings.Contains(string(output), "Experimental: on")
+	return dockerApp, hasExperimental
 }
 
 func findBinary() string {
