@@ -56,6 +56,12 @@ func Extract(appname string) (string, func(), error) {
 			return "", nil, err
 		}
 	}
+	if appname == "." {
+		var err error
+		if appname, err = os.Getwd(); err != nil {
+			return "", nil, errors.Wrap(err, "cannot resolve current working directory")
+		}
+	}
 	// try verbatim first
 	s, err := os.Stat(appname)
 	if err != nil {
@@ -75,10 +81,16 @@ func Extract(appname string) (string, func(), error) {
 	if err != nil {
 		return "", noop, err
 	}
-	if err = extract(appname, tempDir); err != nil {
+	appDir := filepath.Join(tempDir, filepath.Base(appname))
+	if err := os.Mkdir(appDir, 0755); err != nil {
+		os.RemoveAll(tempDir)
 		return "", noop, err
 	}
-	return tempDir, func() { os.RemoveAll(tempDir) }, nil
+	if err = extract(appname, appDir); err != nil {
+		os.RemoveAll(tempDir)
+		return "", noop, err
+	}
+	return appDir, func() { os.RemoveAll(tempDir) }, nil
 }
 
 func extract(appname, outputDir string) error {
