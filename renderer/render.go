@@ -80,6 +80,7 @@ func applyRenderers(data []byte, renderers []string, settings map[string]interfa
 			if err != nil {
 				return nil, err
 			}
+			tmpl.Option("missingkey=error")
 			yaml := bytes.NewBuffer(nil)
 			err = tmpl.Execute(yaml, settings)
 			if err != nil {
