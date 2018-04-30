@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"os/user"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/lunchbox/types"
@@ -56,10 +56,10 @@ func initFromScratch(name string) error {
 	}
 
 	dirName := utils.DirNameFromAppName(name)
-	if err := utils.CreateFileWithData(path.Join(dirName, "docker-compose.yml"), composeData); err != nil {
+	if err := utils.CreateFileWithData(filepath.Join(dirName, "docker-compose.yml"), composeData); err != nil {
 		return err
 	}
-	return utils.CreateFileWithData(path.Join(dirName, "settings.yml"), []byte{'\n'})
+	return utils.CreateFileWithData(filepath.Join(dirName, "settings.yml"), []byte{'\n'})
 }
 
 func parseEnv(env string, target map[string]string) {
@@ -160,7 +160,7 @@ func initFromComposeFile(name string, composeFile string) error {
 		return errors.Wrap(err, "failed to read compose file")
 	}
 	settings := make(map[string]string)
-	envRaw, err := ioutil.ReadFile(path.Join(path.Dir(composeFile), ".env"))
+	envRaw, err := ioutil.ReadFile(filepath.Join(filepath.Dir(composeFile), ".env"))
 	if err == nil {
 		parseEnv(string(envRaw), settings)
 	}
@@ -179,11 +179,11 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal settings")
 	}
-	err = ioutil.WriteFile(path.Join(dirName, "docker-compose.yml"), composeRaw, 0644)
+	err = ioutil.WriteFile(filepath.Join(dirName, "docker-compose.yml"), composeRaw, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write docker-compose.yml")
 	}
-	err = ioutil.WriteFile(path.Join(dirName, "settings.yml"), settingsYAML, 0644)
+	err = ioutil.WriteFile(filepath.Join(dirName, "settings.yml"), settingsYAML, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write settings.yml")
 	}
@@ -203,7 +203,7 @@ func writeMetadataFile(name, dirName string) error {
 	if err != nil {
 		return err
 	}
-	return utils.CreateFileWithData(path.Join(dirName, "metadata.yml"), data)
+	return utils.CreateFileWithData(filepath.Join(dirName, "metadata.yml"), data)
 }
 
 func newMetadata(name string) types.AppMetadata {

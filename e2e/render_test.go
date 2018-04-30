@@ -3,7 +3,7 @@ package e2e
 import (
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -24,16 +24,16 @@ func gather(t *testing.T, dir string) ([]string, []string, map[string]string) {
 	for _, f := range content {
 		split := strings.SplitN(f.Name(), "-", 2)
 		if split[0] == "settings" {
-			settings = append(settings, path.Join(dir, f.Name()))
+			settings = append(settings, filepath.Join(dir, f.Name()))
 		}
 		if split[0] == "override" {
-			overrides = append(overrides, path.Join(dir, f.Name()))
+			overrides = append(overrides, filepath.Join(dir, f.Name()))
 		}
 	}
 	// look for emulated command line env
 	env := make(map[string]string)
-	if _, err = os.Stat(path.Join(dir, "env.yml")); err == nil {
-		envRaw, err := ioutil.ReadFile(path.Join(dir, "env.yml"))
+	if _, err = os.Stat(filepath.Join(dir, "env.yml")); err == nil {
+		envRaw, err := ioutil.ReadFile(filepath.Join(dir, "env.yml"))
 		assert.NilError(t, err, "unable to read file")
 		err = yaml.Unmarshal(envRaw, &env)
 		assert.NilError(t, err, "unable to unmarshal env")
@@ -43,14 +43,14 @@ func gather(t *testing.T, dir string) ([]string, []string, map[string]string) {
 
 func checkResult(t *testing.T, result string, resultErr error, dir string) {
 	if resultErr != nil {
-		ee := path.Join(dir, "expectedError.txt")
+		ee := filepath.Join(dir, "expectedError.txt")
 		if _, err := os.Stat(ee); err != nil {
 			assert.NilError(t, resultErr, "unexpected render error")
 		}
 		expectedErr := readFile(t, ee)
 		assert.ErrorContains(t, resultErr, expectedErr)
 	} else {
-		expectedRender := readFile(t, path.Join(dir, "expected.txt"))
+		expectedRender := readFile(t, filepath.Join(dir, "expected.txt"))
 		assert.Equal(t, string(expectedRender), result, "rendering missmatch")
 	}
 }
@@ -60,16 +60,16 @@ func TestRender(t *testing.T) {
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
 		t.Log("testing", app.Name())
-		settings, overrides, env := gather(t, path.Join("render", app.Name()))
+		settings, overrides, env := gather(t, filepath.Join("render", app.Name()))
 		// run the render
-		config, resultErr := renderer.Render(path.Join("render", app.Name()), overrides, settings, env)
+		config, resultErr := renderer.Render(filepath.Join("render", app.Name()), overrides, settings, env)
 		var result string
 		if resultErr == nil {
 			var bytes []byte
 			bytes, resultErr = yaml.Marshal(config)
 			result = string(bytes)
 		}
-		checkResult(t, result, resultErr, path.Join("render", app.Name()))
+		checkResult(t, result, resultErr, filepath.Join("render", app.Name()))
 	}
 }
 

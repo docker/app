@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 
 	"github.com/docker/lunchbox/packager"
 	"github.com/docker/lunchbox/renderer"
@@ -32,12 +32,12 @@ func Add(appname string, services []string, composeFiles []string, settingsFile 
 	if err != nil {
 		return err
 	}
-	os.Mkdir(path.Join(appname, "images"), 0755)
+	os.Mkdir(filepath.Join(appname, "images"), 0755)
 	for _, s := range config.Services {
 		if len(services) != 0 && !contains(services, s.Name) {
 			continue
 		}
-		cmd := exec.Command("docker", "save", "-o", path.Join(appname, "images", s.Name), s.Image)
+		cmd := exec.Command("docker", "save", "-o", filepath.Join(appname, "images", s.Name), s.Image)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(output)
@@ -68,7 +68,7 @@ func Load(appname string, services []string) error {
 		return err
 	}
 	defer cleanup()
-	imageDir, err := os.Open(path.Join(appname, "images"))
+	imageDir, err := os.Open(filepath.Join(appname, "images"))
 	if err != nil {
 		return fmt.Errorf("no images found in app")
 	}
@@ -80,7 +80,7 @@ func Load(appname string, services []string) error {
 		if len(services) != 0 && !contains(services, i) {
 			continue
 		}
-		cmd := exec.Command("docker", "load", "-i", path.Join(appname, "images", i))
+		cmd := exec.Command("docker", "load", "-i", filepath.Join(appname, "images", i))
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(output)

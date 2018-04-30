@@ -3,7 +3,7 @@ package packager
 import (
 	"fmt"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 
 	"github.com/docker/lunchbox/types"
 	yaml "gopkg.in/yaml.v2"
@@ -16,7 +16,7 @@ func Inspect(appname string) error {
 		return err
 	}
 	defer cleanup()
-	metaFile := path.Join(appname, "metadata.yml")
+	metaFile := filepath.Join(appname, "metadata.yml")
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
 		return err

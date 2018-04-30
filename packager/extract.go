@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/lunchbox/constants"
@@ -43,7 +43,7 @@ func findApp() (string, error) {
 	if hit == "" {
 		return "", fmt.Errorf("no app found in current directory")
 	}
-	return path.Join(cwd, hit), nil
+	return filepath.Join(cwd, hit), nil
 }
 
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.

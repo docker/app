@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -65,10 +65,10 @@ func TestRenderBinary(t *testing.T) {
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
 		t.Log("testing", app.Name())
-		settings, overrides, env := gather(t, path.Join("render", app.Name()))
+		settings, overrides, env := gather(t, filepath.Join("render", app.Name()))
 		args := []string{
 			"render",
-			path.Join("render", app.Name()),
+			filepath.Join("render", app.Name()),
 		}
 		for _, s := range settings {
 			args = append(args, "-f", s)
@@ -82,7 +82,7 @@ func TestRenderBinary(t *testing.T) {
 		t.Logf("executing with %v", args)
 		cmd := exec.Command(dockerApp, args...)
 		output, err := cmd.CombinedOutput()
-		checkResult(t, string(output), err, path.Join("render", app.Name()))
+		checkResult(t, string(output), err, filepath.Join("render", app.Name()))
 	}
 }
 
@@ -105,8 +105,8 @@ func TestInitBinary(t *testing.T) {
 	envData := "# some comment\nNGINX_VERSION=latest"
 	inputDir := randomName("app_input_")
 	os.Mkdir(inputDir, 0755)
-	ioutil.WriteFile(path.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
-	ioutil.WriteFile(path.Join(inputDir, ".env"), []byte(envData), 0644)
+	ioutil.WriteFile(filepath.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
+	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
 	defer os.RemoveAll(inputDir)
 
 	testAppName := randomName("app_")
@@ -117,7 +117,7 @@ func TestInitBinary(t *testing.T) {
 		"init",
 		testAppName,
 		"-c",
-		path.Join(inputDir, "docker-compose.yml"),
+		filepath.Join(inputDir, "docker-compose.yml"),
 	}
 	cmd := exec.Command(dockerApp, args...)
 	output, err := cmd.CombinedOutput()
@@ -125,7 +125,7 @@ func TestInitBinary(t *testing.T) {
 		fmt.Println(string(output))
 	}
 	assert.NilError(t, err)
-	meta, err := ioutil.ReadFile(path.Join(dirName, "metadata.yml"))
+	meta, err := ioutil.ReadFile(filepath.Join(dirName, "metadata.yml"))
 	assert.NilError(t, err)
 	manifest := fs.Expected(
 		t,
