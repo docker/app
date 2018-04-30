@@ -29,7 +29,9 @@ pipeline {
                             dir('stash') {
                                 stash name: 'e2e'
                             }
-                            archiveArtifacts '*.tar.gz'
+                            if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
+                                archiveArtifacts '*.tar.gz'
+                            }
                         } finally {
                             def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm/
                             sh clean_images
