@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -14,7 +14,7 @@ var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
 // AppNameFromDir takes a path to an app directory and returns
 // the application's name
 func AppNameFromDir(dirName string) string {
-	return strings.TrimSuffix(path.Base(dirName), constants.AppExtension)
+	return strings.TrimSuffix(filepath.Base(dirName), constants.AppExtension)
 }
 
 // DirNameFromAppName takes an application name and returns the

@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/docker/lunchbox/constants"
 	"github.com/docker/lunchbox/utils"
@@ -64,19 +64,19 @@ func Pack(appname, output string) error {
 	tarout := tar.NewWriter(target)
 	files := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
 	for _, f := range files {
-		err = tarAdd(tarout, f, path.Join(appname, f))
+		err = tarAdd(tarout, f, filepath.Join(appname, f))
 		if err != nil {
 			return err
 		}
 	}
 	// check for images
-	_, err = os.Stat(path.Join(appname, "images"))
+	_, err = os.Stat(filepath.Join(appname, "images"))
 	if err == nil {
 		err = tarAddDir(tarout, "images")
 		if err != nil {
 			return err
 		}
-		imageDir, err := os.Open(path.Join(appname, "images"))
+		imageDir, err := os.Open(filepath.Join(appname, "images"))
 		if err != nil {
 			return err
 		}
@@ -85,7 +85,7 @@ func Pack(appname, output string) error {
 			return err
 		}
 		for _, i := range images {
-			err = tarAdd(tarout, path.Join("images", i), path.Join(appname, "images", i))
+			err = tarAdd(tarout, filepath.Join("images", i), filepath.Join(appname, "images", i))
 			if err != nil {
 				return err
 			}
@@ -108,7 +108,7 @@ func Unpack(appname, targetDir string) error {
 	if s.IsDir() {
 		return fmt.Errorf("app already extracted")
 	}
-	out := path.Join(targetDir, utils.AppNameFromDir(appname)+constants.AppExtension)
+	out := filepath.Join(targetDir, utils.AppNameFromDir(appname)+constants.AppExtension)
 	err = os.Mkdir(out, 0755)
 	if err != nil {
 		return err

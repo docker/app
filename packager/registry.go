@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/lunchbox/constants"
@@ -31,9 +31,9 @@ func Save(appname, prefix, tag string) error {
 FROM scratch
 COPY / /
 `
-	df := path.Join(appname, "__Dockerfile-docker-app__")
+	df := filepath.Join(appname, "__Dockerfile-docker-app__")
 	ioutil.WriteFile(df, []byte(dockerfile), 0644)
-	di := path.Join(appname, ".dockerignore")
+	di := filepath.Join(appname, ".dockerignore")
 	ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644)
 	args := []string{"build", "-t", prefix + appName(appname) + constants.AppExtension + ":" + tag, "-f", df, appname}
 	cmd := exec.Command("docker", args...)
@@ -48,7 +48,7 @@ COPY / /
 
 // Load loads an app from docker
 func Load(repotag string) error {
-	file := path.Join(os.TempDir(), "docker-app-"+fmt.Sprintf("%v%v", rand.Int63(), rand.Int63()))
+	file := filepath.Join(os.TempDir(), "docker-app-"+fmt.Sprintf("%v%v", rand.Int63(), rand.Int63()))
 	cmd := exec.Command("docker", "save", "-o", file, repotag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -70,7 +70,7 @@ func Load(repotag string) error {
 		if err != nil {
 			return errors.Wrap(err, "error reading next tar header")
 		}
-		if path.Base(header.Name) == "layer.tar" {
+		if filepath.Base(header.Name) == "layer.tar" {
 			data := make([]byte, header.Size)
 			_, err := tarReader.Read(data)
 			if err != nil && err != io.EOF {

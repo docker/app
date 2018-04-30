@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/gotestyourself/gotestyourself/assert"
@@ -33,8 +33,8 @@ func TestInitFromComposeFile(t *testing.T) {
 	envData := "# some comment\nNGINX_VERSION=latest"
 	inputDir := randomName("app_input_")
 	os.Mkdir(inputDir, 0755)
-	ioutil.WriteFile(path.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
-	ioutil.WriteFile(path.Join(inputDir, ".env"), []byte(envData), 0644)
+	ioutil.WriteFile(filepath.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
+	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
 	defer os.RemoveAll(inputDir)
 
 	testAppName := randomName("app_")
@@ -43,7 +43,7 @@ func TestInitFromComposeFile(t *testing.T) {
 	assert.NilError(t, err)
 	defer os.RemoveAll(dirName)
 
-	err = initFromComposeFile(testAppName, path.Join(inputDir, "docker-compose.yml"))
+	err = initFromComposeFile(testAppName, filepath.Join(inputDir, "docker-compose.yml"))
 	assert.NilError(t, err)
 
 	manifest := fs.Expected(

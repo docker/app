@@ -3,7 +3,7 @@ package renderer
 import (
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 
 	conversion "github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
@@ -47,7 +47,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	metaFile := path.Join(appname, "metadata.yml")
+	metaFile := filepath.Join(appname, "metadata.yml")
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 		return err
 	}
 	chart := make(map[interface{}]interface{})
-	prevChartRaw, err := ioutil.ReadFile(path.Join(targetDir, "Chart.yaml"))
+	prevChartRaw, err := ioutil.ReadFile(filepath.Join(targetDir, "Chart.yaml"))
 	if err == nil {
 		err = yaml.Unmarshal(prevChartRaw, chart)
 		if err != nil {
@@ -80,11 +80,11 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(path.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
+	err = ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
 	if err != nil {
 		return err
 	}
-	os.Mkdir(path.Join(targetDir, "templates"), 0755)
+	os.Mkdir(filepath.Join(targetDir, "templates"), 0755)
 	stackSpec := conversion.FromComposeConfig(rendered)
 	stack := v1beta2.Stack{
 		TypeMeta: metav1.TypeMeta{
@@ -101,6 +101,6 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(path.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
+	err = ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 	return err
 }

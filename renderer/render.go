@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -77,7 +77,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	}
 	defer cleanup()
 	// prepend the app settings to the argument settings
-	sf := []string{path.Join(appname, "settings.yml")}
+	sf := []string{filepath.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
 	// load the settings into a struct
 	settings, err := loadSettings(sf)
@@ -85,7 +85,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		return nil, err
 	}
 	// inject our metadata
-	metaFile := path.Join(appname, "metadata.yml")
+	metaFile := filepath.Join(appname, "metadata.yml")
 	meta := make(map[interface{}]interface{})
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
@@ -119,7 +119,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	finalEnv := make(map[string]string)
 	flatten(settings, finalEnv, "")
 	// prepend our app compose file to the list
-	composes := []string{path.Join(appname, "docker-compose.yml")}
+	composes := []string{filepath.Join(appname, "docker-compose.yml")}
 	composes = append(composes, composeFiles...)
 	// go-template, then parse, then expand the compose files
 	configFiles := []composetypes.ConfigFile{}
