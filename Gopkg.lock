@@ -186,7 +186,7 @@
   branch = "master"
   name = "github.com/docker/yatee"
   packages = ["yatee"]
-  revision = "ab05b26f6a5737ef57da102caae5c761ab1161a3"
+  revision = "e9e6b10b0fefd62c88dfb628c897f829074af941"
 
 [[projects]]
   name = "github.com/emicklei/go-restful"
