@@ -141,12 +141,12 @@ func TestHelmBinary(t *testing.T) {
 	stack, _ := ioutil.ReadFile("helm-expected.chart/templates/stack.yaml")
 	manifest := fs.Expected(
 		t,
-		fs.WithMode(0775),
-		fs.WithFile("Chart.yaml", string(chart), fs.WithMode(0664)),
-		fs.WithFile("values.yaml", string(values), fs.WithMode(0664)),
+		fs.WithMode(0755),
+		fs.WithFile("Chart.yaml", string(chart), fs.WithMode(0644)),
+		fs.WithFile("values.yaml", string(values), fs.WithMode(0644)),
 		fs.WithDir("templates",
-			fs.WithMode(0775),
-			fs.WithFile("stack.yaml", string(stack), fs.WithMode(0664)),
+			fs.WithMode(0755),
+			fs.WithFile("stack.yaml", string(stack), fs.WithMode(0644)),
 		),
 	)
 	assert.Assert(t, fs.Equal("helm.chart", manifest))
