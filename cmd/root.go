@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/docker/lunchbox/internal"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -12,6 +14,12 @@ var rootCmd = &cobra.Command{
 	Short:        "Docker App Packages",
 	Long:         "",
 	SilenceUsage: true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if internal.Debug {
+			log.SetLevel(log.DebugLevel)
+		}
+		return nil
+	},
 }
 
 func firstOrEmpty(list []string) string {
@@ -31,6 +39,8 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+
+	rootCmd.PersistentFlags().BoolVar(&internal.Debug, "debug", false, "Enable debug mode")
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,

@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/docker/lunchbox/internal"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +11,7 @@ var buildCmd = &cobra.Command{
 	Use:   "build <app-name>",
 	Short: "Compile an app package from locally available data",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("build called")
+		log.Info("build called")
 	},
 }
 

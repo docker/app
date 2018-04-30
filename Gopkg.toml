@@ -38,6 +38,10 @@
   name = "github.com/gotestyourself/gotestyourself"
   branch = "master"
 
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "v1.0.5"
+
 [[override]]
   name = "k8s.io/kubernetes"
   revision = "v1.8.2"

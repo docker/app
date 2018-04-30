@@ -3,7 +3,6 @@ package packager
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"github.com/docker/lunchbox/types"
 	"github.com/docker/lunchbox/utils"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -49,7 +49,7 @@ func Init(name string, composeFile string) error {
 }
 
 func initFromScratch(name string) error {
-	log.Println("init from scratch")
+	log.Debug("init from scratch")
 	composeData, err := composeFileFromScratch()
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func extractVariables(composeRaw string) ([]string, error) {
 }
 
 func initFromComposeFile(name string, composeFile string) error {
-	log.Println("init from compose")
+	log.Debug("init from compose")
 
 	dirName := utils.DirNameFromAppName(name)
 	composeRaw, err := ioutil.ReadFile(composeFile)
