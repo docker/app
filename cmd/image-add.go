@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/docker/lunchbox/image"
@@ -19,8 +18,7 @@ var imageAddCmd = &cobra.Command{
 		for _, v := range imageAddEnv {
 			kv := strings.SplitN(v, "=", 2)
 			if len(kv) != 2 {
-				fmt.Printf("Malformed env input: '%s'\n", v)
-				os.Exit(1)
+				return fmt.Errorf("Malformed env input: '%s'", v)
 			}
 			d[kv[0]] = kv[1]
 		}
