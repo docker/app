@@ -20,7 +20,7 @@ type options struct {
 }
 
 // flatten flattens a structure: foo.bar.baz -> 'foo.bar.baz'
-func flatten(in map[string]interface{}, out map[string]interface{}, prefix string) {
+func flatten(in map[string]interface{}, out map[string]string, prefix string) {
 	for k, v := range in {
 		switch vv := v.(type) {
 		case string:
@@ -34,7 +34,7 @@ func flatten(in map[string]interface{}, out map[string]interface{}, prefix strin
 			}
 			out[prefix+k] = strings.Join(values, " ")
 		default:
-			out[prefix+k] = v
+			out[prefix+k] = fmt.Sprintf("%v", v)
 		}
 	}
 }
@@ -196,23 +196,21 @@ func evalSub(comps []string, i int) (int64, int, error) {
 }
 
 // resolves an arithmetic expression
-func evalExpr(expr string) (int64, error) {
+func evalExpr(expr string) (string, error) {
 	comps, err := tokenize(expr)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	v, _, err := evalSub(comps, 0)
-	return v, err
+	return fmt.Sprintf("%v", v), err
 }
 
 // resolves and evaluate all ${foo.bar}, $foo.bar and $(expr) in epr
-func eval(expr string, flattened map[string]interface{}, o options) (interface{}, error) {
+func eval(expr string, flattened map[string]string, o options) (string, error) {
 	// Since we go from right to left to support nesting, handling $$ escape is
 	// painful, so just hide them and restore them at the end
 	expr = strings.Replace(expr, "$$", "\x00", -1)
 	end := len(expr)
-	// If evaluation resolves to a single value, return the type value, not a string
-	var bypass interface{}
 	iteration := 0
 	for {
 		iteration++
@@ -223,12 +221,11 @@ func eval(expr string, flattened map[string]interface{}, o options) (interface{}
 		if i == -1 {
 			break
 		}
-		bypass = nil
 		comp, err := extract(expr[i+1:])
 		if err != nil {
 			return "", err
 		}
-		var val interface{}
+		var val string
 		if len(comp) != 0 && comp[0] == '(' {
 			var err error
 			val, err = evalExpr(comp[1 : len(comp)-1])
@@ -247,7 +244,7 @@ func eval(expr string, flattened map[string]interface{}, o options) (interface{}
 					}
 					variable := content[0:q]
 					val, ok = flattened[variable]
-					if isTrue(fmt.Sprintf("%v", val)) {
+					if isTrue(val) {
 						val = content[q+1 : s]
 					} else {
 						val = content[s+1:]
@@ -265,15 +262,8 @@ func eval(expr string, flattened map[string]interface{}, o options) (interface{}
 				fmt.Fprintf(os.Stderr, "variable '%s' not set, expanding to empty string", comp)
 			}
 		}
-		valstr := fmt.Sprintf("%v", val)
-		expr = expr[0:i] + valstr + expr[i+1+len(comp):]
-		if strings.Trim(expr, " ") == valstr {
-			bypass = val
-		}
+		expr = expr[0:i] + val + expr[i+1+len(comp):]
 		end = len(expr)
-	}
-	if bypass != nil {
-		return bypass, nil
 	}
 	expr = strings.Replace(expr, "\x00", "$", -1)
 	return expr, nil
@@ -289,7 +279,7 @@ func isTrue(cond string) bool {
 	return (cond != "" && cond != "false" && cond != "0") != reverse
 }
 
-func recurseList(input []interface{}, settings map[string]interface{}, flattened map[string]interface{}, o options) ([]interface{}, error) {
+func recurseList(input []interface{}, settings map[string]interface{}, flattened map[string]string, o options) ([]interface{}, error) {
 	var res []interface{}
 	for _, v := range input {
 		switch vv := v.(type) {
@@ -310,20 +300,18 @@ func recurseList(input []interface{}, settings map[string]interface{}, flattened
 			if err != nil {
 				return nil, err
 			}
-			if vvvs, ok := vvv.(string); ok {
-				trimed := strings.TrimLeft(vvvs, " ")
-				if strings.HasPrefix(trimed, "@if") {
-					be := strings.Index(trimed, "(")
-					ee := strings.Index(trimed, ")")
-					if be == -1 || ee == -1 || be > ee {
-						return nil, fmt.Errorf("parse error looking for if condition in '%s'", vvv)
-					}
-					cond := trimed[be+1 : ee]
-					if isTrue(cond) {
-						res = append(res, strings.Trim(trimed[ee+1:], " "))
-					}
-					continue
+			trimed := strings.TrimLeft(vvv, " ")
+			if strings.HasPrefix(trimed, "@if") {
+				be := strings.Index(trimed, "(")
+				ee := strings.Index(trimed, ")")
+				if be == -1 || ee == -1 || be > ee {
+					return nil, fmt.Errorf("parse error looking for if condition in '%s'", vvv)
 				}
+				cond := trimed[be+1 : ee]
+				if isTrue(cond) {
+					res = append(res, strings.Trim(trimed[ee+1:], " "))
+				}
+				continue
 			}
 			res = append(res, vvv)
 		default:
@@ -333,7 +321,7 @@ func recurseList(input []interface{}, settings map[string]interface{}, flattened
 	return res, nil
 }
 
-func recurse(input map[interface{}]interface{}, settings map[string]interface{}, flattened map[string]interface{}, o options) (map[interface{}]interface{}, error) {
+func recurse(input map[interface{}]interface{}, settings map[string]interface{}, flattened map[string]string, o options) (map[interface{}]interface{}, error) {
 	res := make(map[interface{}]interface{})
 	for k, v := range input {
 		rk := k
@@ -388,13 +376,9 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 				}
 				comps := strings.SplitN(trimed, " ", 4)
 				varname := comps[1]
-				varrangeraw, err := eval(comps[3], flattened, o)
+				varrange, err := eval(comps[3], flattened, o)
 				if err != nil {
 					return nil, err
-				}
-				varrange, ok := varrangeraw.(string)
-				if !ok {
-					return nil, fmt.Errorf("@for argument must be a string")
 				}
 				mayberange := strings.Split(varrange, "..")
 				if len(mayberange) == 2 {
@@ -441,7 +425,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 				if !ok {
 					return nil, fmt.Errorf("@if value must be a mapping")
 				}
-				if isTrue(fmt.Sprintf("%v", cond)) {
+				if isTrue(cond) {
 					val, err := recurse(mii, settings, flattened, o)
 					if err != nil {
 						return nil, err
@@ -533,7 +517,7 @@ func Process(inputString string, settings map[string]interface{}, opts ...string
 	if err != nil {
 		return nil, err
 	}
-	flattened := make(map[string]interface{})
+	flattened := make(map[string]string)
 	flatten(settings, flattened, "")
 	return recurse(input, settings, flattened, o)
 }

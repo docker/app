@@ -493,6 +493,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/wadey/gocovmerge"
+  packages = ["."]
+  revision = "b5bfa59ec0adc420475f97f89b58045c721d761c"
+
+[[projects]]
+  branch = "master"
   name = "github.com/xeipuuv/gojsonpointer"
   packages = ["."]
   revision = "4e3ac2762d5f479393488629ee9370b50873b3a6"
@@ -573,6 +579,11 @@
   name = "golang.org/x/time"
   packages = ["rate"]
   revision = "fbb02b2291d28baffd63558aa44b4b56f178d650"
+
+[[projects]]
+  name = "golang.org/x/tools"
+  packages = ["cover"]
+  revision = "5c8013c5617234a9515f1b1379aba7e03e846479"
 
 [[projects]]
   branch = "master"
@@ -771,6 +782,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a4b9c982d2f79a4c3ba9232dd354bb8069819070233f81b6285697c0dff72e23"
+  inputs-digest = "7d50265f6c7fa2c559e6dd2f27991d2560779a24a2dc0b69af3d24e9b4ccb7c7"
   solver-name = "gps-cdcl"
   solver-version = 1
