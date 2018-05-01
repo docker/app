@@ -81,17 +81,21 @@ unit-test:
 	@echo "Running unit tests..."
 	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
 
-clean:
-	rm -Rf ./_build docker-app-*.tar.gz
-
 coverage-bin:
 	$(GO_TEST) -coverpkg="./..." -c -tags testrunmain -o _build/$(BIN_NAME).cov
+	go install ./vendor/github.com/wadey/gocovmerge/
 
 coverage: coverage-bin
+	@echo "Running e2e tests (coverage)..."
 	DOCKERAPP_BINARY=../codecoverage/coverage-bin $(GO_TEST) -v ./e2e
+	@echo "Running unit tests (coverage)..."
 	$(GO_TEST) -cover -test.coverprofile=codecoverage/unit.out $(shell go list ./... | grep -vE '/vendor/|/e2e')
 	gocovmerge codecoverage/*.out > codecoverage/all.out
 	go tool cover -func codecoverage/all.out
+	go tool cover -html codecoverage/all.out -o codecoverage/coverage.html
+
+clean:
+	rm -Rf ./_build docker-app-*.tar.gz codecoverage/*.out codecoverage/*.html
 
 ##########################
 # Continuous Integration #
@@ -116,5 +120,5 @@ ci-gradle-test:
 	  -e GRADLE_USER_HOME=/tmp/gradle \
 	  gradle:jdk8 bash -c "cd /gradle && gradle --stacktrace build && cd example && gradle renderIt"
 
-.PHONY: bin bin-all test check lint e2e-test e2e-all unit-test clean ci-lint ci-test ci-bin-all ci-e2e-all ci-gradle-test
+.PHONY: bin bin-all release test check lint test-cov e2e-test e2e-all unit-test coverage coverage-bin clean ci-lint ci-test ci-bin-all ci-e2e-all ci-gradle-test
 .DEFAULT: all
