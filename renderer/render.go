@@ -87,7 +87,7 @@ func applyRenderers(data []byte, renderers []string, settings map[string]interfa
 			}
 			data = yaml.Bytes()
 		case "yatee":
-			yateed, err := yatee.Process(string(data), settings)
+			yateed, err := yatee.Process(string(data), settings, yatee.OptionErrOnMissingKey)
 			if err != nil {
 				return nil, err
 			}

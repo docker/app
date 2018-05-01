@@ -3,11 +3,21 @@ package yatee
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
+
+const (
+	// OptionErrOnMissingKey if set will make rendering fail if a non-existing variable is used
+	OptionErrOnMissingKey = "ErrOnMissingKey"
+)
+
+type options struct {
+	errOnMissingKey bool
+}
 
 // flatten flattens a structure: foo.bar.baz -> 'foo.bar.baz'
 func flatten(in map[string]interface{}, out map[string]string, prefix string) {
@@ -196,7 +206,7 @@ func evalExpr(expr string) (string, error) {
 }
 
 // resolves and evaluate all ${foo.bar}, $foo.bar and $(expr) in epr
-func eval(expr string, flattened map[string]string) (string, error) {
+func eval(expr string, flattened map[string]string, o options) (string, error) {
 	// Since we go from right to left to support nesting, handling $$ escape is
 	// painful, so just hide them and restore them at the end
 	expr = strings.Replace(expr, "$$", "\x00", -1)
@@ -246,7 +256,10 @@ func eval(expr string, flattened map[string]string) (string, error) {
 				val, ok = flattened[comp]
 			}
 			if !ok {
-				fmt.Printf("variable '%s' not set, expanding to empty string", comp)
+				if o.errOnMissingKey {
+					return "", fmt.Errorf("variable '%s' not set", comp)
+				}
+				fmt.Fprintf(os.Stderr, "variable '%s' not set, expanding to empty string", comp)
 			}
 		}
 		expr = expr[0:i] + val + expr[i+1+len(comp):]
@@ -266,24 +279,24 @@ func isTrue(cond string) bool {
 	return (cond != "" && cond != "false" && cond != "0") != reverse
 }
 
-func recurseList(input []interface{}, settings map[string]interface{}, flattened map[string]string) ([]interface{}, error) {
+func recurseList(input []interface{}, settings map[string]interface{}, flattened map[string]string, o options) ([]interface{}, error) {
 	var res []interface{}
 	for _, v := range input {
 		switch vv := v.(type) {
 		case map[interface{}]interface{}:
-			newv, err := recurse(vv, settings, flattened)
+			newv, err := recurse(vv, settings, flattened, o)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, newv)
 		case []interface{}:
-			newv, err := recurseList(vv, settings, flattened)
+			newv, err := recurseList(vv, settings, flattened, o)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, newv)
 		case string:
-			vvv, err := eval(vv, flattened)
+			vvv, err := eval(vv, flattened, o)
 			if err != nil {
 				return nil, err
 			}
@@ -308,7 +321,7 @@ func recurseList(input []interface{}, settings map[string]interface{}, flattened
 	return res, nil
 }
 
-func recurse(input map[interface{}]interface{}, settings map[string]interface{}, flattened map[string]string) (map[interface{}]interface{}, error) {
+func recurse(input map[interface{}]interface{}, settings map[string]interface{}, flattened map[string]string, o options) (map[interface{}]interface{}, error) {
 	res := make(map[interface{}]interface{})
 	for k, v := range input {
 		rk := k
@@ -320,7 +333,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 				if !ok {
 					return nil, fmt.Errorf("@switch value must be a mapping")
 				}
-				key, err := eval(strings.TrimPrefix(trimed, "@switch "), flattened)
+				key, err := eval(strings.TrimPrefix(trimed, "@switch "), flattened, o)
 				if err != nil {
 					return nil, err
 				}
@@ -363,7 +376,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 				}
 				comps := strings.SplitN(trimed, " ", 4)
 				varname := comps[1]
-				varrange, err := eval(comps[3], flattened)
+				varrange, err := eval(comps[3], flattened, o)
 				if err != nil {
 					return nil, err
 				}
@@ -379,7 +392,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 					}
 					for i := rangestart; i < rangeend; i++ {
 						flattened[varname] = fmt.Sprintf("%v", i)
-						val, err := recurse(mii, settings, flattened)
+						val, err := recurse(mii, settings, flattened, o)
 						if err != nil {
 							return nil, err
 						}
@@ -392,7 +405,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 					rangevalues := strings.Split(varrange, " ")
 					for _, i := range rangevalues {
 						flattened[varname] = i
-						val, err := recurse(mii, settings, flattened)
+						val, err := recurse(mii, settings, flattened, o)
 						if err != nil {
 							return nil, err
 						}
@@ -404,7 +417,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 				continue
 			}
 			if strings.HasPrefix(trimed, "@if ") {
-				cond, err := eval(strings.TrimPrefix(trimed, "@if "), flattened)
+				cond, err := eval(strings.TrimPrefix(trimed, "@if "), flattened, o)
 				if err != nil {
 					return nil, err
 				}
@@ -413,7 +426,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 					return nil, fmt.Errorf("@if value must be a mapping")
 				}
 				if isTrue(cond) {
-					val, err := recurse(mii, settings, flattened)
+					val, err := recurse(mii, settings, flattened, o)
 					if err != nil {
 						return nil, err
 					}
@@ -436,7 +449,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 				}
 				continue
 			}
-			rstr, err := eval(kstr, flattened)
+			rstr, err := eval(kstr, flattened, o)
 			if err != nil {
 				return nil, err
 			}
@@ -444,19 +457,19 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 		}
 		switch vv := v.(type) {
 		case map[interface{}]interface{}:
-			newv, err := recurse(vv, settings, flattened)
+			newv, err := recurse(vv, settings, flattened, o)
 			if err != nil {
 				return nil, err
 			}
 			res[rk] = newv
 		case []interface{}:
-			newv, err := recurseList(vv, settings, flattened)
+			newv, err := recurseList(vv, settings, flattened, o)
 			if err != nil {
 				return nil, err
 			}
 			res[rk] = newv
 		case string:
-			vvv, err := eval(vv, flattened)
+			vvv, err := eval(vv, flattened, o)
 			if err != nil {
 				return nil, err
 			}
@@ -489,7 +502,16 @@ func ProcessStrings(input, settings string) (string, error) {
 }
 
 // Process resolves input templated yaml using values given in settings
-func Process(inputString string, settings map[string]interface{}) (map[interface{}]interface{}, error) {
+func Process(inputString string, settings map[string]interface{}, opts ...string) (map[interface{}]interface{}, error) {
+	var o options
+	for _, v := range opts {
+		switch v {
+		case OptionErrOnMissingKey:
+			o.errOnMissingKey = true
+		default:
+			return nil, fmt.Errorf("unknown option '%s'", v)
+		}
+	}
 	input := make(map[interface{}]interface{})
 	err := yaml.Unmarshal([]byte(inputString), input)
 	if err != nil {
@@ -497,5 +519,5 @@ func Process(inputString string, settings map[string]interface{}) (map[interface
 	}
 	flattened := make(map[string]string)
 	flatten(settings, flattened, "")
-	return recurse(input, settings, flattened)
+	return recurse(input, settings, flattened, o)
 }
