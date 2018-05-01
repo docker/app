@@ -1,26 +1,161 @@
-# app package
+# Docker Application Packages
+
+An *experimental* utility to help make Compose files more reusable and sharable.
+
+
+## The problem application packages solve
+
+Compose files do a great job of describing a set of related services. Not only are Compose files easy to write, they are generally easy to read as well. However, a couple of problems often emerge:
+
+1. You have several environments where you want to deploy the application, with small configuration differences
+2. You have lots of similar applications
+
+Fundamentally, Compose files are not easy to share between concerns. Docker Application Packages aim to solve these problems and make Compose more useful for development _and_ production.
+
+## Looking at an example
+
+Let's take the following Compose file. It launches an HTTP server which prints the specified text when hit on the configured port.
+
+```yaml
+version: '3.2'
+services:
+  hello:
+    image: hashicorp/http-echo
+    command: ["-text", "hello world"]
+    ports:
+      - 5678:5678
+```
+
+With `docker-app` installed let's create an Application Package based on this Compose file:
+
+```bash
+$ docker-app init hello
+$ ls
+docker-compose.yml
+hello.dockerapp
+```
+
+We created a few files in the `.dockerapp` folder. Let's edit the `hello.dockerapp/settings.yml` and add the following default values for our application:
+
+```yaml
+port: 5678
+text: hello development
+version: latest
+```
+
+Then modify the Compose file in the `.dockerapp` folder, adding in the variables. 
+
+```yaml
+version: '3.2'
+services:
+  hello:
+    image: hashicorp/http-echo:${version}
+    command: ["-text", "${text}"]
+    ports:
+      - ${port}:5678
+```
+
+Finally you can test everything is working, by rendering the Compose file with the provided default values.
 
 ```
-$ lunchbox
+$ docker-app render
+version: "3.2"
+services:
+  hello:
+    command:
+    - -text
+    - hello development
+    image: hashicorp/http-echo:latest
+    ports:
+    - mode: ingress
+      target: 5678
+      published: 5678
+      protocol: tcp
+```
+
+You can then use that Compose file like any other. You could save it to disk or pipe it straight to `docker stack` or `docker-compose` to launch the application.
+
+```
+$ docker-app render | docker-compose -f - up
+```
+
+This is where it gets interesting. We can override those settings at runtime, using the `--set` option. Let's specify different option and run `render` again:
+
+```
+$ docker-app render --set version=0.2.3 --set port=4567 --set text="hello production"
+version: "3.2"
+services:
+  hello:
+    command:
+    - -text
+    - hello production
+    image: hashicorp/http-echo:0.2.3
+    ports:
+    - mode: ingress
+      target: 5678
+      published: 4567
+      protocol: tcp
+```
+
+If you prefer you can create a standalone configuration file to store those settings. Let's create `prod.yml` with the following contents:
+
+```yaml
+version: 0.2.3
+text: hello production
+port: 4567
+```
+
+You can then run using that configuration file like so:
+
+```
+$ docker-app render -f prod.yml
+```
+
+
+## Integrating with Helm
+
+`docker-app` comes with a few other helpful commands as well, in particular the ability to create Helm Charts from your Docker Applications. This can be useful if you're adopting Kubernetes, and standardising on Helm to manage the lifecycle of your application components, but want to maintain the simplicity of Compose when writing you applications. This also makes it easy to run the same applications locally just using Docker, if you don't want to be running a full Kubernetes cluster.
+
+```
+$ docker-app helm
+```
+
+This will create a folder, `<my-applcation-name>.chart`, in the current directory. The folder contains the required `Chart.yaml` file and templates describing the `stack` Kubernetes object based on the Compose file in your application.
+
+_Note that this requires the Compose Kubernetes controller available in Docker for Windows and Docker for Mac, and in Docker Enterprise Edition._
+
+
+## Next steps
+
+We have lots of ideas for making Compose-based applications easier to share and reuse, and making applications a first-class part of the Docker toolchain. Please let us know what you think about this initial release and about any of the ideas below:
+
+* Saving Docker applications as Docker images, including sharing them on Docker Hub
+* Introducing environments to the settings file
+* Docker images which launch the application when run
+* Built-in commands for running applications
+* Saving required images into the application artifact to support offline installation
+* Automatically validating Compose files against the schema for the specified version
+* Signing applications with notary
+
+
+## Usage
+
+`docker-app` is currently available only as source code for you to build yourself, binaries will be published soon. If the experiment proves successful we'll move this functionality into the main Docker CLI.
+
+```
+$ docker-app
 Docker App Packages
 
 Usage:
   docker-app [command]
 
 Available Commands:
-  build       Compile an app package from locally available data
-  deploy      Deploy the specified app on the connected cluster
   helm        Render the Compose file for this app as an Helm package
   help        Help about any command
   init        Initialize an app package in the current working directory
   inspect     Retrieve metadata for a given app package
-  load        Load an app from docker
-  pack        Pack this app as a single file
-  pull        Pull an app from a registry
-  push        Push the application to a registry
   render      Render the Compose file for this app
-  save        Save the application to docker (in preparation for push)
-  unpack      Unpack the app to expose the content
+  version     Print version information
 
 Flags:
   -h, --help   help for docker-app
