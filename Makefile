@@ -84,6 +84,15 @@ unit-test:
 clean:
 	rm -Rf ./_build docker-app-*.tar.gz
 
+coverage-bin:
+	$(GO_TEST) -coverpkg="./..." -c -tags testrunmain -o _build/$(BIN_NAME).cov
+
+coverage: coverage-bin
+	DOCKERAPP_BINARY=../codecoverage/coverage-bin $(GO_TEST) -v ./e2e
+	$(GO_TEST) -cover -test.coverprofile=codecoverage/unit.out $(shell go list ./... | grep -vE '/vendor/|/e2e')
+	gocovmerge codecoverage/*.out > codecoverage/all.out
+	go tool cover -func codecoverage/all.out
+
 ##########################
 # Continuous Integration #
 ##########################

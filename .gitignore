@@ -1,4 +1,5 @@
 *.tar.gz
 *.dockerapp
 _build/
+codecoverage/*.out
 !examples/simple/*.dockerapp

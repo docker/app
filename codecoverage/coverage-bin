@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# This script is a proxy that injects the required test flags and strips out test output
+# It allows us to use a coverage-enabled binary for e2e tests
+
+../_build/docker-app.cov $* -test.v -test.coverprofile=../codecoverage/e2e.out | \
+grep -vE '^PASS$' | grep -vE '^coverage: [0-9]+\.[0-9]+% of statements in .+$' | grep -v '^=== RUN   TestRunMain$'
