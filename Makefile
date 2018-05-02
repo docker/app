@@ -82,20 +82,21 @@ unit-test:
 	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
 
 coverage-bin:
-	$(GO_TEST) -coverpkg="./..." -c -tags testrunmain -o _build/$(BIN_NAME).cov
+	$(GO_TEST) -coverpkg="./..." -c -ldflags=$(LDFLAGS) -tags testrunmain -o _build/$(BIN_NAME).cov
 	go install ./vendor/github.com/wadey/gocovmerge/
 
 coverage: coverage-bin
+	mkdir -p _build/cov
 	@echo "Running e2e tests (coverage)..."
-	DOCKERAPP_BINARY=../codecoverage/coverage-bin $(GO_TEST) -v ./e2e
+	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
 	@echo "Running unit tests (coverage)..."
-	$(GO_TEST) -cover -test.coverprofile=codecoverage/unit.out $(shell go list ./... | grep -vE '/vendor/|/e2e')
-	gocovmerge codecoverage/*.out > codecoverage/all.out
-	go tool cover -func codecoverage/all.out
-	go tool cover -html codecoverage/all.out -o codecoverage/coverage.html
+	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/vendor/|/e2e')
+	gocovmerge _build/cov/*.out > _build/cov/all.out
+	go tool cover -func _build/cov/all.out
+	go tool cover -html _build/cov/all.out -o _build/cov/coverage.html
 
 clean:
-	rm -Rf ./_build docker-app-*.tar.gz codecoverage/*.out codecoverage/*.html
+	rm -Rf ./_build docker-app-*.tar.gz
 
 ##########################
 # Continuous Integration #
