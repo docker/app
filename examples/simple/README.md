@@ -136,13 +136,22 @@ services:
 
 ```yaml
 # docker-app inspect simple
-version: 0.1.0
-name: simple
-description: ""
-author: sakuya.izayoi
-targets:
-  swarm: true
-  kubernetes: true
+simple 0.1.0
+Maintained by: sakuya.izayoi <sizayoi@sdmansion.jp>
+
+
+
+Setting                  Default
+-------                  -------
+mysql.user.password      wordpress
+mysql.rootpass           axx[<^cz3d.fPb
+mysql.database           wordpressdata
+mysql.user.name          wordpress
+volumes.db_data.name     db_data
+debug                    true
+mysql.image.version      8
+wordpress.scale.mode     global
+wordpress.scale.replicas 0
 ```
 
 ### Generate helm package

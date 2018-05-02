@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/docker/lunchbox/packager"
@@ -39,8 +40,14 @@ func Inspect(appname string) error {
 	if err != nil {
 		return err
 	}
+	// build maintainers string
+	maintainers := ""
+	for _, m := range meta.Maintainers {
+		maintainers += m.Name + " <" + m.Email + ">, "
+	}
+	maintainers = strings.TrimSuffix(maintainers, ", ")
 	fmt.Printf("%s %s\n", meta.Name, meta.Version)
-	fmt.Printf("Maintained by: %s\n", meta.Author)
+	fmt.Printf("Maintained by: %s\n", maintainers)
 	fmt.Println("")
 	fmt.Printf("%s\n", meta.Description)
 	fmt.Println("")

@@ -1,11 +1,17 @@
 package types
 
+// Maintainer represents one of the apps's maintainers
+type Maintainer struct {
+	Name  string
+	Email string
+}
+
 // AppMetadata is the format of the data found inside the metadata.yml file
 type AppMetadata struct {
 	Version     string
 	Name        string
 	Description string
-	Author      string
+	Maintainers []Maintainer
 	Targets     ApplicationTarget
 }
 
