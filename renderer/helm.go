@@ -1,13 +1,18 @@
 package renderer
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
-	conversion "github.com/docker/cli/cli/command/stack/kubernetes"
-	"github.com/docker/cli/kubernetes/compose/v1beta2"
+	"github.com/docker/lunchbox/templateconversion"
+	"github.com/docker/lunchbox/templatev1beta2"
+	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/lunchbox/packager"
+	"github.com/docker/lunchbox/templateloader"
 	"github.com/docker/lunchbox/types"
 	"github.com/docker/lunchbox/utils"
 	yaml "gopkg.in/yaml.v2"
@@ -40,6 +45,83 @@ func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
 	return res, nil
 }
 
+// toGoTemplate converts $foo and ${foo} into {{.foo}}
+func toGoTemplate(template string) (string, error) {
+	start := template
+	re := regexp.MustCompile(`(^|[^$])\${?([a-zA-Z0-9_.]+)}?`)
+	template = re.ReplaceAllString(template, "$1{{.$2}}")
+	template = strings.Replace(template, "$$", "$", -1)
+	fmt.Printf("%s -> %s\n", start, template)
+	return template, nil
+}
+
+func convertTemplatesList(list []interface{}) error {
+	for i, v := range list {
+		switch vv := v.(type) {
+			case string:
+				vv, err := toGoTemplate(vv)
+				if err != nil {
+					return err
+				}
+				list[i] = vv
+			case map[interface{}]interface{}:
+				err := convertTemplates(vv)
+				if err != nil {
+					return err
+				}
+			case []interface{}:
+				convertTemplatesList(vv)
+		}
+	}
+	return nil
+}
+
+// convertTemplates replaces $foo with {{ .foo }}, and resolves template_ keys
+func convertTemplates(dict map[interface{}]interface{}) error {
+	for k, v := range dict {
+		kk := k.(string)
+		if strings.HasPrefix(kk, "template_") {
+			dk := strings.TrimPrefix(kk, "template_")
+			vd, ok := v.(map[interface{}]interface{})
+			if !ok {
+				return fmt.Errorf("Expected a map, got %T", v)
+			}
+			template, ok := vd["valuetemplate"]
+			if ok {
+				var err error
+				template, err = toGoTemplate(template.(string))
+				if err != nil {
+					return err
+				}
+			} else {
+				template = vd["value"]
+			}
+			delete(dict, k)
+			dict[dk] = template
+		} else {
+			switch vv := v.(type) {
+			case string:
+				vv, err := toGoTemplate(vv)
+				if err != nil {
+					return err
+				}
+				dict[k] = vv
+			case map[interface{}]interface{}:
+				err := convertTemplates(vv)
+				if err != nil {
+					return err
+				}
+			case []interface{}:
+				err := convertTemplatesList(vv)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // Helm renders an app as an Helm Chart
 func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string) error {
 	appname, cleanup, err := packager.Extract(appname)
@@ -47,7 +129,13 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 		return err
 	}
 	defer cleanup()
-	rendered, err := Render(appname, composeFiles, settingsFile, env)
+	data, err := ioutil.ReadFile(filepath.Join(appname, "docker-compose.yml"))
+	if err != nil {
+		return err
+	}
+	parsed, err := loader.ParseYAML(data)
+	rendered, err := templateloader.LoadTemplate(parsed)
+	//rendered, err := Render(appname, composeFiles, settingsFile, env)
 	if err != nil {
 		return err
 	}
@@ -89,7 +177,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 		return err
 	}
 	os.Mkdir(filepath.Join(targetDir, "templates"), 0755)
-	stackSpec := conversion.FromComposeConfig(rendered)
+	stackSpec := templateconversion.FromComposeConfig(rendered)
 	stack := v1beta2.Stack{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "stacks.compose.docker.com",
@@ -105,6 +193,16 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
+	preStack := make(map[interface{}]interface{})
+	err = yaml.Unmarshal(stackData, preStack)
+	if err != nil {
+		return err
+	}
+	err = convertTemplates(preStack)
+	if err != nil {
+		return err
+	}
+	stackData, err = yaml.Marshal(preStack)
 	err = ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 	return err
 }
