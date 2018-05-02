@@ -16,9 +16,11 @@ var (
 // FullVersion returns a string of version information.
 func FullVersion() string {
 	res := []string{
-		fmt.Sprintf("Version:    %s", Version),
-		fmt.Sprintf("Git commit: %s", GitCommit),
-		fmt.Sprintf("OS/Arch:    %s/%s", runtime.GOOS, runtime.GOARCH),
+		fmt.Sprintf("Version:      %s", Version),
+		fmt.Sprintf("Git commit:   %s", GitCommit),
+		fmt.Sprintf("OS/Arch:      %s/%s", runtime.GOOS, runtime.GOARCH),
+		fmt.Sprintf("Experimental: %s", Experimental),
+		fmt.Sprintf("Renderers:    %s", Renderers),
 	}
 	return strings.Join(res, "\n")
 }
