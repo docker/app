@@ -37,7 +37,6 @@ func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
 
 // Helm renders an app as an Helm Chart
 func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string) error {
-	oAppname := appname
 	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
 		return err
@@ -57,7 +56,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	targetDir := utils.AppNameFromDir(oAppname) + ".chart"
+	targetDir := utils.AppNameFromDir(appname) + ".chart"
 	os.Mkdir(targetDir, 0755)
 	hmeta, err := toHelmMeta(&meta)
 	if err != nil {
