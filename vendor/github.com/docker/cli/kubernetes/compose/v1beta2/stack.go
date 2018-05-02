@@ -17,8 +17,8 @@ type StackList struct {
 
 // Stack is v1beta2's representation of a Stack
 type Stack struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 
 	Spec   *StackSpec   `json:"spec,omitempty"`
 	Status *StackStatus `json:"status,omitempty"`
