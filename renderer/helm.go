@@ -27,12 +27,17 @@ type helmMeta struct {
 }
 
 func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
-	return &helmMeta{
+	res := &helmMeta{
 		Name:        meta.Name,
 		Version:     meta.Version,
 		Description: meta.Description,
-		Maintainers: []helmMaintainer{{Name: meta.Author}},
-	}, nil
+	}
+	for _, m := range meta.Maintainers {
+		res.Maintainers = append(res.Maintainers,
+			helmMaintainer{Name: m.Name + " <" + m.Email + ">"},
+		)
+	}
+	return res, nil
 }
 
 // Helm renders an app as an Helm Chart

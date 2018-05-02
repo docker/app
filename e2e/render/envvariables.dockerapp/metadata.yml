@@ -1,7 +1,9 @@
 version: 0.1.0
 name: myapp
 description: ""
-author: bearclaw
+maintainers:
+  - name: bearclaw
+    email: bearclaw@bearclaw.bearclaw
 targets:
   swarm: true
   kubernetes: true
