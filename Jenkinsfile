@@ -34,7 +34,7 @@ pipeline {
                                 archiveArtifacts '*.tar.gz'
                             }
                         } finally {
-                            def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm/
+                            def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm -f/
                             sh clean_images
                         }
                     }
@@ -48,6 +48,20 @@ pipeline {
         }
         stage('Test') {
             parallel {
+                stage("Coverage report") {
+                    agent {
+                        label 'gcp-linux-worker-0'
+                    }
+                    steps {
+                        dir('src/github.com/docker/lunchbox') {
+                            sh 'ls -la'
+                            sh 'make ci-coverage'
+                            archiveArtifacts 'cov/all.out'
+                            archiveArtifacts 'cov/coverage.html'
+                            sh 'curl -s https://codecov.io/bash | bash -s - -t 0b5323a7-aa90-4855-95ad-c859a917d611 -f cov/all.out -C'
+                        }
+                    }
+                }
                 stage("Test Linux") {
                     agent {
                         label 'linux'

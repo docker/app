@@ -102,6 +102,8 @@ clean:
 # Continuous Integration #
 ##########################
 
+COV_LABEL := com.docker.lunchbox.cov-run=$(TAG)
+
 ci-lint:
 	@echo "Linting..."
 	docker build -t $(IMAGE_NAME)-lint:$(TAG) $(IMAGE_BUILD_ARGS) -f Dockerfile.lint . --target=lint-image
@@ -110,6 +112,11 @@ ci-lint:
 ci-test:
 	@echo "Testing..."
 	docker build -t $(IMAGE_NAME)-test:$(TAG) $(IMAGE_BUILD_ARGS) . --target=test
+
+ci-coverage:
+	docker build --target=build -t $(IMAGE_NAME)-cov:$(TAG) $(IMAGE_BUILD_ARGS) .
+	docker run --label $(COV_LABEL) $(IMAGE_NAME)-cov:$(TAG) make COMMIT=$(TAG) TAG=$(COMMIT) coverage
+	docker cp $$(docker ps -aql --filter label=$(COV_LABEL)):$(PKG_PATH)/_build/cov/ ./cov
 
 ci-bin-all:
 	docker build -t $(IMAGE_NAME)-bin-all:$(TAG) $(IMAGE_BUILD_ARGS) . --target=bin-build
@@ -121,5 +128,5 @@ ci-gradle-test:
 	  -e GRADLE_USER_HOME=/tmp/gradle \
 	  gradle:jdk8 bash -c "cd /gradle && gradle --stacktrace build && cd example && gradle renderIt"
 
-.PHONY: bin bin-all release test check lint test-cov e2e-test e2e-all unit-test coverage coverage-bin clean ci-lint ci-test ci-bin-all ci-e2e-all ci-gradle-test
+.PHONY: bin bin-all release test check lint test-cov e2e-test e2e-all unit-test coverage coverage-bin clean ci-lint ci-test ci-coverage ci-bin-all ci-e2e-all ci-gradle-test
 .DEFAULT: all
