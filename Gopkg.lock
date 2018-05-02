@@ -84,7 +84,7 @@
     "opts",
     "templates"
   ]
-  revision = "6ead14f56d8f631488970af56bafe306a2d3dbea"
+  revision = "280372ad173cf7481ea0f8b470510520b00286b4"
   source = "github.com/mnottale/cli"
 
 [[projects]]
