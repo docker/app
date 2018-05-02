@@ -17,6 +17,19 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+//flattenYAML reads a YAML file and return a flattened view
+func flattenYAML(content []byte) (map[string]string, error) {
+	in := make(map[interface{}]interface{})
+	if err := yaml.Unmarshal(content, in); err != nil {
+		return nil, err
+	}
+	out := make(map[string]interface{})
+	merge(out, in)
+	res := make(map[string]string)
+	flatten(out, res, "")
+	return res, nil
+}
+
 // flatten flattens a structure: foo.bar.baz -> foo_bar_baz
 func flatten(in map[string]interface{}, out map[string]string, prefix string) {
 	for k, v := range in {
