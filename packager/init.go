@@ -78,7 +78,7 @@ func parseEnv(env string, target map[string]string) {
 }
 
 func isAlNum(b byte) bool {
-	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '_'
+	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '_' || b == '.'
 }
 
 func extractString(data string, res *[]string) {
@@ -140,7 +140,8 @@ func extractRecurse(node map[interface{}]interface{}, res *[]string) error {
 	return nil
 }
 
-func extractVariables(composeRaw string) ([]string, error) {
+// ExtractVariables returns the list of variables used by given compose raw data
+func ExtractVariables(composeRaw string) ([]string, error) {
 	compose := make(map[interface{}]interface{})
 	err := yaml.Unmarshal([]byte(composeRaw), compose)
 	if err != nil {
@@ -164,7 +165,7 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err == nil {
 		parseEnv(string(envRaw), settings)
 	}
-	keys, err := extractVariables(string(composeRaw))
+	keys, err := ExtractVariables(string(composeRaw))
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}

@@ -67,8 +67,8 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 	}
 }
 
-// load a set of settings file and produce a property dictionary
-func loadSettings(files []string) (map[string]interface{}, error) {
+// LoadSettings load a set of settings file and produce a property dictionary
+func LoadSettings(files []string) (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
@@ -83,6 +83,27 @@ func loadSettings(files []string) (map[string]interface{}, error) {
 		merge(res, s)
 	}
 	return res, nil
+}
+
+// MergeSettings merge a flattened settings map into an expanded one
+func MergeSettings(settings map[string]interface{}, env map[string]string) error {
+	for k, v := range env {
+		ss := strings.Split(k, ".")
+		valroot := make(map[interface{}]interface{})
+		val := valroot
+		for _, s := range ss[:len(ss)-1] {
+			val[s] = make(map[interface{}]interface{})
+			val = val[s].(map[interface{}]interface{})
+		}
+		var converted interface{}
+		err := yaml.Unmarshal([]byte(v), &converted)
+		if err != nil {
+			return err
+		}
+		val[ss[len(ss)-1]] = converted
+		merge(settings, valroot)
+	}
+	return nil
 }
 
 func applyRenderers(data []byte, renderers []string, settings map[string]interface{}) ([]byte, error) {
@@ -135,7 +156,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	sf := []string{filepath.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
 	// load the settings into a struct
-	settings, err := loadSettings(sf)
+	settings, err := LoadSettings(sf)
 	if err != nil {
 		return nil, err
 	}
@@ -154,21 +175,9 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	metaPrefixed["app"] = meta
 	merge(settings, metaPrefixed)
 	// inject the user-provided env
-	for k, v := range env {
-		ss := strings.Split(k, ".")
-		valroot := make(map[interface{}]interface{})
-		val := valroot
-		for _, s := range ss[:len(ss)-1] {
-			val[s] = make(map[interface{}]interface{})
-			val = val[s].(map[interface{}]interface{})
-		}
-		var converted interface{}
-		err = yaml.Unmarshal([]byte(v), &converted)
-		if err != nil {
-			return nil, err
-		}
-		val[ss[len(ss)-1]] = converted
-		merge(settings, valroot)
+	err = MergeSettings(settings, env)
+	if err != nil {
+		return nil, err
 	}
 	// flatten settings for variable expension
 	finalEnv := make(map[string]string)

@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	conversion "github.com/docker/cli/cli/command/stack/kubernetes"
+	"github.com/docker/cli/kubernetes/compose/v1beta2"
 	"github.com/docker/lunchbox/templateconversion"
 	"github.com/docker/lunchbox/templatev1beta2"
 	"github.com/docker/cli/cli/compose/loader"
@@ -15,6 +17,7 @@ import (
 	"github.com/docker/lunchbox/templateloader"
 	"github.com/docker/lunchbox/types"
 	"github.com/docker/lunchbox/utils"
+	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,13 +48,46 @@ func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
 	return res, nil
 }
 
+func mergeValues(target map[interface{}]interface{}, source map[string]interface{}) {
+	for k, v := range source {
+		tv, ok := target[k]
+		if !ok {
+			target[k] = v
+			continue
+		}
+		switch tvv := tv.(type) {
+		case map[interface{}]interface{}:
+			mergeValues(tvv, v.(map[string]interface{}))
+		default:
+			target[k] = v
+		}
+	}
+}
+
+// remove from settings all stuff that is not in variables
+func filterVariables(settings map[string]interface{}, variables []string, prefix string) {
+	for k, v := range settings {
+		switch vv := v.(type) {
+		case map[string]interface{}:
+			filterVariables(vv, variables, prefix+k+".")
+			if len(vv) == 0 {
+				delete(settings, k)
+			}
+		default:
+			if !contains(variables, prefix+k) {
+				delete(settings, k)
+			}
+		}
+	}
+}
+
+
 // toGoTemplate converts $foo and ${foo} into {{.foo}}
 func toGoTemplate(template string) (string, error) {
-	start := template
 	re := regexp.MustCompile(`(^|[^$])\${?([a-zA-Z0-9_.]+)}?`)
 	template = re.ReplaceAllString(template, "$1{{.$2}}")
 	template = strings.Replace(template, "$$", "$", -1)
-	fmt.Printf("%s -> %s\n", start, template)
+	//fmt.Printf("%s -> %s\n", start, template)
 	return template, nil
 }
 
@@ -122,23 +158,7 @@ func convertTemplates(dict map[interface{}]interface{}) error {
 	return nil
 }
 
-// Helm renders an app as an Helm Chart
-func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string) error {
-	appname, cleanup, err := packager.Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-	data, err := ioutil.ReadFile(filepath.Join(appname, "docker-compose.yml"))
-	if err != nil {
-		return err
-	}
-	parsed, err := loader.ParseYAML(data)
-	rendered, err := templateloader.LoadTemplate(parsed)
-	//rendered, err := Render(appname, composeFiles, settingsFile, env)
-	if err != nil {
-		return err
-	}
+func makeChart(appname, targetDir string) error {
 	metaFile := filepath.Join(appname, "metadata.yml")
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
@@ -149,8 +169,6 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	targetDir := utils.AppNameFromDir(appname) + ".chart"
-	os.Mkdir(targetDir, 0755)
 	hmeta, err := toHelmMeta(&meta)
 	if err != nil {
 		return err
@@ -172,13 +190,65 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
+	return ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
+}
+
+func helmRender(appname string, targetDir string, composeFiles []string, settingsFile []string, env map[string]string) error {
+	rendered, err := Render(appname, composeFiles, settingsFile, env)
 	if err != nil {
 		return err
 	}
+	stackSpec := conversion.FromComposeConfig(rendered)
+	stack := v1beta2.Stack{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "stacks.compose.docker.com",
+			APIVersion: "v1beta2",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      utils.AppNameFromDir(appname),
+			Namespace: "default", // FIXME
+		},
+		Spec: stackSpec,
+	}
+	stackData, err := yaml.Marshal(stack)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
+}
+
+// Helm renders an app as an Helm Chart
+func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool) error {
+	appname, cleanup, err := packager.Extract(appname)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	targetDir := utils.AppNameFromDir(appname) + ".chart"
+	os.Mkdir(targetDir, 0755)
+	err = makeChart(appname, targetDir)
+	if err != nil {
+		return err
+	}
+	if render {
+		return helmRender(appname, targetDir, composeFiles, settingsFile, env)
+	}
+	data, err := ioutil.ReadFile(filepath.Join(appname, "docker-compose.yml"))
+	if err != nil {
+		return err
+	}
+	variables, err := packager.ExtractVariables(string(data))
+	if err != nil {
+		return errors.Wrap(err, "failed to parse docker-compose.yml, maybe because it is a template")
+	}
+	parsed, err := loader.ParseYAML(data)
+	rendered, err := templateloader.LoadTemplate(parsed)
+	if err != nil {
+		return errors.Wrap(err, "failed to load template compose")
+	}
 	os.Mkdir(filepath.Join(targetDir, "templates"), 0755)
 	stackSpec := templateconversion.FromComposeConfig(rendered)
-	stack := v1beta2.Stack{
+	stack := templatev1beta2.Stack{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "stacks.compose.docker.com",
 			APIVersion: "v1beta2",
@@ -204,5 +274,48 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	}
 	stackData, err = yaml.Marshal(preStack)
 	err = ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
-	return err
+	if err != nil {
+		return err
+	}
+	// merge our variables into Values.yaml
+	sf := []string { filepath.Join(appname, "settings.yml")}
+	sf = append(sf, settingsFile...)
+	settings, err := LoadSettings(sf)
+	if err != nil {
+		return err
+	}
+	metaFile := filepath.Join(appname, "metadata.yml")
+	meta := make(map[interface{}]interface{})
+	metaContent, err := ioutil.ReadFile(metaFile)
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal(metaContent, &meta)
+	if err != nil {
+		return  err
+	}
+	metaPrefixed := make(map[interface{}]interface{})
+	metaPrefixed["app"] = meta
+	merge(settings, metaPrefixed)
+	err = MergeSettings(settings, env)
+	if err != nil {
+		return err
+	}
+	
+	fmt.Printf("variables: %v\n", variables)
+	filterVariables(settings, variables, "")
+	// merge settings with existing values.yml
+	values := make(map[interface{}]interface{})
+	if valuesCur, err := ioutil.ReadFile(filepath.Join(targetDir, "values.yaml")); err == nil {
+		err = yaml.Unmarshal(valuesCur, values)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse existing values.yaml")
+		}
+	}
+	mergeValues(values, settings)
+	valuesRaw, err := yaml.Marshal(values)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filepath.Join(targetDir, "values.yaml"), valuesRaw, 0644)
 }
