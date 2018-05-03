@@ -60,9 +60,9 @@ pipeline {
                         dir('src/github.com/docker/lunchbox') {
                             checkout scm
                             sh 'make ci-coverage'
-                            archiveArtifacts 'cov/all.out'
-                            archiveArtifacts 'cov/coverage.html'
-                            sh 'curl -s https://codecov.io/bash | bash -s - -f cov/all.out -K'
+                            archiveArtifacts '_build/ci-cov/all.out'
+                            archiveArtifacts '_build/ci-cov/coverage.html'
+                            sh 'curl -s https://codecov.io/bash | bash -s - -f _build/ci-cov/all.out -K'
                         }
                     }
                 }

@@ -116,7 +116,7 @@ ci-test:
 ci-coverage:
 	docker build --target=build -t $(IMAGE_NAME)-cov:$(TAG) $(IMAGE_BUILD_ARGS) .
 	docker run --label $(COV_LABEL) $(IMAGE_NAME)-cov:$(TAG) make COMMIT=$(TAG) TAG=$(COMMIT) coverage
-	docker cp $$(docker ps -aql --filter label=$(COV_LABEL)):$(PKG_PATH)/_build/cov/ ./cov
+	mkdir -p ./_build && docker cp $$(docker ps -aql --filter label=$(COV_LABEL)):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 
 ci-bin-all:
 	docker build -t $(IMAGE_NAME)-bin-all:$(TAG) $(IMAGE_BUILD_ARGS) . --target=bin-build
