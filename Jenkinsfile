@@ -54,11 +54,12 @@ pipeline {
                     }
                     steps {
                         dir('src/github.com/docker/lunchbox') {
+                            checkout scm
                             sh 'ls -la'
                             sh 'make ci-coverage'
                             archiveArtifacts 'cov/all.out'
                             archiveArtifacts 'cov/coverage.html'
-                            sh 'curl -s https://codecov.io/bash | bash -s - -t 0b5323a7-aa90-4855-95ad-c859a917d611 -f cov/all.out -C'
+                            sh 'curl -s https://codecov.io/bash | bash -s - -t 0b5323a7-aa90-4855-95ad-c859a917d611 -f cov/all.out -K'
                         }
                     }
                 }
