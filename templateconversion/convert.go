@@ -229,7 +229,7 @@ func fromComposeResourcesResource(r *composeTypes.Resource) *v1beta2.Resource {
 		return nil
 	}
 	return &v1beta2.Resource{
-		MemoryBytes: int64(r.MemoryBytes),
+		MemoryBytes: r.MemoryBytes,
 		NanoCPUs:    r.NanoCPUs,
 	}
 }

@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/cli/compose/template"
@@ -307,7 +309,7 @@ func createTransformHook() mapstructure.DecodeHookFuncType {
 		reflect.TypeOf(types.StringList{}):                       transformStringList,
 		reflect.TypeOf(map[string]string{}):                      transformMapStringString,
 		reflect.TypeOf(types.UlimitsConfig{}):                    transformUlimits,
-		reflect.TypeOf(types.UnitBytes(0)):                       transformSize,
+		reflect.TypeOf(types.UnitBytesOrTemplate{}):              transformSize,
 		reflect.TypeOf([]types.ServicePortConfig{}):              transformServicePort,
 		reflect.TypeOf(types.ServiceSecretConfig{}):              transformStringSourceMap,
 		reflect.TypeOf(types.ServiceConfigObjConfig{}):           transformStringSourceMap,
@@ -320,6 +322,8 @@ func createTransformHook() mapstructure.DecodeHookFuncType {
 		reflect.TypeOf(types.ServiceVolumeConfig{}):              transformServiceVolumeConfig,
 		reflect.TypeOf(types.BuildConfig{}):                      transformBuildConfig,
 		reflect.TypeOf(types.BoolOrTemplate{}):                   transformBoolOrTemplate,
+		reflect.TypeOf(types.UInt64OrTemplate{}):                 transformUInt64OrTemplate,
+		reflect.TypeOf(types.DurationOrTemplate{}):               transformDurationOrTemplate,
 	}
 
 	return func(_ reflect.Type, target reflect.Type, data interface{}) (interface{}, error) {
@@ -839,18 +843,79 @@ func transformBoolOrTemplate(value interface{}) (interface{}, error) {
 	}
 }
 
+func transformUInt64OrTemplate(value interface{}) (interface{}, error) {
+	switch value := value.(type) {
+	case int:
+		v := uint64(value)
+		return types.UInt64OrTemplate{ Value: &v}, nil
+	case string:
+		v, err := strconv.ParseUint(value, 0, 64)
+		if err == nil {
+			return types.UInt64OrTemplate{ Value: &v}, nil
+		}
+		return types.UInt64OrTemplate{ ValueTemplate: value}, nil
+	default:
+		return value, errors.Errorf("invali type %T for boolean", value)
+	}
+}
+
+func transformDurationOrTemplate(value interface{}) (interface{}, error) {
+	switch value := value.(type) {
+	case int:
+		d := time.Duration(value)
+		return types.DurationOrTemplate { Value: &d}, nil
+	case string:
+		d, err := time.ParseDuration(value)
+		if err == nil {
+			return types.DurationOrTemplate { Value: &d}, nil
+		}
+		return types.DurationOrTemplate { ValueTemplate: value}, nil
+	default:
+		return nil, errors.Errorf("invalid type for duration %T", value)
+	}
+}
+
 func transformSize(value interface{}) (interface{}, error) {
 	switch value := value.(type) {
 	case int:
-		return int64(value), nil
+		return types.UnitBytesOrTemplate{Value: int64(value)}, nil
 	case string:
-		return units.RAMInBytes(value)
+		v, err := units.RAMInBytes(value)
+		if err == nil {
+			return types.UnitBytesOrTemplate{Value: int64(v)}, nil
+		}
+		return types.UnitBytesOrTemplate{ValueTemplate: value}, nil
 	}
-	panic(errors.Errorf("invalid type for size %T", value))
+	return nil, errors.Errorf("invalid type for size %T", value)
 }
 
 func toServicePortConfigs(value string) ([]interface{}, error) {
 	var portConfigs []interface{}
+	if strings.Contains(value, "$") {
+		// template detected
+		if strings.Contains(value, "-") {
+			return nil, fmt.Errorf("port range not supported with templated values")
+		}
+		portsProtocol := strings.Split(value, "/")
+		protocol := "tcp"
+		if len(portsProtocol) > 1 {
+			protocol = portsProtocol[1]
+		}
+		portPort := strings.Split(portsProtocol[0], ":")
+		tgt, _ := transformUInt64OrTemplate(portPort[0]) // can't fail on string
+		pub := types.UInt64OrTemplate{}
+		if len(portPort) > 1 {
+			ipub, _ := transformUInt64OrTemplate(portPort[1])
+			pub = ipub.(types.UInt64OrTemplate)
+		}
+		portConfigs = append(portConfigs, types.ServicePortConfig{
+				Protocol: protocol,
+				Target: tgt.(types.UInt64OrTemplate),
+				Published: pub,
+				Mode: "ingress",
+		})
+		return portConfigs, nil
+	}
 
 	ports, portBindings, err := nat.ParsePortSpecs([]string{value})
 	if err != nil {
@@ -870,10 +935,12 @@ func toServicePortConfigs(value string) ([]interface{}, error) {
 			return nil, err
 		}
 		for _, p := range portConfig {
+			tp := uint64(p.TargetPort)
+			pp := uint64(p.PublishedPort)
 			portConfigs = append(portConfigs, types.ServicePortConfig{
 				Protocol:  string(p.Protocol),
-				Target:    p.TargetPort,
-				Published: p.PublishedPort,
+				Target:    types.UInt64OrTemplate{Value: &tp},
+				Published: types.UInt64OrTemplate{Value: &pp},
 				Mode:      string(p.PublishMode),
 			})
 		}

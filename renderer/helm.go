@@ -9,18 +9,34 @@ import (
 	"strings"
 
 	conversion "github.com/docker/cli/cli/command/stack/kubernetes"
-	"github.com/docker/cli/kubernetes/compose/v1beta2"
-	"github.com/docker/lunchbox/templateconversion"
-	"github.com/docker/lunchbox/templatev1beta2"
 	"github.com/docker/cli/cli/compose/loader"
+	"github.com/docker/cli/kubernetes/compose/v1beta2"
 	"github.com/docker/lunchbox/packager"
+	"github.com/docker/lunchbox/templateconversion"
 	"github.com/docker/lunchbox/templateloader"
+	"github.com/docker/lunchbox/templatev1beta2"
 	"github.com/docker/lunchbox/types"
 	"github.com/docker/lunchbox/utils"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+/* Helm rendering with template preservation.
+
+We modify compose.Type (in templatetypes) by replacing all bool by BoolOrTemplate,
+all *uint64 with UInt64OrTemplate, etc.  so that we can store both a value or
+a templated string.
+We modify compose.Loader (in templateloader) to provide a new LoadTemplate that
+skips schema validation and variable interpolation. MapStructure hooks are
+provided for our *OrTemplate structs.
+We modify v1beta2 Stack and associated structures (in templatev1beta2) in sync
+with the changes in compose.Type, with the addition that all *OrTemplate structs
+are yaml-serialized with a name prefied by 'template_'.
+This package then invokes LoadTemplate, then templatev1beta2.convert, and
+post-process the serialized yaml to replace all 'template_'-prefixed keys
+with the appropriate content (value or template)
+*/
 
 type helmMaintainer struct {
 	Name string
@@ -81,7 +97,6 @@ func filterVariables(settings map[string]interface{}, variables []string, prefix
 	}
 }
 
-
 // toGoTemplate converts $foo and ${foo} into {{.foo}}
 func toGoTemplate(template string) (string, error) {
 	re := regexp.MustCompile(`(^|[^$])\${?([a-zA-Z0-9_.]+)}?`)
@@ -94,19 +109,19 @@ func toGoTemplate(template string) (string, error) {
 func convertTemplatesList(list []interface{}) error {
 	for i, v := range list {
 		switch vv := v.(type) {
-			case string:
-				vv, err := toGoTemplate(vv)
-				if err != nil {
-					return err
-				}
-				list[i] = vv
-			case map[interface{}]interface{}:
-				err := convertTemplates(vv)
-				if err != nil {
-					return err
-				}
-			case []interface{}:
-				convertTemplatesList(vv)
+		case string:
+			vv, err := toGoTemplate(vv)
+			if err != nil {
+				return err
+			}
+			list[i] = vv
+		case map[interface{}]interface{}:
+			err := convertTemplates(vv)
+			if err != nil {
+				return err
+			}
+		case []interface{}:
+			convertTemplatesList(vv)
 		}
 	}
 	return nil
@@ -242,6 +257,9 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 		return errors.Wrap(err, "failed to parse docker-compose.yml, maybe because it is a template")
 	}
 	parsed, err := loader.ParseYAML(data)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse template compose")
+	}
 	rendered, err := templateloader.LoadTemplate(parsed)
 	if err != nil {
 		return errors.Wrap(err, "failed to load template compose")
@@ -273,12 +291,15 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 		return err
 	}
 	stackData, err = yaml.Marshal(preStack)
+	if err != nil {
+		return err
+	}
 	err = ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 	if err != nil {
 		return err
 	}
 	// merge our variables into Values.yaml
-	sf := []string { filepath.Join(appname, "settings.yml")}
+	sf := []string{filepath.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
 	settings, err := LoadSettings(sf)
 	if err != nil {
@@ -292,7 +313,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	}
 	err = yaml.Unmarshal(metaContent, &meta)
 	if err != nil {
-		return  err
+		return err
 	}
 	metaPrefixed := make(map[interface{}]interface{})
 	metaPrefixed["app"] = meta
@@ -301,8 +322,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	
-	fmt.Printf("variables: %v\n", variables)
+
 	filterVariables(settings, variables, "")
 	// merge settings with existing values.yml
 	values := make(map[interface{}]interface{})

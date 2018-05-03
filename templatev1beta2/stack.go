@@ -1,8 +1,6 @@
 package templatev1beta2
 
 import (
-	"time"
-
 	types "github.com/docker/lunchbox/templatetypes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -87,12 +85,12 @@ type ServiceConfig struct {
 	Pid             string                   `yaml:"pid,omitempty"`
 	Ports           []ServicePortConfig      `yaml:"ports,omitempty"`
 	Privileged      types.BoolOrTemplate     `yaml:"template_privileged,omitempty" yaml:"template_privileged,omitempty"`
-	ReadOnly        bool                     `yaml:"read_only,omitempty"`
+	ReadOnly        types.BoolOrTemplate     `yaml:"template_read_only,omitempty"`
 	Secrets         []ServiceSecretConfig    `yaml:"secrets,omitempty"`
-	StdinOpen       bool                     `yaml:"stdin_open,omitempty"`
-	StopGracePeriod *time.Duration           `yaml:"stop_grace_period,omitempty"`
+	StdinOpen       types.BoolOrTemplate     `yaml:"template_stdin_open,omitempty"`
+	StopGracePeriod types.DurationOrTemplate `yaml:"template_stop_grace_period,omitempty"`
 	Tmpfs           []string                 `yaml:"tmpfs,omitempty"`
-	Tty             bool                     `yaml:"tty,omitempty"`
+	Tty             types.BoolOrTemplate     `yaml:"template_tty,omitempty"`
 	User            *int64                   `yaml:"user,omitempty"`
 	Volumes         []ServiceVolumeConfig    `yaml:"volumes,omitempty"`
 	WorkingDir      string                   `yaml:"working_dir,omitempty"`
@@ -100,10 +98,10 @@ type ServiceConfig struct {
 
 // ServicePortConfig is the port configuration for a service
 type ServicePortConfig struct {
-	Mode      string `yaml:"mode,omitempty"`
-	Target    uint32 `yaml:"target,omitempty"`
-	Published uint32 `yaml:"published,omitempty"`
-	Protocol  string `yaml:"protocol,omitempty"`
+	Mode      string                 `yaml:"mode,omitempty"`
+	Target    types.UInt64OrTemplate `yaml:"template_target,omitempty"`
+	Published types.UInt64OrTemplate `yaml:"template_published,omitempty"`
+	Protocol  string                 `yaml:"protocol,omitempty"`
 }
 
 // FileObjectConfig is a config type for a file used by a service
@@ -130,11 +128,11 @@ type External struct {
 
 // FileReferenceConfig for a reference to a swarm file object
 type FileReferenceConfig struct {
-	Source string  `yaml:"source,omitempty"`
-	Target string  `yaml:"target,omitempty"`
-	UID    string  `yaml:"uid,omitempty"`
-	GID    string  `yaml:"gid,omitempty"`
-	Mode   *uint32 `yaml:"mode,omitempty"`
+	Source string                 `yaml:"source,omitempty"`
+	Target string                 `yaml:"target,omitempty"`
+	UID    string                 `yaml:"uid,omitempty"`
+	GID    string                 `yaml:"gid,omitempty"`
+	Mode   types.UInt64OrTemplate `yaml:"template_mode,omitempty"`
 }
 
 // ServiceConfigObjConfig is the config obj configuration for a service
@@ -145,18 +143,18 @@ type ServiceSecretConfig FileReferenceConfig
 
 // DeployConfig is the deployment configuration for a service
 type DeployConfig struct {
-	Mode          string            `yaml:"mode,omitempty"`
-	Replicas      *uint64           `yaml:"replicas,omitempty"`
-	Labels        map[string]string `yaml:"labels,omitempty"`
-	UpdateConfig  *UpdateConfig     `yaml:"update_config,omitempty"`
-	Resources     Resources         `yaml:"resources,omitempty"`
-	RestartPolicy *RestartPolicy    `yaml:"restart_policy,omitempty"`
-	Placement     Placement         `yaml:"placement,omitempty"`
+	Mode          string                 `yaml:"mode,omitempty"`
+	Replicas      types.UInt64OrTemplate `yaml:"template_replicas,omitempty"`
+	Labels        map[string]string      `yaml:"labels,omitempty"`
+	UpdateConfig  *UpdateConfig          `yaml:"update_config,omitempty"`
+	Resources     Resources              `yaml:"resources,omitempty"`
+	RestartPolicy *RestartPolicy         `yaml:"restart_policy,omitempty"`
+	Placement     Placement              `yaml:"placement,omitempty"`
 }
 
 // UpdateConfig is the service update configuration
 type UpdateConfig struct {
-	Parallelism *uint64 `yaml:"paralellism,omitempty"`
+	Parallelism types.UInt64OrTemplate `yaml:"template_paralellism,omitempty"`
 }
 
 // Resources the resource limits and reservations
@@ -167,8 +165,8 @@ type Resources struct {
 
 // Resource is a resource to be limited or reserved
 type Resource struct {
-	NanoCPUs    string `yaml:"cpus,omitempty"`
-	MemoryBytes int64  `yaml:"memory,omitempty"`
+	NanoCPUs    string                    `yaml:"cpus,omitempty"`
+	MemoryBytes types.UnitBytesOrTemplate `yaml:"template_memory,omitempty"`
 }
 
 // RestartPolicy is the service restart policy
@@ -197,18 +195,18 @@ type Constraint struct {
 
 // HealthCheckConfig the healthcheck configuration for a service
 type HealthCheckConfig struct {
-	Test     []string       `yaml:"test,omitempty"`
-	Timeout  *time.Duration `yaml:"timeout,omitempty"`
-	Interval *time.Duration `yaml:"interval,omitempty"`
-	Retries  *uint64        `yaml:"retries,omitempty"`
+	Test     []string                 `yaml:"test,omitempty"`
+	Timeout  types.DurationOrTemplate `yaml:"template_timeout,omitempty"`
+	Interval types.DurationOrTemplate `yaml:"template_interval,omitempty"`
+	Retries  types.UInt64OrTemplate   `yaml:"template_retries,omitempty"`
 }
 
 // ServiceVolumeConfig are references to a volume used by a service
 type ServiceVolumeConfig struct {
-	Type     string `yaml:"type,omitempty"`
-	Source   string `yaml:"source,omitempty"`
-	Target   string `yaml:"target,omitempty"`
-	ReadOnly bool   `yaml:"read_only,omitempty"`
+	Type     string               `yaml:"type,omitempty"`
+	Source   string               `yaml:"source,omitempty"`
+	Target   string               `yaml:"target,omitempty"`
+	ReadOnly types.BoolOrTemplate `yaml:"template_read_only,omitempty"`
 }
 
 func (s *StackSpec) clone() *StackSpec {
