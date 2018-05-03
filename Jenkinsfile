@@ -49,17 +49,20 @@ pipeline {
         stage('Test') {
             parallel {
                 stage("Coverage report") {
+                    environment {
+                        CODECOV_TOKEN = credentials('jenkins-codecov-token')
+                    }
+
                     agent {
                         label 'gcp-linux-worker-0'
                     }
                     steps {
                         dir('src/github.com/docker/lunchbox') {
                             checkout scm
-                            sh 'ls -la'
                             sh 'make ci-coverage'
                             archiveArtifacts 'cov/all.out'
                             archiveArtifacts 'cov/coverage.html'
-                            sh 'curl -s https://codecov.io/bash | bash -s - -t 0b5323a7-aa90-4855-95ad-c859a917d611 -f cov/all.out -K'
+                            sh 'curl -s https://codecov.io/bash | bash -s - -f cov/all.out -K'
                         }
                     }
                 }
