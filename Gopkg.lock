@@ -343,6 +343,7 @@
     "assert",
     "assert/cmp",
     "fs",
+    "golden",
     "icmd",
     "internal/difflib",
     "internal/format",

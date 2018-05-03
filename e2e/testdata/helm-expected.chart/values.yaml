@@ -1,0 +1,19 @@
+aport: 10000
+app:
+  name: myapp
+  version: 0.0.1
+dport: 12000
+memory: 100000000
+myapp:
+  debug: false
+  nginx_replicas: 2
+  nginx_version: 2
+preserved: 12
+privileged: false
+read_only: true
+sport: 11000
+stdin_open: true
+timeout: 10000000000
+tty: true
+watcher:
+  image: watcher:latest

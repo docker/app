@@ -2,6 +2,7 @@ package templateconversion
 
 import (
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	v1beta2 "github.com/docker/lunchbox/templatev1beta2"
 )
 
+// FromComposeConfig converts a compose.Config into a StackSpec
 func FromComposeConfig(c *composeTypes.Config) *v1beta2.StackSpec {
 	if c == nil {
 		return nil
@@ -17,6 +19,9 @@ func FromComposeConfig(c *composeTypes.Config) *v1beta2.StackSpec {
 	for i, s := range c.Services {
 		serviceConfigs[i] = fromComposeServiceConfig(s)
 	}
+	sort.Slice(serviceConfigs, func(i, j int) bool {
+		return strings.Compare(serviceConfigs[i].Name, serviceConfigs[j].Name) < 0
+	})
 	return &v1beta2.StackSpec{
 		Services: serviceConfigs,
 		Secrets:  fromComposeSecrets(c.Secrets),
