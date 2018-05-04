@@ -47,10 +47,14 @@ func Inspect(appname string) error {
 	}
 	maintainers = strings.TrimSuffix(maintainers, ", ")
 	fmt.Printf("%s %s\n", meta.Name, meta.Version)
-	fmt.Printf("Maintained by: %s\n", maintainers)
-	fmt.Println("")
-	fmt.Printf("%s\n", meta.Description)
-	fmt.Println("")
+	if maintainers != "" {
+		fmt.Printf("Maintained by: %s\n", maintainers)
+		fmt.Println("")
+	}
+	if meta.Description != "" {
+		fmt.Printf("%s\n", meta.Description)
+		fmt.Println("")
+	}
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 	fmt.Fprintln(w, "Setting\tDefault")
 	fmt.Fprintln(w, "-------\t-------")
