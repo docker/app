@@ -41,6 +41,12 @@
   revision = "c6cef34830231743494fe2969284df7b82cc0ad0"
 
 [[projects]]
+  name = "github.com/coreos/etcd"
+  packages = ["raft/raftpb"]
+  revision = "fdde8705f5bf9a6d9dbfb0220caf2ee1ac816be8"
+  version = "v3.3.4"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -52,13 +58,19 @@
   packages = [
     "cli",
     "cli/command",
+    "cli/command/bundlefile",
     "cli/command/formatter",
     "cli/command/idresolver",
     "cli/command/inspect",
+    "cli/command/node",
+    "cli/command/service",
+    "cli/command/service/progress",
     "cli/command/stack/kubernetes",
     "cli/command/stack/loader",
     "cli/command/stack/options",
+    "cli/command/stack/swarm",
     "cli/command/task",
+    "cli/compose/convert",
     "cli/compose/interpolation",
     "cli/compose/loader",
     "cli/compose/schema",
@@ -82,9 +94,10 @@
     "kubernetes/compose/v1beta2",
     "kubernetes/labels",
     "opts",
+    "service/logs",
     "templates"
   ]
-  revision = "280372ad173cf7481ea0f8b470510520b00286b4"
+  revision = "ed24219f79b2e0034db91681b57b93546c6a76d2"
   source = "github.com/mnottale/cli"
 
 [[projects]]
@@ -140,6 +153,9 @@
     "pkg/longpath",
     "pkg/mount",
     "pkg/pools",
+    "pkg/progress",
+    "pkg/stdcopy",
+    "pkg/streamformatter",
     "pkg/stringid",
     "pkg/system",
     "pkg/tarsum",
@@ -177,10 +193,28 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/docker/go-events"
+  packages = ["."]
+  revision = "9461782956ad83b30282bf90e31fa6a70c255ba9"
+
+[[projects]]
   name = "github.com/docker/go-units"
   packages = ["."]
   revision = "47565b4f722fb6ceae66b95f853feed578a4a51c"
   version = "v0.3.3"
+
+[[projects]]
+  name = "github.com/docker/swarmkit"
+  packages = [
+    "api",
+    "api/deepcopy",
+    "api/defaults",
+    "api/genericresource",
+    "manager/raftselector",
+    "protobuf/plugin"
+  ]
+  revision = "49a9d7f6ba3c1925262641e694c18eb43575f74b"
 
 [[projects]]
   branch = "master"
@@ -196,6 +230,12 @@
   ]
   revision = "2810ccc68e0ca445fa81ebfa03fbf70aca5c41ae"
   version = "v2.7.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/flynn-archive/go-shlex"
+  packages = ["."]
+  revision = "3f9db97f856818214da2e1057f8ad84803971cff"
 
 [[projects]]
   name = "github.com/ghodss/yaml"
@@ -230,8 +270,11 @@
 [[projects]]
   name = "github.com/gogo/protobuf"
   packages = [
+    "gogoproto",
     "proto",
-    "sortkeys"
+    "protoc-gen-gogo/descriptor",
+    "sortkeys",
+    "types"
   ]
   revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
   version = "v1.0.0"
@@ -480,8 +523,10 @@
     "http2/hpack",
     "idna",
     "internal/socks",
+    "internal/timeseries",
     "lex/httplex",
-    "proxy"
+    "proxy",
+    "trace"
   ]
   revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
 
@@ -521,6 +566,32 @@
   name = "golang.org/x/time"
   packages = ["rate"]
   revision = "fbb02b2291d28baffd63558aa44b4b56f178d650"
+
+[[projects]]
+  branch = "master"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  revision = "86e600f69ee4704c6efbf6a2a40a5c10700e76c2"
+
+[[projects]]
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "codes",
+    "credentials",
+    "grpclb/grpc_lb_v1",
+    "grpclog",
+    "internal",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "stats",
+    "status",
+    "tap",
+    "transport"
+  ]
+  revision = "v1.3.0"
 
 [[projects]]
   name = "gopkg.in/inf.v0"
@@ -693,6 +764,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "72b85f2b1694b878a5f44872c4e8beba0b41b99dd3fea5810726398f2cf67192"
+  inputs-digest = "e0171b346de64920e930ef0e6c8b2d69b61eb7e4a9119147aa77738c903ab53d"
   solver-name = "gps-cdcl"
   solver-version = 1
