@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/docker/lunchbox/internal"
-	log "github.com/sirupsen/logrus"
+	"github.com/docker/lunchbox/renderer"
 	"github.com/spf13/cobra"
 )
 
@@ -10,23 +12,34 @@ import (
 var deployCmd = &cobra.Command{
 	Use:   "deploy <app-name>",
 	Short: "Deploy the specified app on the connected cluster",
-	Run: func(cmd *cobra.Command, args []string) {
-		log.Info("deploy called")
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if deployOrchestrator != "swarm" && deployOrchestrator != "kubernetes" {
+			return fmt.Errorf("orchestrator must be either 'swarm' or 'kubernetes'")
+		}
+		d, err := parseSettings(helmEnv)
+		if err != nil {
+			return err
+		}
+		return renderer.Deploy(firstOrEmpty(args), deployComposeFiles, deploySettingsFiles, d, deployOrchestrator, deployKubeConfig, deployNamespace)
 	},
 }
+
+var deployComposeFiles []string
+var deploySettingsFiles []string
+var deployEnv []string
+var deployOrchestrator string
+var deployKubeConfig string
+var deployNamespace string
 
 func init() {
 	if internal.Experimental == "on" {
 		rootCmd.AddCommand(deployCmd)
+		deployCmd.Flags().StringArrayVarP(&deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
+		deployCmd.Flags().StringArrayVarP(&deploySettingsFiles, "settings-files", "f", []string{}, "Override settings files")
+		deployCmd.Flags().StringArrayVarP(&deployEnv, "set", "s", []string{}, "Override environment values")
+		deployCmd.Flags().StringVarP(&deployOrchestrator, "orchestrator", "o", "swarm", "Orchestrator to deploy on (swarm, kubernetes)")
+		deployCmd.Flags().StringVarP(&deployKubeConfig, "kubeconfig", "k", "", "kubeconfig file to use")
+		deployCmd.Flags().StringVarP(&deployNamespace, "namespace", "n", "default", "namespace to deploy into")
+
 	}
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deployCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deployCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

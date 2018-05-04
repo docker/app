@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/lunchbox/internal"
@@ -23,16 +22,9 @@ Override is provided in different ways:
 `,
 	Args: cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		d := make(map[string]string)
-		for _, v := range renderEnv {
-			kv := strings.SplitN(v, "=", 2)
-			if len(kv) != 2 {
-				return fmt.Errorf("Missing '=' in setting '%s', expected KEY=VALUE", v)
-			}
-			if _, ok := d[kv[0]]; ok {
-				return fmt.Errorf("Duplicate command line setting: '%s'", kv[0])
-			}
-			d[kv[0]] = kv[1]
+		d, err := parseSettings(renderEnv)
+		if err != nil {
+			return err
 		}
 		rendered, err := renderer.Render(firstOrEmpty(args), renderComposeFiles, renderSettingsFile, d)
 		if err != nil {

@@ -62,6 +62,14 @@
   name = "github.com/docker/distribution"
   revision = "edc3ab29cdff8694dd6feb85cfeb4b5f1b38ed9c"
 
+[[override]]
+  name = "github.com/docker/swarmkit"
+  revision = "49a9d7f6ba3c1925262641e694c18eb43575f74b"
+
+[[override]]
+  name = "google.golang.org/grpc"
+  revision = "v1.3.0"
+
 [prune]
   non-go = true
   unused-packages = true
