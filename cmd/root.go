@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/docker/lunchbox/internal"
 	log "github.com/sirupsen/logrus"
@@ -27,6 +29,21 @@ func firstOrEmpty(list []string) string {
 		return list[0]
 	}
 	return ""
+}
+
+func parseSettings(s []string) (map[string]string, error) {
+	d := make(map[string]string)
+	for _, v := range s {
+		kv := strings.SplitN(v, "=", 2)
+		if len(kv) != 2 {
+			return nil, fmt.Errorf("Missing '=' in setting '%s', expected KEY=VALUE", v)
+		}
+		if _, ok := d[kv[0]]; ok {
+			return nil, fmt.Errorf("Duplicate command line setting: '%s'", kv[0])
+		}
+		d[kv[0]] = kv[1]
+	}
+	return d, nil
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
