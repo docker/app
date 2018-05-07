@@ -13,7 +13,7 @@ privileged: false
 read_only: true
 sport: 11000
 stdin_open: true
-timeout: 10000000000
+timeout: 10s
 tty: true
 watcher:
   image: watcher:latest
