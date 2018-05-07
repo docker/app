@@ -230,32 +230,8 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
-// Helm renders an app as an Helm Chart
-func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool) error {
-	appname, cleanup, err := packager.Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-	targetDir := utils.AppNameFromDir(appname) + ".chart"
-	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
-		return err
-	}
-	err = makeChart(appname, targetDir)
-	if err != nil {
-		return err
-	}
-	if render {
-		return helmRender(appname, targetDir, composeFiles, settingsFile, env)
-	}
-	data, err := ioutil.ReadFile(filepath.Join(appname, "docker-compose.yml"))
-	if err != nil {
-		return err
-	}
-	variables, err := packager.ExtractVariables(string(data))
-	if err != nil {
-		return errors.Wrap(err, "failed to parse docker-compose.yml, maybe because it is a template")
-	}
+//makeStack converts data into a helm template for a stack
+func makeStack(appname string, targetDir string, data []byte) error {
 	parsed, err := loader.ParseYAML(data)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse template compose")
@@ -294,10 +270,44 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
+	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
+}
+
+// Helm renders an app as an Helm Chart
+func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool) error {
+	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
 		return err
 	}
+	defer cleanup()
+	targetDir := utils.AppNameFromDir(appname) + ".chart"
+	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
+		return err
+	}
+	err = makeChart(appname, targetDir)
+	if err != nil {
+		return err
+	}
+	if render {
+		return helmRender(appname, targetDir, composeFiles, settingsFile, env)
+	}
+	data, err := ioutil.ReadFile(filepath.Join(appname, "docker-compose.yml"))
+	if err != nil {
+		return err
+	}
+	variables, err := packager.ExtractVariables(string(data))
+	if err != nil {
+		return errors.Wrap(err, "failed to parse docker-compose.yml, maybe because it is a template")
+	}
+	err = makeStack(appname, targetDir, data)
+	if err != nil {
+		return err
+	}
+	return makeValues(appname, targetDir, settingsFile, env, variables)
+}
+
+// makeValues updates helm values.yaml with used variables from settings and env
+func makeValues(appname, targetDir string, settingsFile []string, env map[string]string, variables []string) error {
 	// merge our variables into Values.yaml
 	sf := []string{filepath.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
