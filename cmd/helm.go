@@ -16,13 +16,14 @@ var helmCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return renderer.Helm(firstOrEmpty(args), helmComposeFiles, helmSettingsFile, d)
+		return renderer.Helm(firstOrEmpty(args), helmComposeFiles, helmSettingsFile, d, helmRender)
 	},
 }
 
 var helmComposeFiles []string
 var helmSettingsFile []string
 var helmEnv []string
+var helmRender bool
 
 func init() {
 	rootCmd.AddCommand(helmCmd)
@@ -31,4 +32,5 @@ func init() {
 	}
 	helmCmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	helmCmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override environment values")
+	helmCmd.Flags().BoolVarP(&helmRender, "render", "r", false, "Render the template instead of exporting it")
 }

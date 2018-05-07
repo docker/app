@@ -14,6 +14,7 @@ import (
 
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/fs"
+	"github.com/gotestyourself/gotestyourself/golden"
 	"github.com/gotestyourself/gotestyourself/icmd"
 
 	"github.com/docker/lunchbox/utils"
@@ -158,7 +159,7 @@ func TestPackBinary(t *testing.T) {
 	// check that our commands run on the packed version
 	result = icmd.RunCommand(dockerApp, "inspect", filepath.Join(tempDir, "test"))
 	result.Assert(t, icmd.Success)
-	assert.Assert(t, strings.Contains(result.Stdout(), "name: helm"))
+	assert.Assert(t, strings.Contains(result.Stdout(), "myapp"), "got: %s", result.Stdout())
 	result = icmd.RunCommand(dockerApp, "render", filepath.Join(tempDir, "test"))
 	result.Assert(t, icmd.Success)
 	assert.Assert(t, strings.Contains(result.Stdout(), "nginx"))
@@ -175,4 +176,20 @@ func TestPackBinary(t *testing.T) {
 	_, err = os.Stat("output/test.dockerapp/docker-compose.yml")
 	assert.NilError(t, err)
 	os.Chdir(cwd)
+}
+
+func TestHelmBinary(t *testing.T) {
+	dockerApp, _ := getBinary(t)
+	cmd := exec.Command(dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	assert.NilError(t, err)
+	chart, _ := ioutil.ReadFile("helm.chart/Chart.yaml")
+	values, _ := ioutil.ReadFile("helm.chart/values.yaml")
+	stack, _ := ioutil.ReadFile("helm.chart/templates/stack.yaml")
+	golden.AssertBytes(t, chart, "helm-expected.chart/Chart.yaml")
+	golden.AssertBytes(t, values, "helm-expected.chart/values.yaml")
+	golden.AssertBytes(t, stack, "helm-expected.chart/templates/stack.yaml")
 }

@@ -1,0 +1,58 @@
+apiversion: v1beta2
+kind: stacks.compose.docker.com
+metadata:
+  annotations: {}
+  clustername: ""
+  creationtimestamp: "0001-01-01T00:00:00Z"
+  deletiongraceperiodseconds: null
+  deletiontimestamp: null
+  finalizers: []
+  generatename: ""
+  generation: 0
+  initializers: null
+  labels: {}
+  name: helm
+  namespace: default
+  ownerreferences: []
+  resourceversion: ""
+  selflink: ""
+  uid: ""
+spec:
+  services:
+  - deploy:
+      replicas: '{{.myapp.nginx_replicas}}'
+    image: nginx:{{.myapp.nginx_version}}
+    name: front
+  - deploy:
+      resources:
+        limits:
+          memory: '{{.memory}}'
+    health_check:
+      interval: 2m0s
+      test:
+      - /ping
+      - debug
+      timeout: '{{.timeout}}'
+    image: busybox:latest
+    name: debug
+    ports:
+    - mode: ingress
+      protocol: tcp
+      target: '{{.aport}}'
+    - mode: ingress
+      protocol: tcp
+      published: '{{.dport}}'
+      target: '{{.sport}}'
+    privileged: '{{.privileged}}'
+    read_only: '{{.read_only}}'
+    stdin_open: '{{.stdin_open}}'
+    tty: '{{.tty}}'
+  - command:
+    - monitor
+    - --source
+    - '{{.app.name}}-{{.app.version}}'
+    - $dollar
+    image: busybox:latest
+    name: monitor
+  - image: '{{.watcher.image}}'
+    name: app-watcher

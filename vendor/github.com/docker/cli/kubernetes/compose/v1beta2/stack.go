@@ -70,47 +70,47 @@ type StackSpec struct {
 type ServiceConfig struct {
 	Name string `json:"name,omitempty"`
 
-	CapAdd          []string                 `json:"cap_add,omitempty"`
-	CapDrop         []string                 `json:"cap_drop,omitempty"`
-	Command         []string                 `json:"command,omitempty"`
-	Configs         []ServiceConfigObjConfig `json:"configs,omitempty"`
-	Deploy          DeployConfig             `json:"deploy,omitempty"`
-	Entrypoint      []string                 `json:"entrypoint,omitempty"`
-	Environment     map[string]*string       `json:"environment,omitempty"`
-	ExtraHosts      []string                 `json:"extra_hosts,omitempty"`
-	Hostname        string                   `json:"hostname,omitempty"`
-	HealthCheck     *HealthCheckConfig       `json:"health_check,omitempty"`
-	Image           string                   `json:"image,omitempty"`
-	Ipc             string                   `json:"ipc,omitempty"`
-	Labels          map[string]string        `json:"labels,omitempty"`
-	Pid             string                   `json:"pid,omitempty"`
-	Ports           []ServicePortConfig      `json:"ports,omitempty"`
-	Privileged      bool                     `json:"privileged,omitempty"`
-	ReadOnly        bool                     `json:"read_only,omitempty"`
-	Secrets         []ServiceSecretConfig    `json:"secrets,omitempty"`
-	StdinOpen       bool                     `json:"stdin_open,omitempty"`
-	StopGracePeriod *time.Duration           `json:"stop_grace_period,omitempty"`
-	Tmpfs           []string                 `json:"tmpfs,omitempty"`
-	Tty             bool                     `json:"tty,omitempty"`
-	User            *int64                   `json:"user,omitempty"`
-	Volumes         []ServiceVolumeConfig    `json:"volumes,omitempty"`
-	WorkingDir      string                   `json:"working_dir,omitempty"`
+	CapAdd          []string                 `json:"cap_add,omitempty" yaml:"cap_add,omitempty"`
+	CapDrop         []string                 `json:"cap_drop,omitempty" yaml:"cap_drop,omitempty"`
+	Command         []string                 `json:"command,omitempty"  yaml:"command,omitempty"`
+	Configs         []ServiceConfigObjConfig `json:"configs,omitempty" yaml:"configs,omitempty"`
+	Deploy          DeployConfig             `json:"deploy,omitempty" yaml:"deploy,omitempty"`
+	Entrypoint      []string                 `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
+	Environment     map[string]*string       `json:"environment,omitempty" yaml:"environment,omitempty"`
+	ExtraHosts      []string                 `json:"extra_hosts,omitempty" yaml:"extra_hosts,omitempty"`
+	Hostname        string                   `json:"hostname,omitempty" yaml:"hostname,omitempty"`
+	HealthCheck     *HealthCheckConfig       `json:"health_check,omitempty" yaml:"health_check,omitempty"`
+	Image           string                   `json:"image,omitempty" yaml:"image,omitempty"`
+	Ipc             string                   `json:"ipc,omitempty" yaml:"ipc,omitempty"`
+	Labels          map[string]string        `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Pid             string                   `json:"pid,omitempty" yaml:"pid,omitempty"`
+	Ports           []ServicePortConfig      `json:"ports,omitempty" yaml:"ports,omitempty"`
+	Privileged      bool                     `json:"privileged,omitempty" yaml:"privileged,omitempty"`
+	ReadOnly        bool                     `json:"read_only,omitempty" yaml:"read_only,omitempty"`
+	Secrets         []ServiceSecretConfig    `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	StdinOpen       bool                     `json:"stdin_open,omitempty" yaml:"stdin_open,omitempty"`
+	StopGracePeriod *time.Duration           `json:"stop_grace_period,omitempty" yaml:"stop_grace_period,omitempty"`
+	Tmpfs           []string                 `json:"tmpfs,omitempty" yaml:"tmpfs,omitempty"`
+	Tty             bool                     `json:"tty,omitempty" yaml:"tty,omitempty"`
+	User            *int64                   `json:"user,omitempty" yaml:"user,omitempty"`
+	Volumes         []ServiceVolumeConfig    `json:"volumes,omitempty" yaml:"volumes,omitempty"`
+	WorkingDir      string                   `json:"working_dir,omitempty" yaml:"working_dir,omitempty"`
 }
 
 // ServicePortConfig is the port configuration for a service
 type ServicePortConfig struct {
-	Mode      string `json:"mode,omitempty"`
-	Target    uint32 `json:"target,omitempty"`
-	Published uint32 `json:"published,omitempty"`
-	Protocol  string `json:"protocol,omitempty"`
+	Mode      string `json:"mode,omitempty" yaml:"mode,omitempty"`
+	Target    uint32 `json:"target,omitempty" yaml:"target,omitempty"`
+	Published uint32 `json:"published,omitempty" yaml:"published,omitempty"`
+	Protocol  string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 }
 
 // FileObjectConfig is a config type for a file used by a service
 type FileObjectConfig struct {
-	Name     string            `json:"name,omitempty"`
-	File     string            `json:"file,omitempty"`
-	External External          `json:"external,omitempty"`
-	Labels   map[string]string `json:"labels,omitempty"`
+	Name     string            `json:"name,omitempty" yaml:"name,omitempty"`
+	File     string            `json:"file,omitempty" yaml:"file,omitempty"`
+	External External          `json:"external,omitempty" yaml:"external,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 }
 
 // SecretConfig for a secret
@@ -123,17 +123,17 @@ type ConfigObjConfig FileObjectConfig
 // not managed, and should already exist.
 // External.name is deprecated and replaced by Volume.name
 type External struct {
-	Name     string `json:"name,omitempty"`
-	External bool   `json:"external,omitempty"`
+	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
+	External bool   `json:"external,omitempty" yaml:"external,omitempty"`
 }
 
 // FileReferenceConfig for a reference to a swarm file object
 type FileReferenceConfig struct {
-	Source string  `json:"source,omitempty"`
-	Target string  `json:"target,omitempty"`
-	UID    string  `json:"uid,omitempty"`
-	GID    string  `json:"gid,omitempty"`
-	Mode   *uint32 `json:"mode,omitempty"`
+	Source string  `json:"source,omitempty" yaml:"source,omitempty"`
+	Target string  `json:"target,omitempty" yaml:"target,omitempty"`
+	UID    string  `json:"uid,omitempty" yaml:"uid,omitempty"`
+	GID    string  `json:"gid,omitempty" yaml:"gid,omitempty"`
+	Mode   *uint32 `json:"mode,omitempty" yaml:"mode,omitempty"`
 }
 
 // ServiceConfigObjConfig is the config obj configuration for a service
@@ -144,40 +144,40 @@ type ServiceSecretConfig FileReferenceConfig
 
 // DeployConfig is the deployment configuration for a service
 type DeployConfig struct {
-	Mode          string            `json:"mode,omitempty"`
-	Replicas      *uint64           `json:"replicas,omitempty"`
-	Labels        map[string]string `json:"labels,omitempty"`
-	UpdateConfig  *UpdateConfig     `json:"update_config,omitempty"`
-	Resources     Resources         `json:"resources,omitempty"`
-	RestartPolicy *RestartPolicy    `json:"restart_policy,omitempty"`
-	Placement     Placement         `json:"placement,omitempty"`
+	Mode          string            `json:"mode,omitempty" yaml:"mode,omitempty"`
+	Replicas      *uint64           `json:"replicas,omitempty" yaml:"replicas,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	UpdateConfig  *UpdateConfig     `json:"update_config,omitempty" yaml:"update_config,omitempty"`
+	Resources     Resources         `json:"resources,omitempty" yaml:"resources,omitempty"`
+	RestartPolicy *RestartPolicy    `json:"restart_policy,omitempty" yaml:"restart_policy,omitempty"`
+	Placement     Placement         `json:"placement,omitempty" yaml:"placement,omitempty"`
 }
 
 // UpdateConfig is the service update configuration
 type UpdateConfig struct {
-	Parallelism *uint64 `json:"paralellism,omitempty"`
+	Parallelism *uint64 `json:"paralellism,omitempty" yaml:"paralellism,omitempty"`
 }
 
 // Resources the resource limits and reservations
 type Resources struct {
-	Limits       *Resource `json:"limits,omitempty"`
-	Reservations *Resource `json:"reservations,omitempty"`
+	Limits       *Resource `json:"limits,omitempty" yaml:"limits,omitempty"`
+	Reservations *Resource `json:"reservations,omitempty" yaml:"reservations,omitempty"`
 }
 
 // Resource is a resource to be limited or reserved
 type Resource struct {
-	NanoCPUs    string `json:"cpus,omitempty"`
-	MemoryBytes int64  `json:"memory,omitempty"`
+	NanoCPUs    string `json:"cpus,omitempty" yaml:"cpus,omitempty"`
+	MemoryBytes int64  `json:"memory,omitempty" yaml:"memory,omitempty"`
 }
 
 // RestartPolicy is the service restart policy
 type RestartPolicy struct {
-	Condition string `json:"condition,omitempty"`
+	Condition string `json:"condition,omitempty" yaml:"condition,omitempty"`
 }
 
 // Placement constraints for the service
 type Placement struct {
-	Constraints *Constraints `json:"constraints,omitempty"`
+	Constraints *Constraints `json:"constraints,omitempty" yaml:"constraints,omitempty"`
 }
 
 // Constraints lists constraints that can be set on the service
@@ -196,18 +196,18 @@ type Constraint struct {
 
 // HealthCheckConfig the healthcheck configuration for a service
 type HealthCheckConfig struct {
-	Test     []string       `json:"test,omitempty"`
-	Timeout  *time.Duration `json:"timeout,omitempty"`
-	Interval *time.Duration `json:"interval,omitempty"`
-	Retries  *uint64        `json:"retries,omitempty"`
+	Test     []string       `json:"test,omitempty" yaml:"test,omitempty"`
+	Timeout  *time.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	Interval *time.Duration `json:"interval,omitempty" yaml:"interval,omitempty"`
+	Retries  *uint64        `json:"retries,omitempty" yaml:"retries,omitempty"`
 }
 
 // ServiceVolumeConfig are references to a volume used by a service
 type ServiceVolumeConfig struct {
-	Type     string `json:"type,omitempty"`
-	Source   string `json:"source,omitempty"`
-	Target   string `json:"target,omitempty"`
-	ReadOnly bool   `json:"read_only,omitempty"`
+	Type     string `json:"type,omitempty" yaml:"type,omitempty"`
+	Source   string `json:"source,omitempty" yaml:"source,omitempty"`
+	Target   string `json:"target,omitempty" yaml:"target,omitempty"`
+	ReadOnly bool   `json:"read_only,omitempty" yaml:"read_only,omitempty"`
 }
 
 func (s *StackSpec) clone() *StackSpec {
