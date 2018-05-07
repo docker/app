@@ -12,7 +12,10 @@ import (
 var imageAddCmd = &cobra.Command{
 	Use:   "image-add <app-name> [services...]",
 	Short: "Add images for given services (default: all) to the app package",
-	Args:  cobra.MinimumNArgs(1),
+	Long: `This command renders the app's docker-compose.yml file, looks for the
+images it uses, and saves them from the local docker daemon to the images/
+subdirectory.`,
+	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		d := make(map[string]string)
 		for _, v := range imageAddEnv {

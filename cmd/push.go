@@ -8,7 +8,7 @@ import (
 )
 
 var pushCmd = &cobra.Command{
-	Use:   "push <app-name>",
+	Use:   "push [<app-name>]",
 	Short: "Push the application to a registry",
 	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

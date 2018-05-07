@@ -8,7 +8,7 @@ import (
 )
 
 var packCmd = &cobra.Command{
-	Use:   "pack <app-name> [-o output_file]",
+	Use:   "pack [<app-name>] [-o output_file]",
 	Short: "Pack this app as a single file",
 	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

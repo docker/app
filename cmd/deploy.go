@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/docker/cli/cli"
 	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/renderer"
 	"github.com/spf13/cobra"
@@ -10,8 +11,12 @@ import (
 
 // deployCmd represents the deploy command
 var deployCmd = &cobra.Command{
-	Use:   "deploy <app-name>",
+	Use:   "deploy [<app-name>]",
 	Short: "Deploy the specified app on the connected cluster",
+	Long: `Deploy the application on either swarm or kubernetes.
+The app's docker-compose.yml is first rendered as per the render sub-command, and
+then deployed similarly to 'docker stack deploy'.`,
+	Args: cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if deployOrchestrator != "swarm" && deployOrchestrator != "kubernetes" {
 			return fmt.Errorf("orchestrator must be either 'swarm' or 'kubernetes'")

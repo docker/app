@@ -8,8 +8,8 @@ import (
 )
 
 var saveCmd = &cobra.Command{
-	Use:   "save <app-name>",
-	Short: "Save the application to docker (in preparation for push)",
+	Use:   "save [<app-name>]",
+	Short: "Save the application as an image to the docker daemon(in preparation for push)",
 	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if saveTag == "" {
