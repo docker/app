@@ -97,7 +97,7 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 		}
 
 		var err error
-		configDict, err = interpolateConfig(configDict, configDetails.LookupEnv)
+		configDict, err = interpolateConfig(configDict, configDetails.LookupEnv, configDetails.ErrOnMissingVariable)
 		if err != nil {
 			return nil, err
 		}

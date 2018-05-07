@@ -33,7 +33,7 @@ func (e InvalidTemplateError) Error() string {
 type Mapping func(string) (string, bool)
 
 // Substitute variables in the string with their values
-func Substitute(template string, mapping Mapping) (string, error) {
+func Substitute(template string, mapping Mapping, errOnMissingVariable bool) (string, error) {
 	var err error
 	result := pattern.ReplaceAllStringFunc(template, func(substring string) string {
 		matches := pattern.FindStringSubmatch(substring)
@@ -94,7 +94,13 @@ func Substitute(template string, mapping Mapping) (string, error) {
 			return value
 		}
 
-		value, _ := mapping(substitution)
+		value, found := mapping(substitution)
+		if !found && errOnMissingVariable {
+			err = &InvalidTemplateError{
+				Template: fmt.Sprintf("required variable %s is missing a value", substitution),
+			}
+			return ""
+		}
 		return value
 	})
 

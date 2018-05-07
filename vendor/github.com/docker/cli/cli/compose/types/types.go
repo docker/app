@@ -56,10 +56,11 @@ type ConfigFile struct {
 
 // ConfigDetails are the details about a group of ConfigFiles
 type ConfigDetails struct {
-	Version     string
-	WorkingDir  string
-	ConfigFiles []ConfigFile
-	Environment map[string]string
+	Version              string
+	WorkingDir           string
+	ConfigFiles          []ConfigFile
+	Environment          map[string]string
+	ErrOnMissingVariable bool
 }
 
 // LookupEnv provides a lookup function for environment variables

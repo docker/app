@@ -216,9 +216,10 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	//fmt.Printf("ENV: %v\n", finalEnv)
 	//fmt.Printf("MAPENV: %#v\n", settings)
 	rendered, err := loader.Load(composetypes.ConfigDetails{
-		WorkingDir:  ".",
-		ConfigFiles: configFiles,
-		Environment: finalEnv,
+		WorkingDir:           ".",
+		ConfigFiles:          configFiles,
+		Environment:          finalEnv,
+		ErrOnMissingVariable: true,
 	})
 	return rendered, err
 }
