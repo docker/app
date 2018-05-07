@@ -97,7 +97,7 @@
     "service/logs",
     "templates"
   ]
-  revision = "ed24219f79b2e0034db91681b57b93546c6a76d2"
+  revision = "7d5383da2462b9feb013cc3be5e977ddaf51978a"
   source = "github.com/mnottale/cli"
 
 [[projects]]
@@ -765,6 +765,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e0171b346de64920e930ef0e6c8b2d69b61eb7e4a9119147aa77738c903ab53d"
+  inputs-digest = "9c3210640b85b0462eeb83d3d440116e18ad135a017e707cdd413a71438fd125"
   solver-name = "gps-cdcl"
   solver-version = 1

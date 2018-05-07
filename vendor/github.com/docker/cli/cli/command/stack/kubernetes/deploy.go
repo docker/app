@@ -24,6 +24,7 @@ func RunDeploy(dockerCli *KubeCli, opts options.Deploy) error {
 	return DeployStack(dockerCli, opts, cfg)
 }
 
+// DeployStack deploys a parsed stack to kubernetes
 func DeployStack(dockerCli *KubeCli, opts options.Deploy, cfg *composetypes.Config) error {
 	cmdOut := dockerCli.Out()
 	// Initialize clients

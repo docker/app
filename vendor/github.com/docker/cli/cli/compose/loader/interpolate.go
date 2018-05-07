@@ -64,11 +64,12 @@ func toBoolean(value string) (interface{}, error) {
 	}
 }
 
-func interpolateConfig(configDict map[string]interface{}, lookupEnv interp.LookupValue) (map[string]interface{}, error) {
+func interpolateConfig(configDict map[string]interface{}, lookupEnv interp.LookupValue, errOnMissingVariable bool) (map[string]interface{}, error) {
 	return interp.Interpolate(
 		configDict,
 		interp.Options{
 			LookupValue:     lookupEnv,
 			TypeCastMapping: interpolateTypeCastMapping,
+			ErrOnMissingVariable: errOnMissingVariable,
 		})
 }
