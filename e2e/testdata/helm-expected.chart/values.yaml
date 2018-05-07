@@ -1,7 +1,7 @@
 aport: 10000
 app:
   name: myapp
-  version: 0.0.1
+  version: 0.1.0
 dport: 12000
 memory: 100000000
 myapp:

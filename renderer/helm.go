@@ -102,7 +102,6 @@ func toGoTemplate(template string) (string, error) {
 	re := regexp.MustCompile(`(^|[^$])\${?([a-zA-Z0-9_.]+)}?`)
 	template = re.ReplaceAllString(template, "$1{{.$2}}")
 	template = strings.Replace(template, "$$", "$", -1)
-	//fmt.Printf("%s -> %s\n", start, template)
 	return template, nil
 }
 
