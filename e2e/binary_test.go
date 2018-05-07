@@ -159,7 +159,7 @@ func TestPackBinary(t *testing.T) {
 	// check that our commands run on the packed version
 	result = icmd.RunCommand(dockerApp, "inspect", filepath.Join(tempDir, "test"))
 	result.Assert(t, icmd.Success)
-	assert.Assert(t, strings.Contains(result.Stdout(), "name: helm"))
+	assert.Assert(t, strings.Contains(result.Stdout(), "myapp"), "got: %s", result.Stdout())
 	result = icmd.RunCommand(dockerApp, "render", filepath.Join(tempDir, "test"))
 	result.Assert(t, icmd.Success)
 	assert.Assert(t, strings.Contains(result.Stdout(), "nginx"))

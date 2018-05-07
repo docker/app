@@ -240,7 +240,9 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	}
 	defer cleanup()
 	targetDir := utils.AppNameFromDir(appname) + ".chart"
-	os.Mkdir(targetDir, 0755)
+	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
+		return err
+	}
 	err = makeChart(appname, targetDir)
 	if err != nil {
 		return err

@@ -67,7 +67,7 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 	}
 }
 
-// LoadSettings load a set of settings file and produce a property dictionary
+// LoadSettings loads a set of settings file and produce a property dictionary
 func LoadSettings(files []string) (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 	for _, f := range files {
@@ -85,15 +85,16 @@ func LoadSettings(files []string) (map[string]interface{}, error) {
 	return res, nil
 }
 
-// MergeSettings merge a flattened settings map into an expanded one
+// MergeSettings merges a flattened settings map into an expanded one
 func MergeSettings(settings map[string]interface{}, env map[string]string) error {
 	for k, v := range env {
 		ss := strings.Split(k, ".")
 		valroot := make(map[interface{}]interface{})
 		val := valroot
 		for _, s := range ss[:len(ss)-1] {
-			val[s] = make(map[interface{}]interface{})
-			val = val[s].(map[interface{}]interface{})
+			m := make(map[interface{}]interface{})
+			val[s] = m
+			val = m
 		}
 		var converted interface{}
 		err := yaml.Unmarshal([]byte(v), &converted)
