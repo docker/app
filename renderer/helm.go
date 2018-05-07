@@ -220,8 +220,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 			APIVersion: "v1beta2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.AppNameFromDir(appname),
-			Namespace: "default", // FIXME
+			Name: utils.AppNameFromDir(appname),
 		},
 		Spec: stackSpec,
 	}
