@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/lunchbox/internal"
@@ -18,6 +19,9 @@ The app's docker-compose.yml is first rendered as per the render sub-command, an
 then deployed similarly to 'docker stack deploy'.`,
 	Args: cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if do, ok := os.LookupEnv("DOCKER_ORCHESTRATOR"); ok {
+			deployOrchestrator = do
+		}
 		if deployOrchestrator != "swarm" && deployOrchestrator != "kubernetes" {
 			return fmt.Errorf("orchestrator must be either 'swarm' or 'kubernetes'")
 		}
