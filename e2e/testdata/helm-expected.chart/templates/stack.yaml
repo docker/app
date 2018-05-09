@@ -19,40 +19,40 @@ metadata:
   uid: ""
 spec:
   services:
-  - image: '{{.watcher.image}}'
+  - image: '{{.Values.watcher.image}}'
     name: app-watcher
   - deploy:
       resources:
         limits:
-          memory: '{{.memory}}'
+          memory: '{{.Values.memory}}'
     health_check:
       interval: 2m0s
       test:
       - /ping
       - debug
-      timeout: '{{.timeout}}'
+      timeout: '{{.Values.timeout}}'
     image: busybox:latest
     name: debug
     ports:
     - mode: ingress
       protocol: tcp
-      target: '{{.aport}}'
+      target: '{{.Values.aport}}'
     - mode: ingress
       protocol: tcp
-      published: '{{.dport}}'
-      target: '{{.sport}}'
-    privileged: '{{.privileged}}'
-    read_only: '{{.read_only}}'
-    stdin_open: '{{.stdin_open}}'
-    tty: '{{.tty}}'
+      published: '{{.Values.dport}}'
+      target: '{{.Values.sport}}'
+    privileged: '{{.Values.privileged}}'
+    read_only: '{{.Values.read_only}}'
+    stdin_open: '{{.Values.stdin_open}}'
+    tty: '{{.Values.tty}}'
   - deploy:
-      replicas: '{{.myapp.nginx_replicas}}'
-    image: nginx:{{.myapp.nginx_version}}
+      replicas: '{{.Values.myapp.nginx_replicas}}'
+    image: nginx:{{.Values.myapp.nginx_version}}
     name: front
   - command:
     - monitor
     - --source
-    - '{{.app.name}}-{{.app.version}}'
+    - '{{.Values.app.name}}-{{.Values.app.version}}'
     - $dollar
     image: busybox:latest
     name: monitor
