@@ -9,6 +9,7 @@ import (
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/command/stack/swarm"
 	cliflags "github.com/docker/cli/cli/flags"
+	"github.com/docker/lunchbox/utils"
 )
 
 // Deploy deploys this app, merging in settings files, other compose files, end env
@@ -26,7 +27,9 @@ func Deploy(appname string, composeFiles []string, settingsFile []string, env ma
 	})
 	if orchestrator == "swarm" {
 		ctx := context.Background()
-		return swarm.DeployCompose(ctx, cli, rendered, options.Deploy{})
+		return swarm.DeployCompose(ctx, cli, rendered, options.Deploy{
+			Namespace: utils.AppNameFromDir(appname),
+		})
 	}
 	// kube mode
 	kubeCli, err := kubernetes.WrapCli(cli, kubernetes.Options{
