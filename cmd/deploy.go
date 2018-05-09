@@ -37,14 +37,13 @@ var deployKubeConfig string
 var deployNamespace string
 
 func init() {
+	rootCmd.AddCommand(deployCmd)
+	deployCmd.Flags().StringArrayVarP(&deploySettingsFiles, "settings-files", "f", []string{}, "Override settings files")
+	deployCmd.Flags().StringArrayVarP(&deployEnv, "set", "s", []string{}, "Override settings values")
+	deployCmd.Flags().StringVarP(&deployOrchestrator, "orchestrator", "o", "swarm", "Orchestrator to deploy on (swarm, kubernetes)")
+	deployCmd.Flags().StringVarP(&deployKubeConfig, "kubeconfig", "k", "", "kubeconfig file to use")
+	deployCmd.Flags().StringVarP(&deployNamespace, "namespace", "n", "default", "namespace to deploy into")
 	if internal.Experimental == "on" {
-		rootCmd.AddCommand(deployCmd)
 		deployCmd.Flags().StringArrayVarP(&deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
-		deployCmd.Flags().StringArrayVarP(&deploySettingsFiles, "settings-files", "f", []string{}, "Override settings files")
-		deployCmd.Flags().StringArrayVarP(&deployEnv, "set", "s", []string{}, "Override settings values")
-		deployCmd.Flags().StringVarP(&deployOrchestrator, "orchestrator", "o", "swarm", "Orchestrator to deploy on (swarm, kubernetes)")
-		deployCmd.Flags().StringVarP(&deployKubeConfig, "kubeconfig", "k", "", "kubeconfig file to use")
-		deployCmd.Flags().StringVarP(&deployNamespace, "namespace", "n", "default", "namespace to deploy into")
-
 	}
 }
