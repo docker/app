@@ -40,6 +40,6 @@ func init() {
 		helmCmd.Use += " [-c <compose-files>...]"
 	}
 	helmCmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
-	helmCmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override environment values")
+	helmCmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override settings values")
 	helmCmd.Flags().BoolVarP(&helmRender, "render", "r", false, "Render the template instead of exporting it")
 }
