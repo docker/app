@@ -100,7 +100,7 @@ func filterVariables(settings map[string]interface{}, variables []string, prefix
 // toGoTemplate converts $foo and ${foo} into {{.foo}}
 func toGoTemplate(template string) (string, error) {
 	re := regexp.MustCompile(`(^|[^$])\${?([a-zA-Z0-9_.]+)}?`)
-	template = re.ReplaceAllString(template, "$1{{.$2}}")
+	template = re.ReplaceAllString(template, "$1{{.Values.$2}}")
 	template = strings.Replace(template, "$$", "$", -1)
 	return template, nil
 }
