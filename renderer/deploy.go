@@ -39,5 +39,5 @@ func Deploy(appname string, composeFiles []string, settingsFile []string, env ma
 	if err != nil {
 		return err
 	}
-	return kubernetes.DeployStack(kubeCli, options.Deploy{}, rendered)
+	return kubernetes.DeployStack(kubeCli, options.Deploy{Namespace: utils.AppNameFromDir(appname)}, rendered)
 }
