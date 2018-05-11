@@ -25,7 +25,7 @@ then deployed similarly to 'docker stack deploy'.`,
 		if deployOrchestrator != "swarm" && deployOrchestrator != "kubernetes" {
 			return fmt.Errorf("orchestrator must be either 'swarm' or 'kubernetes'")
 		}
-		d, err := parseSettings(helmEnv)
+		d, err := parseSettings(deployEnv)
 		if err != nil {
 			return err
 		}
