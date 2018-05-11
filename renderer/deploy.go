@@ -9,12 +9,18 @@ import (
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/command/stack/swarm"
 	cliflags "github.com/docker/cli/cli/flags"
+	"github.com/docker/lunchbox/packager"
 	"github.com/docker/lunchbox/utils"
 )
 
 // Deploy deploys this app, merging in settings files, other compose files, end env
 func Deploy(appname string, composeFiles []string, settingsFile []string, env map[string]string,
 	orchestrator string, kubeconfig string, namespace string) error {
+	appname, cleanup, err := packager.Extract(appname)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
 	rendered, err := Render(appname, composeFiles, settingsFile, env)
 	if err != nil {
 		return err
