@@ -77,9 +77,9 @@ func TestRenderBinary(t *testing.T) {
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
 		t.Log("testing", app.Name())
-		if (strings.Contains(app.Name(), "gotemplate") && !strings.Contains(renderers, "gotemplate")) ||
-			(strings.Contains(app.Name(), "yatee") && !strings.Contains(renderers, "yatee")) {
-			t.Skip("Required renderer not enabled.")
+		if !checkRenderers(app.Name(), renderers) {
+			t.Log("Required renderer not enabled.")
+			continue
 		}
 		settings, overrides, env := gather(t, filepath.Join("render", app.Name()))
 		args := []string{

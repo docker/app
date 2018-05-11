@@ -1,0 +1,5 @@
+myapp:
+  alpine_version: latest
+  command1: cat
+  command2: foo
+  enable: true

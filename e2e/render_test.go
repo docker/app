@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/renderer"
 
 	"github.com/gotestyourself/gotestyourself/assert"
@@ -41,6 +42,17 @@ func gather(t *testing.T, dir string) ([]string, []string, map[string]string) {
 	return settings, overrides, env
 }
 
+// checkRenderer returns false if appname requires a renderer that is not in enabled
+func checkRenderers(appname string, enabled string) bool {
+	renderers := []string{"gotemplate", "yatee", "mustache"}
+	for _, r := range renderers {
+		if strings.Contains(appname, r) && !strings.Contains(enabled, r) {
+			return false
+		}
+	}
+	return true
+}
+
 func checkResult(t *testing.T, result string, resultErr error, dir string) {
 	if resultErr != nil {
 		ee := filepath.Join(dir, "expectedError.txt")
@@ -60,6 +72,10 @@ func TestRender(t *testing.T) {
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
 		t.Log("testing", app.Name())
+		if !checkRenderers(app.Name(), internal.Renderers) {
+			t.Log("Required renderer not enabled.")
+			continue
+		}
 		settings, overrides, env := gather(t, filepath.Join("render", app.Name()))
 		// run the render
 		config, resultErr := renderer.Render(filepath.Join("render", app.Name()), overrides, settings, env)

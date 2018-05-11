@@ -1,0 +1,12 @@
+version: "3.4"
+services:
+  enabledservice:
+    command:
+    - bash
+    - -c
+    - cat
+    - bar
+    - bam
+    image: alpine:latest
+  other:
+    image: nginx
