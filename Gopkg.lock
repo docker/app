@@ -35,6 +35,12 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  name = "github.com/cbroglie/mustache"
+  packages = ["."]
+  revision = "eb931a9d20042e51d8a3a9ad5a9ba9bc8282c564"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/containerd/continuity"
   packages = ["pathdriver"]
@@ -765,6 +771,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9c3210640b85b0462eeb83d3d440116e18ad135a017e707cdd413a71438fd125"
+  inputs-digest = "a4b9c982d2f79a4c3ba9232dd354bb8069819070233f81b6285697c0dff72e23"
   solver-name = "gps-cdcl"
   solver-version = 1

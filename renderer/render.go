@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/cbroglie/mustache"
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/lunchbox/internal"
@@ -132,6 +133,12 @@ func applyRenderers(data []byte, renderers []string, settings map[string]interfa
 				return nil, err
 			}
 			data = []byte(strings.Replace(string(m), "$", "$$", -1))
+		case "mustache":
+			mdata, err := mustache.Render(string(data), settings)
+			if err != nil {
+				return nil, err
+			}
+			data = []byte(mdata)
 		}
 	}
 	return data, nil
