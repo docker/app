@@ -29,7 +29,7 @@ then deployed similarly to 'docker stack deploy'.`,
 		if err != nil {
 			return err
 		}
-		return renderer.Deploy(firstOrEmpty(args), deployComposeFiles, deploySettingsFiles, d, deployOrchestrator, deployKubeConfig, deployNamespace)
+		return renderer.Deploy(firstOrEmpty(args), deployComposeFiles, deploySettingsFiles, d, deployStackName, deployOrchestrator, deployKubeConfig, deployNamespace)
 	},
 }
 
@@ -39,6 +39,7 @@ var deployEnv []string
 var deployOrchestrator string
 var deployKubeConfig string
 var deployNamespace string
+var deployStackName string
 
 func init() {
 	rootCmd.AddCommand(deployCmd)
@@ -47,6 +48,7 @@ func init() {
 	deployCmd.Flags().StringVarP(&deployOrchestrator, "orchestrator", "o", "swarm", "Orchestrator to deploy on (swarm, kubernetes)")
 	deployCmd.Flags().StringVarP(&deployKubeConfig, "kubeconfig", "k", "", "kubeconfig file to use")
 	deployCmd.Flags().StringVarP(&deployNamespace, "namespace", "n", "default", "namespace to deploy into")
+	deployCmd.Flags().StringVarP(&deployStackName, "name", "d", "", "stack name (default: app name)")
 	if internal.Experimental == "on" {
 		deployCmd.Flags().StringArrayVarP(&deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
 	}
