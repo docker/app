@@ -23,6 +23,7 @@ import (
 var (
 	dockerApp       = ""
 	hasExperimental = false
+	renderers       = ""
 )
 
 func getBinary(t *testing.T) (string, bool) {
@@ -40,7 +41,10 @@ func getBinary(t *testing.T) (string, bool) {
 	output, err := cmd.CombinedOutput()
 	assert.NilError(t, err, "failed to execute %s", binName)
 	dockerApp = binName
-	hasExperimental = strings.Contains(string(output), "Experimental: on")
+	sOutput := string(output)
+	hasExperimental = strings.Contains(sOutput, "Experimental: on")
+	i := strings.Index(sOutput, "Renderers")
+	renderers = sOutput[i+10:]
 	return dockerApp, hasExperimental
 }
 
@@ -73,6 +77,10 @@ func TestRenderBinary(t *testing.T) {
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
 		t.Log("testing", app.Name())
+		if (strings.Contains(app.Name(), "gotemplate") && !strings.Contains(renderers, "gotemplate")) ||
+			(strings.Contains(app.Name(), "yatee") && !strings.Contains(renderers, "yatee")) {
+			t.Skip("Required renderer not enabled.")
+		}
 		settings, overrides, env := gather(t, filepath.Join("render", app.Name()))
 		args := []string{
 			"render",
