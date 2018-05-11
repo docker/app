@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/lunchbox/internal"
@@ -34,7 +35,15 @@ Override is provided in different ways:
 		if err != nil {
 			return err
 		}
-		fmt.Print(string(res))
+		if renderOutput == "-" {
+			fmt.Print(string(res))
+		} else {
+			f, err := os.Create(renderOutput)
+			if err != nil {
+				return err
+			}
+			fmt.Fprint(f, string(res))
+		}
 		return nil
 	},
 }
@@ -42,6 +51,7 @@ Override is provided in different ways:
 var renderComposeFiles []string
 var renderSettingsFile []string
 var renderEnv []string
+var renderOutput string
 
 func init() {
 	rootCmd.AddCommand(renderCmd)
@@ -54,4 +64,5 @@ func init() {
 	}
 	renderCmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	renderCmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
+	renderCmd.Flags().StringVarP(&renderOutput, "output", "o", "-", "Output file")
 }
