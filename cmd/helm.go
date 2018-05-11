@@ -15,9 +15,7 @@ var helmCmd = &cobra.Command{
 - values.yaml is created or updated with the values from settings which are
   actually used by the compose file.
 - templates/stack.yaml is created, with a stack template extracted from the app's
-docker-compose.yml. If the --render option is used, the docker-compose.yml will
-be rendered instead of exported as a template. Note that template export will
-not work if you use go templating, only variable substitution is supported.`,
+docker-compose.yml.`,
 	Args: cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		d, err := parseSettings(helmEnv)
@@ -38,8 +36,10 @@ func init() {
 	if internal.Experimental == "on" {
 		helmCmd.Flags().StringArrayVarP(&helmComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
 		helmCmd.Use += " [-c <compose-files>...]"
+		helmCmd.Flags().BoolVarP(&helmRender, "render", "r", false, "Render the template instead of exporting it")
+		helmCmd.Long += ` If the --render option is used, the docker-compose.yml will
+be rendered instead of exported as a template.`
 	}
 	helmCmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	helmCmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override settings values")
-	helmCmd.Flags().BoolVarP(&helmRender, "render", "r", false, "Render the template instead of exporting it")
 }
