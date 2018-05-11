@@ -6,7 +6,7 @@ E2E_NAME := $(BIN_NAME)-e2e
 EXPERIMENTAL := off
 
 # Comma-separated list of renderers
-RENDERERS := gotemplate
+RENDERERS := ""
 
 TAG ?= $(shell git describe --always --dirty)
 COMMIT ?= $(shell git rev-parse --short HEAD)
