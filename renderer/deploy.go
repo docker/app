@@ -15,7 +15,7 @@ import (
 
 // Deploy deploys this app, merging in settings files, other compose files, end env
 func Deploy(appname string, composeFiles []string, settingsFile []string, env map[string]string,
-	orchestrator string, kubeconfig string, namespace string) error {
+	stackName string, orchestrator string, kubeconfig string, namespace string) error {
 	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
 		return err
@@ -31,10 +31,13 @@ func Deploy(appname string, composeFiles []string, settingsFile []string, env ma
 			Orchestrator: orchestrator,
 		},
 	})
+	if stackName == "" {
+		stackName = utils.AppNameFromDir(appname)
+	}
 	if orchestrator == "swarm" {
 		ctx := context.Background()
 		return swarm.DeployCompose(ctx, cli, rendered, options.Deploy{
-			Namespace: utils.AppNameFromDir(appname),
+			Namespace: stackName,
 		})
 	}
 	// kube mode
@@ -45,5 +48,5 @@ func Deploy(appname string, composeFiles []string, settingsFile []string, env ma
 	if err != nil {
 		return err
 	}
-	return kubernetes.DeployStack(kubeCli, options.Deploy{Namespace: utils.AppNameFromDir(appname)}, rendered)
+	return kubernetes.DeployStack(kubeCli, options.Deploy{Namespace: stackName}, rendered)
 }
