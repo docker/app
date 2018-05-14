@@ -12,7 +12,7 @@ import (
 )
 
 var renderCmd = &cobra.Command{
-	Use:   "render <app-name> [-e key=value...] [-s settings-file...]",
+	Use:   "render <app-name> [-s key=value...] [-f settings-file...]",
 	Short: "Render the Compose file for this app",
 	Long: `Render generates a Compose file from the application's template and optional additional files.
 Override is provided in different ways:
