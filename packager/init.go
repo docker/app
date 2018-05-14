@@ -17,7 +17,7 @@ import (
 
 // Init is the entrypoint initialization function.
 // It generates a new application package based on the provided parameters.
-func Init(name string, composeFile string) error {
+func Init(name string, composeFile string, description string, maintainers []string) error {
 	if err := utils.ValidateAppName(name); err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func Init(name string, composeFile string) error {
 			os.RemoveAll(dirName)
 		}
 	}()
-	if err = writeMetadataFile(name, dirName); err != nil {
+	if err = writeMetadataFile(name, dirName, description, maintainers); err != nil {
 		return err
 	}
 
@@ -199,28 +199,41 @@ func composeFileFromScratch() ([]byte, error) {
 	return yaml.Marshal(fileStruct)
 }
 
-func writeMetadataFile(name, dirName string) error {
-	data, err := yaml.Marshal(newMetadata(name))
+func writeMetadataFile(name, dirName string, description string, maintainers []string) error {
+	data, err := yaml.Marshal(newMetadata(name, description, maintainers))
 	if err != nil {
 		return err
 	}
 	return utils.CreateFileWithData(filepath.Join(dirName, "metadata.yml"), data)
 }
 
-func newMetadata(name string) types.AppMetadata {
-	var userName string
+func newMetadata(name string, description string, maintainers []string) types.AppMetadata {
 	target := types.ApplicationTarget{
 		Swarm:      true,
 		Kubernetes: true,
 	}
-	userData, _ := user.Current()
-	if userData != nil {
-		userName = userData.Username
-	}
-	return types.AppMetadata{
+	res := types.AppMetadata{
 		Version:     "0.1.0",
 		Targets:     target,
 		Name:        name,
-		Maintainers: []types.Maintainer{{Name: userName}},
+		Description: description,
 	}
+	if len(maintainers) == 0 {
+		var userName string
+		userData, _ := user.Current()
+		if userData != nil {
+			userName = userData.Username
+		}
+		res.Maintainers = []types.Maintainer{{Name: userName}}
+	} else {
+		for _, m := range maintainers {
+			ne := strings.Split(m, ":")
+			email := ""
+			if len(ne) > 1 {
+				email = ne[1]
+			}
+			res.Maintainers = append(res.Maintainers, types.Maintainer{Name: ne[0], Email: email})
+		}
+	}
+	return res
 }

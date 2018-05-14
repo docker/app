@@ -118,6 +118,18 @@ func TestInitBinary(t *testing.T) {
     image: nginx:${NGINX_VERSION}
     command: nginx $NGINX_ARGS
 `
+	meta := `version: 0.1.0
+name: app_test
+description: my cool app
+maintainers:
+- name: bob
+  email: ""
+- name: joe
+  email: joe@joe.com
+targets:
+  swarm: true
+  kubernetes: true
+`
 	envData := "# some comment\nNGINX_VERSION=latest"
 	inputDir := randomName("app_input_")
 	os.Mkdir(inputDir, 0755)
@@ -125,7 +137,7 @@ func TestInitBinary(t *testing.T) {
 	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
 	defer os.RemoveAll(inputDir)
 
-	testAppName := randomName("app_")
+	testAppName := "app_test"
 	dirName := utils.DirNameFromAppName(testAppName)
 	defer os.RemoveAll(dirName)
 
@@ -134,6 +146,10 @@ func TestInitBinary(t *testing.T) {
 		testAppName,
 		"-c",
 		filepath.Join(inputDir, "docker-compose.yml"),
+		"-d",
+		"my cool app",
+		"-m", "bob",
+		"-m", "joe:joe@joe.com",
 	}
 	cmd := exec.Command(dockerApp, args...)
 	output, err := cmd.CombinedOutput()
@@ -141,12 +157,10 @@ func TestInitBinary(t *testing.T) {
 		fmt.Println(output)
 	}
 	assert.NilError(t, err)
-	meta, err := ioutil.ReadFile(filepath.Join(dirName, "metadata.yml"))
-	assert.NilError(t, err)
 	manifest := fs.Expected(
 		t,
 		fs.WithMode(0755),
-		fs.WithFile("metadata.yml", string(meta), fs.WithMode(0644)), // too many variables, cheating
+		fs.WithFile("metadata.yml", meta, fs.WithMode(0644)), // too many variables, cheating
 		fs.WithFile("docker-compose.yml", composeData, fs.WithMode(0644)),
 		fs.WithFile("settings.yml", "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
 	)
