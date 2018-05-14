@@ -1,0 +1,9 @@
+version: 0.1.0
+name: simple
+description: ""
+maintainers:
+  - name: sakuya.izayoi
+    email: sizayoi@sdmansion.jp
+targets:
+  swarm: true
+  kubernetes: true
