@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+plugins {
+    id 'java-gradle-plugin'
+}
+apply plugin: 'java-gradle-plugin'
+group 'docker'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+
+gradlePlugin {
+    plugins {
+        dockerapp {
+            id = 'com.docker.gradle.dockerapp'
+            implementationClass = 'com.docker.gradle.dockerapp.DockerAppPlugin'
+        }
+    }
+}

@@ -1,0 +1,31 @@
+version: "3.6"
+services:
+  mysql:
+    image: mysql:${mysql.image.version}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${mysql.rootpass}
+      MYSQL_DATABASE: ${mysql.database}
+      MYSQL_USER: ${mysql.user.name}
+      MYSQL_PASSWORD: ${mysql.user.password}
+    volumes:
+      - source: db_data
+        target: /var/lib/mysql
+        type: volume
+    deploy:
+      mode: replicated
+      replicas: 1
+  wordpress:
+    image: wordpress
+    environment:
+      WORDPRESS_DB_USER: ${mysql.user.name}
+      WORDPRESS_DB_PASSWORD: ${mysql.user.password}
+      WORDPRESS_DB_NAME: ${mysql.database}
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DEBUG: ${debug}
+    deploy:
+      mode: ${wordpress.scale.mode}
+      replicas: ${wordpress.scale.replicas}
+
+volumes:
+  db_data:
+    name: ${volumes.db_data.name}
