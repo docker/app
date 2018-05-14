@@ -72,10 +72,10 @@ func TestWriteMetadataFile(t *testing.T) {
 	tmpdir := fs.NewDir(t, appName)
 	defer tmpdir.Remove()
 
-	err := writeMetadataFile(appName, tmpdir.Path())
+	err := writeMetadataFile(appName, tmpdir.Path(), "", nil)
 	assert.NilError(t, err)
 
-	data, err := yaml.Marshal(newMetadata(appName))
+	data, err := yaml.Marshal(newMetadata(appName, "", nil))
 	assert.NilError(t, err)
 
 	manifest := fs.Expected(
