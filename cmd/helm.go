@@ -9,14 +9,9 @@ import (
 
 var helmCmd = &cobra.Command{
 	Use:   "helm [<app-name>] [-s key=value...] [-f settings-file...]",
-	Short: "Render the Compose file for this app as an Helm package",
-	Long: `The helm command creates or updates the directory <app-name>.chart.
-- Chart.yaml is created or updated from the app's metadata.
-- values.yaml is created or updated with the values from settings which are
-  actually used by the compose file.
-- templates/stack.yaml is created, with a stack template extracted from the app's
-docker-compose.yml.`,
-	Args: cli.RequiresMaxArgs(1),
+	Short: "Generate a Helm chart",
+	Long:  `Generate a Helm chart for the application.`,
+	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		d, err := parseSettings(helmEnv)
 		if err != nil {

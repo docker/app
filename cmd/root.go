@@ -12,12 +12,9 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "docker-app",
-	Short: "Docker App Packages",
-	Long: `Create, render deploy and otherwise manipulate an app package.
-For most sub-commands that take an app-package as only positional argument, this
-argument is optional: an app package is looked for in the current working directory.
-All commands accept both compressed and uncompressed app packages.`,
+	Use:          "docker-app",
+	Short:        "Docker App Packages",
+	Long:         `Build and deploy Docker applications.`,
 	SilenceUsage: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if internal.Debug {
