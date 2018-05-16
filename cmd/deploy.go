@@ -13,11 +13,9 @@ import (
 // deployCmd represents the deploy command
 var deployCmd = &cobra.Command{
 	Use:   "deploy [<app-name>]",
-	Short: "Deploy the specified app on the connected cluster",
-	Long: `Deploy the application on either swarm or kubernetes.
-The app's docker-compose.yml is first rendered as per the render sub-command, and
-then deployed similarly to 'docker stack deploy'.`,
-	Args: cli.RequiresMaxArgs(1),
+	Short: "Deploy or update an application",
+	Long:  `Deploy the application on either Swarm or Kubernetes.`,
+	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if do, ok := os.LookupEnv("DOCKER_ORCHESTRATOR"); ok {
 			deployOrchestrator = do

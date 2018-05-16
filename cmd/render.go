@@ -13,15 +13,9 @@ import (
 
 var renderCmd = &cobra.Command{
 	Use:   "render <app-name> [-s key=value...] [-f settings-file...]",
-	Short: "Render the Compose file for this app",
-	Long: `Render generates a Compose file from the application's template and optional additional files.
-Override is provided in different ways:
-- External YAML settings files can be specified with the -f flag. All settings
-  files are merged in order, the app's settings coming first.
-- Individual settings values can be passed directly on the command line with the
-  -s flag. These value takes precedence over all settings files.
-`,
-	Args: cli.RequiresMaxArgs(1),
+	Short: "Render the Compose file for the application",
+	Long:  `Render the Compose file for the application.`,
+	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		d, err := parseSettings(renderEnv)
 		if err != nil {

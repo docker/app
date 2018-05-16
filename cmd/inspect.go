@@ -9,7 +9,7 @@ import (
 // inspectCmd represents the inspect command
 var inspectCmd = &cobra.Command{
 	Use:   "inspect [<app-name>]",
-	Short: "Shows metadata and settings for a given app package",
+	Short: "Shows metadata and settings for a given application",
 	Args:  cli.RequiresMaxArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return renderer.Inspect(firstOrEmpty(args))
