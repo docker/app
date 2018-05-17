@@ -1,0 +1,21 @@
+version: 0.1.0
+name: tac
+description: my cool app
+maintainers:
+- name: bob
+  email: ""
+- name: joe
+  email: joe@joe.com
+targets:
+  swarm: true
+  kubernetes: true
+
+--
+services:
+  nginx:
+    image: nginx:${NGINX_VERSION}
+    command: nginx $NGINX_ARGS
+
+--
+NGINX_ARGS: FILL ME
+NGINX_VERSION: latest

@@ -17,7 +17,7 @@ import (
 
 // Init is the entrypoint initialization function.
 // It generates a new application package based on the provided parameters.
-func Init(name string, composeFile string, description string, maintainers []string) error {
+func Init(name string, composeFile string, description string, maintainers []string, singleFile bool) error {
 	if err := utils.ValidateAppName(name); err != nil {
 		return err
 	}
@@ -45,7 +45,20 @@ func Init(name string, composeFile string, description string, maintainers []str
 	} else {
 		err = initFromComposeFile(name, composeFile)
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	if !singleFile {
+		return nil
+	}
+	// Merge as a single file
+	temp := "_temp_dockerapp__.dockerapp"
+	err = os.Rename(dirName, temp)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(temp)
+	return Merge(temp, dirName)
 }
 
 func initFromScratch(name string) error {

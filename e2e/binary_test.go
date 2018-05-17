@@ -166,6 +166,28 @@ targets:
 	)
 
 	assert.Assert(t, fs.Equal(dirName, manifest))
+
+	// test single-file init
+	args = []string{
+		"init",
+		"tac",
+		"-c",
+		filepath.Join(inputDir, "docker-compose.yml"),
+		"-d",
+		"my cool app",
+		"-m", "bob",
+		"-m", "joe:joe@joe.com",
+		"-s",
+	}
+	cmd = exec.Command(dockerApp, args...)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	assert.NilError(t, err)
+	defer os.Remove("tac.dockerapp")
+	appData, _ := ioutil.ReadFile("tac.dockerapp")
+	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
 }
 
 func TestInspectBinary(t *testing.T) {
@@ -225,4 +247,42 @@ func TestHelmBinary(t *testing.T) {
 	golden.AssertBytes(t, chart, "helm-expected.chart/Chart.yaml")
 	golden.AssertBytes(t, values, "helm-expected.chart/values.yaml")
 	golden.AssertBytes(t, stack, "helm-expected.chart/templates/stack.yaml")
+}
+
+func TestSplitMergeBinary(t *testing.T) {
+	dockerApp, hasExperimental := getBinary(t)
+	if !hasExperimental {
+		t.Skip("experimental mode needed for this test")
+	}
+	app := "render/envvariables"
+	cmd := exec.Command(dockerApp, "merge", app, "-o", "remerged.dockerapp")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	assert.NilError(t, err)
+	defer os.Remove("remerged.dockerapp")
+	// test that inspect works on single-file
+	cmd = exec.Command(dockerApp, "inspect", "remerged")
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	assert.NilError(t, err)
+	golden.Assert(t, string(output), "envvariables-inspect.golden")
+	// split it
+	cmd = exec.Command(dockerApp, "split", "remerged", "-o", "splitted.dockerapp")
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	assert.NilError(t, err)
+	defer os.RemoveAll("splitted.dockerapp")
+	cmd = exec.Command(dockerApp, "inspect", "splitted")
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	assert.NilError(t, err)
+	golden.Assert(t, string(output), "envvariables-inspect.golden")
 }

@@ -76,21 +76,57 @@ func Extract(appname string) (string, func(), error) {
 		// directory: already decompressed
 		return appname, noop, nil
 	}
-	// not a dir: probably a tarball package, extract that in a temp dir
+	// not a dir: single-file or a tarball package, extract that in a temp dir
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
 		return "", noop, err
 	}
+	defer func() {
+		if err != nil {
+			os.RemoveAll(tempDir)
+		}
+	}()
 	appDir := filepath.Join(tempDir, filepath.Base(appname))
-	if err := os.Mkdir(appDir, 0755); err != nil {
-		os.RemoveAll(tempDir)
+	if err = os.Mkdir(appDir, 0755); err != nil {
 		return "", noop, err
 	}
-	if err = extract(appname, appDir); err != nil {
-		os.RemoveAll(tempDir)
+	if err = extract(appname, appDir); err == nil {
+		return appDir, func() { os.RemoveAll(tempDir) }, nil
+	}
+	if err = extractSingleFile(appname, appDir); err != nil {
 		return "", noop, err
 	}
+	// not a tarball, single-file then
 	return appDir, func() { os.RemoveAll(tempDir) }, nil
+}
+
+func extractSingleFile(appname, appDir string) error {
+	// not a tarball, single-file then
+	data, err := ioutil.ReadFile(appname)
+	if err != nil {
+		return err
+	}
+	parts := strings.Split(string(data), "\n--")
+	if len(parts) != 3 {
+		return fmt.Errorf("malformed single-file application: expected 3 documents")
+	}
+	names := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
+	for i, p := range parts {
+		data := ""
+		if i == 0 {
+			data = p
+		} else {
+			d := strings.SplitN(p, "\n", 2)
+			if len(d) > 1 {
+				data = d[1]
+			}
+		}
+		err = ioutil.WriteFile(filepath.Join(appDir, names[i]), []byte(data), 0644)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func extract(appname, outputDir string) error {
