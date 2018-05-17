@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/tabwriter"
 
@@ -40,6 +41,12 @@ func Inspect(appname string) error {
 	if err != nil {
 		return err
 	}
+	// sort the keys to get consistent output
+	var settingsKeys []string
+	for k := range settings {
+		settingsKeys = append(settingsKeys, k)
+	}
+	sort.Slice(settingsKeys, func(i, j int) bool { return settingsKeys[i] < settingsKeys[j] })
 	// build maintainers string
 	maintainers := ""
 	for _, m := range meta.Maintainers {
@@ -58,8 +65,8 @@ func Inspect(appname string) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 	fmt.Fprintln(w, "Setting\tDefault")
 	fmt.Fprintln(w, "-------\t-------")
-	for k, v := range settings {
-		fmt.Fprintf(w, "%s\t%s\n", k, v)
+	for _, k := range settingsKeys {
+		fmt.Fprintf(w, "%s\t%s\n", k, settings[k])
 	}
 	w.Flush()
 	return nil

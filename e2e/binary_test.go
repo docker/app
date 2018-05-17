@@ -168,6 +168,17 @@ targets:
 	assert.Assert(t, fs.Equal(dirName, manifest))
 }
 
+func TestInspectBinary(t *testing.T) {
+	dockerApp, _ := getBinary(t)
+	cmd := exec.Command(dockerApp, "inspect", "render/envvariables")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	assert.NilError(t, err)
+	golden.Assert(t, string(output), "envvariables-inspect.golden")
+}
+
 func TestPackBinary(t *testing.T) {
 	dockerApp, hasExperimental := getBinary(t)
 	if !hasExperimental {
