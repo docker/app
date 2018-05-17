@@ -71,6 +71,19 @@ func binExt() string {
 	return ""
 }
 
+// Run command, assert it succeeds, return its output
+func assertCommand(t *testing.T, exe string, args ...string) []byte {
+	cmd := exec.Command(exe, args...)
+	output, err := cmd.CombinedOutput()
+	assert.NilError(t, err, string(output))
+	return output
+}
+
+func assertCommandOutput(t *testing.T, goldenFile string, cmd string, args ...string) {
+	output := assertCommand(t, cmd, args...)
+	golden.Assert(t, string(output), goldenFile)
+}
+
 func TestRenderBinary(t *testing.T) {
 	getBinary(t)
 	apps, err := ioutil.ReadDir("render")
@@ -151,12 +164,7 @@ targets:
 		"-m", "bob",
 		"-m", "joe:joe@joe.com",
 	}
-	cmd := exec.Command(dockerApp, args...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(output)
-	}
-	assert.NilError(t, err)
+	assertCommand(t, dockerApp, args...)
 	manifest := fs.Expected(
 		t,
 		fs.WithMode(0755),
@@ -179,12 +187,7 @@ targets:
 		"-m", "joe:joe@joe.com",
 		"-s",
 	}
-	cmd = exec.Command(dockerApp, args...)
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-	}
-	assert.NilError(t, err)
+	assertCommand(t, dockerApp, args...)
 	defer os.Remove("tac.dockerapp")
 	appData, _ := ioutil.ReadFile("tac.dockerapp")
 	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
@@ -192,13 +195,7 @@ targets:
 
 func TestInspectBinary(t *testing.T) {
 	dockerApp, _ := getBinary(t)
-	cmd := exec.Command(dockerApp, "inspect", "render/envvariables")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-	}
-	assert.NilError(t, err)
-	golden.Assert(t, string(output), "envvariables-inspect.golden")
+	assertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "render/envvariables")
 }
 
 func TestPackBinary(t *testing.T) {
@@ -235,12 +232,7 @@ func TestPackBinary(t *testing.T) {
 
 func TestHelmBinary(t *testing.T) {
 	dockerApp, _ := getBinary(t)
-	cmd := exec.Command(dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-	}
-	assert.NilError(t, err)
+	assertCommand(t, dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2")
 	chart, _ := ioutil.ReadFile("helm.chart/Chart.yaml")
 	values, _ := ioutil.ReadFile("helm.chart/values.yaml")
 	stack, _ := ioutil.ReadFile("helm.chart/templates/stack.yaml")
@@ -255,34 +247,12 @@ func TestSplitMergeBinary(t *testing.T) {
 		t.Skip("experimental mode needed for this test")
 	}
 	app := "render/envvariables"
-	cmd := exec.Command(dockerApp, "merge", app, "-o", "remerged.dockerapp")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-	}
-	assert.NilError(t, err)
+	assertCommand(t, dockerApp, "merge", app, "-o", "remerged.dockerapp")
 	defer os.Remove("remerged.dockerapp")
 	// test that inspect works on single-file
-	cmd = exec.Command(dockerApp, "inspect", "remerged")
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-	}
-	assert.NilError(t, err)
-	golden.Assert(t, string(output), "envvariables-inspect.golden")
+	assertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "remerged")
 	// split it
-	cmd = exec.Command(dockerApp, "split", "remerged", "-o", "splitted.dockerapp")
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-	}
-	assert.NilError(t, err)
+	assertCommand(t, dockerApp, "split", "remerged", "-o", "splitted.dockerapp")
 	defer os.RemoveAll("splitted.dockerapp")
-	cmd = exec.Command(dockerApp, "inspect", "splitted")
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-	}
-	assert.NilError(t, err)
-	golden.Assert(t, string(output), "envvariables-inspect.golden")
+	assertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "splitted")
 }
