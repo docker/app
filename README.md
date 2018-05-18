@@ -29,13 +29,44 @@ services:
 With `docker-app` installed let's create an Application Package based on this Compose file:
 
 ```bash
-$ docker-app init hello
+$ docker-app init -s hello
 $ ls
 docker-compose.yml
 hello.dockerapp
 ```
 
-We created a few files in the `.dockerapp` folder. Let's edit the `hello.dockerapp/settings.yml` and add the following default values for our application:
+We created a new file `hello.dockerapp` that contains three YAML documents:
+- metadatas
+- the Compose file
+- settings for your application
+
+It should look like this:
+
+```yaml
+version: 0.1.0
+name: hello
+description: ""
+maintainers:
+- name: yourusername
+  email: ""
+targets:
+  swarm: true
+  kubernetes: true
+
+--
+version: '3.2'
+services:
+  hello:
+    image: hashicorp/http-echo
+    command: ["-text", "hello world"]
+    ports:
+      - 5678:5678
+
+--
+{}
+```
+
+Let's edit the settings section and add the following default values for our application:
 
 ```yaml
 port: 5678
@@ -43,7 +74,7 @@ text: hello development
 version: latest
 ```
 
-Then modify the Compose file in the `.dockerapp` folder, adding in the variables. 
+Then modify the Compose file section in `hello.dockerapp`, adding in the variables.
 
 ```yaml
 version: '3.2'
@@ -134,6 +165,12 @@ $ docker-app helm
 This will create a folder, `<my-applcation-name>.chart`, in the current directory. The folder contains the required `Chart.yaml` file and templates describing the `stack` Kubernetes object based on the Compose file in your application.
 
 _Note that this requires the Compose Kubernetes controller available in Docker for Windows and Docker for Mac, and in Docker Enterprise Edition._
+
+## Single file or directory representation
+
+If you prefer having the three documents in separate YAML files, omit the `-s` option to
+the `docker-app init` command. This will create a directory instead of a singe file, containing
+`metadata.yml`, `docker-compose.yml` and `settings.yml`.
 
 
 ## Next steps
