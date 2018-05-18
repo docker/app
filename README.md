@@ -112,6 +112,17 @@ $ docker-app render -f prod.yml
 ```
 
 
+## Installation
+
+Pre-built binaries are available on [GitHub releases](https://github.com/docker/lunchbox/releases) for Windows, Linux and macOS.
+
+```bash
+wget https://github.com/docker/lunchbox/releases/download/0.1.0/docker-app-linux.tar.gz
+tar xf docker-app-linux.tar.gz
+cp docker-app-linux /usr/local/bin/docker-app
+```
+
+
 ## Integrating with Helm
 
 `docker-app` comes with a few other helpful commands as well, in particular the ability to create Helm Charts from your Docker Applications. This can be useful if you're adopting Kubernetes, and standardising on Helm to manage the lifecycle of your application components, but want to maintain the simplicity of Compose when writing you applications. This also makes it easy to run the same applications locally just using Docker, if you don't want to be running a full Kubernetes cluster.
@@ -139,8 +150,6 @@ We have lots of ideas for making Compose-based applications easier to share and 
 
 
 ## Usage
-
-`docker-app` is currently available only as source code for you to build yourself, binaries will be published soon. If the experiment proves successful we'll move this functionality into the main Docker CLI.
 
 ```
 $ docker-app
