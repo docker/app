@@ -1,0 +1,29 @@
+# Vote.
+vote:
+  image:
+    name: dockersamples/examplevotingapp_vote
+    tag: latest
+  port: 8080
+  replicas: 1
+
+# Result.
+result:
+  image:
+    name: dockersamples/examplevotingapp_result
+    tag: latest
+  port: 8181
+  replicas: 1
+
+# Visualizer.
+visualizer:
+  image:
+    name: dockersamples/visualizer
+    tag: latest
+  port: 8282
+
+# Worker.
+worker:
+  image:
+    name: dockersamples/examplevotingapp_worker
+    tag: latest
+  replicas: 1

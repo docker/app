@@ -1,0 +1,9 @@
+# Vote.
+vote:
+  image:
+    name: vote
+
+# Result.
+result:
+  image:
+    name: result
