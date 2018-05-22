@@ -157,4 +157,27 @@ deploy/production: render/production kill/production
 
 deploy/development: render/development kill/development
 	docker stack deploy ${APP_NAME}-dev -c $(DEVELOPMENT_DIR)/docker-compose.yml
+
+#
+# Pack.
+#
+pack:
+	docker-app pack -o $(PACK)
+
+#
+# Save.
+#
+save:
+    docker-app save -p
+
+#
+# Helm.
+#
+helm/production:
+	docker-app helm -f $(SETTINGS_DIR)/production.yml
+
+helm/development:
+	docker-app helm -f $(SETTINGS_DIR)/development.yml
 ```
+
+You can add more commands, depending on your needs.
