@@ -1,0 +1,9 @@
+version: 0.1.0
+name: echo
+description: "Hello world"
+maintainers:
+- name: dimrok
+  email: "antony.mechin@gmail.com"
+targets:
+  swarm: true
+  kubernetes: true
