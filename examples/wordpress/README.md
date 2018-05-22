@@ -3,7 +3,7 @@
 ### Visualize app configuration
 
 ```yaml
-# docker-app render simple
+# docker-app render wordpress
 version: "3.6"
 services:
   mysql:
@@ -42,7 +42,7 @@ configs: {}
 **Merge with override Compose file**. This example replaces cleartext DB passwords to use secrets instead.
 
 ```yaml
-# docker-app render simple -c with-secrets.yml
+# docker-app render wordpress -c with-secrets.yml
 version: "3.6"
 services:
   mysql:
@@ -52,9 +52,9 @@ services:
     environment:
       MYSQL_DATABASE: wordpressdata
       MYSQL_PASSWORD: ""
-      MYSQL_PASSWORD_FILE: /run/secrets/simple_app_userpass
+      MYSQL_PASSWORD_FILE: /run/secrets/wordpress_app_userpass
       MYSQL_ROOT_PASSWORD: ""
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/simple_app_rootpass
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/wordpress_app_rootpass
       MYSQL_USER: wordpress
     image: mysql:8
     secrets:
@@ -84,10 +84,10 @@ volumes:
     name: db_data
 secrets:
   mysql_rootpass:
-    name: simple_app_rootpass
+    name: wordpress_app_rootpass
     external: true
   mysql_userpass:
-    name: simple_app_userpass
+    name: wordpress_app_userpass
     external: true
 configs: {}
 ```
@@ -95,7 +95,7 @@ configs: {}
 **Override default settings**. This example sets `debug` to false.
 
 ```yaml
-# docker-app render simple -s prod-settings.yml
+# docker-app render wordpress -s prod-settings.yml
 version: "3.6"
 [...]
     environment:
@@ -110,7 +110,7 @@ version: "3.6"
 **Override from the command line**. This example sets `debug` to false and the database user to a
 different value.
 ```yaml
-# docker-app render simple -e debug=true -e mysql.user.name=mollydock
+# docker-app render wordpress -e debug=true -e mysql.user.name=mollydock
 version: "3.6"
 services:
   mysql:
@@ -135,8 +135,8 @@ services:
 ### View app metadata
 
 ```yaml
-# docker-app inspect simple
-simple 0.1.0
+# docker-app inspect wordpress
+wordpress 0.1.0
 Maintained by: sakuya.izayoi <sizayoi@sdmansion.jp>
 
 
@@ -156,18 +156,18 @@ wordpress.scale.replicas 0
 
 ### Generate helm package
 
-`docker-app helm simple` will output a Helm package in the `./simple.helm` folder. `-c`, `-e` and `-s` flags apply the same way they do for the `render` subcommand.
+`docker-app helm wordpress` will output a Helm package in the `./wordpress.helm` folder. `-c`, `-e` and `-s` flags apply the same way they do for the `render` subcommand.
 
 ```
-$ docker-app helm simple -c with-secrets.yml -s prod-settings.yml -e mysql.user.name=mollydock
-$ tree simple.helm
-simple.helm/
+$ docker-app helm wordpress -c with-secrets.yml -s prod-settings.yml -e mysql.user.name=mollydock
+$ tree wordpress.helm
+wordpress.helm/
 ├── Chart.yaml
 └── templates
     └── stack.yaml
 
 1 directory, 2 files
-$ cat simple.helm/templates/stack.yaml
+$ cat wordpress.helm/templates/stack.yaml
 typemeta:
   kind: stacks.compose.docker.com
   apiversion: v1beta2
@@ -177,28 +177,28 @@ objectmeta:
 
 ### Generate distributable app package
 
-`docker-app save simple` creates a Docker image packaging the relevant configuration files:
+`docker-app save wordpress` creates a Docker image packaging the relevant configuration files:
 
 ```
-$ docker-app save simple
-$ docker images simple.dockerapp
+$ docker-app save wordpress
+$ docker images wordpress.dockerapp
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-simple.dockerapp   latest              61f8cafb7762        4 minutes ago       1.2kB
+wordpress.dockerapp   latest              61f8cafb7762        4 minutes ago       1.2kB
 ```
 
 The package can later be retrieved using `docker-app load`:
 
 ```
-$ rm -rf simple.dockerapp
-$ docker-app load simple.dockerapp
-$ tar -tf simple.dockerapp  # TODO: should unpack automatically?
+$ rm -rf wordpress.dockerapp
+$ docker-app load wordpress.dockerapp
+$ tar -tf wordpress.dockerapp  # TODO: should unpack automatically?
 metadata.yml
 docker-compose.yml
 settings.yml
-$ mv simple.dockerapp simple  # TODO: fix UX
-$ docker-app unpack simple
-$ tree simple.dockerapp
-./simple.dockerapp/
+$ mv wordpress.dockerapp wordpress  # TODO: fix UX
+$ docker-app unpack wordpress
+$ tree wordpress.dockerapp
+./wordpress.dockerapp/
 ├── metadata.yml
 ├── docker-compose.yml
 └── settings.yml
@@ -208,13 +208,12 @@ $ tree simple.dockerapp
 
 ### Archive app package
 
-`docker-app pack simple` creates a tar archive containing the relevant configuration files:
+`docker-app pack wordpress` creates a tar archive containing the relevant configuration files:
 
 ```
-$ docker-app pack simple -o myapp.tar
+$ docker-app pack wordpress -o myapp.tar
 $ tar -tf myapp.tar
 metadata.yml
 docker-compose.yml
 settings.yml
 ```
-
