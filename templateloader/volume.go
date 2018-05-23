@@ -5,8 +5,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/docker/cli/cli/compose/types"
 	"github.com/docker/docker/api/types/mount"
+	types "github.com/docker/lunchbox/templatetypes"
 	"github.com/pkg/errors"
 )
 
@@ -70,9 +70,9 @@ func populateFieldFromBuffer(char rune, buffer []rune, volume *types.ServiceVolu
 	for _, option := range strings.Split(strBuffer, ",") {
 		switch option {
 		case "ro":
-			volume.ReadOnly = true
+			volume.ReadOnly = types.BoolOrTemplate{ Value:  true}
 		case "rw":
-			volume.ReadOnly = false
+			volume.ReadOnly = types.BoolOrTemplate{ Value: false}
 		case "nocopy":
 			volume.Volume = &types.ServiceVolumeVolume{NoCopy: true}
 		default:
