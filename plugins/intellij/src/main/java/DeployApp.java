@@ -24,9 +24,6 @@ public class DeployApp extends AnAction {
         Project project = event.getProject();
         PropertiesComponent pc = PropertiesComponent.getInstance(project);
         String appPath = pc.getValue("docker_app_path");
-        if (appPath == null || appPath.equals("")) {
-            appPath = ""; // project.getBasePath();
-        }
         try {
             String orchestrator = "swarm";
             if (pc.getValue("docker_app_orchestrator").equals("kubernetes"))
@@ -58,21 +55,16 @@ public class DeployApp extends AnAction {
                     + name
                     + settings;
             Process p = Runtime.getRuntime().exec(cmd,null, new File(project.getBasePath()));
-            /*Logger l = Logger.getInstance("docker-app");
-            l.setLevel(Level.INFO);
-            l.info("Running deploy command: " + cmd);*/
             BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
             String line;
             while ((line = input.readLine()) != null) {
                 Notification n = new Notification("docker-app", "deploy", line, NotificationType.INFORMATION);
                 Notifications.Bus.notify(n);
-                //l.info(line);
             }
             BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
             while ((line = error.readLine()) != null) {
                 Notification n = new Notification("docker-app", "deploy", line, NotificationType.ERROR);
                 Notifications.Bus.notify(n);
-                //l.warn(line);
             }
         } catch (Exception e) {
             Messages.showMessageDialog(project, "docker-app invocation failed with " + e.toString(), "Render Failure", Messages.getInformationIcon());

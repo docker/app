@@ -16,9 +16,6 @@ public class RenderApp extends AnAction {
         Project project = event.getProject();
         PropertiesComponent pc = PropertiesComponent.getInstance(project);
         String appPath = pc.getValue("docker_app_path");
-        if (appPath == null || appPath.equals("")) {
-            appPath = ""; // project.getBasePath();
-        }
         try {
             String rawSettings = pc.getValue("docker_app_overrides");
             String settings = "";

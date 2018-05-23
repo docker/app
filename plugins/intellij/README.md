@@ -1,4 +1,4 @@
-# docker application plugin for intellij IDEA
+# Docker Application plugin for intellij IDEA
 
 This directory contains the sources of a Docker Application plugin for Intellij IDEA.
 
@@ -14,7 +14,7 @@ Follow instructions here: https://www.jetbrains.com/help/idea/installing-plugin-
 
 # Using the plugin
 
-The plugin exposes the following commands in a top-level `docker` menu:
+The plugin exposes the following commands in a top-level `Docker` menu:
 
 ## New application
 
