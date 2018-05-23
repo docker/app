@@ -2,7 +2,7 @@
 
 ### Initialize project
 
-In this example, we will create a one-service application that deploys an web page displaying a message.
+In this example, we will create a single service application that deploys a web page displaying a message.
 
 Initialize the project using `docker-app init hello-world`.
 
@@ -27,7 +27,7 @@ services:
 
 ### Give variables their default value
 
-Open `settings.yml` and every variables with the default value you want, e.g.:
+Open `settings.yml` and add every variables with the default value you want, e.g.:
 
 ```
 $ cat settings.yml

@@ -34,7 +34,7 @@ Change default replicas, from:
 
 ### Give variables their default value
 
-Open `settings.yml` and every variables with the default value you want, e.g.:
+Open `settings.yml` and add every variables with the default value you want, e.g.:
 
 ```
 $ cat settings.yml
