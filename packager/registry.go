@@ -84,7 +84,12 @@ func Load(repotag string) error {
 
 // Push pushes an app to a registry
 func Push(appname, prefix, tag string) error {
-	err := Save(appname, prefix, tag)
+	appname, cleanup, err := Extract(appname)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	err = Save(appname, prefix, tag)
 	if err != nil {
 		return err
 	}
