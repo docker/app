@@ -46,10 +46,10 @@ kill: kill/production kill/development
 # Deploy.
 #
 deploy/production: render/production kill/production
-	docker stack deploy ${APP_NAME} -c $(PRODUCTION_DIR)/docker-compose.yml
+	docker-app deploy -f $(SETTINGS_DIR)/production.yml
 
 deploy/development: render/development kill/development
-	docker stack deploy ${APP_NAME}-dev -c $(DEVELOPMENT_DIR)/docker-compose.yml
+	docker-app deploy -f $(SETTINGS_DIR)/development.yml
 
 #
 # Pack.
