@@ -6,7 +6,7 @@ In this example, we will create a single service application that deploys a web 
 
 Initialize the single file project using `docker-app init -s hello-world`. A single file application contains the three sections, `metadata` corresponding `metadata.yml`, `settings` corresponding `settings.yml` and `services` corresponding `docker-compose.yml`.
 
-```
+```bash
 $ ls -l
 -rw-r--r-- 1 README.md
 $ docker-app init -s hello-world
@@ -50,7 +50,10 @@ Edit the `description` and `maintainers` fields in the metadata section.
 
 Add a service `hello` to the `services` section.
 
-```
+---
+
+[hello-world.dockerapp](hello-world.dockerapp):
+```yml
 [...]
 ---
 #
@@ -71,7 +74,10 @@ services:
 
 In the settings section, add every variables with the default value you want, e.g.:
 
-```
+---
+
+[hello-world.dockerapp](hello-world.dockerapp):
+```yml
 [...]
 ---
 #
@@ -87,9 +93,9 @@ You can now render your application by running `docker-app render` or even perso
 
 Create a `render` directory and redirect the output of `docker-app render ...` to `render/docker-compose.yml`.
 
-```
-mkdir -p render
-docker-app render -s text="hello user" > render/docker-compose.yml
+```bash
+$ mkdir -p render
+$ docker-app render -s text="hello user" > render/docker-compose.yml
 ```
 
 ### Deploy
