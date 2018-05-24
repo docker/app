@@ -78,7 +78,7 @@ e2e-test: bin
 
 unit-test:
 	@echo "Running unit tests..."
-	$(GO_TEST) $(shell go list ./... | grep -vE '/vendor/|/e2e')
+	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
 
 clean:
 	rm -Rf ./_build docker-app-*.tar.gz
