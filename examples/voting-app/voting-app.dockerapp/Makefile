@@ -32,23 +32,23 @@ render/development: cleanup/development
 render: render/production render/development
 
 #
-# Kill.
+# Stop.
 #
-kill/production:
+stop/production:
 	docker stack rm ${APP_NAME}
 
-kill/development:
+stop/development:
 	docker stack rm ${APP_NAME}-dev
 
-kill: kill/production kill/development
+stop: stop/production stop/development
 
 #
 # Deploy.
 #
-deploy/production: render/production kill/production
+deploy/production: render/production stop/production
 	docker-app deploy -f $(SETTINGS_DIR)/production.yml
 
-deploy/development: render/development kill/development
+deploy/development: render/development stop/development
 	docker-app deploy -f $(SETTINGS_DIR)/development.yml
 
 #
