@@ -62,9 +62,6 @@ e2e-all: check_go_env
 	@echo "Building for all platforms..."
 	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_TEST) -c -i -o _build/$(E2E_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) ./e2e || exit 1;)
 
-release:
-	gsutil cp -r _build gs://docker_app
-
 test check: lint unit-test e2e-test
 
 lint:
@@ -101,5 +98,5 @@ ci-bin-all:
 	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) tar -cz -C $(PKG_PATH)/_build $(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) > $(BIN_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) /bin/sh -c "cp $(PKG_PATH)/_build/*-$(OS)* $(PKG_PATH)/e2e && cd $(PKG_PATH)/e2e && tar -cz * --exclude=*.go" > $(E2E_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 
-.PHONY: bin bin-all release test check lint e2e-test e2e-all unit-test clean ci-lint ci-test ci-bin-all ci-e2e-all
+.PHONY: bin bin-all test check lint e2e-test e2e-all unit-test clean ci-lint ci-test ci-bin-all ci-e2e-all
 .DEFAULT: all
