@@ -93,6 +93,7 @@ pipeline {
                     deleteDir()
                     sh 'rm -f *.tar.gz'
                     unstash 'artifacts'
+                    echo "Releasing $TAG_NAME"
                     release('docker/lunchbox')
                 }
             }
@@ -102,7 +103,7 @@ pipeline {
 
 def release(repo) {
     withCredentials([[$class: 'StringBinding', credentialsId: 'github-release-token', variable: 'GITHUB_TOKEN']]) {
-        def data = "{\"tag_name\": \"$BRANCH_NAME\", \"name\": \"$BRANCH_NAME\", \"draft\": true, \"prerelease\": true}"
+        def data = "{\"tag_name\": \"$TAG_NAME\", \"name\": \"$TAG_NAME\", \"draft\": true, \"prerelease\": true}"
         def url = "https://api.github.com/repos/$repo/releases"
         def reply = sh(returnStdout: true, script: "curl -sSf -H \"Authorization: token $GITHUB_TOKEN\" -H \"Accept: application/json\" -H \"Content-type: application/json\" -X POST -d '$data' $url")
         def release = readJSON text: reply
