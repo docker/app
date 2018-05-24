@@ -32,12 +32,80 @@ Change default replicas, from:
 - `<value:1>` to `${result.replicas}`
 - `<value:1>` to `${worker.replicas}`
 
+---
+
+[voting-app.dockerapp/docker-compose.yml](voting-app.dockerapp/docker-compose.yml):
+```yml
+[...]
+vote:
+    image: ${vote.image.name}:${vote.image.tag}
+    ports:
+      - ${vote.port}:80
+    networks:
+      - frontend
+    depends_on:
+      - redis
+    deploy:
+      replicas: ${vote.replicas}
+      update_config:
+        parallelism: 2
+      restart_policy:
+        condition: on-failure
+
+  result:
+    image: ${result.image.name}:${result.image.tag}
+    ports:
+      - ${result.port}:80
+    networks:
+      - backend
+    depends_on:
+      - db
+    deploy:
+      replicas: ${result.replicas}
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  worker:
+    image: ${worker.image.name}:${worker.image.tag}
+    networks:
+      - frontend
+      - backend
+    deploy:
+      mode: replicated
+      replicas: ${worker.replicas}
+      labels: [APP=VOTING]
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [node.role == manager]
+
+  visualizer:
+    image: ${visualizer.image.name}:${visualizer.image.tag}
+    ports:
+      - ${visualizer.port}:8080
+    stop_grace_period: 1m30s
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+[...]
+```
+
 ### Give variables their default value
 
 Open `settings.yml` and add every variables with the default value you want, e.g.:
 
-```
-$ cat settings.yml
+---
+
+[voting-app.dockerapp/settings.yml](voting-app.dockerapp/settings.yml):
+```yml
 # Vote.
 vote:
   image:
@@ -75,8 +143,10 @@ Test your application by running `docker-app render`.
 
 Create `settings/development.yml` and `settings/production.yml` and add your target-specific variables.
 
-```
-$ cat settings/development.yml
+---
+
+[voting-app.dockerapp/settings/development.yml](voting-app.dockerapp/settings/development.yml):
+```yml
 # Vote.
 vote:
   image:
@@ -87,8 +157,10 @@ result:
   image:
     name: result
 ```
-```
-$ cat settings/production.yml
+---
+
+[voting-app.dockerapp/settings/production.yml](voting-app.dockerapp/settings/production.yml):
+```yml
 # Vote.
 vote:
   port: 80
@@ -104,15 +176,18 @@ result:
 
 Add a Makefile to simplify rendering, deploying and killing your app.
 
-```
-$ cat Makefile
+---
+
+[voting-app.dockerapp/Makefile](voting-app.dockerapp/Makefile):
+```Makefile
 # Input.
-APP_NAME := voting-app
 SETTINGS_DIR ?= settings
+APP_NAME := voting-app
 
 # Output.
 DEVELOPMENT_DIR := build/development
 PRODUCTION_DIR := build/production
+PACK := $(APP_NAME).pack
 
 #
 # Cleanup.
