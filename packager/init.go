@@ -15,6 +15,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+func prependToFile(filename, text string) {
+	content, _ := ioutil.ReadFile(filename)
+	content = []byte(text + string(content))
+	ioutil.WriteFile(filename, content, 0644)
+}
+
 // Init is the entrypoint initialization function.
 // It generates a new application package based on the provided parameters.
 func Init(name string, composeFile string, description string, maintainers []string, singleFile bool) error {
@@ -52,6 +58,10 @@ func Init(name string, composeFile string, description string, maintainers []str
 		return nil
 	}
 	// Merge as a single file
+	// Add some helfpful comments to distinguish the sections
+	prependToFile(filepath.Join(dirName, "docker-compose.yml"), "# This section contains the Compose file that describes your application services.\n")
+	prependToFile(filepath.Join(dirName, "settings.yml"), "# This section contains the default values for your application settings.\n")
+	prependToFile(filepath.Join(dirName, "metadata.yml"), "# This section contains your application metadata.\n")
 	temp := "_temp_dockerapp__.dockerapp"
 	err = os.Rename(dirName, temp)
 	if err != nil {
