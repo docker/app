@@ -1,0 +1,9 @@
+# Vote.
+vote:
+  port: 80
+  replicas: 3
+
+# Result.
+result:
+  port: 80
+  replicas: 5

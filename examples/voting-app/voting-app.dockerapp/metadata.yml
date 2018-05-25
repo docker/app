@@ -1,0 +1,9 @@
+version: 0.1.0
+name: voting-app
+description: "Dogs or cats?"
+maintainers:
+- name: dimrok
+  email: "antony.mechin@docker.com"
+targets:
+  swarm: true
+  kubernetes: true

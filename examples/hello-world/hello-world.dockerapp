@@ -1,0 +1,31 @@
+#
+# Metadata.
+#
+version: 0.1.0
+name: hello-world
+description: "Hello world!"
+maintainers:
+- name: user
+  email: "user@email.com"
+targets:
+  swarm: true
+  kubernetes: true
+
+--
+#
+# Services.
+#
+version: "3.6"
+services:
+  hello:
+    image: hashicorp/http-echo
+    command: ["-text", "${text}"]
+    ports:
+      - ${port}:5678
+
+--
+#
+# Settings.
+#
+port: 8080
+text: hello world!
