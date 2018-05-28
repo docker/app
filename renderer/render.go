@@ -139,6 +139,9 @@ func applyRenderers(data []byte, renderers []string, settings map[string]interfa
 				return nil, err
 			}
 			data = []byte(mdata)
+		case "none":
+		default:
+			return nil, fmt.Errorf("unknown renderer %s", r)
 		}
 	}
 	return data, nil
@@ -197,7 +200,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
 		rl := strings.Split(r, ",")
 		for _, r := range rl {
-			if !contains(renderers, r) {
+			if r != "none" && !contains(renderers, r) {
 				return nil, fmt.Errorf("renderer '%s' not found", r)
 			}
 		}

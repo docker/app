@@ -11,5 +11,5 @@ tty: true
 aport: 10000
 sport: 11000
 dport: 12000
-memory: 100000000
+memory: '100000000'
 timeout: 10s
