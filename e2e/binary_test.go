@@ -199,10 +199,7 @@ func TestInspectBinary(t *testing.T) {
 }
 
 func TestPackBinary(t *testing.T) {
-	dockerApp, hasExperimental := getBinary(t)
-	if !hasExperimental {
-		t.Skip("experimental mode needed for this test")
-	}
+	dockerApp, _ := getBinary(t)
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	assert.NilError(t, err)
 	defer os.RemoveAll(tempDir)
