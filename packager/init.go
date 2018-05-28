@@ -17,7 +17,7 @@ import (
 
 func prependToFile(filename, text string) {
 	content, _ := ioutil.ReadFile(filename)
-	content = []byte(text + string(content))
+	content = append([]byte(text), content...)
 	ioutil.WriteFile(filename, content, 0644)
 }
 
