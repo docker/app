@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/docker/cli/cli"
-	"github.com/docker/lunchbox/internal"
 	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
 )
@@ -25,9 +24,7 @@ var (
 )
 
 func init() {
-	if internal.Experimental == "on" {
-		rootCmd.AddCommand(pushCmd)
-		pushCmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "prefix to use")
-		pushCmd.Flags().StringVarP(&pushTag, "tag", "t", "latest", "tag to use")
-	}
+	rootCmd.AddCommand(pushCmd)
+	pushCmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "prefix to use")
+	pushCmd.Flags().StringVarP(&pushTag, "tag", "t", "latest", "tag to use")
 }
