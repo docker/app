@@ -80,8 +80,7 @@
     <Content Include="Resources\CommandNew.png" />
     <Content Include="Resources\CommandSelectApp.png" />
     <Content Include="Resources\CommandSettings.png" />
-    <Content Include="Resources\whale.ico" />
-    <Content Include="Resources\whale.png" />
+    <Content Include="Resources\docker.ico" />
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
