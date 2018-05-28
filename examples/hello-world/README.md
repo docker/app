@@ -14,9 +14,7 @@ $ ls -l
 -rw-r--r-- 1 README.md
 -rw-r--r-- 1 hello-world.dockerapp
 $ cat hello-world.dockerapp
-#
-# Metadata.
-#
+# This section contains your application metadata.
 version: 0.1.0
 name: hello-world
 description: ""
@@ -28,16 +26,12 @@ targets:
   kubernetes: true
 
 --
-#
-# Services.
-#
+# This section contains the Compose file that describes your application services.
 version: "3.6"
 services: {}
 
 --
-#
-# Settings.
-#
+# This section contains the default values for your application settings.
 ```
 
 Open `hello-world.dockerapp` with your favorite text editor.
@@ -56,9 +50,7 @@ Add a service `hello` to the `services` section.
 ```yml
 [...]
 ---
-#
-# Services.
-#
+# This section contains the Compose file that describes your application services.
 services:
   hello:
     image: hashicorp/http-echo
@@ -80,9 +72,7 @@ In the settings section, add every variables with the default value you want, e.
 ```yml
 [...]
 ---
-#
-# Settings.
-#
+# This section contains the default values for your application settings.
 port: 8080
 text: hello world!
 ```

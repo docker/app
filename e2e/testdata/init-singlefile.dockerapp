@@ -1,3 +1,4 @@
+# This section contains your application metadata.
 version: 0.1.0
 name: tac
 description: my cool app
@@ -11,11 +12,13 @@ targets:
   kubernetes: true
 
 --
+# This section contains the Compose file that describes your application services.
 services:
   nginx:
     image: nginx:${NGINX_VERSION}
     command: nginx $NGINX_ARGS
 
 --
+# This section contains the default values for your application settings.
 NGINX_ARGS: FILL ME
 NGINX_VERSION: latest
