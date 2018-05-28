@@ -233,9 +233,9 @@ func TestHelmBinary(t *testing.T) {
 	chart, _ := ioutil.ReadFile("helm.chart/Chart.yaml")
 	values, _ := ioutil.ReadFile("helm.chart/values.yaml")
 	stack, _ := ioutil.ReadFile("helm.chart/templates/stack.yaml")
-	golden.AssertBytes(t, chart, "helm-expected.chart/Chart.yaml")
-	golden.AssertBytes(t, values, "helm-expected.chart/values.yaml")
-	golden.AssertBytes(t, stack, "helm-expected.chart/templates/stack.yaml")
+	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml")
+	golden.Assert(t, string(values), "helm-expected.chart/values.yaml")
+	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack.yaml")
 }
 
 func TestSplitMergeBinary(t *testing.T) {
