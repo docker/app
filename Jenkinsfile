@@ -26,6 +26,7 @@ pipeline {
                             sh 'make ci-bin-all'
                             sh 'mkdir stash'
                             sh 'ls *.tar.gz | xargs -i tar -xf {} -C stash'
+                            sh 'make ci-gradle-test DOCKERAPP_BINARY=$PWD/stash/docker-app-linux'
                             dir('stash') {
                                 stash name: 'e2e'
                             }

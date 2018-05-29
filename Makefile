@@ -10,6 +10,10 @@ RENDERERS := "none"
 
 TAG ?= $(shell git describe --always --dirty)
 COMMIT ?= $(shell git rev-parse --short HEAD)
+CWD = $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+
+# Used by ci-gradle-test target
+DOCKERAPP_BINARY ?= $(CWD)/_build/$(BIN_NAME)-linux
 
 IMAGE_NAME := docker-app
 
@@ -67,7 +71,7 @@ test check: lint unit-test e2e-test
 lint:
 	@echo "Linting..."
 	@tar -c Dockerfile.lint gometalinter.json | docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint - --target=lint-volume > /dev/null
-	@docker run --rm -v $(dir $(realpath $(lastword $(MAKEFILE_LIST)))):$(PKG_PATH):ro,cached $(IMAGE_NAME)-lint
+	@docker run --rm -v $(CWD):$(PKG_PATH):ro,cached $(IMAGE_NAME)-lint
 
 e2e-test: bin
 	@echo "Running e2e tests..."
@@ -98,5 +102,10 @@ ci-bin-all:
 	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) tar -cz -C $(PKG_PATH)/_build $(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) > $(BIN_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) /bin/sh -c "cp $(PKG_PATH)/_build/*-$(OS)* $(PKG_PATH)/e2e && cd $(PKG_PATH)/e2e && tar -cz * --exclude=*.go" > $(E2E_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 
-.PHONY: bin bin-all test check lint e2e-test e2e-all unit-test clean ci-lint ci-test ci-bin-all ci-e2e-all
+ci-gradle-test:
+	docker run --user $(shell id -u) --rm -v $(CWD)/gradle:/gradle -v $(DOCKERAPP_BINARY):/usr/local/bin/docker-app \
+	  -e GRADLE_USER_HOME=/tmp/gradle \
+	  gradle:jdk8 bash -c "cd /gradle && gradle --stacktrace build && cd example && gradle renderIt"
+
+.PHONY: bin bin-all test check lint e2e-test e2e-all unit-test clean ci-lint ci-test ci-bin-all ci-e2e-all ci-gradle-test
 .DEFAULT: all
