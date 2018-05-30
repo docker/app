@@ -46,9 +46,35 @@ func findApp() (string, error) {
 	return filepath.Join(cwd, hit), nil
 }
 
+// extractImage extracts a docker application in a docker image to a temporary directory
+func extractImage(appname string) (string, func(), error) {
+	var imagename string
+	if strings.Contains(appname, ":") {
+		nametag := strings.SplitN(appname, ":", 2)
+		nametag[0] = utils.DirNameFromAppName(nametag[0])
+		appname = filepath.Base(nametag[0])
+		imagename = strings.Join(nametag, ":")
+	} else {
+		imagename = utils.DirNameFromAppName(appname)
+		appname = filepath.Base(imagename)
+	}
+	tempDir, err := ioutil.TempDir("", "dockerapp")
+	if err != nil {
+		return "", noop, err
+	}
+	defer os.RemoveAll(tempDir)
+	err = Load(imagename, tempDir)
+	if err != nil {
+		return "", noop, fmt.Errorf("could not locate application in either filesystem or docker image")
+	}
+	// this gave us a compressed app, run through extract again
+	return Extract(filepath.Join(tempDir, appname))
+}
+
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.
 // It returns effective app name, and cleanup function
 // If appname is empty, it looks into cwd, and all subdirs for a single matching .dockerapp
+// If nothing is found, it looks for an image and loads it
 func Extract(appname string) (string, func(), error) {
 	if appname == "" {
 		var err error
@@ -62,6 +88,7 @@ func Extract(appname string) (string, func(), error) {
 			return "", nil, errors.Wrap(err, "cannot resolve current working directory")
 		}
 	}
+	originalAppname := appname
 	// try verbatim first
 	s, err := os.Stat(appname)
 	if err != nil {
@@ -70,7 +97,8 @@ func Extract(appname string) (string, func(), error) {
 		s, err = os.Stat(appname)
 	}
 	if err != nil {
-		return "", noop, err
+		// look for a docker image
+		return extractImage(originalAppname)
 	}
 	if s.IsDir() {
 		// directory: already decompressed
