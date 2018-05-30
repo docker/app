@@ -7,6 +7,7 @@ FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS build
 RUN apk add --no-cache \
   bash \
   build-base \
+  docker \
   git \
   util-linux
 WORKDIR /go/src/github.com/docker/lunchbox/

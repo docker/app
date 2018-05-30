@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -19,6 +20,51 @@ import (
 
 	"github.com/docker/lunchbox/utils"
 )
+
+type registry struct {
+	port      int
+	container string
+}
+
+func startRegistry() (*registry, error) {
+	r := &registry{}
+	err := r.Start()
+	return r, err
+}
+
+// Start starts a new docker registry on a random port
+func (r *registry) Start() error {
+	cmd := exec.Command("docker", "run", "--rm", "-d", "-P", "registry:2")
+	output, err := cmd.Output()
+	r.container = strings.Trim(string(output), " \r\n")
+	return err
+}
+
+// Stop terminates this registry
+func (r *registry) Stop() error {
+	cmd := exec.Command("docker", "stop", r.container)
+	_, err := cmd.CombinedOutput()
+	return err
+}
+
+// Port returns the host port this registry listens on
+func (r *registry) Port() (int, error) {
+	if r.port != 0 {
+		return r.port, nil
+	}
+	cmd := exec.Command("docker", "port", r.container, "5000")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+		return 0, err
+	}
+	sport := strings.Split(string(output), ":")[1]
+	p, err := strconv.ParseInt(strings.Trim(sport, " \r\n"), 10, 32)
+	if err == nil {
+		r.port = int(p)
+	}
+	return r.port, err
+}
 
 var (
 	dockerApp       = ""
@@ -69,6 +115,12 @@ func binExt() string {
 		return ".exe"
 	}
 	return ""
+}
+
+// just run a command discarding everything
+func runCommand(exe string, args ...string) {
+	cmd := exec.Command(exe, args...)
+	cmd.CombinedOutput()
 }
 
 // Run command, assert it succeeds, return its output
@@ -253,4 +305,36 @@ func TestSplitMergeBinary(t *testing.T) {
 	assertCommand(t, dockerApp, "split", "remerged", "-o", "splitted.dockerapp")
 	defer os.RemoveAll("splitted.dockerapp")
 	assertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "splitted")
+}
+
+func TestImageBinary(t *testing.T) {
+	dockerApp, _ := getBinary(t)
+	r, err := startRegistry()
+	assert.NilError(t, err)
+	defer r.Stop()
+	port, err := r.Port()
+	assert.NilError(t, err)
+	registry := fmt.Sprintf("localhost:%v", port)
+	defer func() {
+		// no way to match both in one command
+		cmd1 := exec.Command("docker", "image", "ls", "--format", "{{.ID}}", "--filter", "reference=*/*envvariables*")
+		o1, _ := cmd1.Output()
+		cmd2 := exec.Command("docker", "image", "ls", "--format", "{{.ID}}", "--filter", "reference=*/*/*envvariables*")
+		o2, _ := cmd2.Output()
+		refs := strings.Split(string(append(o1, o2...)), "\n")
+		args := []string{"image", "rm", "-f"}
+		args = append(args, refs...)
+		runCommand("docker", args...)
+	}()
+	// save with tag/prefix override
+	assertCommand(t, dockerApp, "save", "-t", "mytag", "-p", registry+"/myuser/", "render/envvariables")
+	assertCommandOutput(t, "image-inspect-labels.golden", "docker", "inspect", "-f", "{{.Config.Labels.maintainers}}", registry+"/myuser/envvariables.dockerapp:mytag")
+	// save with tag/prefix from metadata
+	assertCommand(t, dockerApp, "save", "render/envvariables")
+	assertCommandOutput(t, "image-inspect-labels.golden", "docker", "inspect", "-f", "{{.Config.Labels.maintainers}}", "alice/envvariables.dockerapp:0.1.0")
+	// push to a registry
+	assertCommand(t, dockerApp, "push", "-p", registry+"/myuser/", "render/envvariables")
+	// various commands from an image
+	assertCommand(t, dockerApp, "inspect", "alice/envvariables:0.1.0")
+	assertCommand(t, dockerApp, "inspect", "alice/envvariables.dockerapp:0.1.0")
 }

@@ -53,7 +53,7 @@ pipeline {
                         CODECOV_TOKEN = credentials('jenkins-codecov-token')
                     }
                     agent {
-                        label 'gcp-linux-worker-0'
+                        label 'linux'
                     }
                     steps {
                         dir('src/github.com/docker/lunchbox') {
