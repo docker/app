@@ -56,11 +56,11 @@ check_go_env:
 
 bin: check_go_env
 	@echo "Building _build/$(BIN_NAME)$(EXEC_EXT)..."
-	$(GO_BUILD) -ldflags=$(LDFLAGS) -o _build/$(BIN_NAME)$(EXEC_EXT)
+	$(GO_BUILD) -ldflags=$(LDFLAGS) -o _build/$(BIN_NAME)$(EXEC_EXT) ./cmd/docker-app
 
 bin-all: check_go_env
 	@echo "Building for all platforms..."
-	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_BUILD) -ldflags=$(LDFLAGS) -o _build/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) || exit 1;)
+	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_BUILD) -ldflags=$(LDFLAGS) -o _build/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) ./cmd/docker-app || exit 1;)
 
 e2e-all: check_go_env
 	@echo "Building for all platforms..."
