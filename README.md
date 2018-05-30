@@ -46,6 +46,7 @@ It should look like this:
 version: 0.1.0
 name: hello
 description: ""
+repository_prefix: ""
 maintainers:
 - name: yourusername
   email: ""
