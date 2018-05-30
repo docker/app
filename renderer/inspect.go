@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/docker/lunchbox/packager"
@@ -48,11 +47,7 @@ func Inspect(appname string) error {
 	}
 	sort.Slice(settingsKeys, func(i, j int) bool { return settingsKeys[i] < settingsKeys[j] })
 	// build maintainers string
-	maintainers := ""
-	for _, m := range meta.Maintainers {
-		maintainers += m.Name + " <" + m.Email + ">, "
-	}
-	maintainers = strings.TrimSuffix(maintainers, ", ")
+	maintainers := meta.Maintainers.String()
 	fmt.Printf("%s %s\n", meta.Name, meta.Version)
 	if maintainers != "" {
 		fmt.Printf("Maintained by: %s\n", maintainers)
