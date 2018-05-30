@@ -56,15 +56,15 @@ check_go_env:
 
 bin: check_go_env
 	@echo "Building _build/$(BIN_NAME)$(EXEC_EXT)..."
-	$(GO_BUILD) -ldflags=$(LDFLAGS) -i -o _build/$(BIN_NAME)$(EXEC_EXT)
+	$(GO_BUILD) -ldflags=$(LDFLAGS) -o _build/$(BIN_NAME)$(EXEC_EXT)
 
 bin-all: check_go_env
 	@echo "Building for all platforms..."
-	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_BUILD) -ldflags=$(LDFLAGS) -i -o _build/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) || exit 1;)
+	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_BUILD) -ldflags=$(LDFLAGS) -o _build/$(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) || exit 1;)
 
 e2e-all: check_go_env
 	@echo "Building for all platforms..."
-	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_TEST) -c -i -o _build/$(E2E_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) ./e2e || exit 1;)
+	$(foreach OS, $(OS_LIST), GOOS=$(OS) $(GO_TEST) -c -o _build/$(E2E_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) ./e2e || exit 1;)
 
 test check: lint unit-test e2e-test
 
