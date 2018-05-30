@@ -19,7 +19,6 @@ pipeline {
                     script {
                         try {
                             checkout scm
-                            sh 'rm -rf *.tar.gz stash'
                             sh 'docker image prune -f'
                             sh 'make ci-lint'
                             sh 'make ci-test'
@@ -40,6 +39,11 @@ pipeline {
                     }
                 }
             }
+            post {
+                always {
+                    deleteDir()
+                }
+            }
         }
         stage('Test') {
             parallel {
@@ -49,9 +53,13 @@ pipeline {
                     }
                     steps  {
                         dir('src/github.com/docker/lunchbox') {
-                            deleteDir()
                             unstash 'e2e'
                             sh './docker-app-e2e-linux'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
@@ -61,9 +69,13 @@ pipeline {
                     }
                     steps {
                         dir('src/github.com/docker/lunchbox') {
-                            deleteDir()
                             unstash 'e2e'
                             sh './docker-app-e2e-darwin'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
@@ -73,9 +85,13 @@ pipeline {
                     }
                     steps {
                         dir('src/github.com/docker/lunchbox') {
-                            deleteDir()
                             unstash "e2e"
                             bat 'docker-app-e2e-windows.exe'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
@@ -90,11 +106,15 @@ pipeline {
             }
             steps {
                 dir('src/github.com/docker/lunchbox') {
-                    deleteDir()
                     sh 'rm -f *.tar.gz'
                     unstash 'artifacts'
                     echo "Releasing $TAG_NAME"
                     release('docker/lunchbox')
+                }
+            }
+            post {
+                always {
+                    deleteDir()
                 }
             }
         }
