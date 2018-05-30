@@ -11,52 +11,53 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var renderCmd = &cobra.Command{
-	Use:   "render <app-name> [-s key=value...] [-f settings-file...]",
-	Short: "Render the Compose file for the application",
-	Long:  `Render the Compose file for the application.`,
-	Args:  cli.RequiresMaxArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		d, err := parseSettings(renderEnv)
-		if err != nil {
-			return err
-		}
-		rendered, err := renderer.Render(firstOrEmpty(args), renderComposeFiles, renderSettingsFile, d)
-		if err != nil {
-			return err
-		}
-		res, err := yaml.Marshal(rendered)
-		if err != nil {
-			return err
-		}
-		if renderOutput == "-" {
-			fmt.Print(string(res))
-		} else {
-			f, err := os.Create(renderOutput)
+var (
+	renderComposeFiles []string
+	renderSettingsFile []string
+	renderEnv          []string
+	renderOutput       string
+)
+
+func renderCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "render <app-name> [-s key=value...] [-f settings-file...]",
+		Short: "Render the Compose file for the application",
+		Long:  `Render the Compose file for the application.`,
+		Args:  cli.RequiresMaxArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := parseSettings(renderEnv)
 			if err != nil {
 				return err
 			}
-			fmt.Fprint(f, string(res))
-		}
-		return nil
-	},
-}
-
-var renderComposeFiles []string
-var renderSettingsFile []string
-var renderEnv []string
-var renderOutput string
-
-func init() {
-	rootCmd.AddCommand(renderCmd)
+			rendered, err := renderer.Render(firstOrEmpty(args), renderComposeFiles, renderSettingsFile, d)
+			if err != nil {
+				return err
+			}
+			res, err := yaml.Marshal(rendered)
+			if err != nil {
+				return err
+			}
+			if renderOutput == "-" {
+				fmt.Print(string(res))
+			} else {
+				f, err := os.Create(renderOutput)
+				if err != nil {
+					return err
+				}
+				fmt.Fprint(f, string(res))
+			}
+			return nil
+		},
+	}
 	if internal.Experimental == "on" {
-		renderCmd.Use += " [-c <compose-files>...]"
-		renderCmd.Long += `- External Compose files or template Compose files can be specified with the -c flag.
+		cmd.Use += " [-c <compose-files>...]"
+		cmd.Long += `- External Compose files or template Compose files can be specified with the -c flag.
   (Repeat the flag for multiple files). These files will be merged in order with
   the app's own Compose file.`
-		renderCmd.Flags().StringArrayVarP(&renderComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
+		cmd.Flags().StringArrayVarP(&renderComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
 	}
-	renderCmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "f", []string{}, "Override settings files")
-	renderCmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
-	renderCmd.Flags().StringVarP(&renderOutput, "output", "o", "-", "Output file")
+	cmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "f", []string{}, "Override settings files")
+	cmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
+	cmd.Flags().StringVarP(&renderOutput, "output", "o", "-", "Output file")
+	return cmd
 }

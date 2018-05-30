@@ -6,25 +6,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var pushCmd = &cobra.Command{
-	Use:   "push [<app-name>]",
-	Short: "Push the application to a registry",
-	Args:  cli.RequiresMaxArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if pushTag == "" {
-			pushTag = "latest"
-		}
-		return packager.Push(firstOrEmpty(args), pushPrefix, pushTag)
-	},
-}
-
 var (
 	pushPrefix string
 	pushTag    string
 )
 
-func init() {
-	rootCmd.AddCommand(pushCmd)
-	pushCmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "prefix to use")
-	pushCmd.Flags().StringVarP(&pushTag, "tag", "t", "latest", "tag to use")
+func pushCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "push [<app-name>]",
+		Short: "Push the application to a registry",
+		Args:  cli.RequiresMaxArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if pushTag == "" {
+				pushTag = "latest"
+			}
+			return packager.Push(firstOrEmpty(args), pushPrefix, pushTag)
+		},
+	}
+	cmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "prefix to use")
+	cmd.Flags().StringVarP(&pushTag, "tag", "t", "latest", "tag to use")
+	return cmd
 }

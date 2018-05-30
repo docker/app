@@ -10,44 +10,46 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	deployComposeFiles  []string
+	deploySettingsFiles []string
+	deployEnv           []string
+	deployOrchestrator  string
+	deployKubeConfig    string
+	deployNamespace     string
+	deployStackName     string
+)
+
 // deployCmd represents the deploy command
-var deployCmd = &cobra.Command{
-	Use:   "deploy [<app-name>]",
-	Short: "Deploy or update an application",
-	Long:  `Deploy the application on either Swarm or Kubernetes.`,
-	Args:  cli.RequiresMaxArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if do, ok := os.LookupEnv("DOCKER_ORCHESTRATOR"); ok {
-			deployOrchestrator = do
-		}
-		if deployOrchestrator != "swarm" && deployOrchestrator != "kubernetes" {
-			return fmt.Errorf("orchestrator must be either 'swarm' or 'kubernetes'")
-		}
-		d, err := parseSettings(deployEnv)
-		if err != nil {
-			return err
-		}
-		return renderer.Deploy(firstOrEmpty(args), deployComposeFiles, deploySettingsFiles, d, deployStackName, deployOrchestrator, deployKubeConfig, deployNamespace)
-	},
-}
-
-var deployComposeFiles []string
-var deploySettingsFiles []string
-var deployEnv []string
-var deployOrchestrator string
-var deployKubeConfig string
-var deployNamespace string
-var deployStackName string
-
-func init() {
-	rootCmd.AddCommand(deployCmd)
-	deployCmd.Flags().StringArrayVarP(&deploySettingsFiles, "settings-files", "f", []string{}, "Override settings files")
-	deployCmd.Flags().StringArrayVarP(&deployEnv, "set", "s", []string{}, "Override settings values")
-	deployCmd.Flags().StringVarP(&deployOrchestrator, "orchestrator", "o", "swarm", "Orchestrator to deploy on (swarm, kubernetes)")
-	deployCmd.Flags().StringVarP(&deployKubeConfig, "kubeconfig", "k", "", "kubeconfig file to use")
-	deployCmd.Flags().StringVarP(&deployNamespace, "namespace", "n", "default", "namespace to deploy into")
-	deployCmd.Flags().StringVarP(&deployStackName, "name", "d", "", "stack name (default: app name)")
-	if internal.Experimental == "on" {
-		deployCmd.Flags().StringArrayVarP(&deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
+func deployCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deploy [<app-name>]",
+		Short: "Deploy or update an application",
+		Long:  `Deploy the application on either Swarm or Kubernetes.`,
+		Args:  cli.RequiresMaxArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if do, ok := os.LookupEnv("DOCKER_ORCHESTRATOR"); ok {
+				deployOrchestrator = do
+			}
+			if deployOrchestrator != "swarm" && deployOrchestrator != "kubernetes" {
+				return fmt.Errorf("orchestrator must be either 'swarm' or 'kubernetes'")
+			}
+			d, err := parseSettings(deployEnv)
+			if err != nil {
+				return err
+			}
+			return renderer.Deploy(firstOrEmpty(args), deployComposeFiles, deploySettingsFiles, d, deployStackName, deployOrchestrator, deployKubeConfig, deployNamespace)
+		},
 	}
+
+	cmd.Flags().StringArrayVarP(&deploySettingsFiles, "settings-files", "f", []string{}, "Override settings files")
+	cmd.Flags().StringArrayVarP(&deployEnv, "set", "s", []string{}, "Override settings values")
+	cmd.Flags().StringVarP(&deployOrchestrator, "orchestrator", "o", "swarm", "Orchestrator to deploy on (swarm, kubernetes)")
+	cmd.Flags().StringVarP(&deployKubeConfig, "kubeconfig", "k", "", "kubeconfig file to use")
+	cmd.Flags().StringVarP(&deployNamespace, "namespace", "n", "default", "namespace to deploy into")
+	cmd.Flags().StringVarP(&deployStackName, "name", "d", "", "stack name (default: app name)")
+	if internal.Experimental == "on" {
+		cmd.Flags().StringArrayVarP(&deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
+	}
+	return cmd
 }
