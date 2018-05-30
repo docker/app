@@ -20,7 +20,10 @@ func AppNameFromDir(dirName string) string {
 // DirNameFromAppName takes an application name and returns the
 // corresponding directory name
 func DirNameFromAppName(appName string) string {
-	return fmt.Sprintf("%s%s", appName, constants.AppExtension)
+	if strings.HasSuffix(appName, constants.AppExtension) {
+		return appName
+	}
+	return appName + constants.AppExtension
 }
 
 // ValidateAppName takes an app name and returns an error if it doesn't

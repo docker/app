@@ -47,7 +47,7 @@ COPY / /
 }
 
 // Load loads an app from docker
-func Load(repotag string) error {
+func Load(repotag string, outputDir string) error {
 	file := filepath.Join(os.TempDir(), "docker-app-"+fmt.Sprintf("%v%v", rand.Int63(), rand.Int63()))
 	cmd := exec.Command("docker", "save", "-o", file, repotag)
 	output, err := cmd.CombinedOutput()
@@ -75,7 +75,7 @@ func Load(repotag string) error {
 				return errors.Wrap(err, "error reading tar data")
 			}
 			repo := strings.Split(repotag, ":")[0]
-			err = ioutil.WriteFile(appName(repo)+constants.AppExtension, data, 0644)
+			err = ioutil.WriteFile(filepath.Join(outputDir, utils.DirNameFromAppName(filepath.Base(repo))), data, 0644)
 			return errors.Wrap(err, "error writing output file")
 		}
 	}
@@ -108,5 +108,5 @@ func Pull(repotag string) error {
 	if err != nil {
 		return errors.Wrapf(err, "error from docker pull command: %s", string(output))
 	}
-	return Load(repotag)
+	return Load(repotag, ".")
 }
