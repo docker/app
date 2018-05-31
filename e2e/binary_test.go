@@ -183,15 +183,21 @@ func TestInitBinary(t *testing.T) {
     image: nginx:${NGINX_VERSION}
     command: nginx $NGINX_ARGS
 `
-	meta := `version: 0.1.0
+	meta := `# Version of the application
+version: 0.1.0
+# Name of the application
 name: app_test
+# A short description of the application
 description: my cool app
-repository_prefix: ""
+# Prefix to use when pushing to a registry. This is typically your Hub username followed by a slash.
+#repository_prefix: myHubUsername/
+# List of application maitainers with name and email for each
 maintainers:
-- name: bob
-  email: ""
-- name: joe
-  email: joe@joe.com
+  - name: bob
+    email: 
+  - name: joe
+    email: joe@joe.com
+# Specify false here if your application doesn't support Swarm or Kubernetes
 targets:
   swarm: true
   kubernetes: true

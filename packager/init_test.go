@@ -12,7 +12,6 @@ import (
 	"github.com/gotestyourself/gotestyourself/fs"
 
 	"github.com/docker/app/utils"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func randomName(prefix string) string {
@@ -72,18 +71,31 @@ func TestWriteMetadataFile(t *testing.T) {
 	tmpdir := fs.NewDir(t, appName)
 	defer tmpdir.Remove()
 
-	err := writeMetadataFile(appName, tmpdir.Path(), "", nil)
+	err := writeMetadataFile(appName, tmpdir.Path(), "", []string{"bearclaw:bearclaw"})
 	assert.NilError(t, err)
 
-	data, err := yaml.Marshal(newMetadata(appName, "", nil))
+	data := `# Version of the application
+version: 0.1.0
+# Name of the application
+name: writemetadata_test
+# A short description of the application
+description: 
+# Prefix to use when pushing to a registry. This is typically your Hub username followed by a slash.
+#repository_prefix: myHubUsername/
+# List of application maitainers with name and email for each
+maintainers:
+  - name: bearclaw
+    email: bearclaw
+# Specify false here if your application doesn't support Swarm or Kubernetes
+targets:
+  swarm: true
+  kubernetes: true
+`
 	assert.NilError(t, err)
 
 	manifest := fs.Expected(
 		t,
-		fs.WithFile("metadata.yml", "",
-			fs.WithMode(0644),
-			fs.WithBytes(data),
-		),
+		fs.WithFile("metadata.yml", data, fs.WithMode(0644)),
 	)
 	assert.Assert(t, fs.Equal(tmpdir.Path(), manifest))
 }

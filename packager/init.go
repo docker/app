@@ -1,12 +1,14 @@
 package packager
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/docker/app/types"
 	"github.com/docker/app/utils"
@@ -222,12 +224,38 @@ func composeFileFromScratch() ([]byte, error) {
 	return yaml.Marshal(fileStruct)
 }
 
+const metaTemplate = `# Version of the application
+version: {{ .Version }}
+# Name of the application
+name: {{ .Name }}
+# A short description of the application
+description: {{ .Description }}
+# Prefix to use when pushing to a registry. This is typically your Hub username followed by a slash.
+{{ if len .RepositoryPrefix }}repository_prefix: {{ .RepositoryPrefix }} {{ else }}#repository_prefix: myHubUsername/{{ end }}
+# List of application maitainers with name and email for each
+{{ if len .Maintainers }}maintainers:
+{{ range .Maintainers }}  - name: {{ .Name  }}
+    email: {{ .Email }}
+{{ end }}{{ else }}#maintainers:
+#  - name: John Doe
+#    email: john@doe.com
+{{ end }}# Specify false here if your application doesn't support Swarm or Kubernetes
+targets:
+  swarm: true
+  kubernetes: true
+`
+
 func writeMetadataFile(name, dirName string, description string, maintainers []string) error {
-	data, err := yaml.Marshal(newMetadata(name, description, maintainers))
+	meta := newMetadata(name, description, maintainers)
+	tmpl, err := template.New("metadata").Parse(metaTemplate)
 	if err != nil {
 		return err
 	}
-	return utils.CreateFileWithData(filepath.Join(dirName, "metadata.yml"), data)
+	resBuf := &bytes.Buffer{}
+	if err := tmpl.Execute(resBuf, meta); err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filepath.Join(dirName, "metadata.yml"), resBuf.Bytes(), 0644)
 }
 
 func newMetadata(name string, description string, maintainers []string) types.AppMetadata {
