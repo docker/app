@@ -1,1 +1,3 @@
 debug: false
+wordpress:
+  port: 80
