@@ -2,6 +2,7 @@
 version: 0.1.0
 name: tac
 description: my cool app
+repository_prefix: ""
 maintainers:
 - name: bob
   email: ""

@@ -17,13 +17,10 @@ func pushCmd() *cobra.Command {
 		Short: "Push the application to a registry",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if pushTag == "" {
-				pushTag = "latest"
-			}
 			return packager.Push(firstOrEmpty(args), pushPrefix, pushTag)
 		},
 	}
-	cmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "prefix to use")
-	cmd.Flags().StringVarP(&pushTag, "tag", "t", "latest", "tag to use")
+	cmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "prefix to use (default: repository_prefix in metadata)")
+	cmd.Flags().StringVarP(&pushTag, "tag", "t", "", "tag to use (default: version in metadata")
 	return cmd
 }

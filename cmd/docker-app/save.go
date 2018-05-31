@@ -17,13 +17,11 @@ func saveCmd() *cobra.Command {
 		Short: "Save the application as an image to the docker daemon(in preparation for push)",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if saveTag == "" {
-				saveTag = "latest"
-			}
-			return packager.Save(firstOrEmpty(args), savePrefix, saveTag)
+			_, err := packager.Save(firstOrEmpty(args), savePrefix, saveTag)
+			return err
 		},
 	}
-	cmd.Flags().StringVarP(&savePrefix, "prefix", "p", "", "prefix to use")
-	cmd.Flags().StringVarP(&saveTag, "tag", "t", "latest", "tag to use")
+	cmd.Flags().StringVarP(&savePrefix, "prefix", "p", "", "prefix to use (default: repository_prefix in metadata)")
+	cmd.Flags().StringVarP(&saveTag, "tag", "t", "", "tag to use (default: version in metadata)")
 	return cmd
 }

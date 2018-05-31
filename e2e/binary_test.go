@@ -134,6 +134,7 @@ func TestInitBinary(t *testing.T) {
 	meta := `version: 0.1.0
 name: app_test
 description: my cool app
+repository_prefix: ""
 maintainers:
 - name: bob
   email: ""

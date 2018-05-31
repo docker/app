@@ -12,21 +12,41 @@ import (
 	"strings"
 
 	"github.com/docker/lunchbox/constants"
+	"github.com/docker/lunchbox/types"
 	"github.com/docker/lunchbox/utils"
 	"github.com/pkg/errors"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func appName(appname string) string {
 	return utils.AppNameFromDir(appname)
 }
 
-// Save saves an app to docker
-func Save(appname, prefix, tag string) error {
+// Save saves an app to docker and returns the image name.
+func Save(appname, prefix, tag string) (string, error) {
 	appname, cleanup, err := Extract(appname)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer cleanup()
+	if prefix == "" || tag == "" {
+		metaFile := filepath.Join(appname, "metadata.yml")
+		metaContent, err := ioutil.ReadFile(metaFile)
+		if err != nil {
+			return "", err
+		}
+		var meta types.AppMetadata
+		err = yaml.Unmarshal(metaContent, &meta)
+		if err != nil {
+			return "", err
+		}
+		if tag == "" {
+			tag = meta.Version
+		}
+		if prefix == "" {
+			prefix = meta.RepositoryPrefix
+		}
+	}
 	dockerfile := `
 FROM scratch
 COPY / /
@@ -35,7 +55,8 @@ COPY / /
 	ioutil.WriteFile(df, []byte(dockerfile), 0644)
 	di := filepath.Join(appname, ".dockerignore")
 	ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644)
-	args := []string{"build", "-t", prefix + appName(appname) + constants.AppExtension + ":" + tag, "-f", df, appname}
+	imageName := prefix + appName(appname) + constants.AppExtension + ":" + tag
+	args := []string{"build", "-t", imageName, "-f", df, appname}
 	cmd := exec.Command("docker", args...)
 	output, err := cmd.CombinedOutput()
 	os.Remove(df)
@@ -43,7 +64,7 @@ COPY / /
 	if err != nil {
 		fmt.Println(string(output))
 	}
-	return err
+	return imageName, err
 }
 
 // Load loads an app from docker
@@ -89,11 +110,11 @@ func Push(appname, prefix, tag string) error {
 		return err
 	}
 	defer cleanup()
-	err = Save(appname, prefix, tag)
+	imageName, err := Save(appname, prefix, tag)
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("docker", "push", prefix+appName(appname)+constants.AppExtension+":"+tag)
+	cmd := exec.Command("docker", "push", imageName)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrapf(err, "error from docker push command: %s", string(output))
