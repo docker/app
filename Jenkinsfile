@@ -11,9 +11,6 @@ pipeline {
 
     stages {
         stage('Build') {
-            agent {
-                label 'linux'
-            }
             steps  {
                 dir('src/github.com/docker/lunchbox') {
                     script {
@@ -52,9 +49,6 @@ pipeline {
                     environment {
                         CODECOV_TOKEN = credentials('jenkins-codecov-token')
                     }
-                    agent {
-                        label 'gcp-linux-worker-0'
-                    }
                     steps {
                         dir('src/github.com/docker/lunchbox') {
                             checkout scm
@@ -66,9 +60,6 @@ pipeline {
                     }
                 }
                 stage("Test Linux") {
-                    agent {
-                        label 'linux'
-                    }
                     steps  {
                         dir('src/github.com/docker/lunchbox') {
                             unstash 'e2e'
@@ -116,9 +107,6 @@ pipeline {
             }
         }
         stage('Release') {
-            agent {
-                label "linux"
-            }
             when {
                 buildingTag()
             }
