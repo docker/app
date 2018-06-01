@@ -124,7 +124,7 @@ ci-bin-all:
 	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) /bin/sh -c "cp $(PKG_PATH)/_build/*-$(OS)* $(PKG_PATH)/e2e && cd $(PKG_PATH)/e2e && tar -cz * --exclude=*.go" > $(E2E_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 
 ci-gradle-test:
-	docker run --user $(shell id -u) --rm -v $(CWD)/gradle:/gradle -v $(DOCKERAPP_BINARY):/usr/local/bin/docker-app \
+	docker run --user $(shell id -u) --rm -v $(CWD)/integrations/gradle:/gradle -v $(DOCKERAPP_BINARY):/usr/local/bin/docker-app \
 	  -e GRADLE_USER_HOME=/tmp/gradle \
 	  gradle:jdk8 bash -c "cd /gradle && gradle --stacktrace build && cd example && gradle renderIt"
 
