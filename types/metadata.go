@@ -1,9 +1,31 @@
 package types
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Maintainer represents one of the apps's maintainers
 type Maintainer struct {
 	Name  string
 	Email string
+}
+
+// Maintainers is a list of maintainers
+type Maintainers []Maintainer
+
+// String gives a string representation of a list of maintainers
+func (ms Maintainers) String() string {
+	res := make([]string, len(ms))
+	for i, m := range ms {
+		res[i] = m.String()
+	}
+	return strings.Join(res, ",")
+}
+
+// String gives a string representation of a maintainer
+func (m Maintainer) String() string {
+	return fmt.Sprintf("%s <%s>", m.Name, m.Email)
 }
 
 // AppMetadata is the format of the data found inside the metadata.yml file
@@ -12,7 +34,7 @@ type AppMetadata struct {
 	Name             string
 	Description      string
 	RepositoryPrefix string `yaml:"repository_prefix"`
-	Maintainers      []Maintainer
+	Maintainers      Maintainers
 	Targets          ApplicationTarget
 }
 

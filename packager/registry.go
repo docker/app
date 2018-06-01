@@ -29,28 +29,28 @@ func Save(appname, prefix, tag string) (string, error) {
 		return "", err
 	}
 	defer cleanup()
-	if prefix == "" || tag == "" {
-		metaFile := filepath.Join(appname, "metadata.yml")
-		metaContent, err := ioutil.ReadFile(metaFile)
-		if err != nil {
-			return "", err
-		}
-		var meta types.AppMetadata
-		err = yaml.Unmarshal(metaContent, &meta)
-		if err != nil {
-			return "", err
-		}
-		if tag == "" {
-			tag = meta.Version
-		}
-		if prefix == "" {
-			prefix = meta.RepositoryPrefix
-		}
+	metaFile := filepath.Join(appname, "metadata.yml")
+	metaContent, err := ioutil.ReadFile(metaFile)
+	if err != nil {
+		return "", err
 	}
-	dockerfile := `
+	var meta types.AppMetadata
+	err = yaml.Unmarshal(metaContent, &meta)
+	if err != nil {
+		return "", err
+	}
+	if tag == "" {
+		tag = meta.Version
+	}
+	if prefix == "" {
+		prefix = meta.RepositoryPrefix
+	}
+	dockerfile := fmt.Sprintf(`
 FROM scratch
+LABEL com.docker.application=%s
+LABEL maintainers="%v"
 COPY / /
-`
+`, meta.Name, meta.Maintainers)
 	df := filepath.Join(appname, "__Dockerfile-docker-app__")
 	ioutil.WriteFile(df, []byte(dockerfile), 0644)
 	di := filepath.Join(appname, ".dockerignore")
