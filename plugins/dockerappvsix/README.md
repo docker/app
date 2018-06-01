@@ -4,6 +4,10 @@ This directory contains the sources of a Docker Application plugin for Visual St
 
 The plugin creates a few commands in the `Tools` menu.
 
+# Restoring dependencies
+
+Run .\nuget.exe restore
+
 # Building the plugin
 
 Open the `dockerappvsix.sln` solution in Visual Studio, change the target to `Release` and hit build. This will produce the plugin under `dockerappvsix/bin/Release/dockerappvsix.vsix`.
