@@ -1,4 +1,4 @@
-PKG_NAME := github.com/docker/lunchbox
+PKG_NAME := github.com/docker/app
 BIN_NAME := docker-app
 E2E_NAME := $(BIN_NAME)-e2e
 
@@ -102,7 +102,7 @@ clean:
 # Continuous Integration #
 ##########################
 
-COV_LABEL := com.docker.lunchbox.cov-run=$(TAG)
+COV_LABEL := com.docker.app.cov-run=$(TAG)
 
 ci-lint:
 	@echo "Linting..."

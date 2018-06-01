@@ -15,7 +15,7 @@ pipeline {
                 label 'linux'
             }
             steps  {
-                dir('src/github.com/docker/lunchbox') {
+                dir('src/github.com/docker/app') {
                     script {
                         try {
                             checkout scm
@@ -56,7 +56,7 @@ pipeline {
                         label 'linux'
                     }
                     steps {
-                        dir('src/github.com/docker/lunchbox') {
+                        dir('src/github.com/docker/app') {
                             checkout scm
                             sh 'make ci-coverage'
                             archiveArtifacts '_build/ci-cov/all.out'
@@ -70,7 +70,7 @@ pipeline {
                         label 'linux'
                     }
                     steps  {
-                        dir('src/github.com/docker/lunchbox') {
+                        dir('src/github.com/docker/app') {
                             unstash 'e2e'
                             sh './docker-app-e2e-linux'
                         }
@@ -86,7 +86,7 @@ pipeline {
                         label "mac"
                     }
                     steps {
-                        dir('src/github.com/docker/lunchbox') {
+                        dir('src/github.com/docker/app') {
                             unstash 'e2e'
                             sh './docker-app-e2e-darwin'
                         }
@@ -102,7 +102,7 @@ pipeline {
                         label "windows"
                     }
                     steps {
-                        dir('src/github.com/docker/lunchbox') {
+                        dir('src/github.com/docker/app') {
                             unstash "e2e"
                             bat 'docker-app-e2e-windows.exe'
                         }
@@ -123,11 +123,11 @@ pipeline {
                 buildingTag()
             }
             steps {
-                dir('src/github.com/docker/lunchbox') {
+                dir('src/github.com/docker/app') {
                     sh 'rm -f *.tar.gz'
                     unstash 'artifacts'
                     echo "Releasing $TAG_NAME"
-                    release('docker/lunchbox')
+                    release('docker/app')
                 }
             }
             post {

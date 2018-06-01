@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/docker/app/packager"
 	"github.com/docker/cli/cli"
-	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
 )
 

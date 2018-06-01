@@ -20,14 +20,14 @@ RUN git clone https://github.com/alexkohler/nakedret.git /go/src/github.com/alex
     && go build -v -o /usr/local/bin/nakedret . \
     && rm -rf /go/src/* /go/pkg/*
 
-WORKDIR /go/src/github.com/docker/lunchbox
+WORKDIR /go/src/github.com/docker/app
 ENV CGO_ENABLED=0
 ENV DISABLE_WARN_OUTSIDE_CONTAINER=1
 ENTRYPOINT ["/usr/local/bin/gometalinter"]
 CMD ["--config=gometalinter.json", "./..."]
 
 FROM lint-base AS lint-volume
-VOLUME ["/go/src/github.com/docker/lunchbox"]
+VOLUME ["/go/src/github.com/docker/app"]
 
 FROM lint-base AS lint-image
 COPY . .

@@ -12,7 +12,7 @@ import (
 
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/cli/compose/template"
-	types "github.com/docker/lunchbox/templatetypes"
+	types "github.com/docker/app/templatetypes"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/go-connections/nat"

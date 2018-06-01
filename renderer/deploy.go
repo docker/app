@@ -4,13 +4,13 @@ import (
 	"context"
 	"os"
 
+	"github.com/docker/app/packager"
+	"github.com/docker/app/utils"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/command/stack/swarm"
 	cliflags "github.com/docker/cli/cli/flags"
-	"github.com/docker/lunchbox/packager"
-	"github.com/docker/lunchbox/utils"
 )
 
 // Deploy deploys this app, merging in settings files, other compose files, end env

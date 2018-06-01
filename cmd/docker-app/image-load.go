@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/docker/lunchbox/image"
+	"github.com/docker/app/image"
 	"github.com/spf13/cobra"
 )
 

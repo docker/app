@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/docker/lunchbox/constants"
-	"github.com/docker/lunchbox/utils"
+	"github.com/docker/app/constants"
+	"github.com/docker/app/utils"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

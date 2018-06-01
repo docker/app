@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/lunchbox/types"
-	"github.com/docker/lunchbox/utils"
+	"github.com/docker/app/types"
+	"github.com/docker/app/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"

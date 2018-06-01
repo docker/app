@@ -11,7 +11,7 @@ import (
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/fs"
 
-	"github.com/docker/lunchbox/utils"
+	"github.com/docker/app/utils"
 	yaml "gopkg.in/yaml.v2"
 )
 

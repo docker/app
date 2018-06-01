@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/lunchbox/internal"
+	"github.com/docker/app/internal"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

@@ -6,9 +6,9 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/docker/lunchbox/packager"
-	"github.com/docker/lunchbox/renderer"
-	"github.com/docker/lunchbox/utils"
+	"github.com/docker/app/packager"
+	"github.com/docker/app/renderer"
+	"github.com/docker/app/utils"
 )
 
 func contains(list []string, needle string) bool {

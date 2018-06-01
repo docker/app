@@ -146,10 +146,10 @@ $ docker-app render -f prod.yml
 
 ## Installation
 
-Pre-built binaries are available on [GitHub releases](https://github.com/docker/lunchbox/releases) for Windows, Linux and macOS.
+Pre-built binaries are available on [GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and macOS.
 
 ```bash
-wget https://github.com/docker/lunchbox/releases/download/0.1.0/docker-app-linux.tar.gz
+wget https://github.com/docker/app/releases/download/0.1.0/docker-app-linux.tar.gz
 tar xf docker-app-linux.tar.gz
 cp docker-app-linux /usr/local/bin/docker-app
 ```

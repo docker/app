@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/app/internal"
+	"github.com/docker/app/renderer"
 	"github.com/docker/cli/cli"
-	"github.com/docker/lunchbox/internal"
-	"github.com/docker/lunchbox/renderer"
 	"github.com/spf13/cobra"
 )
 
