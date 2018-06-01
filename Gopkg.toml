@@ -20,6 +20,7 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
+required = ["github.com/wadey/gocovmerge"]
 
 [[constraint]]
   name = "github.com/spf13/cobra"
@@ -33,6 +34,11 @@
   name = "github.com/docker/cli"
   branch = "master"
   source = "github.com/mnottale/cli"
+
+[[override]]
+  name = "github.com/spf13/pflag"
+  branch = "master"
+  source = "github.com/shin-/pflag"
 
 [[constraint]]
   name = "github.com/gotestyourself/gotestyourself"
@@ -69,6 +75,10 @@
 [[override]]
   name = "google.golang.org/grpc"
   revision = "v1.3.0"
+
+[[constraint]]
+  name = "github.com/wadey/gocovmerge"
+  branch = "master"
 
 [prune]
   non-go = true

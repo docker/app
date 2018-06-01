@@ -34,7 +34,7 @@ pipeline {
                                 archiveArtifacts '*.tar.gz'
                             }
                         } finally {
-                            def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm/
+                            def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm -f/
                             sh clean_images
                         }
                     }
@@ -48,6 +48,23 @@ pipeline {
         }
         stage('Test') {
             parallel {
+                stage("Coverage report") {
+                    environment {
+                        CODECOV_TOKEN = credentials('jenkins-codecov-token')
+                    }
+                    agent {
+                        label 'gcp-linux-worker-0'
+                    }
+                    steps {
+                        dir('src/github.com/docker/lunchbox') {
+                            checkout scm
+                            sh 'make ci-coverage'
+                            archiveArtifacts '_build/ci-cov/all.out'
+                            archiveArtifacts '_build/ci-cov/coverage.html'
+                            sh 'curl -s https://codecov.io/bash | bash -s - -f _build/ci-cov/all.out -K'
+                        }
+                    }
+                }
                 stage("Test Linux") {
                     agent {
                         label 'linux'

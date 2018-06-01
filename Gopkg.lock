@@ -465,10 +465,11 @@
   version = "v0.0.2"
 
 [[projects]]
+  branch = "master"
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
-  version = "v1.0.1"
+  revision = "ff05565044323371eb96042057fdfc1d8958aab7"
+  source = "github.com/shin-/pflag"
 
 [[projects]]
   branch = "master"
@@ -490,6 +491,12 @@
     "tuf/validation"
   ]
   revision = "2b39e81caa26d9b0392f637d83520cb244390ffa"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/wadey/gocovmerge"
+  packages = ["."]
+  revision = "b5bfa59ec0adc420475f97f89b58045c721d761c"
 
 [[projects]]
   branch = "master"
@@ -573,6 +580,12 @@
   name = "golang.org/x/time"
   packages = ["rate"]
   revision = "fbb02b2291d28baffd63558aa44b4b56f178d650"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = ["cover"]
+  revision = "a5b4c53f6e8bdcafa95a94671bf2d1203365858b"
 
 [[projects]]
   branch = "master"
@@ -771,6 +784,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a4b9c982d2f79a4c3ba9232dd354bb8069819070233f81b6285697c0dff72e23"
+  inputs-digest = "1502d8910e0c6be9293194ec44e78bb1fb1dab51e5fd130db123bb40e2733107"
   solver-name = "gps-cdcl"
   solver-version = 1

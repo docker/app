@@ -81,12 +81,28 @@ unit-test:
 	@echo "Running unit tests..."
 	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
 
+coverage-bin:
+	$(GO_TEST) -coverpkg="./..." -c -ldflags=$(LDFLAGS) -tags testrunmain -o _build/$(BIN_NAME).cov ./cmd/docker-app
+	go install ./vendor/github.com/wadey/gocovmerge/
+
+coverage: coverage-bin
+	mkdir -p _build/cov
+	@echo "Running e2e tests (coverage)..."
+	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
+	@echo "Running unit tests (coverage)..."
+	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
+	gocovmerge _build/cov/*.out > _build/cov/all.out
+	go tool cover -func _build/cov/all.out
+	go tool cover -html _build/cov/all.out -o _build/cov/coverage.html
+
 clean:
 	rm -Rf ./_build docker-app-*.tar.gz
 
 ##########################
 # Continuous Integration #
 ##########################
+
+COV_LABEL := com.docker.lunchbox.cov-run=$(TAG)
 
 ci-lint:
 	@echo "Linting..."
@@ -96,6 +112,11 @@ ci-lint:
 ci-test:
 	@echo "Testing..."
 	docker build -t $(IMAGE_NAME)-test:$(TAG) $(IMAGE_BUILD_ARGS) . --target=test
+
+ci-coverage:
+	docker build --target=build -t $(IMAGE_NAME)-cov:$(TAG) $(IMAGE_BUILD_ARGS) .
+	docker run --label $(COV_LABEL) $(IMAGE_NAME)-cov:$(TAG) make COMMIT=$(TAG) TAG=$(COMMIT) coverage
+	mkdir -p ./_build && docker cp $$(docker ps -aql --filter label=$(COV_LABEL)):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 
 ci-bin-all:
 	docker build -t $(IMAGE_NAME)-bin-all:$(TAG) $(IMAGE_BUILD_ARGS) . --target=bin-build
@@ -107,5 +128,5 @@ ci-gradle-test:
 	  -e GRADLE_USER_HOME=/tmp/gradle \
 	  gradle:jdk8 bash -c "cd /gradle && gradle --stacktrace build && cd example && gradle renderIt"
 
-.PHONY: bin bin-all test check lint e2e-test e2e-all unit-test clean ci-lint ci-test ci-bin-all ci-e2e-all ci-gradle-test
+.PHONY: bin bin-all release test check lint test-cov e2e-test e2e-all unit-test coverage coverage-bin clean ci-lint ci-test ci-coverage ci-bin-all ci-e2e-all ci-gradle-test
 .DEFAULT: all
