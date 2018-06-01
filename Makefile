@@ -90,7 +90,7 @@ coverage: coverage-bin
 	@echo "Running e2e tests (coverage)..."
 	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
 	@echo "Running unit tests (coverage)..."
-	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/vendor/|/e2e')
+	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
 	gocovmerge _build/cov/*.out > _build/cov/all.out
 	go tool cover -func _build/cov/all.out
 	go tool cover -html _build/cov/all.out -o _build/cov/coverage.html

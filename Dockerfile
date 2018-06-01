@@ -5,10 +5,10 @@ ARG TAG=unknown
 
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS build
 RUN apk add --no-cache \
+  bash \
   build-base \
   git \
-  util-linux \
-  bash
+  util-linux
 WORKDIR /go/src/github.com/docker/lunchbox/
 COPY . .
 

@@ -52,7 +52,6 @@ pipeline {
                     environment {
                         CODECOV_TOKEN = credentials('jenkins-codecov-token')
                     }
-
                     agent {
                         label 'gcp-linux-worker-0'
                     }
