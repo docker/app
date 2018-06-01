@@ -4,6 +4,8 @@ This directory contains the sources of a Docker Application plugin for Intellij 
 
 The plugin creates a new top-level `Docker` menu populated with commands to manipulate Docker applications.
 
+![The plugin menu](docker-app-intellij.png)
+
 # Building the plugin
 
 Simply run `gradle build` in the plugins/intellij directory. This will create a jar with the plugin binary in the `build/lib` directory.
