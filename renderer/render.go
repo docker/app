@@ -10,10 +10,10 @@ import (
 	"text/template"
 
 	"github.com/cbroglie/mustache"
+	"github.com/docker/app/internal"
+	"github.com/docker/app/packager"
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
-	"github.com/docker/lunchbox/internal"
-	"github.com/docker/lunchbox/packager"
 	"github.com/docker/yatee/yatee"
 	"gopkg.in/yaml.v2"
 )

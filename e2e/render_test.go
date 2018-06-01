@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/lunchbox/internal"
-	"github.com/docker/lunchbox/renderer"
+	"github.com/docker/app/internal"
+	"github.com/docker/app/renderer"
 
 	"github.com/gotestyourself/gotestyourself/assert"
 	"gopkg.in/yaml.v2"

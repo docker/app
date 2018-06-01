@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/lunchbox/constants"
-	"github.com/docker/lunchbox/types"
-	"github.com/docker/lunchbox/utils"
+	"github.com/docker/app/constants"
+	"github.com/docker/app/types"
+	"github.com/docker/app/utils"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )

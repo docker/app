@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/lunchbox/image"
-	"github.com/docker/lunchbox/internal"
+	"github.com/docker/app/image"
+	"github.com/docker/app/internal"
 	"github.com/spf13/cobra"
 )
 

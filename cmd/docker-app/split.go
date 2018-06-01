@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/docker/app/internal"
+	"github.com/docker/app/packager"
 	"github.com/docker/cli/cli"
-	"github.com/docker/lunchbox/internal"
-	"github.com/docker/lunchbox/packager"
 	"github.com/spf13/cobra"
 )
 

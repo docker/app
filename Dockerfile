@@ -10,7 +10,7 @@ RUN apk add --no-cache \
   docker \
   git \
   util-linux
-WORKDIR /go/src/github.com/docker/lunchbox/
+WORKDIR /go/src/github.com/docker/app/
 COPY . .
 
 FROM build AS bin-build

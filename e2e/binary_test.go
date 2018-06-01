@@ -18,7 +18,7 @@ import (
 	"github.com/gotestyourself/gotestyourself/golden"
 	"github.com/gotestyourself/gotestyourself/icmd"
 
-	"github.com/docker/lunchbox/utils"
+	"github.com/docker/app/utils"
 )
 
 type registry struct {

@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/docker/docker/api/types/mount"
-	types "github.com/docker/lunchbox/templatetypes"
+	types "github.com/docker/app/templatetypes"
 	"github.com/pkg/errors"
 )
 
