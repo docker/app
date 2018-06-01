@@ -82,7 +82,7 @@ unit-test:
 	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
 
 coverage-bin:
-	$(GO_TEST) -coverpkg="./..." -c -ldflags=$(LDFLAGS) -tags testrunmain -o _build/$(BIN_NAME).cov
+	$(GO_TEST) -coverpkg="./..." -c -ldflags=$(LDFLAGS) -tags testrunmain -o _build/$(BIN_NAME).cov ./cmd/docker-app
 	go install ./vendor/github.com/wadey/gocovmerge/
 
 coverage: coverage-bin
