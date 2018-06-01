@@ -2,6 +2,7 @@
 using System.ComponentModel.Design;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
@@ -12,111 +13,83 @@ using Task = System.Threading.Tasks.Task;
 
 namespace dockerappvsix
 {
-    /// <summary>
-    /// Command handler
-    /// </summary>
     internal sealed class CommandDeploy
     {
-        /// <summary>
-        /// Command ID.
-        /// </summary>
         public const int CommandId = 4131;
-
-        /// <summary>
-        /// Command menu group (command set GUID).
-        /// </summary>
+        
         public static readonly Guid CommandSet = new Guid("0113e9de-ef33-4d36-9c72-75012c5afd35");
+        
+        private readonly AsyncPackage _package;
 
-        /// <summary>
-        /// VS Package that provides this command, not null.
-        /// </summary>
-        private readonly AsyncPackage package;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandDeploy"/> class.
-        /// Adds our command handlers for menu (commands must exist in the command table file)
-        /// </summary>
-        /// <param name="package">Owner package, not null.</param>
-        /// <param name="commandService">Command service to add command to, not null.</param>
         private CommandDeploy(AsyncPackage package, OleMenuCommandService commandService)
         {
-            this.package = package ?? throw new ArgumentNullException(nameof(package));
+            _package = package ?? throw new ArgumentNullException(nameof(package));
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
 
             var menuCommandID = new CommandID(CommandSet, CommandId);
             var menuItem = new MenuCommand(this.ExecuteAsync, menuCommandID);
             commandService.AddCommand(menuItem);
         }
-
-        /// <summary>
-        /// Gets the instance of the command.
-        /// </summary>
+        
         public static CommandDeploy Instance
         {
             get;
             private set;
         }
-
-        /// <summary>
-        /// Gets the service provider from the owner package.
-        /// </summary>
+        
         private Microsoft.VisualStudio.Shell.IAsyncServiceProvider ServiceProvider
         {
             get
             {
-                return this.package;
+                return this._package;
             }
         }
-
-        /// <summary>
-        /// Initializes the singleton instance of the command.
-        /// </summary>
-        /// <param name="package">Owner package, not null.</param>
+        
         public static async Task InitializeAsync(AsyncPackage package)
         {
-            // Verify the current thread is the UI thread - the call to AddCommand in CommandDeploy's constructor requires
-            // the UI thread.
             ThreadHelper.ThrowIfNotOnUIThread();
 
             OleMenuCommandService commandService = await package.GetServiceAsync((typeof(IMenuCommandService))) as OleMenuCommandService;
             Instance = new CommandDeploy(package, commandService);
         }
 
-        private string AddArg(Globals g, string key, string cmd)
+        private void AddArgIfExists(Globals g, string key, string flag, StringBuilder cmd)
         {
-            if (g.get_VariableExists(key) && g[key] as string != "")
-                return " " + cmd + " " + g[key];
-            return "";
+            var value = g.GetOrNull<string>(key);
+            if (string.IsNullOrEmpty(value)) {
+                return;
+            }
+            
+            if (!string.IsNullOrEmpty(flag)) {
+                cmd.Append($" {flag}");
+            }
+            cmd.Append($" {value}");
         }
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
         private async void ExecuteAsync(object sender, EventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            DTE dte = await this.package.GetServiceAsync(typeof(DTE)) as DTE;
+            DTE dte = await this._package.GetServiceAsync(typeof(DTE)) as DTE;
             Globals g = dte.Solution.Globals;
-            string args = "deploy";
-            args += AddArg(g, "dockerapp_applocation", "");
-            args += AddArg(g, "dockerapp_orchestrator", "--orchestrator");
-            args += AddArg(g, "dockerapp_stackname", "--name");
-            args += AddArg(g, "dockerapp_namespace", "--namespace");
-            args += AddArg(g, "dockerapp_kubeconfig", "--kubeconfig");
-            if (g.get_VariableExists("dockerapp_settings"))
+            var argsBuilder = new StringBuilder("deploy");
+            AddArgIfExists(g, "dockerapp_applocation", null, argsBuilder);
+            AddArgIfExists(g, "dockerapp_orchestrator", "--orchestrator", argsBuilder);
+            AddArgIfExists(g, "dockerapp_stackname", "--name", argsBuilder);
+            AddArgIfExists(g, "dockerapp_namespace", "--namespace", argsBuilder);
+            AddArgIfExists(g, "dockerapp_kubeconfig", "--kubeconfig", argsBuilder);
+            var settings = g.GetOrNull<string>("dockerapp_settings");
+
+            if (settings !=null)
             {
-                foreach (string s in (g["dockerapp_settings"] as string).Split('\n'))
-                    args += " -s " + s;
+                foreach (string s in (settings).Split('\n')) {
+                    argsBuilder.Append($" -s {s}");
+                }
             }
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             proc.StartInfo.FileName = "docker-app";
             proc.StartInfo.UseShellExecute = false;
             proc.StartInfo.RedirectStandardError = true;
             proc.StartInfo.RedirectStandardOutput = true;
-            proc.StartInfo.Arguments = args;
+            proc.StartInfo.Arguments = argsBuilder.ToString();
 
             if (dte.Solution.FileName != "")
             {
@@ -130,7 +103,7 @@ namespace dockerappvsix
             IVsOutputWindowPane generalPane;
             outWindow.GetPane(ref generalPaneGuid, out generalPane);
 
-            generalPane.OutputString("Deploy command: docker-app " + args + System.Environment.NewLine);
+            generalPane.OutputString("Deploy command: docker-app " + argsBuilder.ToString() + System.Environment.NewLine);
             generalPane.Activate(); // Brings this pane into view
             while (!proc.StandardOutput.EndOfStream)
                 generalPane.OutputString(proc.StandardOutput.ReadLine() + System.Environment.NewLine);
