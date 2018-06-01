@@ -22,7 +22,6 @@
 
 required = ["github.com/wadey/gocovmerge"]
 
-
 [[constraint]]
   name = "github.com/spf13/cobra"
   version = "0.0.2"
@@ -43,10 +42,6 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[constraint]]
   name = "github.com/gotestyourself/gotestyourself"
-  branch = "master"
-
-[[constraint]]
-  name = "github.com/wadey/gocovmerge"
   branch = "master"
 
 [[constraint]]
@@ -80,6 +75,10 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "google.golang.org/grpc"
   revision = "v1.3.0"
+
+[[constraint]]
+  name = "github.com/wadey/gocovmerge"
+  branch = "master"
 
 [prune]
   non-go = true
