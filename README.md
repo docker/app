@@ -173,12 +173,31 @@ If you prefer having the three documents in separate YAML files, omit the `-s` o
 the `docker-app init` command. This will create a directory instead of a singe file, containing
 `metadata.yml`, `docker-compose.yml` and `settings.yml`.
 
+## Sharing your application on the Hub
+
+You can push any application to the Hub using `docker-app push`:
+
+``` bash
+$ docker-app push --prefix myHubUser/ --tag latest
+```
+
+This command will create an image named `myHubUser/hello.dockerapp:latest` on your local Docker
+daemon, and push it to the Hub.
+
+By default, this command uses the application version defined in `metadata.yml` as the tag,
+and the value of the metadata field `repository_prefix` as prefix.
+
+All `docker-app` commands accept a local image name as input, which means you can run on a different host:
+
+``` bash
+$ docker pull myHubUser/hello.dockerapp:latest
+$ docker-app inspect myHubUser/hello
+```
 
 ## Next steps
 
 We have lots of ideas for making Compose-based applications easier to share and reuse, and making applications a first-class part of the Docker toolchain. Please let us know what you think about this initial release and about any of the ideas below:
 
-* Saving Docker applications as Docker images, including sharing them on Docker Hub
 * Introducing environments to the settings file
 * Docker images which launch the application when run
 * Built-in commands for running applications
