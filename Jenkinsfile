@@ -2,7 +2,7 @@ properties([buildDiscarder(logRotator(numToKeepStr: '20'))])
 
 pipeline {
     agent {
-        label 'linux'
+        label 'pipeline'
     }
 
     options {
