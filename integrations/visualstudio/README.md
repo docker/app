@@ -4,6 +4,7 @@ This directory contains the sources of a Docker Application plugin for Visual St
 
 The plugin creates a few commands in the `Tools` menu.
 
+![The plugin menu](vspluginscreenshot.png)
 # Restoring dependencies
 
 Run .\nuget.exe restore
