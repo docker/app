@@ -20,6 +20,7 @@ targets:
 
 --
 # This section contains the Compose file that describes your application services.
+version: "3.2"
 services:
   nginx:
     image: nginx:${NGINX_VERSION}

@@ -49,7 +49,7 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 	for k, v := range src {
 		kk, ok := k.(string)
 		if !ok {
-			panic(fmt.Sprintf("DAFUCK, key %v in %#v is not a string", k, src))
+			panic(fmt.Sprintf("fatal error, key %v in %#v is not a string", k, src))
 		}
 		eval, ok := res[kk]
 		switch vv := v.(type) {

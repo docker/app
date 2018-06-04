@@ -136,11 +136,21 @@ func assertCommandOutput(t *testing.T, goldenFile string, cmd string, args ...st
 	golden.Assert(t, string(output), goldenFile)
 }
 
+func assertCommandFailureOutput(t *testing.T, goldenFile string, exe string, args ...string) {
+	cmd := exec.Command(exe, args...)
+	output, err := cmd.CombinedOutput()
+	assert.Assert(t, err != nil)
+	golden.Assert(t, string(output), goldenFile)
+}
+
 func TestRenderBinary(t *testing.T) {
 	getBinary(t)
 	apps, err := ioutil.ReadDir("render")
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
+		if app.Name() == "testdata" {
+			continue
+		}
 		t.Log("testing", app.Name())
 		if !checkRenderers(app.Name(), renderers) {
 			t.Log("Required renderer not enabled.")
@@ -178,7 +188,8 @@ func randomName(prefix string) string {
 
 func TestInitBinary(t *testing.T) {
 	getBinary(t)
-	composeData := `services:
+	composeData := `version: "3.2"
+services:
   nginx:
     image: nginx:${NGINX_VERSION}
     command: nginx $NGINX_ARGS
@@ -250,6 +261,23 @@ targets:
 	defer os.Remove("tac.dockerapp")
 	appData, _ := ioutil.ReadFile("tac.dockerapp")
 	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
+	// Check various commands work on single-file app package
+	assertCommand(t, dockerApp, "inspect", "tac")
+	assertCommand(t, dockerApp, "render", "tac")
+}
+
+func TestDetectAppBinary(t *testing.T) {
+	dockerApp, _ := getBinary(t)
+	// cwd = e2e
+	assertCommand(t, dockerApp, "inspect")
+	cwd, err := os.Getwd()
+	assert.NilError(t, err)
+	defer os.Chdir(cwd)
+	os.Chdir("helm.dockerapp")
+	assertCommand(t, dockerApp, "inspect")
+	assertCommand(t, dockerApp, "inspect", ".")
+	os.Chdir(filepath.Join(cwd, "render"))
+	assertCommandFailureOutput(t, "inspect-multiple-apps.golden", dockerApp, "inspect")
 }
 
 func TestInspectBinary(t *testing.T) {

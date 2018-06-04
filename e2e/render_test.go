@@ -71,6 +71,9 @@ func TestRender(t *testing.T) {
 	apps, err := ioutil.ReadDir("render")
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
+		if app.Name() == "testdata" {
+			continue
+		}
 		t.Log("testing", app.Name())
 		if !checkRenderers(app.Name(), internal.Renderers) {
 			t.Log("Required renderer not enabled.")
