@@ -126,7 +126,7 @@ ci-bin-all:
 ci-gradle-test:
 	docker run --user $(shell id -u) --rm -v $(CWD)/integrations/gradle:/gradle -v $(DOCKERAPP_BINARY):/usr/local/bin/docker-app \
 	  -e GRADLE_USER_HOME=/tmp/gradle \
-	  gradle:jdk8 bash -c "cd /gradle && gradle --stacktrace build && cd example && gradle renderIt"
+	  gradle:jdk8 bash -c "cd /gradle && ./gradlew --stacktrace build && cd example && gradle renderIt"
 
 .PHONY: bin bin-all release test check lint test-cov e2e-test e2e-all unit-test coverage coverage-bin clean ci-lint ci-test ci-coverage ci-bin-all ci-e2e-all ci-gradle-test
 .DEFAULT: all

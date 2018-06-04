@@ -2,3 +2,4 @@
 *.dockerapp
 _build/
 !examples/simple/*.dockerapp
+.gradle
