@@ -4,7 +4,7 @@
 
 In this example, we will create a single service application that deploys a web page displaying a message.
 
-Initialize the single file project using `docker-app init --single-file hello-world`. A single file application contains the three sections, `metadata` corresponding `metadata.yml`, `settings` corresponding `settings.yml` and `services` corresponding `docker-compose.yml`.
+Initialize the single file project using `docker-app init --single-file hello-world`. A single file application contains the three sections, `metadata` which corresponds to `metadata.yml`, `settings` which corresponds to `settings.yml` and `services` which corresponds to `docker-compose.yml`.
 
 ```bash
 $ ls -l
@@ -79,7 +79,7 @@ text: hello world!
 
 ### Render
 
-You can now render your application by running `docker-app render` or even personalize the rendered compose file by running `docker-app render --set text="hello user!"`.
+You can now render your application by running `docker-app render` or even personalize the rendered Compose file by running `docker-app render --set text="hello user!"`.
 
 Create a `render` directory and redirect the output of `docker-app render ...` to `render/docker-compose.yml`.
 

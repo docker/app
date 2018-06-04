@@ -2,7 +2,7 @@
 
 ### Initialize project
 
-In this example, we will create an app from the existing docker sample `example-voting-app`. First download the project [here](https://github.com/dockersamples/example-voting-app).
+In this example, we will create an app from the existing Docker sample `example-voting-app`. First download the project [here](https://github.com/dockersamples/example-voting-app).
 
 Initialize the project using `docker-app init voting-app --compose-file example-voting-app/docker-stack.yml`.
 

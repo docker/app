@@ -1,6 +1,6 @@
 ## Examples
 
-This folder contains several examples of applications builts using `docker-app`, from a simple `hello-world` application to more complexe, multi-services applications.
+This folder contains several examples of applications built using `docker-app`, from a simple `hello-world` application to more complex, multi-service applications.
 
 ### Hello world application
 
@@ -10,12 +10,12 @@ To learn how to create a simple app that displays a given text, [click here](hel
 
 ### Voting application
 
-To learn how to create the Docker voting app from docker samples, [click here](voting-app).
+To learn how to create the Docker voting app from [Docker samples](https://github.com/dockersamples), [click here](voting-app).
 
 ![Voting app screenshot](.resources/cats-or-dogs.png "Voting app screenshot")
 
-### Wordpress application
+### WordPress application
 
-To learn how to create a basic wordpress with a database, [click here](wordpress).
+To learn how to create a basic WordPress with a database, [click here](WordPress).
 
-![Wordpress app screenshot](.resources/wordpress.png "Wordpress app screenshot")
+![WordPress app screenshot](.resources/wordpress.png "WordPress app screenshot")

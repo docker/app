@@ -11,7 +11,7 @@ services:
       MYSQL_PASSWORD: ${mysql.user.password}
     volumes:
        - source: volume
-         target: /var/lib/mysql #/data
+         target: /var/lib/mysql
          type: volume
     networks:
        - overlay
