@@ -144,6 +144,8 @@ $ docker-app render -f prod.yml
 ```
 
 
+More examples are available in the [examples](examples) directory.
+
 ## Installation
 
 Pre-built binaries are available on [GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and macOS.
