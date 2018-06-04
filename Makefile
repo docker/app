@@ -70,7 +70,7 @@ test check: lint unit-test e2e-test
 
 lint:
 	@echo "Linting..."
-	@tar -c Dockerfile.lint gometalinter.json | docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint - --target=lint-volume > /dev/null
+	@tar -c Dockerfile.lint gometalinter.json | docker build -t $(IMAGE_NAME)-lint $(IMAGE_BUILD_ARGS) -f Dockerfile.lint - > /dev/null
 	@docker run --rm -v $(CWD):$(PKG_PATH):ro,cached $(IMAGE_NAME)-lint
 
 e2e-test: bin
@@ -106,7 +106,7 @@ COV_LABEL := com.docker.app.cov-run=$(TAG)
 
 ci-lint:
 	@echo "Linting..."
-	docker build -t $(IMAGE_NAME)-lint:$(TAG) $(IMAGE_BUILD_ARGS) -f Dockerfile.lint . --target=lint-image
+	docker build -t $(IMAGE_NAME)-lint:$(TAG) $(IMAGE_BUILD_ARGS) -f Dockerfile.lint .
 	docker run --rm $(IMAGE_NAME)-lint:$(TAG)
 
 ci-test:
