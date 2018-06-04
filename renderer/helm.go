@@ -176,23 +176,23 @@ func makeChart(appname, targetDir string) error {
 	metaFile := filepath.Join(appname, "metadata.yml")
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read application metadata")
 	}
 	var meta types.AppMetadata
 	err = yaml.Unmarshal(metaContent, &meta)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse application metadata")
 	}
 	hmeta, err := toHelmMeta(&meta)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to convert application metadata")
 	}
 	chart := make(map[interface{}]interface{})
 	prevChartRaw, err := ioutil.ReadFile(filepath.Join(targetDir, "Chart.yaml"))
 	if err == nil {
 		err = yaml.Unmarshal(prevChartRaw, chart)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to unmarshal current Chart.yaml")
 		}
 	}
 	chart["name"] = hmeta.Name
@@ -202,7 +202,7 @@ func makeChart(appname, targetDir string) error {
 	chart["maintainers"] = hmeta.Maintainers
 	hmetadata, err := yaml.Marshal(chart)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal Chart")
 	}
 	return ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
 }
@@ -225,7 +225,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 	}
 	stackData, err := yaml.Marshal(stack)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal stack data")
 	}
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
@@ -255,20 +255,20 @@ func makeStack(appname string, targetDir string, data []byte) error {
 	}
 	stackData, err := yaml.Marshal(stack)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal stack data")
 	}
 	preStack := make(map[interface{}]interface{})
 	err = yaml.Unmarshal(stackData, preStack)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unmarshal stack data")
 	}
 	err = convertTemplates(preStack)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to convert stack templates")
 	}
 	stackData, err = yaml.Marshal(preStack)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal final stack")
 	}
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
@@ -282,7 +282,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	defer cleanup()
 	targetDir := utils.AppNameFromDir(appname) + ".chart"
 	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
-		return err
+		return errors.Wrap(err, "failed to create Chart directory")
 	}
 	err = makeChart(appname, targetDir)
 	if err != nil {
@@ -293,7 +293,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	}
 	data, err := ioutil.ReadFile(filepath.Join(appname, "docker-compose.yml"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read application Compose file")
 	}
 	variables, err := packager.ExtractVariables(string(data))
 	if err != nil {
@@ -319,18 +319,18 @@ func makeValues(appname, targetDir string, settingsFile []string, env map[string
 	meta := make(map[interface{}]interface{})
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read application metadata")
 	}
 	err = yaml.Unmarshal(metaContent, &meta)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse application metadata")
 	}
 	metaPrefixed := make(map[interface{}]interface{})
 	metaPrefixed["app"] = meta
 	merge(settings, metaPrefixed)
 	err = MergeSettings(settings, env)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to merge application settings")
 	}
 
 	filterVariables(settings, variables, "")
@@ -345,7 +345,7 @@ func makeValues(appname, targetDir string, settingsFile []string, env map[string
 	mergeValues(values, settings)
 	valuesRaw, err := yaml.Marshal(values)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate values.yaml")
 	}
 	return ioutil.WriteFile(filepath.Join(targetDir, "values.yaml"), valuesRaw, 0644)
 }

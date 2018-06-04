@@ -31,7 +31,7 @@ func Init(name string, composeFile string, description string, maintainers []str
 	}
 	dirName := utils.DirNameFromAppName(name)
 	if err := os.Mkdir(dirName, 0755); err != nil {
-		return err
+		return errors.Wrap(err, "failed to create application directory")
 	}
 	var err error
 	defer func() {
@@ -249,11 +249,11 @@ func writeMetadataFile(name, dirName string, description string, maintainers []s
 	meta := newMetadata(name, description, maintainers)
 	tmpl, err := template.New("metadata").Parse(metaTemplate)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "internal error parsing metadata template")
 	}
 	resBuf := &bytes.Buffer{}
 	if err := tmpl.Execute(resBuf, meta); err != nil {
-		return err
+		return errors.Wrap(err, "error generating metadata")
 	}
 	return ioutil.WriteFile(filepath.Join(dirName, "metadata.yml"), resBuf.Bytes(), 0644)
 }

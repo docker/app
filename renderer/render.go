@@ -15,6 +15,7 @@ import (
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/yatee/yatee"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -74,12 +75,12 @@ func LoadSettings(files []string) (map[string]interface{}, error) {
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to read settings file %s", f)
 		}
 		s := make(map[interface{}]interface{})
 		err = yaml.Unmarshal(data, &s)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to parse settings file %s", f)
 		}
 		merge(res, s)
 	}
@@ -120,7 +121,7 @@ func applyRenderers(data []byte, renderers []string, settings map[string]interfa
 			yaml := bytes.NewBuffer(nil)
 			err = tmpl.Execute(yaml, settings)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "failed to execute gotemplate")
 			}
 			data = yaml.Bytes()
 		case "yatee":
@@ -130,13 +131,13 @@ func applyRenderers(data []byte, renderers []string, settings map[string]interfa
 			}
 			m, err := yaml.Marshal(yateed)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "failed to execute yatee template")
 			}
 			data = []byte(strings.Replace(string(m), "$", "$$", -1))
 		case "mustache":
 			mdata, err := mustache.Render(string(data), settings)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "failed to execute mustache template")
 			}
 			data = []byte(mdata)
 		case "none":
@@ -176,11 +177,11 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	meta := make(map[interface{}]interface{})
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to read package metadata file")
 	}
 	err = yaml.Unmarshal(metaContent, &meta)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to parse package metadata file")
 	}
 	metaPrefixed := make(map[interface{}]interface{})
 	metaPrefixed["app"] = meta
@@ -188,7 +189,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	// inject the user-provided env
 	err = MergeSettings(settings, env)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to merge settings")
 	}
 	// flatten settings for variable expension
 	finalEnv := make(map[string]string)
@@ -211,7 +212,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	for _, c := range composes {
 		data, err := ioutil.ReadFile(c)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to read Compose file %s", c)
 		}
 		data, err = applyRenderers(data, renderers, settings)
 		if err != nil {
@@ -219,7 +220,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		}
 		parsed, err := loader.ParseYAML(data)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to parse Compose file %s", c)
 		}
 		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
 	}
@@ -231,5 +232,5 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		Environment:          finalEnv,
 		ErrOnMissingVariable: true,
 	})
-	return rendered, err
+	return rendered, errors.Wrap(err, "failed to load Compose file")
 }
