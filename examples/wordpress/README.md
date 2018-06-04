@@ -95,7 +95,7 @@ configs: {}
 **Override default settings**. This example sets `debug` to false.
 
 ```yaml
-# docker-app render wordpress -s prod-settings.yml
+# docker-app render wordpress --settings-files prod-settings.yml
 version: "3.6"
 [...]
     environment:
@@ -110,7 +110,7 @@ version: "3.6"
 **Override from the command line**. This example sets `debug` to false and the database user to a
 different value.
 ```yaml
-# docker-app render wordpress -e debug=true -e mysql.user.name=mollydock
+# docker-app render wordpress --set debug=true --set mysql.user.name=mollydock
 version: "3.6"
 services:
   mysql:
@@ -156,10 +156,10 @@ wordpress.scale.replicas 0
 
 ### Generate helm package
 
-`docker-app helm wordpress` will output a Helm package in the `./wordpress.helm` folder. `-c`, `-e` and `-s` flags apply the same way they do for the `render` subcommand.
+`docker-app helm wordpress` will output a Helm package in the `./wordpress.helm` folder. `--compose-file` (or `-c`), `--set` (or `-e`) and `--settings-files` (or `-s`) flags apply the same way they do for the `render` subcommand.
 
 ```
-$ docker-app helm wordpress -c with-secrets.yml -s prod-settings.yml -e mysql.user.name=mollydock
+$ docker-app helm wordpress --compose-file with-secrets.yml --settings-files prod-settings.yml --set mysql.user.name=mollydock
 $ tree wordpress.helm
 wordpress.helm/
 ├── Chart.yaml
@@ -211,7 +211,7 @@ $ tree wordpress.dockerapp
 `docker-app pack wordpress` creates a tar archive containing the relevant configuration files:
 
 ```
-$ docker-app pack wordpress -o myapp.tar
+$ docker-app pack wordpress --output myapp.tar
 $ tar -tf myapp.tar
 metadata.yml
 docker-compose.yml

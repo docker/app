@@ -1,16 +1,22 @@
 debug: true
 mysql:
   image:
-    version: 8
+    version: 5.6
   rootpass: axx[<^cz3d.fPb
   database: wordpressdata
   user:
     name: wordpress
     password: wordpress
+  scale:
+    endpoint_mode: dnsrr
+    mode: replicated
+    replicas: 1
 wordpress:
   scale:
-    mode: global
-    replicas: 0
+    mode: replicated
+    replicas: 1
+    endpoint_mode: vip
+  port: 8080
 volumes:
   db_data:
     name: db_data

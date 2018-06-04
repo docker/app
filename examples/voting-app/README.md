@@ -2,9 +2,9 @@
 
 ### Initialize project
 
-In this example, we will create an app from the existing docker sample `example-voting-app`. First download the project [here](https://github.com/dockersamples/example-voting-app).
+In this example, we will create an app from the existing Docker sample `example-voting-app`. First download the project [here](https://github.com/dockersamples/example-voting-app).
 
-Initialize the project using `docker-app init voting-app -c example-voting-app/docker-stack.yml`.
+Initialize the project using `docker-app init voting-app --compose-file example-voting-app/docker-stack.yml`.
 
 ### Edit metadata
 
@@ -205,11 +205,11 @@ cleanup: cleanup/production cleanup/development
 #
 render/production: cleanup/production
 	@mkdir -p $(PRODUCTION_DIR)
-	docker-app render -f $(SETTINGS_DIR)/production.yml > $(PRODUCTION_DIR)/docker-compose.yml
+	docker-app render --settings-files $(SETTINGS_DIR)/production.yml > $(PRODUCTION_DIR)/docker-compose.yml
 
 render/development: cleanup/development
 	@mkdir -p $(DEVELOPMENT_DIR)
-	docker-app render -f $(SETTINGS_DIR)/development.yml > $(DEVELOPMENT_DIR)/docker-compose.yml
+	docker-app render --settings-files $(SETTINGS_DIR)/development.yml > $(DEVELOPMENT_DIR)/docker-compose.yml
 
 render: render/production render/development
 
@@ -228,10 +228,10 @@ stop: stop/production stop/development
 # Deploy.
 #
 deploy/production: render/production stop/production
-	docker-app deploy -f $(SETTINGS_DIR)/production.yml
+	docker-app deploy --settings-files $(SETTINGS_DIR)/production.yml
 
 deploy/development: render/development stop/development
-	docker-app deploy -f $(SETTINGS_DIR)/development.yml
+	docker-app deploy --settings-files $(SETTINGS_DIR)/development.yml
 
 #
 # Pack.
@@ -243,10 +243,10 @@ pack:
 # Helm.
 #
 helm/production:
-	docker-app helm -f $(SETTINGS_DIR)/production.yml
+	docker-app helm --settings-files $(SETTINGS_DIR)/production.yml
 
 helm/development:
-	docker-app helm -f $(SETTINGS_DIR)/development.yml
+	docker-app helm --settings-files $(SETTINGS_DIR)/development.yml
 ```
 
 You can add more commands, depending on your needs.

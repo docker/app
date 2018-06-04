@@ -1,9 +1,11 @@
 # Vote.
 vote:
   image:
+    # Use your own image.
     name: vote
 
 # Result.
 result:
   image:
+    # Use your own image.
     name: result
