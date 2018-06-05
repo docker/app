@@ -20,17 +20,30 @@ IMAGE_NAME := docker-app
 ALPINE_VERSION := 3.7
 GO_VERSION := 1.10.1
 
+ifeq ($(BUILDTIME),)
+  BUILDTIME := ${shell date --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/'}
+endif
+ifeq ($(BUILDTIME),)
+  BUILDTIME := ${shell gdate --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/'}
+endif
+ifeq ($(BUILDTIME),)
+  $(error unable to set BUILDTIME, ensure that you have GNU date installed or set manually)
+endif
+
 IMAGE_BUILD_ARGS := \
     --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
     --build-arg GO_VERSION=$(GO_VERSION) \
     --build-arg COMMIT=$(COMMIT) \
-    --build-arg TAG=$(TAG)
+    --build-arg TAG=$(TAG)       \
+    --build-arg BUILDTIME=$(BUILDTIME)
+
 
 LDFLAGS := "-s -w \
 	-X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
 	-X $(PKG_NAME)/internal.Version=$(TAG)      \
 	-X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL) \
-	-X $(PKG_NAME)/internal.Renderers=$(RENDERERS)"
+	-X $(PKG_NAME)/internal.Renderers=$(RENDERERS) \
+	-X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
 
 GO_BUILD := CGO_ENABLED=0 go build
 GO_TEST := CGO_ENABLED=0 go test
@@ -115,7 +128,7 @@ ci-test:
 
 ci-coverage:
 	docker build --target=build -t $(IMAGE_NAME)-cov:$(TAG) $(IMAGE_BUILD_ARGS) .
-	docker run -v /var/run/docker.sock:/var/run/docker.sock --label $(COV_LABEL) $(IMAGE_NAME)-cov:$(TAG) make COMMIT=$(TAG) TAG=$(COMMIT) coverage
+	docker run -v /var/run/docker.sock:/var/run/docker.sock --label $(COV_LABEL) $(IMAGE_NAME)-cov:$(TAG) make COMMIT=$(TAG) TAG=$(COMMIT) BUILDTIME=$(BUILDTIME) coverage
 	mkdir -p ./_build && docker cp $$(docker ps -aql --filter label=$(COV_LABEL)):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 
 ci-bin-all:
