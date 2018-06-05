@@ -9,7 +9,7 @@ Initialize the single file project using `docker-app init --single-file hello-wo
 ```bash
 $ ls -l
 -rw-r--r-- 1 README.md
-$ docker-app init -s hello-world
+$ docker-app init --single-file hello-world
 $ ls -l
 -rw-r--r-- 1 README.md
 -rw-r--r-- 1 hello-world.dockerapp
