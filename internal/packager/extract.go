@@ -104,12 +104,13 @@ func Extract(appname string) (string, func(), error) {
 		}
 	}
 	originalAppname := appname
-	// try verbatim first
+
+	// try appending our extension
+	appname = internal.DirNameFromAppName(appname)
 	s, err := os.Stat(appname)
 	if err != nil {
-		// try appending our extension
-		appname = internal.DirNameFromAppName(appname)
-		s, err = os.Stat(appname)
+		// try verbatim
+		s, err = os.Stat(originalAppname)
 	}
 	if err != nil {
 		// look for a docker image
