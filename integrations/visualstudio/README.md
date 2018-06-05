@@ -25,7 +25,7 @@ The plugin exposes the following commands in the `Tools` menu:
 
 This command displays a dialog that can be used to initialize a new Docker Application.
 
-It gives you the option to chose the name, description and maintainers of the application, as well as whether to use single-file mode or not.
+It gives you the option to choose the name, description and maintainers of the application, as well as whether to use single-file mode or not.
 
 ## Select application
 
