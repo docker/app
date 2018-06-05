@@ -12,16 +12,31 @@ RUN apk add --no-cache \
   git \
   util-linux
 WORKDIR /go/src/github.com/docker/app/
-COPY . .
 
 FROM build AS bin-build
+COPY . .
+ARG COMMIT
+ARG TAG
+ARG BUILDTIME=unknown
+RUN make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} bin
+
+FROM build AS bin-all
+COPY . .
 ARG COMMIT
 ARG TAG
 ARG BUILDTIME=unknown
 RUN make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} bin-all e2e-all
 
 FROM build AS test
+COPY . .
 ARG COMMIT
 ARG TAG
 ARG BUILDTIME=unknown
 RUN make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} unit-test
+
+FROM java:8-jdk AS gradle_test
+WORKDIR /app
+COPY integrations/gradle .
+COPY --from=bin-build /go/src/github.com/docker/app/_build/docker-app /usr/local/bin
+RUN ./gradlew --stacktrace build && \
+    cd example && ./gradlew renderIt

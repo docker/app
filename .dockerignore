@@ -2,3 +2,5 @@
 *.dockerapp
 *.tar.gz
 _build/
+Dockerfile
+.gitignore
