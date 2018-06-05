@@ -10,9 +10,9 @@ func loadCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "load <repotag>",
 		Short: "Load an application from a docker image",
-		Args:  cli.RequiresMaxArgs(1),
+		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return packager.Load(firstOrEmpty(args), ".")
+			return packager.Load(args[0], ".")
 		},
 	}
 }
