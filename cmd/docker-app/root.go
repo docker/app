@@ -15,20 +15,20 @@ var (
 		helmCmd(),
 		initCmd(),
 		inspectCmd(),
-		loadCmd(),
-		packCmd(),
-		pullCmd(),
 		pushCmd(),
 		renderCmd(),
 		saveCmd(),
-		unpackCmd(),
 		versionCmd(),
 	}
 	experimentalCommands = []*cobra.Command{
 		imageAddCmd(),
 		imageLoadCmd(),
+		loadCmd(),
 		mergeCmd(),
+		packCmd(),
+		pullCmd(),
 		splitCmd(),
+		unpackCmd(),
 	}
 )
 
