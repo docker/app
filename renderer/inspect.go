@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/app/packager"
 	"github.com/docker/app/types"
+	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -23,7 +24,7 @@ func Inspect(appname string) error {
 	metaFile := filepath.Join(appname, "metadata.yml")
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read application metadata")
 	}
 	var meta types.AppMetadata
 	err = yaml.Unmarshal(metaContent, &meta)
@@ -34,11 +35,11 @@ func Inspect(appname string) error {
 	settingsFile := filepath.Join(appname, "settings.yml")
 	settingsContent, err := ioutil.ReadFile(settingsFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read application settings")
 	}
 	settings, err := flattenYAML(settingsContent)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse application settings")
 	}
 	// sort the keys to get consistent output
 	var settingsKeys []string

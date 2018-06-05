@@ -35,13 +35,13 @@ func findApp() (string, error) {
 	for _, c := range content {
 		if strings.HasSuffix(c.Name(), constants.AppExtension) {
 			if hit != "" {
-				return "", fmt.Errorf("multiple apps found in current directory, specify the app on the command line")
+				return "", fmt.Errorf("multiple applications found in current directory, specify the application name on the command line")
 			}
 			hit = c.Name()
 		}
 	}
 	if hit == "" {
-		return "", fmt.Errorf("no app found in current directory")
+		return "", fmt.Errorf("no application found in current directory")
 	}
 	return filepath.Join(cwd, hit), nil
 }
@@ -60,7 +60,7 @@ func extractImage(appname string) (string, func(), error) {
 	}
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
-		return "", noop, err
+		return "", noop, errors.Wrap(err, "failed to create temporary directory")
 	}
 	defer os.RemoveAll(tempDir)
 	err = Load(imagename, tempDir)
@@ -107,7 +107,7 @@ func Extract(appname string) (string, func(), error) {
 	// not a dir: single-file or a tarball package, extract that in a temp dir
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
-		return "", noop, err
+		return "", noop, errors.Wrap(err, "failed to create temporary directory")
 	}
 	defer func() {
 		if err != nil {
@@ -116,7 +116,7 @@ func Extract(appname string) (string, func(), error) {
 	}()
 	appDir := filepath.Join(tempDir, filepath.Base(appname))
 	if err = os.Mkdir(appDir, 0755); err != nil {
-		return "", noop, err
+		return "", noop, errors.Wrap(err, "failed to create application in temporary directory")
 	}
 	if err = extract(appname, appDir); err == nil {
 		return appDir, func() { os.RemoveAll(tempDir) }, nil
@@ -132,7 +132,7 @@ func extractSingleFile(appname, appDir string) error {
 	// not a tarball, single-file then
 	data, err := ioutil.ReadFile(appname)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read single-file application package")
 	}
 	parts := strings.Split(string(data), "\n--")
 	if len(parts) != 3 {
@@ -151,7 +151,7 @@ func extractSingleFile(appname, appDir string) error {
 		}
 		err = ioutil.WriteFile(filepath.Join(appDir, names[i]), []byte(data), 0644)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to write application file")
 		}
 	}
 	return nil
@@ -160,7 +160,7 @@ func extractSingleFile(appname, appDir string) error {
 func extract(appname, outputDir string) error {
 	f, err := os.Open(appname)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to open application package")
 	}
 	tarReader := tar.NewReader(f)
 	outputDir = outputDir + "/"

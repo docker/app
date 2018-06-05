@@ -32,12 +32,12 @@ func Save(appname, prefix, tag string) (string, error) {
 	metaFile := filepath.Join(appname, "metadata.yml")
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to read application metadata")
 	}
 	var meta types.AppMetadata
 	err = yaml.Unmarshal(metaContent, &meta)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to parse application metadata")
 	}
 	if tag == "" {
 		tag = meta.Version
@@ -78,7 +78,7 @@ func Load(repotag string, outputDir string) error {
 	defer os.Remove(file)
 	f, err := os.Open(file)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to open temporary image file")
 	}
 	tarReader := tar.NewReader(f)
 	for {
