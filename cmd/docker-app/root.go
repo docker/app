@@ -25,7 +25,6 @@ var (
 		versionCmd(),
 	}
 	experimentalCommands = []*cobra.Command{
-		buildCmd(),
 		imageAddCmd(),
 		imageLoadCmd(),
 		mergeCmd(),
