@@ -21,7 +21,7 @@ func saveCmd() *cobra.Command {
 			return err
 		},
 	}
-	cmd.Flags().StringVarP(&savePrefix, "prefix", "p", "", "prefix to use (default: repository_prefix in metadata)")
+	cmd.Flags().StringVarP(&savePrefix, "prefix", "p", "", "repository prefix to use (default: repository_prefix in metadata)")
 	cmd.Flags().StringVarP(&saveTag, "tag", "t", "", "tag to use (default: version in metadata)")
 	return cmd
 }

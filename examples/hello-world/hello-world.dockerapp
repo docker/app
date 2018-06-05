@@ -4,7 +4,7 @@
 version: 0.1.0
 name: hello-world
 description: "Hello world!"
-repository_prefix: "myhubuser/"
+repository_prefix: "myhubuser"
 maintainers:
 - name: user
   email: "user@email.com"
