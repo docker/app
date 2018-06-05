@@ -2,6 +2,7 @@ ARG ALPINE_VERSION=3.7
 ARG GO_VERSION=1.10.1
 ARG COMMIT=unknown
 ARG TAG=unknown
+ARG BUILDTIME=unknown
 
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS build
 RUN apk add --no-cache \
@@ -16,9 +17,11 @@ COPY . .
 FROM build AS bin-build
 ARG COMMIT
 ARG TAG
-RUN make COMMIT=${COMMIT} TAG=${TAG} bin-all e2e-all
+ARG BUILDTIME=unknown
+RUN make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} bin-all e2e-all
 
 FROM build AS test
 ARG COMMIT
 ARG TAG
-RUN make COMMIT=${COMMIT} TAG=${TAG} unit-test
+ARG BUILDTIME=unknown
+RUN make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} unit-test
