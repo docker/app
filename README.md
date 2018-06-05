@@ -29,7 +29,7 @@ services:
 With `docker-app` installed let's create an Application Package based on this Compose file:
 
 ```bash
-$ docker-app init -s hello
+$ docker-app init --single-file hello
 $ ls
 docker-compose.yml
 hello.dockerapp
