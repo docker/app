@@ -8,7 +8,7 @@ The plugin creates a new top-level `Docker` menu populated with commands to mani
 
 # Building the plugin
 
-Simply run `gradle build` in the plugins/intellij directory. This will create a jar with the plugin binary in the `build/lib` directory.
+Simply run `./gradlew build` in the plugins/intellij directory. This will create a jar with the plugin binary in the `build/lib` directory.
 
 # Installing the plugin
 

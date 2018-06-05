@@ -4,7 +4,7 @@ This directory contains an experimental Gradle plugin that exposes tasks that ma
 
 ## Building the plugin
 
-Running `gradle build` in the plugin directory will create the plugin jar file in the `build/lib` directory.
+Running `./gradlew build` in the plugin directory will create the plugin jar file in the `build/lib` directory.
 
 ## Using the plugin
 
