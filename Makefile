@@ -17,9 +17,6 @@ DOCKERAPP_BINARY ?= $(CWD)/_build/$(BIN_NAME)-linux
 
 IMAGE_NAME := docker-app
 
-ALPINE_VERSION := 3.7
-GO_VERSION := 1.10.1
-
 ifeq ($(BUILDTIME),)
   BUILDTIME := ${shell date --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/'}
 endif
@@ -31,8 +28,6 @@ ifeq ($(BUILDTIME),)
 endif
 
 IMAGE_BUILD_ARGS := \
-    --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
-    --build-arg GO_VERSION=$(GO_VERSION) \
     --build-arg COMMIT=$(COMMIT) \
     --build-arg TAG=$(TAG)       \
     --build-arg BUILDTIME=$(BUILDTIME)
