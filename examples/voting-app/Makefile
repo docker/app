@@ -1,6 +1,7 @@
 # Input.
-SETTINGS_DIR ?= settings
 APP_NAME := voting-app
+APP_FOLDER := $(APP_NAME).dockerapp
+SETTINGS_DIR ?= $(APP_FOLDER)/settings
 
 # Output.
 DEVELOPMENT_DIR := build/development
@@ -27,7 +28,7 @@ render/production: cleanup/production
 
 render/development: cleanup/development
 	@mkdir -p $(DEVELOPMENT_DIR)
-	docker-app render- --settings-files $(SETTINGS_DIR)/development.yml > $(DEVELOPMENT_DIR)/docker-compose.yml
+	docker-app render --settings-files $(SETTINGS_DIR)/development.yml > $(DEVELOPMENT_DIR)/docker-compose.yml
 
 render: render/production render/development
 
@@ -38,7 +39,7 @@ stop/production:
 	docker stack rm ${APP_NAME}
 
 stop/development:
-	docker stack rm ${APP_NAME}-dev
+	docker stack rm ${APP_NAME}
 
 stop: stop/production stop/development
 
