@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/docker/app/packager"
 	"github.com/docker/cli/cli"
 	"github.com/spf13/cobra"
@@ -17,7 +19,10 @@ func saveCmd() *cobra.Command {
 		Short: "Save the application as an image to the docker daemon(in preparation for push)",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := packager.Save(firstOrEmpty(args), savePrefix, saveTag)
+			imageName, err := packager.Save(firstOrEmpty(args), savePrefix, saveTag)
+			if imageName != "" {
+				fmt.Printf("Saved application as image: %s\n", imageName)
+			}
 			return err
 		},
 	}
