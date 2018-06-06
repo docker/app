@@ -190,7 +190,22 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err == nil {
 		parseEnv(string(envRaw), settings)
 	}
-	keys, err := ExtractVariables(string(composeRaw))
+	compose := make(map[interface{}]interface{})
+	err = yaml.Unmarshal(composeRaw, compose)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse compose file")
+	}
+	version, ok := compose["version"]
+	if !ok {
+		return fmt.Errorf("unsupported compose file version: 1")
+	}
+	ver := fmt.Sprintf("%v", version)
+	if ver[0] != '3' {
+		return fmt.Errorf("unsupported Compose file version: %s", ver)
+	}
+
+	var keys []string
+	err = extractRecurse(compose, &keys)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}
