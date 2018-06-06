@@ -21,6 +21,8 @@ Double-click on the `dockerappsvix.vsix` file in the explorer. This will prompt 
 
 The plugin exposes the following commands in the `Tools` menu:
 
+The plugin requires that the `docker-app` tool is in your `$PATH`.
+
 ## New application
 
 This command displays a dialog that can be used to initialize a new Docker Application.

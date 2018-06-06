@@ -4,7 +4,7 @@ This directory contains an experimental Gradle plugin that exposes tasks that ma
 
 ## Building the plugin
 
-Running `gradlew build` in the plugin directory will create the plugin jar file in the `build/lib` directory.
+Running `./gradlew build` in the plugin directory will create the plugin jar file in the `build/lib` directory.
 
 ## Using the plugin
 
@@ -21,6 +21,8 @@ apply plugin: com.docker.gradle.dockerapp.DockerAppPlugin
 
 import com.docker.gradle.dockerapp.*
 ```
+
+The plugin requires that the `docker-app` tool is in your `$PATH`.
 
 You can then use the tasks exposed by this plugin:
 

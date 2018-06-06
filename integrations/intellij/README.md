@@ -8,11 +8,13 @@ The plugin creates a new top-level `Docker` menu populated with commands to mani
 
 # Building the plugin
 
-Run `gradlew build` in the plugins/intellij directory. This will create a jar with the plugin binary in the `build/lib` directory.
+Run `./gradlew build` in the plugins/intellij directory. This will create a jar with the plugin binary in the `build/lib` directory.
 
 # Installing the plugin
 
 Follow instructions here: https://www.jetbrains.com/help/idea/installing-plugin-from-disk.html
+
+The plugin requires that the `docker-app` tool is in your `$PATH`.
 
 # Using the plugin
 
