@@ -45,6 +45,9 @@ func Save(appname, prefix, tag string) (string, error) {
 	if prefix == "" {
 		prefix = meta.RepositoryPrefix
 	}
+	if prefix != "" && !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
 	dockerfile := fmt.Sprintf(`
 FROM scratch
 LABEL com.docker.application=%s

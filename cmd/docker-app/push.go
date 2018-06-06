@@ -20,7 +20,7 @@ func pushCmd() *cobra.Command {
 			return packager.Push(firstOrEmpty(args), pushPrefix, pushTag)
 		},
 	}
-	cmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "prefix to use (default: repository_prefix in metadata)")
+	cmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "repository prefix to use (default: repository_prefix in metadata)")
 	cmd.Flags().StringVarP(&pushTag, "tag", "t", "", "tag to use (default: version in metadata")
 	return cmd
 }
