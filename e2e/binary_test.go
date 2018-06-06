@@ -371,6 +371,12 @@ func TestImageBinary(t *testing.T) {
 	assertCommandOutput(t, "image-inspect-labels.golden", "docker", "inspect", "-f", "{{.Config.Labels.maintainers}}", "alice/envvariables.dockerapp:0.1.0")
 	// push to a registry
 	assertCommand(t, dockerApp, "push", "-p", registry+"/myuser", "render/envvariables")
+	assertCommand(t, dockerApp, "push", "-p", registry+"/myuser", "-t", "latest", "render/envvariables")
+	assertCommand(t, "docker", "image", "rm", registry+"/myuser/envvariables.dockerapp:0.1.0")
+	assertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp:0.1.0")
+	assertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp")
+	assertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables")
+	assertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables:0.1.0")
 	// various commands from an image
 	assertCommand(t, dockerApp, "inspect", "alice/envvariables:0.1.0")
 	assertCommand(t, dockerApp, "inspect", "alice/envvariables.dockerapp:0.1.0")
