@@ -132,14 +132,12 @@ ci-coverage:
 	mkdir -p ./_build && docker cp $$(docker ps -aql --filter label=$(COV_LABEL)):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 
 ci-bin-all:
-	docker build -t $(IMAGE_NAME)-bin-all:$(TAG) $(IMAGE_BUILD_ARGS) . --target=bin-build
+	docker build -t $(IMAGE_NAME)-bin-all:$(TAG) $(IMAGE_BUILD_ARGS) . --target=bin-all
 	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) tar -cz -C $(PKG_PATH)/_build $(BIN_NAME)-$(OS)$(if $(filter windows, $(OS)),.exe,) > $(BIN_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 	$(foreach OS, $(OS_LIST), docker run --rm $(IMAGE_NAME)-bin-all:$(TAG) /bin/sh -c "cp $(PKG_PATH)/_build/*-$(OS)* $(PKG_PATH)/e2e && cd $(PKG_PATH)/e2e && tar -cz * --exclude=*.go" > $(E2E_NAME)-$(OS)-$(TAG).tar.gz || exit 1;)
 
 ci-gradle-test:
-	docker run --user $(shell id -u) --rm -v $(CWD)/integrations/gradle:/gradle -v $(DOCKERAPP_BINARY):/usr/local/bin/docker-app \
-	  -e GRADLE_USER_HOME=/tmp/gradle \
-	  gradle:jdk8 bash -c "cd /gradle && ./gradlew --stacktrace build && cd example && gradle renderIt"
+	docker build . --target=gradle_test
 
 .PHONY: bin bin-all release test check lint test-cov e2e-test e2e-all unit-test coverage coverage-bin clean ci-lint ci-test ci-coverage ci-bin-all ci-e2e-all ci-gradle-test
 .DEFAULT: all
