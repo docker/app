@@ -102,7 +102,11 @@ func Load(repotag string, outputDir string) error {
 			if err != nil && err != io.EOF {
 				return errors.Wrap(err, "error reading tar data")
 			}
-			repo := strings.Split(repotag, ":")[0]
+			repoComps := strings.Split(repotag, ":")
+			repo := repoComps[0]
+			if len(repoComps) == 3 || (len(repoComps) == 2 && strings.Contains(repoComps[1], "/")) {
+				repo = repoComps[1]
+			}
 			err = ioutil.WriteFile(filepath.Join(outputDir, utils.DirNameFromAppName(filepath.Base(repo))), data, 0644)
 			return errors.Wrap(err, "error writing output file")
 		}

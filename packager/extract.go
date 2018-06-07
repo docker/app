@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -50,9 +51,14 @@ func findApp() (string, error) {
 func extractImage(appname string) (string, func(), error) {
 	var imagename string
 	if strings.Contains(appname, ":") {
-		nametag := strings.SplitN(appname, ":", 2)
-		nametag[0] = utils.DirNameFromAppName(nametag[0])
-		appname = filepath.Base(nametag[0])
+		nametag := strings.Split(appname, ":")
+		if len(nametag) == 3 || strings.Contains(nametag[1], "/") {
+			nametag[1] = utils.DirNameFromAppName(nametag[1])
+			appname = filepath.Base(nametag[1])
+		} else {
+			nametag[0] = utils.DirNameFromAppName(nametag[0])
+			appname = filepath.Base(nametag[0])
+		}
 		imagename = strings.Join(nametag, ":")
 	} else {
 		imagename = utils.DirNameFromAppName(appname)
@@ -65,7 +71,17 @@ func extractImage(appname string) (string, func(), error) {
 	defer os.RemoveAll(tempDir)
 	err = Load(imagename, tempDir)
 	if err != nil {
-		return "", noop, fmt.Errorf("could not locate application in either filesystem or docker image")
+		if !strings.Contains(imagename, "/") {
+			return "", noop, fmt.Errorf("could not locate application in either filesystem or docker image")
+		}
+		// Try to pull it
+		cmd := exec.Command("docker", "pull", imagename)
+		if err := cmd.Run(); err != nil {
+			return "", noop, fmt.Errorf("could not locate application in filesystem, docker image or registry")
+		}
+		if err := Load(imagename, tempDir); err != nil {
+			return "", noop, errors.Wrap(err, "failed to load pulled image")
+		}
 	}
 	// this gave us a compressed app, run through extract again
 	return Extract(filepath.Join(tempDir, appname))
