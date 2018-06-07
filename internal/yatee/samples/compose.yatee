@@ -1,0 +1,30 @@
+services:
+  "@for i in 0..2":
+    replica$i:
+      image: superduperserver:latest
+      command: /run $i
+      port:
+        - $(5000 + ($i*2))
+        - $(5001 + ($i * 2))
+  "@switch ${myapp.mode}":
+    debug:
+      debugger2:
+        image: debug
+    release:
+      monitor2:
+        image: monitor
+  "@if ${myapp.debug}":
+    debugger:
+      image: debug
+  "@if ! ${myapp.debug}":
+    monitor:
+      image: monitor
+  "@for i in $myapp.services":
+    "$i":
+      image: $i:latest
+test:
+- v1
+- v2
+- "@if (true) vtrue"
+- "@if (false) vfalse"
+- "@if (!false) vtrue2"

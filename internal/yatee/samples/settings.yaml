@@ -1,0 +1,6 @@
+myapp:
+  debug: false
+  services:
+    - nginx
+    - redis
+  mode: debug
