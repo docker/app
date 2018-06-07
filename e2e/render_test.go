@@ -15,6 +15,7 @@ import (
 )
 
 func gather(t *testing.T, dir string) ([]string, []string, map[string]string) {
+	t.Helper()
 	var (
 		overrides []string
 		settings  []string
@@ -54,6 +55,7 @@ func checkRenderers(appname string, enabled string) bool {
 }
 
 func checkResult(t *testing.T, result string, resultErr error, dir string) {
+	t.Helper()
 	if resultErr != nil {
 		ee := filepath.Join(dir, "expectedError.txt")
 		if _, err := os.Stat(ee); err != nil {
@@ -95,6 +97,7 @@ func TestRender(t *testing.T) {
 // readFile returns the content of the file at the designated path normalizing
 // line endings by removing any \r.
 func readFile(t *testing.T, path string) string {
+	t.Helper()
 	content, err := ioutil.ReadFile(path)
 	assert.NilError(t, err, "missing '"+path+"' file")
 	return strings.Replace(string(content), "\r", "", -1)

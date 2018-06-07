@@ -73,6 +73,7 @@ var (
 )
 
 func getBinary(t *testing.T) (string, bool) {
+	t.Helper()
 	if dockerApp != "" {
 		return dockerApp, hasExperimental
 	}
@@ -125,6 +126,7 @@ func runCommand(exe string, args ...string) {
 
 // Run command, assert it succeeds, return its output
 func assertCommand(t *testing.T, exe string, args ...string) []byte {
+	t.Helper()
 	cmd := exec.Command(exe, args...)
 	output, err := cmd.CombinedOutput()
 	assert.NilError(t, err, string(output))
@@ -132,11 +134,13 @@ func assertCommand(t *testing.T, exe string, args ...string) []byte {
 }
 
 func assertCommandOutput(t *testing.T, goldenFile string, cmd string, args ...string) {
+	t.Helper()
 	output := assertCommand(t, cmd, args...)
 	golden.Assert(t, string(output), goldenFile)
 }
 
 func assertCommandFailureOutput(t *testing.T, goldenFile string, exe string, args ...string) {
+	t.Helper()
 	cmd := exec.Command(exe, args...)
 	output, err := cmd.CombinedOutput()
 	assert.Assert(t, err != nil)
