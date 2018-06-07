@@ -1,25 +1,27 @@
-# Docker Application plugin for Visual Studio
+# Docker Application extension for Visual Studio
 
-This directory contains the sources of a Docker Application plugin for Visual Studio.
+This directory contains the sources of a Docker Application extension for Visual Studio.
 
-The plugin creates a few commands in the `Tools` menu.
+The extension creates a few commands in the `Tools` menu.
 
-![The plugin menu](vspluginscreenshot.png)
+![The extension menu](vsextensionscreenshot.png)
 # Restoring dependencies
 
 Run `nuget.exe restore`.
 
-# Building the plugin
+# Building the extension
 
-Open the `dockerappvsix.sln` solution in Visual Studio, change the target to `Release` and hit build. This will produce the plugin under `dockerappvsix/bin/Release/dockerappvsix.vsix`.
+Open the `dockerappvsix.sln` solution in Visual Studio, change the target to `Release` and hit build. This will produce the extension under `dockerappvsix/bin/Release/dockerappvsix.vsix`.
 
-# Installing the plugin
+# Installing the extension
 
 Double-click on the `dockerappsvix.vsix` file in the explorer. This will prompt you to install the extension.
 
-# Using the plugin
+# Using the extension
 
-The plugin exposes the following commands in the `Tools` menu:
+The extension exposes the following commands in the `Tools` menu:
+
+The extension requires that the `docker-app` tool is in your `$PATH`.
 
 ## New application
 

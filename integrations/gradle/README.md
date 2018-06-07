@@ -22,6 +22,8 @@ apply plugin: com.docker.gradle.dockerapp.DockerAppPlugin
 import com.docker.gradle.dockerapp.*
 ```
 
+The plugin requires that the `docker-app` tool is in your `$PATH`.
+
 You can then use the tasks exposed by this plugin:
 
 ### Render

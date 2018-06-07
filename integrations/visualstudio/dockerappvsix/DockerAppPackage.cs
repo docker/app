@@ -45,7 +45,7 @@ namespace dockerappvsix
         public const string PackageGuidString = "02eefd95-14a5-4afd-ab88-8d61ce9c902f";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CommandRender"/> class.
+        /// Initializes a new instance of the <see cref="DockerAppPackage"/> class.
         /// </summary>
         public DockerAppPackage()
         {
