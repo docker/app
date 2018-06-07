@@ -86,6 +86,7 @@ func isIdentNumChar(r byte) bool {
 }
 
 // extract extracts an expression from a string
+// nolint: gocyclo
 func extract(expr string) (string, error) {
 	if expr == "" {
 		return "", nil
@@ -206,6 +207,7 @@ func evalExpr(expr string) (int64, error) {
 }
 
 // resolves and evaluate all ${foo.bar}, $foo.bar and $(expr) in epr
+// nolint: gocyclo
 func eval(expr string, flattened map[string]interface{}, o options) (interface{}, error) {
 	// Since we go from right to left to support nesting, handling $$ escape is
 	// painful, so just hide them and restore them at the end
@@ -333,6 +335,8 @@ func recurseList(input []interface{}, settings map[string]interface{}, flattened
 	return res, nil
 }
 
+// FIXME complexity on this is 47… get it lower than 16
+// nolint: gocyclo
 func recurse(input map[interface{}]interface{}, settings map[string]interface{}, flattened map[string]interface{}, o options) (map[interface{}]interface{}, error) {
 	res := make(map[interface{}]interface{})
 	for k, v := range input {

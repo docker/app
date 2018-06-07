@@ -3,8 +3,8 @@ package yatee
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
 	yaml "gopkg.in/yaml.v2"
+	"gotest.tools/assert"
 )
 
 func testEval(t *testing.T, input string, env map[string]interface{}, output interface{}) {

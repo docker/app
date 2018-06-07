@@ -223,12 +223,6 @@
   revision = "49a9d7f6ba3c1925262641e694c18eb43575f74b"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/docker/yatee"
-  packages = ["yatee"]
-  revision = "d904cbd7cc692a1909a7247b16ec47067f759556"
-
-[[projects]]
   name = "github.com/emicklei/go-restful"
   packages = [
     ".",
@@ -329,6 +323,12 @@
   ]
   revision = "ee43cbb60db7bd22502942cccbc39059117352ab"
   version = "v0.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gopherjs/gopherjs"
+  packages = ["js"]
+  revision = "8dffc02ea1cb8398bb73f30424697c60fcf8d4c5"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -782,6 +782,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d4724226115810fd03cd41c5ac66c5dbf15385c4711c0a7c77dd838a168d4b9e"
+  inputs-digest = "f716205fe9433cc490be04ab21d6e8aac807029bde23d8b41aaf4499b72fa5b9"
   solver-name = "gps-cdcl"
   solver-version = 1

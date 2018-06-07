@@ -35,10 +35,6 @@ required = ["github.com/wadey/gocovmerge"]
   branch = "master"
   source = "github.com/mnottale/cli"
 
-[[constraint]]
-  name = "github.com/gotestyourself/gotestyourself"
-  branch = "master"
-
 [[override]]
   name = "github.com/spf13/pflag"
   revision = "3ebe029320b2676d667ae88da602a5f854788a8a"
