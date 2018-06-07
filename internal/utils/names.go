@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/docker/app/constants"
+	"github.com/docker/app/internal/constants"
 )
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")

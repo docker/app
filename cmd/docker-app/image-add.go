@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/app/image"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/image"
 	"github.com/spf13/cobra"
 )
 

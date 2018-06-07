@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/app/constants"
-	"github.com/docker/app/utils"
+	"github.com/docker/app/internal/constants"
+	"github.com/docker/app/internal/utils"
 	"github.com/pkg/errors"
 )
 

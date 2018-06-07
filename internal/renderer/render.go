@@ -11,7 +11,7 @@ import (
 
 	"github.com/cbroglie/mustache"
 	"github.com/docker/app/internal"
-	"github.com/docker/app/packager"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/yatee/yatee"

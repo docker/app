@@ -8,10 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/docker/app/internal/utils"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
-
-	"github.com/docker/app/utils"
 )
 
 func randomName(prefix string) string {

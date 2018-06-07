@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/packager"
-	"github.com/docker/app/renderer"
-	"github.com/docker/app/utils"
+	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/renderer"
+	"github.com/docker/app/internal/utils"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack/kubernetes"

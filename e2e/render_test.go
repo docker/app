@@ -8,8 +8,7 @@ import (
 	"testing"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/renderer"
-
+	"github.com/docker/app/internal/renderer"
 	"gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 )

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	composeTypes "github.com/docker/app/templatetypes"
-	v1beta2 "github.com/docker/app/templatev1beta2"
+	composeTypes "github.com/docker/app/internal/templatetypes"
+	v1beta2 "github.com/docker/app/internal/templatev1beta2"
 )
 
 // FromComposeConfig converts a compose.Config into a StackSpec
