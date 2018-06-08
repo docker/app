@@ -15,6 +15,13 @@ CWD = $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 # Used by ci-gradle-test target
 DOCKERAPP_BINARY ?= $(CWD)/bin/$(BIN_NAME)-linux
 
+ifeq ($(shell echo "check_quotes"),"check_quotes")
+  WINDOWS := yes
+  BUILDTIME := unknown
+else
+  WINDOWS := no
+endif
+
 ifeq ($(BUILDTIME),)
   BUILDTIME := ${shell date --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/'}
 endif
@@ -32,7 +39,17 @@ LDFLAGS := "-s -w \
 	-X $(PKG_NAME)/internal.Renderers=$(RENDERERS) \
 	-X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
 
+ifeq ($(WINDOWS),yes)
+  mkdir = mkdir $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
+  rm = del /S /Q $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
+  chmod =
+else
+  mkdir = mkdir -p $(1)
+  rm = rm -rf $(1)
+  chmod = chmod $(1) $(2)
+endif
+
 EXEC_EXT :=
 ifeq ($(OS),Windows_NT)
-    EXEC_EXT := .exe
+  EXEC_EXT := .exe
 endif

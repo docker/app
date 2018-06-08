@@ -49,12 +49,12 @@ coverage-bin:
 
 coverage-test-unit:
 	@echo "Running unit tests (coverage)..."
-	mkdir -p _build/cov
+	@$(call mkdir,_build/cov)
 	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
 
 coverage-test-e2e: coverage-bin
 	@echo "Running e2e tests (coverage)..."
-	mkdir -p _build/cov
+	@$(call mkdir,_build/cov)
 	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
 
 coverage: coverage-test-unit coverage-test-e2e
@@ -64,7 +64,9 @@ coverage: coverage-test-unit coverage-test-e2e
 	go tool cover -html _build/cov/all.out -o _build/cov/coverage.html
 
 clean:
-	rm -Rf ./bin ./_build docker-app-*.tar.gz
+	$(call rm,bin)
+	$(call rm,_build)
+	$(call rm,docker-app-*.tar.gz)
 
 .PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean
 .DEFAULT: all

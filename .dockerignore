@@ -2,4 +2,6 @@
 *.dockerapp
 *.tar.gz
 _build/
-bin/docker-app-*
+bin/docker-app-windows.exe
+bin/docker-app-darwin
+bin/docker-app-e2e-*
