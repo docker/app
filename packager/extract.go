@@ -105,12 +105,13 @@ func Extract(appname string) (string, func(), error) {
 		}
 	}
 	originalAppname := appname
-	// try verbatim first
+
+	// try appending our extension
+	appname = utils.DirNameFromAppName(appname)
 	s, err := os.Stat(appname)
 	if err != nil {
-		// try appending our extension
-		appname = utils.DirNameFromAppName(appname)
-		s, err = os.Stat(appname)
+		// try verbatim
+		s, err = os.Stat(originalAppname)
 	}
 	if err != nil {
 		// look for a docker image
@@ -118,7 +119,7 @@ func Extract(appname string) (string, func(), error) {
 	}
 	if s.IsDir() {
 		// directory: already decompressed
-		return appname, noop, nil
+		return s.Name(), noop, nil
 	}
 	// not a dir: single-file or a tarball package, extract that in a temp dir
 	tempDir, err := ioutil.TempDir("", "dockerapp")
