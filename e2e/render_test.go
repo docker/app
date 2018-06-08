@@ -10,8 +10,8 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/renderer"
 
-	"github.com/gotestyourself/gotestyourself/assert"
 	"gopkg.in/yaml.v2"
+	"gotest.tools/assert"
 )
 
 func gather(t *testing.T, dir string) ([]string, []string, map[string]string) {

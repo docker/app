@@ -1,15 +1,15 @@
 /*Package fs provides tools for creating temporary files, and testing the
 contents and structure of a directory.
 */
-package fs
+package fs // import "gotest.tools/fs"
 
 import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/x/subtest"
+	"gotest.tools/assert"
+	"gotest.tools/x/subtest"
 )
 
 // Path objects return their filesystem path. Path may be implemented by a

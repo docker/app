@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
-	"github.com/gotestyourself/gotestyourself/internal/format"
+	"gotest.tools/assert/cmp"
+	"gotest.tools/internal/format"
 )
 
 // Equal compares a directory to the expected structured described by a manifest
@@ -61,7 +61,7 @@ func eqResource(x, y resource) []problem {
 	if x.gid != y.gid {
 		p = append(p, notEqual("gid", x.gid, y.gid))
 	}
-	if x.mode != y.mode {
+	if x.mode != anyFileMode && x.mode != y.mode {
 		p = append(p, notEqual("mode", x.mode, y.mode))
 	}
 	return p

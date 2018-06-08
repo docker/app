@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/fs"
+	"gotest.tools/assert"
+	"gotest.tools/fs"
 
 	"github.com/docker/app/utils"
 )

@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/pkg/errors"
+	"gotest.tools/assert"
 )
 
 // Manifest stores the expected structure and properties of files and directories

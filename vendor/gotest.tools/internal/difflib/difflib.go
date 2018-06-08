@@ -4,7 +4,7 @@ Original source: https://github.com/pmezard/go-difflib
 
 This file is trimmed to only the parts used by this repository.
 */
-package difflib
+package difflib // import "gotest.tools/internal/difflib"
 
 func min(a, b int) int {
 	if a < b {

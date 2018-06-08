@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/gotestyourself/gotestyourself/assert"
+	"gotest.tools/assert"
 )
 
 // resourcePath is an adaptor for resources so they can be used as a Path
@@ -134,6 +134,18 @@ const anyFile = "*"
 func MatchExtraFiles(path Path) error {
 	if m, ok := path.(*directoryPath); ok {
 		m.AddFile(anyFile)
+	}
+	return nil
+}
+
+// anyFileMode is represented by uint32_max
+const anyFileMode os.FileMode = 4294967295
+
+// MatchAnyFileMode is a PathOp that updates a Manifest so that the resource at path
+// will match any file mode.
+func MatchAnyFileMode(path Path) error {
+	if m, ok := path.(manifestResource); ok {
+		m.SetMode(anyFileMode)
 	}
 	return nil
 }
