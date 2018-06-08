@@ -29,7 +29,7 @@ pipeline {
                                 stash name: 'e2e'
                             }
                             if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
-                                stash name: 'artifacts', includes: '*.tar.gz', excludes: '*-e2e-*'
+                                stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
                                 archiveArtifacts 'bin/*.tar.gz'
                             }
                         } finally {
