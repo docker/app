@@ -2,3 +2,4 @@
 *.dockerapp
 *.tar.gz
 _build/
+bin/docker-app-*

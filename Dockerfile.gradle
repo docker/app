@@ -1,0 +1,3 @@
+FROM gradle:jdk8
+COPY bin/docker-app /usr/local/bin/docker-app
+COPY --chown=gradle:gradle integrations/gradle .

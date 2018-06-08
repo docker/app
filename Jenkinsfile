@@ -20,13 +20,12 @@ pipeline {
                         try {
                             checkout scm
                             sh 'docker image prune -f'
-                            sh 'make ci-lint'
-                            sh 'make ci-test'
-                            sh 'make ci-bin-all'
-                            sh 'mkdir stash'
-                            sh 'ls *.tar.gz | xargs -i tar -xf {} -C stash'
-                            sh 'make ci-gradle-test DOCKERAPP_BINARY=$PWD/stash/docker-app-linux'
-                            dir('stash') {
+                            sh 'make -f docker.Makefile lint'
+                            sh 'make -f docker.Makefile cross e2e-cross tars'
+                            dir('bin') {
+                                stash name: 'binaries'
+                            }
+                            dir('e2e') {
                                 stash name: 'e2e'
                             }
                             if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
@@ -48,7 +47,7 @@ pipeline {
         }
         stage('Test') {
             parallel {
-                stage("Coverage report") {
+                stage("Coverage") {
                     environment {
                         CODECOV_TOKEN = credentials('jenkins-codecov-token')
                     }
@@ -58,10 +57,21 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make ci-coverage'
+                            sh 'make -f docker.Makefile coverage'
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
                             sh 'curl -s https://codecov.io/bash | bash -s - -f _build/ci-cov/all.out -K'
+                        }
+                    }
+                }
+                stage("Gradle test") {
+                    agent {
+                        label 'linux'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            checkout scm
+                            sh 'make -f docker.Makefile gradle-test'
                         }
                     }
                 }
@@ -71,6 +81,7 @@ pipeline {
                     }
                     steps  {
                         dir('src/github.com/docker/app') {
+                            unstash 'binaries'
                             unstash 'e2e'
                             sh './docker-app-e2e-linux'
                         }
@@ -87,6 +98,7 @@ pipeline {
                     }
                     steps {
                         dir('src/github.com/docker/app') {
+                            unstash 'binaries'
                             unstash 'e2e'
                             sh './docker-app-e2e-darwin'
                         }
@@ -103,7 +115,8 @@ pipeline {
                     }
                     steps {
                         dir('src/github.com/docker/app') {
-                            unstash "e2e"
+                            unstash "binaries"
+                            unstash 'e2e'
                             bat 'docker-app-e2e-windows.exe'
                         }
                     }
@@ -124,10 +137,11 @@ pipeline {
             }
             steps {
                 dir('src/github.com/docker/app') {
-                    sh 'rm -f *.tar.gz'
                     unstash 'artifacts'
                     echo "Releasing $TAG_NAME"
-                    release('docker/app')
+                    dir('bin') {
+                        release('docker/app')
+                    }
                 }
             }
             post {
@@ -146,6 +160,6 @@ def release(repo) {
         def reply = sh(returnStdout: true, script: "curl -sSf -H \"Authorization: token $GITHUB_TOKEN\" -H \"Accept: application/json\" -H \"Content-type: application/json\" -X POST -d '$data' $url")
         def release = readJSON text: reply
         url = release.upload_url.replace('{?name,label}', '')
-        sh("ls *.tar.gz | xargs -i curl -sf -H \"Authorization: token $GITHUB_TOKEN\" -H \"Accept: application/json\" -H \"Content-type: application/gzip\" -X POST --data-binary \"@{}\" $url?name={}")
+        sh("for f in * ; do curl -sf -H \"Authorization: token $GITHUB_TOKEN\" -H \"Accept: application/json\" -H \"Content-type: application/octet-stream\" -X POST --data-binary \"@\${f}\" $url?name=\${f}; done")
     }
 }
