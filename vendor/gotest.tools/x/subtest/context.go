@@ -3,7 +3,7 @@ provides a testing.TB, and context.Context.
 
 This package was inspired by github.com/frankban/quicktest.
 */
-package subtest
+package subtest // import "gotest.tools/x/subtest"
 
 import (
 	"context"

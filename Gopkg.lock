@@ -344,22 +344,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/gotestyourself/gotestyourself"
-  packages = [
-    "assert",
-    "assert/cmp",
-    "fs",
-    "golden",
-    "icmd",
-    "internal/difflib",
-    "internal/format",
-    "internal/source",
-    "x/subtest"
-  ]
-  revision = "f2728c79a87095c99f7a496701a81d3eae9fe3df"
-
-[[projects]]
-  branch = "master"
   name = "github.com/howeyc/gopass"
   packages = ["."]
   revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
@@ -624,6 +608,22 @@
   version = "v2.2.1"
 
 [[projects]]
+  name = "gotest.tools"
+  packages = [
+    "assert",
+    "assert/cmp",
+    "fs",
+    "golden",
+    "icmd",
+    "internal/difflib",
+    "internal/format",
+    "internal/source",
+    "x/subtest"
+  ]
+  revision = "b6e20af1ed078cd01a6413b734051a292450b4cb"
+  version = "v2.1.0"
+
+[[projects]]
   branch = "master"
   name = "k8s.io/api"
   packages = [
@@ -782,6 +782,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "baca916d27bce84770e4e5f574685619dfe0b9e5ae0cce16b524f91420dd30a7"
+  inputs-digest = "d4724226115810fd03cd41c5ac66c5dbf15385c4711c0a7c77dd838a168d4b9e"
   solver-name = "gps-cdcl"
   solver-version = 1

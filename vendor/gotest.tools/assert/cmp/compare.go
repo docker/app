@@ -1,5 +1,5 @@
 /*Package cmp provides Comparisons for Assert and Check*/
-package cmp
+package cmp // import "gotest.tools/assert/cmp"
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/gotestyourself/gotestyourself/internal/format"
+	"gotest.tools/internal/format"
 )
 
 // Comparison is a function which compares values and returns ResultSuccess if
@@ -19,7 +19,7 @@ type Comparison func() Result
 // and succeeds if the values are equal.
 //
 // The comparison can be customized using comparison Options.
-// Package assert/opt (http://bit.do/t-assert-opt) provides some additional
+// Package https://godoc.org/gotest.tools/assert/opt provides some additional
 // commonly used Options.
 func DeepEqual(x, y interface{}, opts ...cmp.Option) Comparison {
 	return func() (result Result) {
@@ -58,7 +58,7 @@ func toResult(success bool, msg string) Result {
 	return ResultFailure(msg)
 }
 
-// Equal succeeds if x == y.
+// Equal succeeds if x == y. See assert.Equal for full documentation.
 func Equal(x, y interface{}) Comparison {
 	return func() Result {
 		switch {

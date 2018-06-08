@@ -2,7 +2,7 @@
 
 Golden files are files in the ./testdata/ subdirectory of the package under test.
 */
-package golden
+package golden // import "gotest.tools/golden"
 
 import (
 	"bytes"
@@ -11,9 +11,9 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
-	"github.com/gotestyourself/gotestyourself/internal/format"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
+	"gotest.tools/internal/format"
 )
 
 var flagUpdate = flag.Bool("test.update-golden", false, "update golden file")
@@ -62,16 +62,11 @@ func exactBytes(in []byte) []byte {
 // to the golden file.
 // Returns whether the assertion was successful (true) or not (false).
 // This is equivalent to assert.Check(t, String(actual, filename))
-//
-// Deprecated: In a future version this function will change to use assert.Assert
-// instead of assert.Check to be consistent with other assert functions.
-// Use assert.Check(t, String(actual, filename) if you want to preserve the
-// current behaviour.
-func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...interface{}) bool {
+func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	return assert.Check(t, String(actual, filename), msgAndArgs...)
+	assert.Assert(t, String(actual, filename), msgAndArgs...)
 }
 
 // String compares actual to the contents of filename and returns success
@@ -105,21 +100,16 @@ func String(actual string, filename string) cmp.Comparison {
 // written to the golden file.
 // Returns whether the assertion was successful (true) or not (false)
 // This is equivalent to assert.Check(t, Bytes(actual, filename))
-//
-// Deprecated: In a future version this function will change to use assert.Assert
-// instead of assert.Check to be consistent with other assert functions.
-// Use assert.Check(t, Bytes(actual, filename) if you want to preserve the
-// current behaviour.
 func AssertBytes(
 	t assert.TestingT,
 	actual []byte,
 	filename string,
 	msgAndArgs ...interface{},
-) bool {
+) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	return assert.Check(t, Bytes(actual, filename), msgAndArgs...)
+	assert.Assert(t, Bytes(actual, filename), msgAndArgs...)
 }
 
 // Bytes compares actual to the contents of filename and returns success

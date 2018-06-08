@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/fs"
-	"github.com/gotestyourself/gotestyourself/golden"
-	"github.com/gotestyourself/gotestyourself/icmd"
+	"gotest.tools/assert"
+	"gotest.tools/fs"
+	"gotest.tools/golden"
+	"gotest.tools/icmd"
 
 	"github.com/docker/app/utils"
 )
