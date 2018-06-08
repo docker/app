@@ -11,15 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/app/internal/constants"
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/types"
-	"github.com/docker/app/internal/utils"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )
 
 func appName(appname string) string {
-	return utils.AppNameFromDir(appname)
+	return internal.AppNameFromDir(appname)
 }
 
 // Save saves an app to docker and returns the image name.
@@ -64,7 +63,7 @@ COPY / /
 		return "", errors.Wrapf(err, "cannot create file %s", di)
 	}
 	defer os.Remove(di)
-	imageName := prefix + appName(appname) + constants.AppExtension + ":" + tag
+	imageName := prefix + appName(appname) + internal.AppExtension + ":" + tag
 	args := []string{"build", "-t", imageName, "-f", df, appname}
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = ioutil.Discard
@@ -107,7 +106,7 @@ func Load(repotag string, outputDir string) error {
 			if len(repoComps) == 3 || (len(repoComps) == 2 && strings.Contains(repoComps[1], "/")) {
 				repo = repoComps[1]
 			}
-			err = ioutil.WriteFile(filepath.Join(outputDir, utils.DirNameFromAppName(filepath.Base(repo))), data, 0644)
+			err = ioutil.WriteFile(filepath.Join(outputDir, internal.DirNameFromAppName(filepath.Base(repo))), data, 0644)
 			return errors.Wrap(err, "error writing output file")
 		}
 	}

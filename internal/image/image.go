@@ -6,9 +6,9 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/renderer"
-	"github.com/docker/app/internal/utils"
 )
 
 func contains(list []string, needle string) bool {
@@ -48,7 +48,7 @@ func Add(appname string, services []string, composeFiles []string, settingsFile 
 	s, err := os.Stat(oappname)
 	if err != nil {
 		// try appending our extension
-		oappname = utils.DirNameFromAppName(oappname)
+		oappname = internal.DirNameFromAppName(oappname)
 		s, err = os.Stat(oappname)
 	}
 	if err != nil {

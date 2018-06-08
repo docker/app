@@ -10,8 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/app/internal/constants"
-	"github.com/docker/app/internal/utils"
+	"github.com/docker/app/internal"
 	"github.com/pkg/errors"
 )
 
@@ -25,7 +24,7 @@ func findApp() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "cannot resolve current working directory")
 	}
-	if strings.HasSuffix(cwd, constants.AppExtension) {
+	if strings.HasSuffix(cwd, internal.AppExtension) {
 		return cwd, nil
 	}
 	content, err := ioutil.ReadDir(cwd)
@@ -34,7 +33,7 @@ func findApp() (string, error) {
 	}
 	hit := ""
 	for _, c := range content {
-		if strings.HasSuffix(c.Name(), constants.AppExtension) {
+		if strings.HasSuffix(c.Name(), internal.AppExtension) {
 			if hit != "" {
 				return "", fmt.Errorf("multiple applications found in current directory, specify the application name on the command line")
 			}
@@ -53,15 +52,15 @@ func extractImage(appname string) (string, func(), error) {
 	if strings.Contains(appname, ":") {
 		nametag := strings.Split(appname, ":")
 		if len(nametag) == 3 || strings.Contains(nametag[1], "/") {
-			nametag[1] = utils.DirNameFromAppName(nametag[1])
+			nametag[1] = internal.DirNameFromAppName(nametag[1])
 			appname = filepath.Base(nametag[1])
 		} else {
-			nametag[0] = utils.DirNameFromAppName(nametag[0])
+			nametag[0] = internal.DirNameFromAppName(nametag[0])
 			appname = filepath.Base(nametag[0])
 		}
 		imagename = strings.Join(nametag, ":")
 	} else {
-		imagename = utils.DirNameFromAppName(appname)
+		imagename = internal.DirNameFromAppName(appname)
 		appname = filepath.Base(imagename)
 	}
 	tempDir, err := ioutil.TempDir("", "dockerapp")
@@ -109,7 +108,7 @@ func Extract(appname string) (string, func(), error) {
 	s, err := os.Stat(appname)
 	if err != nil {
 		// try appending our extension
-		appname = utils.DirNameFromAppName(appname)
+		appname = internal.DirNameFromAppName(appname)
 		s, err = os.Stat(appname)
 	}
 	if err != nil {

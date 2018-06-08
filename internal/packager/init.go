@@ -10,8 +10,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/types"
-	"github.com/docker/app/internal/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -26,10 +26,10 @@ func prependToFile(filename, text string) {
 // Init is the entrypoint initialization function.
 // It generates a new application package based on the provided parameters.
 func Init(name string, composeFile string, description string, maintainers []string, singleFile bool) error {
-	if err := utils.ValidateAppName(name); err != nil {
+	if err := internal.ValidateAppName(name); err != nil {
 		return err
 	}
-	dirName := utils.DirNameFromAppName(name)
+	dirName := internal.DirNameFromAppName(name)
 	if err := os.Mkdir(dirName, 0755); err != nil {
 		return errors.Wrap(err, "failed to create application directory")
 	}
@@ -80,11 +80,12 @@ func initFromScratch(name string) error {
 		return err
 	}
 
-	dirName := utils.DirNameFromAppName(name)
-	if err := utils.CreateFileWithData(filepath.Join(dirName, "docker-compose.yml"), composeData); err != nil {
+	dirName := internal.DirNameFromAppName(name)
+
+	if err := ioutil.WriteFile(filepath.Join(dirName, "docker-compose.yml"), composeData, 0644); err != nil {
 		return err
 	}
-	return utils.CreateFileWithData(filepath.Join(dirName, "settings.yml"), []byte{'\n'})
+	return ioutil.WriteFile(filepath.Join(dirName, "settings.yml"), []byte{'\n'}, 0644)
 }
 
 func parseEnv(env string, target map[string]string) {
@@ -180,7 +181,7 @@ func ExtractVariables(composeRaw string) ([]string, error) {
 func initFromComposeFile(name string, composeFile string) error {
 	log.Debug("init from compose")
 
-	dirName := utils.DirNameFromAppName(name)
+	dirName := internal.DirNameFromAppName(name)
 	composeRaw, err := ioutil.ReadFile(composeFile)
 	if err != nil {
 		return errors.Wrap(err, "failed to read compose file")

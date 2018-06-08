@@ -13,7 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/app/internal/utils"
+	"github.com/docker/app/internal"
+
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 	"gotest.tools/golden"
@@ -224,7 +225,7 @@ targets:
 	defer os.RemoveAll(inputDir)
 
 	testAppName := "app_test"
-	dirName := utils.DirNameFromAppName(testAppName)
+	dirName := internal.DirNameFromAppName(testAppName)
 	defer os.RemoveAll(dirName)
 
 	args := []string{
