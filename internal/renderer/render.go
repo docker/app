@@ -12,9 +12,9 @@ import (
 	"github.com/cbroglie/mustache"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/yatee"
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
-	"github.com/docker/yatee/yatee"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
