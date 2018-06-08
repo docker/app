@@ -100,8 +100,8 @@ func findBinary() string {
 		os.Getenv("DOCKERAPP_BINARY"),
 		"./docker-app-" + runtime.GOOS + binExt(),
 		"./docker-app" + binExt(),
-		"../_build/docker-app-" + runtime.GOOS + binExt(),
-		"../_build/docker-app" + binExt(),
+		"../bin/docker-app-" + runtime.GOOS + binExt(),
+		"../bin/docker-app" + binExt(),
 	}
 	for _, binName := range binNames {
 		if _, err := os.Stat(binName); err == nil {

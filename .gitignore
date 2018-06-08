@@ -1,5 +1,6 @@
 *.tar.gz
 *.dockerapp
 _build/
+bin/
 !examples/simple/*.dockerapp
 .gradle
