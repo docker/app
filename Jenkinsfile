@@ -30,7 +30,7 @@ pipeline {
                             }
                             if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
                                 stash name: 'artifacts', includes: '*.tar.gz', excludes: '*-e2e-*'
-                                archiveArtifacts '*.tar.gz'
+                                archiveArtifacts 'bin/*.tar.gz'
                             }
                         } finally {
                             def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm -f/
