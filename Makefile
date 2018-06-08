@@ -3,7 +3,7 @@ include vars.mk
 GO_BUILD := CGO_ENABLED=0 go build
 GO_TEST := CGO_ENABLED=0 go test
 
-all: bin test
+all: bin/$(BIN_NAME) test
 
 check_go_env:
 	@test $$(go list) = "$(PKG_NAME)" || \

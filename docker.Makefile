@@ -10,7 +10,7 @@ IMAGE_BUILD_ARGS := \
 PKG_PATH := /go/src/$(PKG_NAME)
 
 .DEFAULT: all
-all: bin test
+all: bin/$(BIN_NAME) test
 
 create_bin:
 	@mkdir -p bin
