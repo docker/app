@@ -1,0 +1,98 @@
+properties([buildDiscarder(logRotator(numToKeepStr: '20'))])
+
+pipeline {
+    agent {
+	label 'ubuntu-1604-aufs-edge'
+    }
+    
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+        stage('build&validate') {
+	    parallel{
+		stage('validate') {
+		    agent {
+			label 'ubuntu-1604-aufs-edge'
+		    }
+		    steps {
+			dir('src/github.com/docker/app') {
+			    checkout scm
+			    sh 'make -f docker.Makefile lint'
+			}
+		    }
+		}
+		stage('build') {
+		    agent {
+			label 'ubuntu-1604-aufs-edge'
+		    }
+		    steps {
+			dir('src/github.com/docker/app') {
+			    checkout scm
+                            sh 'make -f docker.Makefile cross e2e-cross'
+                            dir('bin') {
+                                stash name: 'binaries'
+                            }
+			    dir('e2e') {
+				stash name: 'e2e'
+			    }
+			}
+		    }
+		}
+	    }
+        }
+        stage('coverage') {
+            parallel {
+                stage("coverage") { 
+		    //environment {
+                    //    CODECOV_TOKEN = credentials('jenkins-codecov-token')
+                    //}
+                    agent {
+                        label 'ubuntu-1604-aufs-edge'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            checkout scm
+                            sh 'make -f docker.Makefile coverage'
+                            archiveArtifacts '_build/ci-cov/all.out'
+                            archiveArtifacts '_build/ci-cov/coverage.html'
+                            // sh 'curl -s https://codecov.io/bash | bash -s - -f _build/ci-cov/all.out -K'
+                        }
+                    }
+                }
+                stage("Gradle test") {
+                    agent {
+                        label 'ubuntu-1604-aufs-edge'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            checkout scm
+                            sh 'make -f docker.Makefile gradle-test'
+                        }
+                    }
+                }
+		/*
+                stage("Test Win") {
+                    agent {
+                        label "windows"
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            unstash "binaries"
+			    unstash 'e2e'
+                            bat 'docker-app-e2e-windows.exe'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
+                        }
+                    }
+                 }
+		 */
+            }
+        }
+    }
+}
+
