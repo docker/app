@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/docker/app/image"
+	"github.com/docker/app/internal/image"
 	"github.com/spf13/cobra"
 )
 

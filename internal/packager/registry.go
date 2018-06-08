@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/app/constants"
-	"github.com/docker/app/types"
-	"github.com/docker/app/utils"
+	"github.com/docker/app/internal/constants"
+	"github.com/docker/app/internal/types"
+	"github.com/docker/app/internal/utils"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )

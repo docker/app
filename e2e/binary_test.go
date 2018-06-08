@@ -13,12 +13,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/docker/app/internal/utils"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 	"gotest.tools/golden"
 	"gotest.tools/icmd"
-
-	"github.com/docker/app/utils"
 )
 
 type registry struct {

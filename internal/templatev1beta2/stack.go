@@ -1,7 +1,7 @@
 package templatev1beta2
 
 import (
-	types "github.com/docker/app/templatetypes"
+	types "github.com/docker/app/internal/templatetypes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )

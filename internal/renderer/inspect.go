@@ -8,8 +8,8 @@ import (
 	"sort"
 	"text/tabwriter"
 
-	"github.com/docker/app/packager"
-	"github.com/docker/app/types"
+	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/types"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )

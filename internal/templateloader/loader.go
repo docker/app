@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	types "github.com/docker/app/internal/templatetypes"
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/cli/compose/template"
-	types "github.com/docker/app/templatetypes"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/go-connections/nat"
@@ -43,37 +43,37 @@ func ParseYAML(source []byte) (map[string]interface{}, error) {
 }
 
 func processEnabled(configDict map[string]interface{}) bool {
-       if v, ok := configDict["enabled"]; ok {
-               e := fmt.Sprintf("%v", v)
-               e = strings.Trim(e, " ")
-               reverse := len(e) != 0 && e[0] == '!'
-               if reverse {
-                       e = strings.Trim(e[1:], " ")
-               }
-               disabled := e == "" || e == "0" || e == "false" || e == "FALSE";
-               if reverse {
-                       disabled = !disabled
-               }
-               if disabled {
-                       return false
-               }
-               delete(configDict, "enabled")
-       }
-       for k, v := range configDict {
-               if m, ok := v.(map[string]interface{}); ok {
-                       if ! processEnabled(m) {
-                               delete(configDict, k)
-                       }
-               }
-       }
-       return true
+	if v, ok := configDict["enabled"]; ok {
+		e := fmt.Sprintf("%v", v)
+		e = strings.Trim(e, " ")
+		reverse := len(e) != 0 && e[0] == '!'
+		if reverse {
+			e = strings.Trim(e[1:], " ")
+		}
+		disabled := e == "" || e == "0" || e == "false" || e == "FALSE"
+		if reverse {
+			disabled = !disabled
+		}
+		if disabled {
+			return false
+		}
+		delete(configDict, "enabled")
+	}
+	for k, v := range configDict {
+		if m, ok := v.(map[string]interface{}); ok {
+			if !processEnabled(m) {
+				delete(configDict, k)
+			}
+		}
+	}
+	return true
 }
 
 func resolveEnabled(configDict map[string]interface{}) (map[string]interface{}, error) {
-       if ! processEnabled(configDict) {
-               return map[string]interface{}{}, nil
-       }
-       return configDict, nil
+	if !processEnabled(configDict) {
+		return map[string]interface{}{}, nil
+	}
+	return configDict, nil
 }
 
 // LoadTemplate loads a config without resolving the variables
@@ -829,15 +829,15 @@ func transformHealthCheckTest(data interface{}) (interface{}, error) {
 func transformBoolOrTemplate(value interface{}) (interface{}, error) {
 	switch value := value.(type) {
 	case int:
-		return types.BoolOrTemplate{ Value: value != 0}, nil
+		return types.BoolOrTemplate{Value: value != 0}, nil
 	case bool:
-		return types.BoolOrTemplate{ Value: value}, nil
+		return types.BoolOrTemplate{Value: value}, nil
 	case string:
 		b, err := toBoolean(value)
 		if err == nil {
-			return types.BoolOrTemplate{ Value: b.(bool)}, nil
+			return types.BoolOrTemplate{Value: b.(bool)}, nil
 		}
-		return types.BoolOrTemplate{ ValueTemplate: value}, nil
+		return types.BoolOrTemplate{ValueTemplate: value}, nil
 	default:
 		return value, errors.Errorf("invali type %T for boolean", value)
 	}
@@ -847,13 +847,13 @@ func transformUInt64OrTemplate(value interface{}) (interface{}, error) {
 	switch value := value.(type) {
 	case int:
 		v := uint64(value)
-		return types.UInt64OrTemplate{ Value: &v}, nil
+		return types.UInt64OrTemplate{Value: &v}, nil
 	case string:
 		v, err := strconv.ParseUint(value, 0, 64)
 		if err == nil {
-			return types.UInt64OrTemplate{ Value: &v}, nil
+			return types.UInt64OrTemplate{Value: &v}, nil
 		}
-		return types.UInt64OrTemplate{ ValueTemplate: value}, nil
+		return types.UInt64OrTemplate{ValueTemplate: value}, nil
 	default:
 		return value, errors.Errorf("invali type %T for boolean", value)
 	}
@@ -863,13 +863,13 @@ func transformDurationOrTemplate(value interface{}) (interface{}, error) {
 	switch value := value.(type) {
 	case int:
 		d := time.Duration(value)
-		return types.DurationOrTemplate { Value: &d}, nil
+		return types.DurationOrTemplate{Value: &d}, nil
 	case string:
 		d, err := time.ParseDuration(value)
 		if err == nil {
-			return types.DurationOrTemplate { Value: &d}, nil
+			return types.DurationOrTemplate{Value: &d}, nil
 		}
-		return types.DurationOrTemplate { ValueTemplate: value}, nil
+		return types.DurationOrTemplate{ValueTemplate: value}, nil
 	default:
 		return nil, errors.Errorf("invalid type for duration %T", value)
 	}
@@ -909,10 +909,10 @@ func toServicePortConfigs(value string) ([]interface{}, error) {
 			pub = ipub.(types.UInt64OrTemplate)
 		}
 		portConfigs = append(portConfigs, types.ServicePortConfig{
-				Protocol: protocol,
-				Target: tgt.(types.UInt64OrTemplate),
-				Published: pub,
-				Mode: "ingress",
+			Protocol:  protocol,
+			Target:    tgt.(types.UInt64OrTemplate),
+			Published: pub,
+			Mode:      "ingress",
 		})
 		return portConfigs, nil
 	}

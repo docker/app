@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/docker/app/internal"
-	"github.com/docker/app/renderer"
+	"github.com/docker/app/internal/renderer"
 	"github.com/docker/cli/cli"
 	"github.com/spf13/cobra"
 )

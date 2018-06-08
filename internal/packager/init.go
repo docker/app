@@ -10,8 +10,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/docker/app/types"
-	"github.com/docker/app/utils"
+	"github.com/docker/app/internal/types"
+	"github.com/docker/app/internal/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
