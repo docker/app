@@ -30,22 +30,22 @@ bin/%: create_bin
 
 cross: create_bin
 	docker build --target=$* -t $(IMAGE_NAME)-cross $(IMAGE_BUILD_ARGS) .
-	( containerID=$$(docker create $(IMAGE_NAME)-cross noop); \
-		docker cp $$containerID:$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux; \
-		docker cp $$containerID:$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin ; \
-		docker cp $$containerID:$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe; \
-		docker rm $$containerID )
+	$(eval containerID=$(shell docker create $(IMAGE_NAME)-cross noop))
+	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
+	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
+	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe
+	docker rm $(containerID)
 	@chmod +x bin/$(BIN_NAME)-linux
 	@chmod +x bin/$(BIN_NAME)-darwin
 	@chmod +x bin/$(BIN_NAME)-windows.exe
 
 e2e-cross: create_bin
 	docker build --target=e2e-cross -t $(IMAGE_NAME)-e2e-cross $(IMAGE_BUILD_ARGS) .
-	( containerID=$$(docker create $(IMAGE_NAME)-e2e-cross noop); \
-		docker cp $$containerID:$(PKG_PATH)/bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-linux; \
-		docker cp $$containerID:$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin ; \
-		docker cp $$containerID:$(PKG_PATH)/bin/$(BIN_NAME)-e2e-windows.exe bin/$(BIN_NAME)-e2e-windows.exe; \
-		docker rm $$containerID )
+	$(eval containerID=$(shell docker create $(IMAGE_NAME)-e2e-cross noop))
+	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-linux
+	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin
+	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-windows.exe bin/$(BIN_NAME)-e2e-windows.exe
+	docker rm $(containerID)
 	@chmod +x bin/$(BIN_NAME)-e2e-linux
 	@chmod +x bin/$(BIN_NAME)-e2e-darwin
 	@chmod +x bin/$(BIN_NAME)-e2e-windows.exe
