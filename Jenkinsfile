@@ -74,6 +74,11 @@ pipeline {
                             sh 'make -f docker.Makefile gradle-test'
                         }
                     }
+                    post {
+                        always {
+                            deleteDir()
+                        }
+                    }
                 }
                 stage("Test Linux") {
                     agent {
