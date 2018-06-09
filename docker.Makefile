@@ -21,6 +21,13 @@ build_dev_image:
 shell: build_dev_image
 	docker run -ti --rm $(IMAGE_NAME)-dev bash
 
+bin/$(BIN_NAME)-linux: create_bin
+	docker build --target=$(BIN_NAME) -t $(IMAGE_NAME)-bin $(IMAGE_BUILD_ARGS) .
+	$(eval containerID=$(shell docker create $(IMAGE_NAME)-bin noop))
+	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME) $@
+	docker rm $(containerID)
+	@chmod +x $@
+
 cross: create_bin
 	docker build --target=$* -t $(IMAGE_NAME)-cross $(IMAGE_BUILD_ARGS) .
 	$(eval containerID=$(shell docker create $(IMAGE_NAME)-cross noop))
@@ -67,7 +74,7 @@ coverage: build_dev_image
 	docker cp $(containerID):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 	docker rm $(containerID)
 
-gradle-test: cross
+gradle-test: bin/$(BIN_NAME)-linux
 	docker build -t $(IMAGE_NAME)-bin -f Dockerfile.gradle .
 	docker run --rm $(IMAGE_NAME)-bin bash -c "./gradlew --stacktrace build && cd example && gradle renderIt"
 
