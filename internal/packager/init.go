@@ -197,11 +197,11 @@ func initFromComposeFile(name string, composeFile string) error {
 	}
 	version, ok := compose["version"]
 	if !ok {
-		return fmt.Errorf("unsupported compose file version: 1")
+		return fmt.Errorf("unsupported Compose file version: version too low: 1 < 3.0")
 	}
 	ver := fmt.Sprintf("%v", version)
-	if ver[0] != '3' {
-		return fmt.Errorf("unsupported Compose file version: %s", ver)
+	if err = utils.CheckVersionGte(ver, "3.0"); err != nil {
+		return errors.Wrap(err, "unsupported Compose file version")
 	}
 
 	var keys []string
