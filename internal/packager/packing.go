@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/docker/app/internal/constants"
-	"github.com/docker/app/internal/utils"
+	"github.com/docker/app/internal"
+
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -99,7 +99,7 @@ func Unpack(appname, targetDir string) error {
 	s, err := os.Stat(appname)
 	if err != nil {
 		// try appending our extension
-		appname = utils.DirNameFromAppName(appname)
+		appname = internal.DirNameFromAppName(appname)
 		s, err = os.Stat(appname)
 	}
 	if err != nil {
@@ -108,7 +108,7 @@ func Unpack(appname, targetDir string) error {
 	if s.IsDir() {
 		return fmt.Errorf("app already extracted")
 	}
-	out := filepath.Join(targetDir, utils.AppNameFromDir(appname)+constants.AppExtension)
+	out := filepath.Join(targetDir, internal.AppNameFromDir(appname)+internal.AppExtension)
 	err = os.Mkdir(out, 0755)
 	if err != nil {
 		return err

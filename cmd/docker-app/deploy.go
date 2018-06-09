@@ -8,7 +8,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/renderer"
-	"github.com/docker/app/internal/utils"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack/kubernetes"
@@ -83,7 +82,7 @@ func runDeploy(appname string, opts deployOptions) error {
 	})
 	stackName := opts.deployStackName
 	if stackName == "" {
-		stackName = utils.AppNameFromDir(appname)
+		stackName = internal.AppNameFromDir(appname)
 	}
 	if deployOrchestrator == "swarm" {
 		ctx := context.Background()

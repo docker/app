@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/docker/app/internal/utils"
+	"github.com/docker/app/internal"
+
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )
@@ -36,7 +37,7 @@ func TestInitFromComposeFile(t *testing.T) {
 	defer os.RemoveAll(inputDir)
 
 	testAppName := randomName("app_")
-	dirName := utils.DirNameFromAppName(testAppName)
+	dirName := internal.DirNameFromAppName(testAppName)
 	err := os.Mkdir(dirName, 0755)
 	assert.NilError(t, err)
 	defer os.RemoveAll(dirName)
@@ -56,7 +57,7 @@ func TestInitFromComposeFile(t *testing.T) {
 
 func TestInitFromInvalidComposeFile(t *testing.T) {
 	testAppName := randomName("app_")
-	dirName := utils.DirNameFromAppName(testAppName)
+	dirName := internal.DirNameFromAppName(testAppName)
 	err := os.Mkdir(dirName, 0755)
 	assert.NilError(t, err)
 	defer os.RemoveAll(dirName)

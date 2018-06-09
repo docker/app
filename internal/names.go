@@ -1,12 +1,15 @@
-package utils
+package internal
 
 import (
 	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
+)
 
-	"github.com/docker/app/internal/constants"
+const (
+	// AppExtension is the extension used by an application
+	AppExtension = ".dockerapp"
 )
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
@@ -14,16 +17,16 @@ var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
 // AppNameFromDir takes a path to an app directory and returns
 // the application's name
 func AppNameFromDir(dirName string) string {
-	return strings.TrimSuffix(filepath.Base(dirName), constants.AppExtension)
+	return strings.TrimSuffix(filepath.Base(dirName), AppExtension)
 }
 
 // DirNameFromAppName takes an application name and returns the
 // corresponding directory name
 func DirNameFromAppName(appName string) string {
-	if strings.HasSuffix(appName, constants.AppExtension) {
+	if strings.HasSuffix(appName, AppExtension) {
 		return appName
 	}
-	return appName + constants.AppExtension
+	return appName + AppExtension
 }
 
 // ValidateAppName takes an app name and returns an error if it doesn't

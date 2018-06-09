@@ -8,12 +8,12 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/templateconversion"
 	"github.com/docker/app/internal/templateloader"
 	"github.com/docker/app/internal/templatev1beta2"
 	"github.com/docker/app/internal/types"
-	"github.com/docker/app/internal/utils"
 	conversion "github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
@@ -219,7 +219,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 			APIVersion: "v1beta2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: utils.AppNameFromDir(appname),
+			Name: internal.AppNameFromDir(appname),
 		},
 		Spec: stackSpec,
 	}
@@ -248,7 +248,7 @@ func makeStack(appname string, targetDir string, data []byte) error {
 			APIVersion: "v1beta2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.AppNameFromDir(appname),
+			Name:      internal.AppNameFromDir(appname),
 			Namespace: "default", // FIXME
 		},
 		Spec: stackSpec,
@@ -280,7 +280,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 		return err
 	}
 	defer cleanup()
-	targetDir := utils.AppNameFromDir(appname) + ".chart"
+	targetDir := internal.AppNameFromDir(appname) + ".chart"
 	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}
