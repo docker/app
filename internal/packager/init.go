@@ -231,8 +231,8 @@ version: {{ .Version }}
 name: {{ .Name }}
 # A short description of the application
 description: {{ .Description }}
-# Repository prefix to use when pushing to a registry. This is typically your Hub username.
-{{ if len .RepositoryPrefix }}repository_prefix: {{ .RepositoryPrefix }} {{ else }}#repository_prefix: myHubUsername{{ end }}
+# Namespace to use when pushing to a registry. This is typically your Hub username.
+{{ if len .Namespace}}namespace: {{ .Namespace }} {{ else }}#namespace: myHubUsername{{ end }}
 # List of application maitainers with name and email for each
 {{ if len .Maintainers }}maintainers:
 {{ range .Maintainers }}  - name: {{ .Name  }}

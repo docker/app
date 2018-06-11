@@ -6,21 +6,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	pushPrefix string
-	pushTag    string
-)
+type pushOptions struct {
+	namespace string
+	tag       string
+}
 
 func pushCmd() *cobra.Command {
+	var opts pushOptions
 	cmd := &cobra.Command{
 		Use:   "push [<app-name>]",
 		Short: "Push the application to a registry",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return packager.Push(firstOrEmpty(args), pushPrefix, pushTag)
+			return packager.Push(firstOrEmpty(args), opts.namespace, opts.tag)
 		},
 	}
-	cmd.Flags().StringVarP(&pushPrefix, "prefix", "p", "", "repository prefix to use (default: repository_prefix in metadata)")
-	cmd.Flags().StringVarP(&pushTag, "tag", "t", "", "tag to use (default: version in metadata")
+	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "namespace to use (default: namespace in metadata)")
+	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "tag to use (default: version in metadata")
 	return cmd
 }

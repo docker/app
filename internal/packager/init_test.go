@@ -80,8 +80,8 @@ version: 0.1.0
 name: writemetadata_test
 # A short description of the application
 description: 
-# Repository prefix to use when pushing to a registry. This is typically your Hub username.
-#repository_prefix: myHubUsername
+# Namespace to use when pushing to a registry. This is typically your Hub username.
+#namespace: myHubUsername
 # List of application maitainers with name and email for each
 maintainers:
   - name: bearclaw

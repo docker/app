@@ -46,7 +46,7 @@ It should look like this:
 version: 0.1.0
 name: hello
 description: ""
-repository_prefix: ""
+namespace: ""
 maintainers:
 - name: yourusername
   email: ""
@@ -180,14 +180,14 @@ the `docker-app init` command. This will create a directory instead of a singe f
 You can push any application to the Hub using `docker-app push`:
 
 ``` bash
-$ docker-app push --prefix myHubUser --tag latest
+$ docker-app push --namespace myHubUser --tag latest
 ```
 
 This command will create an image named `myHubUser/hello.dockerapp:latest` on your local Docker
 daemon, and push it to the Hub.
 
 By default, this command uses the application version defined in `metadata.yml` as the tag,
-and the value of the metadata field `repository_prefix` as the repository prefix.
+and the value of the metadata field `namespace` as the image namespace.
 
 All `docker-app` commands accept a local image name as input, which means you can run on a different host:
 

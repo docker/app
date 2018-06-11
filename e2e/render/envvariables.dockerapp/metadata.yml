@@ -1,7 +1,7 @@
 version: 0.1.0
 name: myapp
 description: ""
-repository_prefix: "alice"
+namespace: "alice"
 maintainers:
   - name: bearclaw
     email: bearclaw@bearclaw.bearclaw
