@@ -11,37 +11,51 @@ pipeline {
 
     stages {
         stage('Build') {
-            agent {
-                label 'linux'
-            }
-            steps  {
-                dir('src/github.com/docker/app') {
-                    script {
-                        try {
+            parallel {
+                stage("Validate") {
+                    agent {
+                        label 'linux'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'docker image prune -f'
                             sh 'make -f docker.Makefile lint'
-                            sh 'make -f docker.Makefile cross e2e-cross tars'
-                            dir('bin') {
-                                stash name: 'binaries'
-                            }
-                            dir('e2e') {
-                                stash name: 'e2e'
-                            }
-                            if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
-                                stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
-                                archiveArtifacts 'bin/*.tar.gz'
-                            }
-                        } finally {
-                            def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm -f/
-                            sh clean_images
+                            sh 'make -f docker.Makefile vendor'
                         }
                     }
                 }
-            }
-            post {
-                always {
-                    deleteDir()
+                stage("Binaries"){
+                    agent {
+                        label 'linux'
+                    }
+                    steps  {
+                        dir('src/github.com/docker/app') {
+                            script {
+                                try {
+                                    checkout scm
+                                    sh 'make -f docker.Makefile cross e2e-cross tars'
+                                    dir('bin') {
+                                        stash name: 'binaries'
+                                    }
+                                    dir('e2e') {
+                                        stash name: 'e2e'
+                                    }
+                                    if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
+                                        stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
+                                        archiveArtifacts 'bin/*.tar.gz'
+                                    }
+                                } finally {
+                                    def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm -f/
+                                    sh clean_images
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
+                        }
+                    }
                 }
             }
         }
