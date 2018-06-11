@@ -1,6 +1,16 @@
 include vars.mk
 
-IMAGE_NAME := docker-app
+LINT_IMAGE_NAME := $(BIN_NAME)-lint:$(TAG)
+DEV_IMAGE_NAME := $(BIN_NAME)-dev:$(TAG)
+BIN_IMAGE_NAME := $(BIN_NAME)-bin:$(TAG)
+CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(TAG)
+E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(TAG)
+GRADLE_IMAGE_NAME := $(BIN_NAME)-gradle:$(TAG)
+
+BIN_CTNR_NAME := $(BIN_NAME)-bin-$(TAG)
+CROSS_CTNR_NAME := $(BIN_NAME)-cross-$(TAG)
+E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
+COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
 
 IMAGE_BUILD_ARGS := \
     --build-arg COMMIT=$(COMMIT) \
@@ -16,36 +26,36 @@ create_bin:
 	@$(call mkdir,bin)
 
 build_dev_image:
-	docker build --target=dev -t $(IMAGE_NAME)-dev $(IMAGE_BUILD_ARGS) .
+	docker build --target=dev -t $(DEV_IMAGE_NAME) $(IMAGE_BUILD_ARGS) .
 
 shell: build_dev_image
-	docker run -ti --rm $(IMAGE_NAME)-dev bash
+	docker run -ti --rm $(DEV_IMAGE_NAME) bash
 
 bin/$(BIN_NAME)-linux: create_bin
-	docker build --target=$(BIN_NAME) -t $(IMAGE_NAME)-bin $(IMAGE_BUILD_ARGS) .
-	$(eval containerID=$(shell docker create $(IMAGE_NAME)-bin noop))
-	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME) $@
-	docker rm $(containerID)
+	docker build --target=$(BIN_NAME) -t $(BIN_IMAGE_NAME) $(IMAGE_BUILD_ARGS) .
+	docker create --name $(BIN_CTNR_NAME) $(BIN_IMAGE_NAME) noop
+	docker cp $(BIN_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME) $@
+	docker rm $(BIN_CTNR_NAME)
 	@chmod +x $@
 
 cross: create_bin
-	docker build --target=$* -t $(IMAGE_NAME)-cross $(IMAGE_BUILD_ARGS) .
-	$(eval containerID=$(shell docker create $(IMAGE_NAME)-cross noop))
-	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
-	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
-	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe
-	docker rm $(containerID)
+	docker build --target=$* -t $(CROSS_IMAGE_NAME) $(IMAGE_BUILD_ARGS) .
+	docker create --name $(CROSS_CTNR_NAME) $(CROSS_IMAGE_NAME) noop
+	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
+	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
+	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe
+	docker rm $(CROSS_CTNR_NAME)
 	@$(call chmod,+x,bin/$(BIN_NAME)-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-darwin)
 	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
 
 e2e-cross: create_bin
-	docker build --target=e2e-cross -t $(IMAGE_NAME)-e2e-cross $(IMAGE_BUILD_ARGS) .
-	$(eval containerID=$(shell docker create $(IMAGE_NAME)-e2e-cross noop))
-	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-linux
-	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin
-	docker cp $(containerID):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-windows.exe bin/$(BIN_NAME)-e2e-windows.exe
-	docker rm $(containerID)
+	docker build --target=e2e-cross -t $(E2E_CROSS_IMAGE_NAME) $(IMAGE_BUILD_ARGS) .
+	docker create --name $(E2E_CROSS_CTNR_NAME) $(E2E_CROSS_IMAGE_NAME) noop
+	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-linux
+	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin
+	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-windows.exe bin/$(BIN_NAME)-e2e-windows.exe
+	docker rm $(E2E_CROSS_CTNR_NAME)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-darwin)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-windows.exe)
@@ -61,26 +71,26 @@ tars:
 test: test-unit test-e2e
 
 test-unit: build_dev_image
-	docker run --rm $(IMAGE_NAME)-dev make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} test-unit
+	docker run --rm $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} test-unit
 
 test-e2e: build_dev_image
-	docker run -v /var/run:/var/run:ro --rm $(IMAGE_NAME)-dev make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} bin/$(BIN_NAME) test-e2e
+	docker run -v /var/run:/var/run:ro --rm $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
 coverage: build_dev_image
 	@$(call mkdir,_build)
-	$(eval containerID=$(shell docker run -v /var/run:/var/run:ro -tid $(IMAGE_NAME)-dev make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} coverage))
-	docker logs -f $(containerID)
-	docker cp $(containerID):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
-	docker rm $(containerID)
+	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) -tid $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} coverage
+	docker logs -f $(COV_CTNR_NAME)
+	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
+	docker rm $(COV_CTNR_NAME)
 
 gradle-test: bin/$(BIN_NAME)-linux
-	docker build -t $(IMAGE_NAME)-bin -f Dockerfile.gradle .
-	docker run --rm $(IMAGE_NAME)-bin bash -c "./gradlew --stacktrace build && cd example && gradle renderIt"
+	docker build -t $(GRADLE_IMAGE_NAME) -f Dockerfile.gradle .
+	docker run --rm $(GRADLE_IMAGE_NAME) bash -c "./gradlew --stacktrace build && cd example && gradle renderIt"
 
 lint:
 	@echo "Linting..."
-	docker build -t $(IMAGE_NAME)-lint:$(TAG) $(IMAGE_BUILD_ARGS) -f Dockerfile.lint .
-	docker run --rm $(IMAGE_NAME)-lint:$(TAG) make lint
+	docker build -t $(LINT_IMAGE_NAME) $(IMAGE_BUILD_ARGS) -f Dockerfile.lint .
+	docker run --rm $(LINT_IMAGE_NAME) make lint
 
 .PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars
