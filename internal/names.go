@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	// AppExtension is the extension used by an application
+	// AppExtension is the extension used by an application.
 	AppExtension = ".dockerapp"
+	// The label used to distinguish applications from Docker images.
+	ImageLabel = "com.docker.application"
 )
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")

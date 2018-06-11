@@ -62,12 +62,12 @@ test-unit: build_dev_image ## run unit tests
 	docker run --rm $(DEV_IMAGE_NAME) make test-unit
 
 test-e2e: build_dev_image ## run end-to-end tests
-	docker run -v /var/run:/var/run:ro --rm $(DEV_IMAGE_NAME) make bin/$(BIN_NAME) test-e2e
+	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
 coverage: build_dev_image ## run tests with coverage
 	@$(call mkdir,_build)
-	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) -tid $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} coverage
+	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -tid $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} coverage
 	docker logs -f $(COV_CTNR_NAME)
 	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 	docker rm $(COV_CTNR_NAME)

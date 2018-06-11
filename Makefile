@@ -34,7 +34,7 @@ lint: ## run linter(s)
 
 test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."
-	$(GO_TEST) ./e2e/
+	$(GO_TEST) -v ./e2e/
 
 test-unit: ## run unit tests
 	@echo "Running unit tests..."
