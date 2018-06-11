@@ -9,10 +9,10 @@ RUN apk add --no-cache \
   make\
   git \
   curl \
-  util-linux
+  util-linux \
+  coreutils
 RUN curl -Ls https://download.docker.com/linux/static/$DOCKERCLI_CHANNEL/x86_64/docker-$DOCKERCLI_VERSION.tgz | \
   tar -xz docker/docker && \
-  ls -l . && \
   mv docker/docker /usr/bin/docker
 
 WORKDIR /go/src/github.com/docker/app/
@@ -23,22 +23,10 @@ RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DE
     chmod +x /usr/bin/dep
 COPY . .
 
-FROM dev AS docker-app
-ARG COMMIT=unknown
-ARG TAG=unknown
-ARG BUILDTIME=unknown
-RUN make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} bin/docker-app
-
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
-FROM docker-app AS cross
-ARG COMMIT=unknown
-ARG TAG=unknown
-ARG BUILDTIME=unknown
-RUN make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} cross
+FROM dev AS cross
+RUN make cross
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross
-ARG COMMIT=unknown
-ARG TAG=unknown
-ARG BUILDTIME=unknown
-RUN make COMMIT=${COMMIT} TAG=${TAG} BUILDTIME=${BUILDTIME} e2e-cross
+RUN make e2e-cross
