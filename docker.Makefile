@@ -89,8 +89,12 @@ gradle-test: bin/$(BIN_NAME)-linux
 	docker run --rm $(GRADLE_IMAGE_NAME) bash -c "./gradlew --stacktrace build && cd example && gradle renderIt"
 
 lint:
-	@echo "Linting..."
+	$(info Linting...)
 	docker build -t $(LINT_IMAGE_NAME) $(IMAGE_BUILD_ARGS) -f Dockerfile.lint .
 	docker run --rm $(LINT_IMAGE_NAME) make lint
 
-.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars
+vendor: build_dev_image
+	$(info Vendoring...)
+	docker run --rm $(DEV_IMAGE_NAME) sh -c "make BUILDTIME=${BUILDTIME} vendor && hack/check-git-diff vendor"
+
+.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor

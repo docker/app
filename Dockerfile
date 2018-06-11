@@ -18,6 +18,9 @@ RUN curl -Ls https://download.docker.com/linux/static/$DOCKERCLI_CHANNEL/x86_64/
 WORKDIR /go/src/github.com/docker/app/
 
 FROM build AS dev
+ARG DEP_VERSION=v0.4.1
+RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
+    chmod +x /usr/bin/dep
 COPY . .
 
 FROM dev AS docker-app

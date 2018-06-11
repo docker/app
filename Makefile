@@ -68,5 +68,9 @@ clean:
 	$(call rm,_build)
 	$(call rm,docker-app-*.tar.gz)
 
-.PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean
+vendor:
+	$(call rm,vendor)
+	dep ensure -v
+
+.PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor
 .DEFAULT: all
