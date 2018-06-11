@@ -204,8 +204,8 @@ version: 0.1.0
 name: app_test
 # A short description of the application
 description: my cool app
-# Repository prefix to use when pushing to a registry. This is typically your Hub username.
-#repository_prefix: myHubUsername
+# Namespace to use when pushing to a registry. This is typically your Hub username.
+#namespace: myHubUsername
 # List of application maitainers with name and email for each
 maintainers:
   - name: bob
@@ -368,14 +368,14 @@ func TestImageBinary(t *testing.T) {
 		runCommand("docker", args...)
 	}()
 	// save with tag/prefix override
-	assertCommand(t, dockerApp, "save", "-t", "mytag", "-p", registry+"/myuser", "render/envvariables")
+	assertCommand(t, dockerApp, "save", "-t", "mytag", "--namespace", registry+"/myuser", "render/envvariables")
 	assertCommandOutput(t, "image-inspect-labels.golden", "docker", "inspect", "-f", "{{.Config.Labels.maintainers}}", registry+"/myuser/envvariables.dockerapp:mytag")
 	// save with tag/prefix from metadata
 	assertCommand(t, dockerApp, "save", "render/envvariables")
 	assertCommandOutput(t, "image-inspect-labels.golden", "docker", "inspect", "-f", "{{.Config.Labels.maintainers}}", "alice/envvariables.dockerapp:0.1.0")
 	// push to a registry
-	assertCommand(t, dockerApp, "push", "-p", registry+"/myuser", "render/envvariables")
-	assertCommand(t, dockerApp, "push", "-p", registry+"/myuser", "-t", "latest", "render/envvariables")
+	assertCommand(t, dockerApp, "push", "--namespace", registry+"/myuser", "render/envvariables")
+	assertCommand(t, dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "render/envvariables")
 	assertCommand(t, "docker", "image", "rm", registry+"/myuser/envvariables.dockerapp:0.1.0")
 	assertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp:0.1.0")
 	assertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp")

@@ -18,7 +18,7 @@ $ cat hello-world.dockerapp
 version: 0.1.0
 name: hello-world
 description: ""
-repository_prefix: ""
+namespace: ""
 maintainers:
 - name: dimrok
   email: ""

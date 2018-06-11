@@ -22,7 +22,7 @@ func appName(appname string) string {
 }
 
 // Save saves an app to docker and returns the image name.
-func Save(appname, prefix, tag string) (string, error) {
+func Save(appname, namespace, tag string) (string, error) {
 	appname, cleanup, err := Extract(appname)
 	if err != nil {
 		return "", err
@@ -41,11 +41,11 @@ func Save(appname, prefix, tag string) (string, error) {
 	if tag == "" {
 		tag = meta.Version
 	}
-	if prefix == "" {
-		prefix = meta.RepositoryPrefix
+	if namespace == "" {
+		namespace = meta.Namespace
 	}
-	if prefix != "" && !strings.HasSuffix(prefix, "/") {
-		prefix += "/"
+	if namespace != "" && !strings.HasSuffix(namespace, "/") {
+		namespace += "/"
 	}
 	dockerfile := fmt.Sprintf(`
 FROM scratch
@@ -63,7 +63,7 @@ COPY / /
 		return "", errors.Wrapf(err, "cannot create file %s", di)
 	}
 	defer os.Remove(di)
-	imageName := prefix + appName(appname) + internal.AppExtension + ":" + tag
+	imageName := namespace + appName(appname) + internal.AppExtension + ":" + tag
 	args := []string{"build", "-t", imageName, "-f", df, appname}
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = ioutil.Discard
@@ -114,13 +114,13 @@ func Load(repotag string, outputDir string) error {
 }
 
 // Push pushes an app to a registry
-func Push(appname, prefix, tag string) error {
+func Push(appname, namespace, tag string) error {
 	appname, cleanup, err := Extract(appname)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
-	imageName, err := Save(appname, prefix, tag)
+	imageName, err := Save(appname, namespace, tag)
 	if err != nil {
 		return err
 	}

@@ -30,12 +30,12 @@ func (m Maintainer) String() string {
 
 // AppMetadata is the format of the data found inside the metadata.yml file
 type AppMetadata struct {
-	Version          string
-	Name             string
-	Description      string
-	RepositoryPrefix string `yaml:"repository_prefix"`
-	Maintainers      Maintainers
-	Targets          ApplicationTarget
+	Version     string
+	Name        string
+	Description string
+	Namespace   string `yaml:"namespace"`
+	Maintainers Maintainers
+	Targets     ApplicationTarget
 }
 
 // ApplicationTarget represents which platform(s) / orchestrator(s) the
