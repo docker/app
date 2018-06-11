@@ -15,11 +15,10 @@ CWD = $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 # Used by ci-gradle-test target
 DOCKERAPP_BINARY ?= $(CWD)/bin/$(BIN_NAME)-linux
 
-ifeq ($(shell echo "check_quotes"),"check_quotes")
+WINDOWS := no
+ifneq ($(filter cmd.exe powershell.exe,$(subst /, ,$(SHELL))),)
   WINDOWS := yes
   BUILDTIME := unknown
-else
-  WINDOWS := no
 endif
 
 ifeq ($(BUILDTIME),)
