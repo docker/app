@@ -71,6 +71,9 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
+                            dir("bin") {
+                                unstash "binaries"
+                            }
                             sh 'make -f docker.Makefile gradle-test'
                         }
                     }
