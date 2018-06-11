@@ -28,6 +28,7 @@ pipeline {
                             dir('e2e') {
                                 stash name: 'e2e'
                             }
+                            sh './bin/docker-app-linux version'
                             if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
                                 stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
                                 archiveArtifacts 'bin/*.tar.gz'
@@ -88,6 +89,7 @@ pipeline {
                         dir('src/github.com/docker/app') {
                             unstash 'binaries'
                             unstash 'e2e'
+                            sh './docker-app-linux version'
                             sh './docker-app-e2e-linux'
                         }
                     }
@@ -105,6 +107,7 @@ pipeline {
                         dir('src/github.com/docker/app') {
                             unstash 'binaries'
                             unstash 'e2e'
+                            sh './docker-app-darwin version'
                             sh './docker-app-e2e-darwin'
                         }
                     }
@@ -122,6 +125,7 @@ pipeline {
                         dir('src/github.com/docker/app') {
                             unstash "binaries"
                             unstash 'e2e'
+                            bat 'docker-app-windows.exe version'
                             bat 'docker-app-e2e-windows.exe'
                         }
                     }
