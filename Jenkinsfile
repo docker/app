@@ -10,6 +10,21 @@ pipeline {
     }
 
     stages {
+        stage('Pre') {
+            agent {
+                label 'linux'
+            }
+            steps {
+                script {
+                    def dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+                    def date = new java.util.Date()
+                    def timestamp = dateFormat.format(date).toString()
+                    sh "echo ${timestamp} > .buildtime"
+		    sh 'ls -la && cat .buildtime'
+                    stash 'buildtime'
+                }
+            }
+        }
         stage('Build') {
             parallel {
                 stage("Validate") {
@@ -19,8 +34,9 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make -f docker.Makefile lint'
-                            sh 'make -f docker.Makefile vendor'
+                            unstash 'buildtime'
+			    sh 'ls -la && cat .buildtime'
+                            sh 'make -f docker.Makefile BUILDTIME=`cat .buildtime` lint vendor'
                         }
                     }
                 }
@@ -33,7 +49,8 @@ pipeline {
                             script {
                                 try {
                                     checkout scm
-                                    sh 'make -f docker.Makefile cross e2e-cross tars'
+                                    unstash 'buildtime'
+                                    sh 'make -f docker.Makefile BUILDTIME=`cat .buildtime`  cross e2e-cross tars'
                                     dir('bin') {
                                         stash name: 'binaries'
                                     }
@@ -71,7 +88,8 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make -f docker.Makefile coverage'
+                            unstash 'buildtime'
+                            sh 'make -f docker.Makefile BUILDTIME=`cat .buildtime` coverage'
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
                             sh 'curl -s https://codecov.io/bash | bash -s - -f _build/ci-cov/all.out -K'
@@ -88,7 +106,8 @@ pipeline {
                             dir("bin") {
                                 unstash "binaries"
                             }
-                            sh 'make -f docker.Makefile gradle-test'
+                            unstash 'buildtime'
+                            sh 'make -f docker.Makefile BUILDTIME=`cat .buildtime` gradle-test'
                         }
                     }
                     post {
