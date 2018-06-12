@@ -69,7 +69,7 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 }
 
 // LoadSettings loads a set of settings file and produce a property dictionary
-func LoadSettings(files []string) (map[string]interface{}, error) {
+func loadSettings(files []string) (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
@@ -87,7 +87,7 @@ func LoadSettings(files []string) (map[string]interface{}, error) {
 }
 
 // MergeSettings merges a flattened settings map into an expanded one
-func MergeSettings(settings map[string]interface{}, env map[string]string) error {
+func mergeSettings(settings map[string]interface{}, env map[string]string) error {
 	for k, v := range env {
 		ss := strings.Split(k, ".")
 		valroot := make(map[interface{}]interface{})
@@ -162,7 +162,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	sf := []string{filepath.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
 	// load the settings into a struct
-	settings, err := LoadSettings(sf)
+	settings, err := loadSettings(sf)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	metaPrefixed["app"] = meta
 	merge(settings, metaPrefixed)
 	// inject the user-provided env
-	err = MergeSettings(settings, env)
+	err = mergeSettings(settings, env)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to merge settings")
 	}
