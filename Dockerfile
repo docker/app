@@ -21,12 +21,16 @@ FROM build AS dev
 ARG DEP_VERSION=v0.4.1
 RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
     chmod +x /usr/bin/dep
+ARG STUPID_VERSION=0.0.3
+RUN mkdir bin && \
+    curl -o bin/stupid-darwin -L https://github.com/jeanlaurent/stupid/releases/download/${STUPID_VERSION}/stupid-darwin && \
+    curl -o bin/stupid-linux -L https://github.com/jeanlaurent/stupid/releases/download/${STUPID_VERSION}/stupid-linux && \
+    curl -o bin/stupid-windows.exe -L https://github.com/jeanlaurent/stupid/releases/download/${STUPID_VERSION}/stupid-windows.exe && \
+    chmod +x bin/stupid-linux
 COPY . .
 
-# FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM dev AS cross
 RUN make cross
 
-# FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross
 RUN make e2e-cross
