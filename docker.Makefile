@@ -62,7 +62,7 @@ test-unit: build_dev_image
 	docker run --rm $(DEV_IMAGE_NAME) make test-unit
 
 test-e2e: build_dev_image
-	docker run -v /var/run:/var/run:ro --rm $(DEV_IMAGE_NAME) make bin/$(BIN_NAME) test-e2e
+	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
 coverage: build_dev_image
