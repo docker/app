@@ -64,7 +64,7 @@ func Load(appname string, services []string) error {
 	return nil
 }
 
-// List images with the label 'com.docker.application'.
+// List images with the label specific to applications.
 func List(appname string) error {
 	cmd := exec.Command("docker", "image", "ls", "--format='{{.Repository}}:{{.Tag}}'", "--filter", "label=com.docker.application")
 	output, err := cmd.CombinedOutput()
