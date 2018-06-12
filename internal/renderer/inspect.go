@@ -8,7 +8,6 @@ import (
 	"sort"
 	"text/tabwriter"
 
-	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/types"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
@@ -16,11 +15,6 @@ import (
 
 // Inspect dumps the metadata of an app
 func Inspect(appname string) error {
-	appname, cleanup, err := packager.Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
 	metaFile := filepath.Join(appname, "metadata.yml")
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {

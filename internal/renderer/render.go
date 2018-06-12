@@ -11,7 +11,6 @@ import (
 
 	"github.com/cbroglie/mustache"
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/yatee"
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -157,13 +156,8 @@ func contains(list []string, needle string) bool {
 	return false
 }
 
-// Render renders the Compose file for this app, merging in settings files, other compose files, end env
+// Render renders the Compose file for this app, merging in settings files, other compose files, and env
 func Render(appname string, composeFiles []string, settingsFile []string, env map[string]string) (*composetypes.Config, error) {
-	appname, cleanup, err := packager.Extract(appname)
-	if err != nil {
-		return nil, err
-	}
-	defer cleanup()
 	// prepend the app settings to the argument settings
 	sf := []string{filepath.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
@@ -224,8 +218,6 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		}
 		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
 	}
-	//fmt.Printf("ENV: %v\n", finalEnv)
-	//fmt.Printf("MAPENV: %#v\n", settings)
 	rendered, err := loader.Load(composetypes.ConfigDetails{
 		WorkingDir:           ".",
 		ConfigFiles:          configFiles,

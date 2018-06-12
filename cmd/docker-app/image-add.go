@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/image"
+	"github.com/docker/app/internal/packager"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +34,30 @@ subdirectory.`,
 				}
 				d[kv[0]] = kv[1]
 			}
-			return image.Add(args[0], args[1:], imageAddComposeFiles, imageAddSettingsFile, d)
+			oappname := args[0]
+			appname, cleanup, err := packager.Extract(oappname)
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+			if err := image.Add(appname, args[1:], imageAddComposeFiles, imageAddSettingsFile, d); err != nil {
+				return err
+			}
+			// check if source was a tarball
+			s, err := os.Stat(oappname)
+			if err != nil {
+				// try appending our extension
+				oappname = internal.DirNameFromAppName(oappname)
+				s, err = os.Stat(oappname)
+				if err != nil {
+					return err
+				}
+			}
+			if !s.IsDir() {
+				// source was a tarball, rebuild it
+				return packager.Pack(appname, oappname)
+			}
+			return nil
 		},
 	}
 	if internal.Experimental == "on" {

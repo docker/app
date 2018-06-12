@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/cli/cli"
 	"github.com/spf13/cobra"
@@ -25,7 +26,12 @@ func helmCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderer.Helm(firstOrEmpty(args), helmComposeFiles, helmSettingsFile, d, helmRender)
+			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+			return renderer.Helm(appname, helmComposeFiles, helmSettingsFile, d, helmRender)
 		},
 	}
 	if internal.Experimental == "on" {

@@ -6,8 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/renderer"
 )
 
@@ -22,12 +20,6 @@ func contains(list []string, needle string) bool {
 
 // Add add service images to the app package
 func Add(appname string, services []string, composeFiles []string, settingsFile []string, env map[string]string) error {
-	oappname := appname
-	appname, cleanup, err := packager.Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
 	config, err := renderer.Render(appname, composeFiles, settingsFile, env)
 	if err != nil {
 		return err
@@ -44,30 +36,11 @@ func Add(appname string, services []string, composeFiles []string, settingsFile 
 			return err
 		}
 	}
-	// check if source was a tarball
-	s, err := os.Stat(oappname)
-	if err != nil {
-		// try appending our extension
-		oappname = internal.DirNameFromAppName(oappname)
-		s, err = os.Stat(oappname)
-	}
-	if err != nil {
-		return err // this shouldn't happen
-	}
-	if !s.IsDir() {
-		// source was a tarball, rebuild it
-		return packager.Pack(appname, oappname)
-	}
 	return nil
 }
 
 // Load loads app packed images to the docker daemon
 func Load(appname string, services []string) error {
-	appname, cleanup, err := packager.Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
 	imageDir, err := os.Open(filepath.Join(appname, "images"))
 	if err != nil {
 		return fmt.Errorf("no images found in app")
