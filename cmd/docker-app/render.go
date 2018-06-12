@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/cli/cli"
 	"github.com/spf13/cobra"
@@ -29,7 +30,12 @@ func renderCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			rendered, err := renderer.Render(firstOrEmpty(args), renderComposeFiles, renderSettingsFile, d)
+			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+			rendered, err := renderer.Render(appname, renderComposeFiles, renderSettingsFile, d)
 			if err != nil {
 				return err
 			}

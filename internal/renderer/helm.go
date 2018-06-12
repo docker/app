@@ -275,16 +275,11 @@ func makeStack(appname string, targetDir string, data []byte) error {
 
 // Helm renders an app as an Helm Chart
 func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool) error {
-	appname, cleanup, err := packager.Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
 	targetDir := internal.AppNameFromDir(appname) + ".chart"
 	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}
-	err = makeChart(appname, targetDir)
+	err := makeChart(appname, targetDir)
 	if err != nil {
 		return err
 	}
@@ -311,7 +306,7 @@ func makeValues(appname, targetDir string, settingsFile []string, env map[string
 	// merge our variables into Values.yaml
 	sf := []string{filepath.Join(appname, "settings.yml")}
 	sf = append(sf, settingsFile...)
-	settings, err := LoadSettings(sf)
+	settings, err := loadSettings(sf)
 	if err != nil {
 		return err
 	}
@@ -328,7 +323,7 @@ func makeValues(appname, targetDir string, settingsFile []string, env map[string
 	metaPrefixed := make(map[interface{}]interface{})
 	metaPrefixed["app"] = meta
 	merge(settings, metaPrefixed)
-	err = MergeSettings(settings, env)
+	err = mergeSettings(settings, env)
 	if err != nil {
 		return errors.Wrap(err, "failed to merge application settings")
 	}
