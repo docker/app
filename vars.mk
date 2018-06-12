@@ -10,10 +10,6 @@ RENDERERS := "none"
 
 TAG ?= $(shell git describe --always --dirty 2>/dev/null)
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null)
-CWD = $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-
-# Used by ci-gradle-test target
-DOCKERAPP_BINARY ?= $(CWD)/bin/$(BIN_NAME)-linux
 
 WINDOWS := no
 ifneq ($(filter cmd.exe powershell.exe,$(subst /, ,$(SHELL))),)
