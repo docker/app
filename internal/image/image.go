@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/docker/app/internal/renderer"
 )
@@ -68,15 +67,11 @@ func Load(appname string, services []string) error {
 func List(appname string) error {
 	cmd := exec.Command(
 		"docker", "image", "ls",
-		"--format='{{.Repository}}:{{.Tag}}'",
 		"--filter", fmt.Sprintf("label=%s", internal.ImageLabel),
 		"--", appname)
-	output, err := cmd.CombinedOutput()
 
-	if err != nil {
-		fmt.Println(output)
-		return err
-	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-	return nil
+	return cmd.Run()
 }
