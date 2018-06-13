@@ -52,6 +52,12 @@ func equals(expected string) func(string) error {
 	}
 }
 
+func extractImageID(t *testing.T, line string) string {
+	fields := strings.Fields(line)
+	assert.Assert(t, len(fields) > 3)
+	return fields[2]
+}
+
 type commandConfig struct {
 	env string
 	exe string
@@ -103,6 +109,14 @@ func TestLsCmd(t *testing.T) {
 		3: equals(""),
 	})
 
+	// Except quiet flag to return IDs only.
+	var ids []string
+	for _, line := range strings.Split(result.Stdout(), "\n")[1:2] {
+		ids = append(ids, extractImageID(t, line))
+	}
+	result = dockerApp.run("ls", "--quiet")
+	assert.DeepEqual(t, strings.Split(result.Stdout(), "\n")[0:1], ids)
+
 	// Except the output to contain only ls_myapp.
 	result = dockerApp.run("ls", "ls_myapp.dockerapp")
 	lineByLineComparator(t, result.Stdout(), 3, map[int]func(string) error{
@@ -110,4 +124,9 @@ func TestLsCmd(t *testing.T) {
 		1: prefix("ls_myapp.dockerapp   0.1.0"),
 		2: equals(""),
 	})
+
+	// Except quiet flag to return only one ID.
+	id := extractImageID(t, strings.Split(result.Stdout(), "\n")[1])
+	result = dockerApp.run("ls", "-q", "ls_myapp.dockerapp")
+	assert.Equal(t, result.Stdout(), id+"\n")
 }

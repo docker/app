@@ -64,12 +64,16 @@ func Load(appname string, services []string) error {
 }
 
 // List images with the label specific to applications.
-func List(appname string) error {
-	cmd := exec.Command(
-		"docker", "image", "ls",
-		"--filter", fmt.Sprintf("label=%s", internal.ImageLabel),
-		"--", appname)
+func List(appname string, quiet bool) error {
+	args := []string{
+		"image", "ls", "--filter", fmt.Sprintf("label=%s", internal.ImageLabel),
+	}
+	if quiet {
+		args = append(args, "-q")
+	}
+	args = append(args, []string{"--", appname}...)
 
+	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
