@@ -21,7 +21,7 @@ func saveCmd() *cobra.Command {
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			imageName, err := packager.Save(firstOrEmpty(args), opts.namespace, opts.tag)
-			if imageName != "" {
+			if imageName != "" && err == nil {
 				fmt.Printf("Saved application as image: %s\n", imageName)
 			}
 			return err
