@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"time"
 )
 
 var (
@@ -20,10 +21,19 @@ func FullVersion() string {
 	res := []string{
 		fmt.Sprintf("Version:      %s", Version),
 		fmt.Sprintf("Git commit:   %s", GitCommit),
-		fmt.Sprintf("Build time:   %s", BuildTime),
+		fmt.Sprintf("Built:        %s", reformatDate(BuildTime)),
 		fmt.Sprintf("OS/Arch:      %s/%s", runtime.GOOS, runtime.GOARCH),
 		fmt.Sprintf("Experimental: %s", Experimental),
 		fmt.Sprintf("Renderers:    %s", Renderers),
 	}
 	return strings.Join(res, "\n")
+}
+
+// FIXME(chris-crone): use function in docker/cli/cli/command/system/version.go.
+func reformatDate(buildTime string) string {
+	t, errTime := time.Parse(time.RFC3339Nano, buildTime)
+	if errTime == nil {
+		return t.Format(time.ANSIC)
+	}
+	return buildTime
 }
