@@ -18,7 +18,7 @@ bin/$(BIN_NAME)-windows:: bin/$(BIN_NAME)-windows.exe
 bin/$(BIN_NAME)-% bin/$(BIN_NAME)-%.exe: cmd/$(BIN_NAME) check_go_env
 	GOOS=$* $(GO_BUILD) -ldflags=$(LDFLAGS) -o $@ ./$<
 
-cross: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe
+cross: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe ## cross-compile binaries (linux, darwin, windows)
 
 .PHONY: bin/$(BIN_NAME)-e2e-windows
 bin/$(BIN_NAME)-e2e-windows:: bin/$(BIN_NAME)-e2e-windows.exe
@@ -30,17 +30,17 @@ e2e-cross: bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-
 
 check: lint test
 
-test: test-unit test-e2e
+test: test-unit test-e2e ## run all tests
 
-lint:
+lint: ## run linter(s)
 	@echo "Linting..."
 	@gometalinter --config=gometalinter.json
 
-test-e2e: bin/$(BIN_NAME)
+test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."
 	$(GO_TEST) ./e2e/
 
-test-unit:
+test-unit: ## run unit tests
 	@echo "Running unit tests..."
 	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
 
@@ -57,20 +57,23 @@ coverage-test-e2e: coverage-bin
 	@$(call mkdir,_build/cov)
 	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
 
-coverage: coverage-test-unit coverage-test-e2e
+coverage: coverage-test-unit coverage-test-e2e ## run tests with coverage
 	go install ./vendor/github.com/wadey/gocovmerge/
 	gocovmerge _build/cov/*.out > _build/cov/all.out
 	go tool cover -func _build/cov/all.out
 	go tool cover -html _build/cov/all.out -o _build/cov/coverage.html
 
-clean:
+clean: ## clean build artifacts
 	$(call rm,bin)
 	$(call rm,_build)
 	$(call rm,docker-app-*.tar.gz)
 
-vendor:
+vendor: ## update vendoring
 	$(call rm,vendor)
 	dep ensure -v
 
-.PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor
+help: ## this help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
+
+.PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor help
 .DEFAULT: all
