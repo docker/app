@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/renderer"
 )
 
