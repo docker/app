@@ -54,6 +54,11 @@ func deployCmd() *cobra.Command {
 }
 
 func runDeploy(appname string, opts deployOptions) error {
+	appname, cleanup, err := packager.Extract(appname)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
 	deployOrchestrator := opts.deployOrchestrator
 	if do, ok := os.LookupEnv("DOCKER_ORCHESTRATOR"); ok {
 		deployOrchestrator = do
@@ -65,11 +70,6 @@ func runDeploy(appname string, opts deployOptions) error {
 	if err != nil {
 		return err
 	}
-	appname, cleanup, err := packager.Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
 	rendered, err := renderer.Render(appname, opts.deployComposeFiles, opts.deploySettingsFiles, d)
 	if err != nil {
 		return err

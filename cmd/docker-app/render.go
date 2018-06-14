@@ -26,15 +26,15 @@ func renderCmd() *cobra.Command {
 		Long:  `Render the Compose file for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			d, err := parseSettings(renderEnv)
-			if err != nil {
-				return err
-			}
 			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {
 				return err
 			}
 			defer cleanup()
+			d, err := parseSettings(renderEnv)
+			if err != nil {
+				return err
+			}
 			rendered, err := renderer.Render(appname, renderComposeFiles, renderSettingsFile, d)
 			if err != nil {
 				return err

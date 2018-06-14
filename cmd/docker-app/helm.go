@@ -22,15 +22,15 @@ func helmCmd() *cobra.Command {
 		Long:  `Generate a Helm chart for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			d, err := parseSettings(helmEnv)
-			if err != nil {
-				return err
-			}
 			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {
 				return err
 			}
 			defer cleanup()
+			d, err := parseSettings(helmEnv)
+			if err != nil {
+				return err
+			}
 			return renderer.Helm(appname, helmComposeFiles, helmSettingsFile, d, helmRender)
 		},
 	}
