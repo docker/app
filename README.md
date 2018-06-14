@@ -165,7 +165,7 @@ cp docker-app-linux /usr/local/bin/docker-app
 $ docker-app helm
 ```
 
-This will create a folder, `<my-applcation-name>.chart`, in the current directory. The folder contains the required `Chart.yaml` file and templates describing the `stack` Kubernetes object based on the Compose file in your application.
+This will create a folder, `<my-application-name>.chart`, in the current directory. The folder contains the required `Chart.yaml` file and templates describing the `stack` Kubernetes object based on the Compose file in your application.
 
 _Note that this requires the Compose Kubernetes controller available in Docker for Windows and Docker for Mac, and in Docker Enterprise Edition._
 
