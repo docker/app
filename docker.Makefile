@@ -7,6 +7,7 @@ CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(TAG)
 E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(TAG)
 GRADLE_IMAGE_NAME := $(BIN_NAME)-gradle:$(TAG)
 
+STUPID_CNTR_NAME := $(BIN_NAME)-stupid-$(TAG)
 BIN_CTNR_NAME := $(BIN_NAME)-bin-$(TAG)
 CROSS_CTNR_NAME := $(BIN_NAME)-cross-$(TAG)
 E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
@@ -20,8 +21,11 @@ all: cross test
 create_bin:
 	@$(call mkdir,bin)
 
-build_dev_image:
+build_dev_image: create_bin
 	docker build --target=dev -t $(DEV_IMAGE_NAME) .
+	docker create --name $(STUPID_CNTR_NAME) $(DEV_IMAGE_NAME) noop
+	docker cp $(STUPID_CNTR_NAME):$(PKG_PATH)/$(STUPID) $(STUPID)
+	docker rm $(STUPID_CNTR_NAME)
 
 shell: build_dev_image
 	docker run -ti --rm $(DEV_IMAGE_NAME) bash
@@ -33,9 +37,9 @@ cross: create_bin
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe
 	docker rm $(CROSS_CTNR_NAME)
-	@$(call chmod,+x,bin/$(BIN_NAME)-linux)
-	@$(call chmod,+x,bin/$(BIN_NAME)-darwin)
-	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
+	$(CHMOD) +x bin/$(BIN_NAME)-linux
+	$(CHMOD) +x bin/$(BIN_NAME)-darwin
+	$(CHMOD) +x bin/$(BIN_NAME)-windows.exe
 
 e2e-cross: create_bin
 	docker build --target=e2e-cross -t $(E2E_CROSS_IMAGE_NAME)  .
@@ -44,9 +48,9 @@ e2e-cross: create_bin
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-windows.exe bin/$(BIN_NAME)-e2e-windows.exe
 	docker rm $(E2E_CROSS_CTNR_NAME)
-	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-linux)
-	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-darwin)
-	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-windows.exe)
+	$(CHMOD) +x bin/$(BIN_NAME)-e2e-linux
+	$(CHMOD) +x bin/$(BIN_NAME)-e2e-darwin
+	$(CHMOD) +x bin/$(BIN_NAME)-e2e-windows.exe
 
 tars:
 	tar czf bin/$(BIN_NAME)-linux.tar.gz -C bin $(BIN_NAME)-linux

@@ -60,12 +60,10 @@ coverage: coverage-test-unit coverage-test-e2e
 	go tool cover -html _build/cov/all.out -o _build/cov/coverage.html
 
 clean:
-	$(call rm,bin)
-	$(call rm,_build)
-	$(call rm,docker-app-*.tar.gz)
+	$(STUPID) rm bin build docker-app-*.tar.gz
 
 vendor:
-	$(call rm,vendor)
+	$(STUPID) rm vendor
 	dep ensure -v
 
 .PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor
