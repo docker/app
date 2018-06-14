@@ -49,10 +49,10 @@ func Save(appname, namespace, tag string) (string, error) {
 	}
 	dockerfile := fmt.Sprintf(`
 FROM scratch
-LABEL com.docker.application=%s
+LABEL %s=%s
 LABEL maintainers="%v"
 COPY / /
-`, meta.Name, meta.Maintainers)
+`, internal.ImageLabel, meta.Name, meta.Maintainers)
 	df := filepath.Join(appname, "__Dockerfile-docker-app__")
 	if err := ioutil.WriteFile(df, []byte(dockerfile), 0644); err != nil {
 		return "", errors.Wrapf(err, "cannot create file %s", df)
