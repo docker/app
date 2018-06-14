@@ -23,10 +23,10 @@ create_bin:
 build_dev_image:
 	docker build --target=dev -t $(DEV_IMAGE_NAME) .
 
-shell: build_dev_image
+shell: build_dev_image ## run a shell in the docker build image
 	docker run -ti --rm $(DEV_IMAGE_NAME) bash
 
-cross: create_bin
+cross: create_bin ## cross-compile binaries (linux, darwin, windows)
 	docker build --target=$* -t $(CROSS_IMAGE_NAME)  .
 	docker create --name $(CROSS_CTNR_NAME) $(CROSS_IMAGE_NAME) noop
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
@@ -56,16 +56,16 @@ tars:
 	tar czf bin/$(BIN_NAME)-windows.tar.gz -C bin $(BIN_NAME)-windows.exe
 	tar czf bin/$(BIN_NAME)-e2e-windows.tar.gz -C bin $(BIN_NAME)-e2e-windows.exe
 
-test: test-unit test-e2e
+test: test-unit test-e2e ## run all tests
 
-test-unit: build_dev_image
+test-unit: build_dev_image ## run unit tests
 	docker run --rm $(DEV_IMAGE_NAME) make test-unit
 
-test-e2e: build_dev_image
+test-e2e: build_dev_image ## run end-to-end tests
 	docker run -v /var/run:/var/run:ro --rm $(DEV_IMAGE_NAME) make bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
-coverage: build_dev_image
+coverage: build_dev_image ## run tests with coverage
 	@$(call mkdir,_build)
 	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) -tid $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} coverage
 	docker logs -f $(COV_CTNR_NAME)
@@ -76,7 +76,7 @@ gradle-test:
 	tar cf - Dockerfile.gradle bin/docker-app-linux integrations/gradle | docker build -t $(GRADLE_IMAGE_NAME) -f Dockerfile.gradle -
 	docker run --rm $(GRADLE_IMAGE_NAME) bash -c "./gradlew --stacktrace build && cd example && gradle renderIt"
 
-lint:
+lint: ## run linter(s)
 	$(info Linting...)
 	docker build -t $(LINT_IMAGE_NAME) -f Dockerfile.lint .
 	docker run --rm $(LINT_IMAGE_NAME) make lint
@@ -85,4 +85,7 @@ vendor: build_dev_image
 	$(info Vendoring...)
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"
 
-.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor
+help: ## this help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
+
+.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor help
