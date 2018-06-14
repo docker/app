@@ -9,24 +9,20 @@ check_go_env:
 	@test $$(go list) = "$(PKG_NAME)" || \
 		(echo "Invalid Go environment" && false)
 
-bin/%: cmd/% check_go_env
-	$(GO_BUILD) -ldflags=$(LDFLAGS) -o $@$(EXEC_EXT) ./$<
-
-.PHONY: bin/$(BIN_NAME)-windows
-bin/$(BIN_NAME)-windows:: bin/$(BIN_NAME)-windows.exe
-
-bin/$(BIN_NAME)-% bin/$(BIN_NAME)-%.exe: cmd/$(BIN_NAME) check_go_env
-	GOOS=$* $(GO_BUILD) -ldflags=$(LDFLAGS) -o $@ ./$<
-
 cross: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe
 
-.PHONY: bin/$(BIN_NAME)-e2e-windows
-bin/$(BIN_NAME)-e2e-windows:: bin/$(BIN_NAME)-e2e-windows.exe
+e2e-cross: bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-windows.exe
 
-bin/$(BIN_NAME)-e2e-% bin/$(BIN_NAME)-e2e-%.exe: e2e bin/$(BIN_NAME)-%
+.PHONY: bin/$(BIN_NAME)-e2e-windows
+bin/$(BIN_NAME)-e2e-%.exe bin/$(BIN_NAME)-e2e-%: e2e bin/$(BIN_NAME)-%
 	GOOS=$* $(GO_TEST) -c -o $@ ./$<
 
-e2e-cross: bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-windows.exe
+.PHONY: bin/$(BIN_NAME)-windows
+bin/$(BIN_NAME)-%.exe bin/$(BIN_NAME)-%: cmd/$(BIN_NAME) check_go_env
+	GOOS=$* $(GO_BUILD) -ldflags=$(LDFLAGS) -o $@ ./$<
+
+bin/%: cmd/% check_go_env
+	$(GO_BUILD) -ldflags=$(LDFLAGS) -o $@$(EXEC_EXT) ./$<
 
 check: lint test
 
