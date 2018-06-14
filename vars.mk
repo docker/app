@@ -8,20 +8,37 @@ EXPERIMENTAL := off
 # Comma-separated list of renderers
 RENDERERS := "none"
 
-TAG ?= $(shell git describe --always --dirty 2>/dev/null)
-COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null)
+# Failing to resolve sh.exe to a full path denotes a windows vanilla shell.
+# Although 'simple' commands are still exec'ed, 'complex' ones are batch'ed instead of sh'ed.
+ifeq ($(SHELL),sh.exe)
+  mkdir = mkdir $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
+  rm = del /F /Q $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
+  rmdir = rmdir /S /Q $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
+  chmod =
+  BUILDTIME ?= unknown
+  NULL := nul
+else
+  # The no-op redirection forces make to shell out the commands instead of spawning a process as
+  # the latter can fail on windows running cmd or powershell while having a unix style shell in the path.
+  mkdir = mkdir -p $(1) 1>&1
+  rm = rm -rf $(1) 1>&1
+  rmdir = rm -rf $(1) 1>&1
+  chmod = chmod $(1) $(2) 1>&1
+  NULL := /dev/null
+endif
 
-WINDOWS := no
-ifneq ($(filter cmd.exe powershell.exe,$(subst /, ,$(SHELL))),)
-  WINDOWS := yes
-  BUILDTIME := unknown
+ifeq ($(TAG),)
+  TAG := $(shell git describe --always --dirty 2> $(NULL))
+endif
+ifeq ($(COMMIT),)
+  COMMIT := $(shell git rev-parse --short HEAD 2> $(NULL))
 endif
 
 ifeq ($(BUILDTIME),)
-  BUILDTIME := ${shell date --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/'}
+  BUILDTIME := $(shell date --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/')
 endif
 ifeq ($(BUILDTIME),)
-  BUILDTIME := ${shell gdate --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/'}
+  BUILDTIME := $(shell gdate --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/')
 endif
 ifeq ($(BUILDTIME),)
   $(error unable to set BUILDTIME, ensure that you have GNU date installed or set manually)
@@ -33,16 +50,6 @@ LDFLAGS := "-s -w \
 	-X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL) \
 	-X $(PKG_NAME)/internal.Renderers=$(RENDERERS) \
 	-X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
-
-ifeq ($(WINDOWS),yes)
-  mkdir = mkdir $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
-  rm = del /S /Q $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
-  chmod =
-else
-  mkdir = mkdir -p $(1)
-  rm = rm -rf $(1)
-  chmod = chmod $(1) $(2)
-endif
 
 EXEC_EXT :=
 ifeq ($(OS),Windows_NT)
