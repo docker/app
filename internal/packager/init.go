@@ -3,6 +3,7 @@ package packager
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -70,7 +71,13 @@ func Init(name string, composeFile string, description string, maintainers []str
 		return err
 	}
 	defer os.RemoveAll(temp)
-	return Merge(temp, dirName)
+	var target io.Writer
+	target, err = os.Create(dirName)
+	if err != nil {
+		return err
+	}
+	defer target.(io.WriteCloser).Close()
+	return Merge(temp, target)
 }
 
 func initFromScratch(name string) error {

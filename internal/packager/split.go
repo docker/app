@@ -9,12 +9,7 @@ import (
 
 // Split converts an app package to the split version
 func Split(appname string, outputDir string) error {
-	appname, cleanup, err := Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-	err = os.Mkdir(outputDir, 0755)
+	err := os.Mkdir(outputDir, 0755)
 	if err != nil {
 		return err
 	}
@@ -33,22 +28,7 @@ func Split(appname string, outputDir string) error {
 }
 
 // Merge converts an app-package to the single-file merged version
-func Merge(appname string, outputFile string) error {
-	appname, cleanup, err := Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-	var target io.Writer
-	if outputFile == "-" {
-		target = os.Stdout
-	} else {
-		target, err = os.Create(outputFile)
-		if err != nil {
-			return err
-		}
-		defer target.(io.WriteCloser).Close()
-	}
+func Merge(appname string, target io.Writer) error {
 	names := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
 	for i, n := range names {
 		input, err := ioutil.ReadFile(filepath.Join(appname, n))

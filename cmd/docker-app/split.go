@@ -15,11 +15,16 @@ func splitCmd() *cobra.Command {
 		Short: "Split a single-file application into multiple files",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return packager.Split(firstOrEmpty(args), splitOutputDir)
+			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+			return packager.Split(appname, splitOutputDir)
 		},
 	}
 	if internal.Experimental == "on" {
-		cmd.Flags().StringVarP(&splitOutputDir, "output", "o", "-", "Output directory")
+		cmd.Flags().StringVarP(&splitOutputDir, "output", "o", ".", "Output directory")
 	}
 	return cmd
 }

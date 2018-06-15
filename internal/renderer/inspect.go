@@ -2,8 +2,8 @@ package renderer
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"sort"
 	"text/tabwriter"
@@ -14,7 +14,7 @@ import (
 )
 
 // Inspect dumps the metadata of an app
-func Inspect(appname string) error {
+func Inspect(out io.Writer, appname string) error {
 	metaFile := filepath.Join(appname, "metadata.yml")
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
@@ -43,16 +43,16 @@ func Inspect(appname string) error {
 	sort.Slice(settingsKeys, func(i, j int) bool { return settingsKeys[i] < settingsKeys[j] })
 	// build maintainers string
 	maintainers := meta.Maintainers.String()
-	fmt.Printf("%s %s\n", meta.Name, meta.Version)
+	fmt.Fprintf(out, "%s %s\n", meta.Name, meta.Version)
 	if maintainers != "" {
-		fmt.Printf("Maintained by: %s\n", maintainers)
-		fmt.Println("")
+		fmt.Fprintf(out, "Maintained by: %s\n", maintainers)
+		fmt.Fprintln(out, "")
 	}
 	if meta.Description != "" {
-		fmt.Printf("%s\n", meta.Description)
-		fmt.Println("")
+		fmt.Fprintf(out, "%s\n", meta.Description)
+		fmt.Fprintln(out, "")
 	}
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	w := tabwriter.NewWriter(out, 0, 0, 1, ' ', 0)
 	fmt.Fprintln(w, "Setting\tDefault")
 	fmt.Fprintln(w, "-------\t-------")
 	for _, k := range settingsKeys {
