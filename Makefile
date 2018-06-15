@@ -60,12 +60,12 @@ coverage: coverage-test-unit coverage-test-e2e ## run tests with coverage
 	go tool cover -html _build/cov/all.out -o _build/cov/coverage.html
 
 clean: ## clean build artifacts
-	$(call rm,bin)
-	$(call rm,_build)
+	$(call rmdir,bin)
+	$(call rmdir,_build)
 	$(call rm,docker-app-*.tar.gz)
 
 vendor: ## update vendoring
-	$(call rm,vendor)
+	$(call rmdir,vendor)
 	dep ensure -v
 
 help: ## this help
