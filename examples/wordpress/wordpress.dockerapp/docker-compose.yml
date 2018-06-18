@@ -10,9 +10,9 @@ services:
       MYSQL_USER: ${mysql.user.name}
       MYSQL_PASSWORD: ${mysql.user.password}
     volumes:
-       - source: volume
-         target: /var/lib/mysql
-         type: volume
+      - source: db_data
+        target: /var/lib/mysql
+        type: volume
     networks:
        - overlay
     deploy:
@@ -40,7 +40,8 @@ services:
       - mysql
 
 volumes:
-  db_data: ${volumes.db_data.name}
+  db_data:
+    name: ${volumes.db_data.name}
 
 networks:
   overlay:
