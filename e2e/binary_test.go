@@ -287,19 +287,19 @@ func TestHelmBinary(t *testing.T) {
 }
 
 func TestSplitMergeBinary(t *testing.T) {
-	dockerApp, hasExperimental := getBinary(t)
-	if !hasExperimental {
-		t.Skip("experimental mode needed for this test")
-	}
+	dockerApp, _ := getBinary(t)
 	app := "render/envvariables"
 	assertCommand(t, dockerApp, "merge", app, "-o", "remerged.dockerapp")
 	defer os.Remove("remerged.dockerapp")
 	// test that inspect works on single-file
 	assertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "remerged")
 	// split it
-	assertCommand(t, dockerApp, "split", "remerged", "-o", "splitted.dockerapp")
-	defer os.RemoveAll("splitted.dockerapp")
-	assertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "splitted")
+	assertCommand(t, dockerApp, "split", "remerged", "-o", "split.dockerapp")
+	defer os.RemoveAll("split.dockerapp")
+	assertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "split")
+	// test inplace
+	assertCommand(t, dockerApp, "merge", "split")
+	assertCommand(t, dockerApp, "split", "split")
 }
 
 func TestImageBinary(t *testing.T) {
