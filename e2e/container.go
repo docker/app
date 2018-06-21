@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"gotest.tools/assert"
 )
@@ -35,6 +36,7 @@ func (c *container) start(t *testing.T) {
 	cmd := exec.Command("docker", "run", "--rm", "--privileged", "-d", "-P", c.image)
 	output := runCmd(t, cmd)
 	c.container = strings.Trim(output, " \r\n")
+	time.Sleep(time.Second * 3)
 }
 
 // Stop terminates this container
