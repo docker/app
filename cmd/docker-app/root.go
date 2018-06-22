@@ -15,6 +15,7 @@ var (
 		helmCmd(),
 		initCmd(),
 		inspectCmd(),
+		lsCmd(),
 		pushCmd(),
 		renderCmd(),
 		saveCmd(),

@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -20,51 +19,6 @@ import (
 	"gotest.tools/golden"
 	"gotest.tools/icmd"
 )
-
-type registry struct {
-	port      int
-	container string
-}
-
-func startRegistry() (*registry, error) {
-	r := &registry{}
-	err := r.Start()
-	return r, err
-}
-
-// Start starts a new docker registry on a random port
-func (r *registry) Start() error {
-	cmd := exec.Command("docker", "run", "--rm", "-d", "-P", "registry:2")
-	output, err := cmd.Output()
-	r.container = strings.Trim(string(output), " \r\n")
-	return err
-}
-
-// Stop terminates this registry
-func (r *registry) Stop() error {
-	cmd := exec.Command("docker", "stop", r.container)
-	_, err := cmd.CombinedOutput()
-	return err
-}
-
-// Port returns the host port this registry listens on
-func (r *registry) Port() (int, error) {
-	if r.port != 0 {
-		return r.port, nil
-	}
-	cmd := exec.Command("docker", "port", r.container, "5000")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-		return 0, err
-	}
-	sport := strings.Split(string(output), ":")[1]
-	p, err := strconv.ParseInt(strings.Trim(sport, " \r\n"), 10, 32)
-	if err == nil {
-		r.port = int(p)
-	}
-	return r.port, err
-}
 
 var (
 	dockerApp       = ""
@@ -350,12 +304,9 @@ func TestSplitMergeBinary(t *testing.T) {
 
 func TestImageBinary(t *testing.T) {
 	dockerApp, _ := getBinary(t)
-	r, err := startRegistry()
-	assert.NilError(t, err)
-	defer r.Stop()
-	port, err := r.Port()
-	assert.NilError(t, err)
-	registry := fmt.Sprintf("localhost:%v", port)
+	r := startRegistry(t)
+	defer r.stop(t)
+	registry := r.getAddress(t)
 	defer func() {
 		// no way to match both in one command
 		cmd1 := exec.Command("docker", "image", "ls", "--format", "{{.ID}}", "--filter", "reference=*/*envvariables*")
