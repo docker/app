@@ -198,7 +198,22 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err == nil {
 		parseEnv(string(envRaw), settings)
 	}
-	keys, err := ExtractVariables(string(composeRaw))
+	compose := make(map[interface{}]interface{})
+	err = yaml.Unmarshal(composeRaw, compose)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse compose file")
+	}
+	version, ok := compose["version"]
+	if !ok {
+		return fmt.Errorf("unsupported Compose file version: version too low: 1 < 3.0")
+	}
+	ver := fmt.Sprintf("%v", version)
+	if err = utils.CheckVersionGte(ver, "3.0"); err != nil {
+		return errors.Wrap(err, "unsupported Compose file version")
+	}
+
+	var keys []string
+	err = extractRecurse(compose, &keys)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}

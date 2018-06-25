@@ -24,7 +24,9 @@ func randomName(prefix string) string {
 }
 
 func TestInitFromComposeFile(t *testing.T) {
-	composeData := `services:
+	composeData := `
+version: '3.0'
+services:
   nginx:
     image: nginx:${NGINX_VERSION}
     command: nginx $NGINX_ARGS
@@ -64,6 +66,49 @@ func TestInitFromInvalidComposeFile(t *testing.T) {
 
 	err = initFromComposeFile(testAppName, "doesnotexist")
 	assert.ErrorContains(t, err, "failed to read")
+}
+
+func TestInitFromV2ComposeFile(t *testing.T) {
+	composeData := `
+version: '2.4'
+services:
+  nginx:
+    image: nginx:${NGINX_VERSION}
+    command: nginx $NGINX_ARGS
+`
+	inputDir := randomName("app_input_")
+	os.Mkdir(inputDir, 0755)
+	ioutil.WriteFile(filepath.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
+	defer os.RemoveAll(inputDir)
+
+	testAppName := randomName("app_")
+	dirName := utils.DirNameFromAppName(testAppName)
+	err := os.Mkdir(dirName, 0755)
+	assert.NilError(t, err)
+	defer os.RemoveAll(dirName)
+
+	err = initFromComposeFile(testAppName, filepath.Join(inputDir, "docker-compose.yml"))
+	assert.ErrorContains(t, err, "unsupported Compose file version")
+}
+
+func TestInitFromV1ComposeFile(t *testing.T) {
+	composeData := `
+nginx:
+  image: nginx
+`
+	inputDir := randomName("app_input_")
+	os.Mkdir(inputDir, 0755)
+	ioutil.WriteFile(filepath.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
+	defer os.RemoveAll(inputDir)
+
+	testAppName := randomName("app_")
+	dirName := utils.DirNameFromAppName(testAppName)
+	err := os.Mkdir(dirName, 0755)
+	assert.NilError(t, err)
+	defer os.RemoveAll(dirName)
+
+	err = initFromComposeFile(testAppName, filepath.Join(inputDir, "docker-compose.yml"))
+	assert.ErrorContains(t, err, "unsupported Compose file version")
 }
 
 func TestWriteMetadataFile(t *testing.T) {
