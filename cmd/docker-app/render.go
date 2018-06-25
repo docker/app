@@ -8,6 +8,7 @@ import (
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/cli/cli"
+	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -19,7 +20,7 @@ var (
 	renderOutput       string
 )
 
-func renderCmd() *cobra.Command {
+func renderCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "render <app-name> [-s key=value...] [-f settings-file...]",
 		Short: "Render the Compose file for the application",
@@ -44,7 +45,7 @@ func renderCmd() *cobra.Command {
 				return err
 			}
 			if renderOutput == "-" {
-				fmt.Print(string(res))
+				fmt.Fprint(dockerCli.Out(), string(res))
 			} else {
 				f, err := os.Create(renderOutput)
 				if err != nil {

@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/docker/app/internal"
-
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 func tarAdd(tarout *tar.Writer, path, file string) error {
@@ -43,34 +41,17 @@ func tarAddDir(tarout *tar.Writer, path string) error {
 }
 
 // Pack packs the app as a single file
-func Pack(appname, output string) error {
-	if output == "-" && terminal.IsTerminal(int(os.Stdout.Fd())) {
-		return fmt.Errorf("Refusing to output to a terminal, use a shell redirect or the '-o' option")
-	}
-	appname, cleanup, err := Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-	var target io.Writer
-	if output == "-" {
-		target = os.Stdout
-	} else {
-		target, err = os.Create(output)
-		if err != nil {
-			return err
-		}
-	}
+func Pack(appname string, target io.Writer) error {
 	tarout := tar.NewWriter(target)
 	files := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
 	for _, f := range files {
-		err = tarAdd(tarout, f, filepath.Join(appname, f))
+		err := tarAdd(tarout, f, filepath.Join(appname, f))
 		if err != nil {
 			return err
 		}
 	}
 	// check for images
-	_, err = os.Stat(filepath.Join(appname, "images"))
+	_, err := os.Stat(filepath.Join(appname, "images"))
 	if err == nil {
 		err = tarAddDir(tarout, "images")
 		if err != nil {

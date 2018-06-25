@@ -5,36 +5,14 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/cli/cli/command"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var (
-	commands = []*cobra.Command{
-		deployCmd(),
-		helmCmd(),
-		initCmd(),
-		inspectCmd(),
-		lsCmd(),
-		pushCmd(),
-		renderCmd(),
-		saveCmd(),
-		versionCmd(),
-	}
-	experimentalCommands = []*cobra.Command{
-		imageAddCmd(),
-		imageLoadCmd(),
-		loadCmd(),
-		mergeCmd(),
-		packCmd(),
-		pullCmd(),
-		splitCmd(),
-		unpackCmd(),
-	}
-)
-
 // rootCmd represents the base command when called without any subcommands
-func newRootCmd() *cobra.Command {
+// FIXME(vdemeester) use command.Cli interface
+func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "docker-app",
 		Short:        "Docker App Packages",
@@ -48,15 +26,35 @@ func newRootCmd() *cobra.Command {
 		},
 	}
 	cmd.PersistentFlags().BoolVar(&internal.Debug, "debug", false, "Enable debug mode")
-	for _, c := range commands {
-		cmd.AddCommand(c)
-	}
-	if internal.Experimental == "on" {
-		for _, c := range experimentalCommands {
-			cmd.AddCommand(c)
-		}
-	}
+	addCommands(cmd, dockerCli)
 	return cmd
+}
+
+// addCommands adds all the commands from cli/command to the root command
+func addCommands(cmd *cobra.Command, dockerCli *command.DockerCli) {
+	cmd.AddCommand(
+		deployCmd(dockerCli),
+		helmCmd(),
+		initCmd(),
+		inspectCmd(dockerCli),
+		lsCmd(),
+		pushCmd(),
+		renderCmd(dockerCli),
+		saveCmd(dockerCli),
+		versionCmd(dockerCli),
+	)
+	if internal.Experimental == "on" {
+		cmd.AddCommand(
+			imageAddCmd(),
+			imageLoadCmd(),
+			loadCmd(),
+			mergeCmd(dockerCli),
+			packCmd(dockerCli),
+			pullCmd(),
+			splitCmd(),
+			unpackCmd(),
+		)
+	}
 }
 
 func firstOrEmpty(list []string) string {

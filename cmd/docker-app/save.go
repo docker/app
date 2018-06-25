@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/cli/cli"
+	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,7 @@ type saveOptions struct {
 	tag       string
 }
 
-func saveCmd() *cobra.Command {
+func saveCmd(dockerCli command.Cli) *cobra.Command {
 	var opts saveOptions
 	cmd := &cobra.Command{
 		Use:   "save [<app-name>]",
@@ -22,7 +23,7 @@ func saveCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			imageName, err := packager.Save(firstOrEmpty(args), opts.namespace, opts.tag)
 			if imageName != "" && err == nil {
-				fmt.Printf("Saved application as image: %s\n", imageName)
+				fmt.Fprintf(dockerCli.Out(), "Saved application as image: %s\n", imageName)
 			}
 			return err
 		},

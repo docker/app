@@ -28,7 +28,7 @@ type deployOptions struct {
 }
 
 // deployCmd represents the deploy command
-func deployCmd() *cobra.Command {
+func deployCmd(dockerCli *command.DockerCli) *cobra.Command {
 	var opts deployOptions
 
 	cmd := &cobra.Command{
@@ -37,7 +37,7 @@ func deployCmd() *cobra.Command {
 		Long:  `Deploy the application on either Swarm or Kubernetes.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeploy(firstOrEmpty(args), opts)
+			return runDeploy(dockerCli, firstOrEmpty(args), opts)
 		},
 	}
 
@@ -53,7 +53,7 @@ func deployCmd() *cobra.Command {
 	return cmd
 }
 
-func runDeploy(appname string, opts deployOptions) error {
+func runDeploy(dockerCli *command.DockerCli, appname string, opts deployOptions) error {
 	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
 		return err
@@ -74,8 +74,7 @@ func runDeploy(appname string, opts deployOptions) error {
 	if err != nil {
 		return err
 	}
-	cli := command.NewDockerCli(os.Stdin, os.Stdout, os.Stderr, true)
-	cli.Initialize(&cliflags.ClientOptions{
+	dockerCli.Initialize(&cliflags.ClientOptions{
 		Common: &cliflags.CommonOptions{
 			Orchestrator: deployOrchestrator,
 		},
@@ -86,12 +85,12 @@ func runDeploy(appname string, opts deployOptions) error {
 	}
 	if deployOrchestrator == "swarm" {
 		ctx := context.Background()
-		return swarm.DeployCompose(ctx, cli, rendered, options.Deploy{
+		return swarm.DeployCompose(ctx, dockerCli, rendered, options.Deploy{
 			Namespace: stackName,
 		})
 	}
 	// kube mode
-	kubeCli, err := kubernetes.WrapCli(cli, kubernetes.Options{
+	kubeCli, err := kubernetes.WrapCli(dockerCli, kubernetes.Options{
 		Namespace: opts.deployNamespace,
 		Config:    opts.deployKubeConfig,
 	})

@@ -49,8 +49,12 @@ subdirectory.`,
 				}
 			}
 			if !s.IsDir() {
+				target, err := os.Create(oappname)
+				if err != nil {
+					return err
+				}
 				// source was a tarball, rebuild it
-				return packager.Pack(appname, oappname)
+				return packager.Pack(appname, target)
 			}
 			return nil
 		},
