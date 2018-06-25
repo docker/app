@@ -139,7 +139,7 @@
 |   -- name                    |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 | - working_dir                |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 
-## Kamoulox
+## Kamoulox (and HELM)
 
 | Features                     | 3.6 | 3.5 | 3.4 | 3.3 | 3.2 | 3.1 | 3.0 |
 |------------------------------|-----|-----|-----|-----|-----|-----|-----|
@@ -254,7 +254,7 @@
 | - restart                    |     |     |     |     |     |     |     |
 | - domainname                 |     |     |     |     |     |     |     |
 | - hostname                   |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
-| - ipc                        |     |     |     |     |     |     |     |
+| - ipc                        |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 | - mac_address                |     |     |     |     |     |     |     |
 | - privileged                 |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 | - read_only                  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
@@ -265,130 +265,3 @@
 |   -- numerical               |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 |   -- name                    |     |     |     |     |     |     |     |
 | - working_dir                |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
-
-## Helm (tbd)
-
-| Features                     | 3.6 | 3.5 | 3.4 | 3.3 | 3.2 | 3.1 | 3.0 |
-|------------------------------|-----|-----|-----|-----|-----|-----|-----|
-| build                        |     |     |     |     |     |     |     |
-|  - args                      |     |     |     |     |     |     |     |
-|  - cache_from                |     |     |     |     |     |     |     |
-|  - context                   |     |     |     |     |     |     |     |
-|  - dockerfile                |     |     |     |     |     |     |     |
-|  - labels                    |     |     |     |     |     |     |     |
-|  - labels                    |     |     |     |     |     |     |     |
-|  - network                   |     |     |     |     |     |     |     |
-|  - shm_size                  |     |     |     |     |     |     |     |
-|  - target                    |     |     |     |     |     |     |     |
-| cap_add                      |     |     |     |     |     |     |     |
-| cap_drop                     |     |     |     |     |     |     |     |
-| command                      |     |     |     |     |     |     |     |
-| configs                      |     |     |     |     |     |     |     |
-| - external                   |     |     |     |     |     |     |     |
-| - file                       |     |     |     |     |     |     |     |
-| - mode                       |     |     |     |     |     |     |     |
-| - name                       |     |     |     |     |     |     |     |
-| cgroup_parent                |     |     |     |     |     |     |     |
-| container_name               |     |     |     |     |     |     |     |
-| credential_spec              |     |     |     |     |     |     |     |
-| deploy                       |     |     |     |     |     |     |     |
-| - endpoint_mode: dnsrr       |     |     |     |     |     |     |     |
-| - endpoint_mode: vip         |     |     |     |     |     |     |     |
-| - labels                     |     |     |     |     |     |     |     |
-| - mode                       |     |     |     |     |     |     |     |
-| - placement                  |     |     |     |     |     |     |     |
-| - replicas                   |     |     |     |     |     |     |     |
-| - resources                  |     |     |     |     |     |     |     |
-|   -- limits                  |     |     |     |     |     |     |     |
-|   -- reservations            |     |     |     |     |     |     |     |
-| - restart_policy             |     |     |     |     |     |     |     |
-|   -- condition: none         |     |     |     |     |     |     |     |
-|   -- condition: on-failure   |     |     |     |     |     |     |     |
-|   -- condition: any          |     |     |     |     |     |     |     |
-|   -- delay                   |     |     |     |     |     |     |     |
-|   -- max_attempts            |     |     |     |     |     |     |     |
-|   -- window                  |     |     |     |     |     |     |     |
-| - update_config              |     |     |     |     |     |     |     |
-|   -- delay                   |     |     |     |     |     |     |     |
-|   -- failure_action          |     |     |     |     |     |     |     |
-|   -- max_failure_ratio       |     |     |     |     |     |     |     |
-|   -- monitor                 |     |     |     |     |     |     |     |
-|   -- order                   |     |     |     |     |     |     |     |
-|   -- parallelism             |     |     |     |     |     |     |     |
-| - devices                    |     |     |     |     |     |     |     |
-| - depends_on                 |     |     |     |     |     |     |     |
-| - dns                        |     |     |     |     |     |     |     |
-| - dns_search                 |     |     |     |     |     |     |     |
-| - tmpfs                      |     |     |     |     |     |     |     |
-| - entrypoint                 |     |     |     |     |     |     |     |
-| - env_file                   |     |     |     |     |     |     |     |
-| - environment                |     |     |     |     |     |     |     |
-|   -- key=value               |     |     |     |     |     |     |     |
-|   -- key                     |     |     |     |     |     |     |     |
-| - expose                     |     |     |     |     |     |     |     |
-| - external_links             |     |     |     |     |     |     |     |
-| - extra_hosts                |     |     |     |     |     |     |     |
-| - healthcheck                |     |     |     |     |     |     |     |
-|   -- disable                 |     |     |     |     |     |     |     |
-|   -- interval                |     |     |     |     |     |     |     |
-|   -- retries                 |     |     |     |     |     |     |     |
-|   -- start_period            |     |     |     |     |     |     |     |
-|   -- test                    |     |     |     |     |     |     |     |
-|   -- test: NONE              |     |     |     |     |     |     |     |
-|   -- timeout                 |     |     |     |     |     |     |     |
-| - image                      |     |     |     |     |     |     |     |
-| - isolation                  |     |     |     |     |     |     |     |
-| - labels                     |     |     |     |     |     |     |     |
-| - links                      |     |     |     |     |     |     |     |
-| - logging                    |     |     |     |     |     |     |     |
-|   -- driver                  |     |     |     |     |     |     |     |
-|   -- options                 |     |     |     |     |     |     |     |
-| - network_mode               |     |     |     |     |     |     |     |
-| - networks                   |     |     |     |     |     |     |     |
-|   -- aliases                 |     |     |     |     |     |     |     |
-|   -- ipv4_address            |     |     |     |     |     |     |     |
-|   -- ipv6_address            |     |     |     |     |     |     |     |
-|   -- name                    |     |     |     |     |     |     |     |
-| - pid: host                  |     |     |     |     |     |     |     |
-| - ports                      |     |     |     |     |     |     |     |
-|   -- mode: host              |     |     |     |     |     |     |     |
-|   -- mode: ingress           |     |     |     |     |     |     |     |
-|   -- protocol                |     |     |     |     |     |     |     |
-|   -- published               |     |     |     |     |     |     |     |
-|   -- target                  |     |     |     |     |     |     |     |
-| - secrets                    |     |     |     |     |     |     |     |
-|   -- gid                     |     |     |     |     |     |     |     |
-|   -- mode                    |     |     |     |     |     |     |     |
-|   -- name                    |     |     |     |     |     |     |     |
-|   -- source                  |     |     |     |     |     |     |     |
-|   -- target                  |     |     |     |     |     |     |     |
-|   -- uid                     |     |     |     |     |     |     |     |
-| - security_opt               |     |     |     |     |     |     |     |
-| - stop_grace_period          |     |     |     |     |     |     |     |
-| - stop_signal                |     |     |     |     |     |     |     |
-| - sysctls                    |     |     |     |     |     |     |     |
-| - ulimits                    |     |     |     |     |     |     |     |
-| - userns_mode                |     |     |     |     |     |     |     |
-| - volumes                    |     |     |     |     |     |     |     |
-|   -- bind/propagation        |     |     |     |     |     |     |     |
-|   -- name                    |     |     |     |     |     |     |     |
-|   -- read_only               |     |     |     |     |     |     |     |
-|   -- source                  |     |     |     |     |     |     |     |
-|   -- target                  |     |     |     |     |     |     |     |
-|   -- type: bind              |     |     |     |     |     |     |     |
-|   -- type: volume            |     |     |     |     |     |     |     |
-|   -- volume/nocopy           |     |     |     |     |     |     |     |
-| - restart                    |     |     |     |     |     |     |     |
-| - domainname                 |     |     |     |     |     |     |     |
-| - hostname                   |     |     |     |     |     |     |     |
-| - ipc                        |     |     |     |     |     |     |     |
-| - mac_address                |     |     |     |     |     |     |     |
-| - privileged                 |     |     |     |     |     |     |     |
-| - read_only                  |     |     |     |     |     |     |     |
-| - shm_size                   |     |     |     |     |     |     |     |
-| - stdin_open                 |     |     |     |     |     |     |     |
-| - tty                        |     |     |     |     |     |     |     |
-| - user                       |     |     |     |     |     |     |     |
-|   -- numerical               |     |     |     |     |     |     |     |
-|   -- name                    |     |     |     |     |     |     |     |
-| - working_dir                |     |     |     |     |     |     |     |
