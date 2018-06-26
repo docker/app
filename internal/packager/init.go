@@ -45,8 +45,8 @@ func Init(name string, composeFile string, description string, maintainers []str
 	}
 
 	if composeFile == "" {
-		if _, err := os.Stat("docker-compose.yml"); err == nil {
-			composeFile = "docker-compose.yml"
+		if _, err := os.Stat(internal.ComposeFileName); err == nil {
+			composeFile = internal.ComposeFileName
 		}
 	}
 	if composeFile == "" {
@@ -62,9 +62,9 @@ func Init(name string, composeFile string, description string, maintainers []str
 	}
 	// Merge as a single file
 	// Add some helfpful comments to distinguish the sections
-	prependToFile(filepath.Join(dirName, "docker-compose.yml"), "# This section contains the Compose file that describes your application services.\n")
-	prependToFile(filepath.Join(dirName, "settings.yml"), "# This section contains the default values for your application settings.\n")
-	prependToFile(filepath.Join(dirName, "metadata.yml"), "# This section contains your application metadata.\n")
+	prependToFile(filepath.Join(dirName, internal.ComposeFileName), "# This section contains the Compose file that describes your application services.\n")
+	prependToFile(filepath.Join(dirName, internal.SettingsFileName), "# This section contains the default values for your application settings.\n")
+	prependToFile(filepath.Join(dirName, internal.MetadataFileName), "# This section contains your application metadata.\n")
 	temp := "_temp_dockerapp__.dockerapp"
 	err = os.Rename(dirName, temp)
 	if err != nil {
@@ -89,10 +89,10 @@ func initFromScratch(name string) error {
 
 	dirName := internal.DirNameFromAppName(name)
 
-	if err := ioutil.WriteFile(filepath.Join(dirName, "docker-compose.yml"), composeData, 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(dirName, internal.ComposeFileName), composeData, 0644); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(dirName, "settings.yml"), []byte{'\n'}, 0644)
+	return ioutil.WriteFile(filepath.Join(dirName, internal.SettingsFileName), []byte{'\n'}, 0644)
 }
 
 func parseEnv(env string, target map[string]string) {
@@ -213,11 +213,11 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal settings")
 	}
-	err = ioutil.WriteFile(filepath.Join(dirName, "docker-compose.yml"), composeRaw, 0644)
+	err = ioutil.WriteFile(filepath.Join(dirName, internal.ComposeFileName), composeRaw, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write docker-compose.yml")
 	}
-	err = ioutil.WriteFile(filepath.Join(dirName, "settings.yml"), settingsYAML, 0644)
+	err = ioutil.WriteFile(filepath.Join(dirName, internal.SettingsFileName), settingsYAML, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write settings.yml")
 	}
@@ -263,7 +263,7 @@ func writeMetadataFile(name, dirName string, description string, maintainers []s
 	if err := tmpl.Execute(resBuf, meta); err != nil {
 		return errors.Wrap(err, "error generating metadata")
 	}
-	return ioutil.WriteFile(filepath.Join(dirName, "metadata.yml"), resBuf.Bytes(), 0644)
+	return ioutil.WriteFile(filepath.Join(dirName, internal.MetadataFileName), resBuf.Bytes(), 0644)
 }
 
 func newMetadata(name string, description string, maintainers []string) types.AppMetadata {

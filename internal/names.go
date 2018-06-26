@@ -12,11 +12,17 @@ const (
 	AppExtension = ".dockerapp"
 	// The label used to distinguish applications from Docker images.
 	ImageLabel = "com.docker.application"
+	// MetadataFileName is metadata file name
+	MetadataFileName = "metadata.yml"
+	// ComposeFileName is compose file name
+	ComposeFileName = "docker-compose.yml"
+	// SettingsFileName is settings file name
+	SettingsFileName = "settings.yml"
 )
 
 var (
 	// Application file names, in order.
-	FileNames = []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
+	FileNames = []string{MetadataFileName, ComposeFileName, SettingsFileName}
 )
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")

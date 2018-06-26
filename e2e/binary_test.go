@@ -174,7 +174,7 @@ targets:
 	envData := "# some comment\nNGINX_VERSION=latest"
 	inputDir := randomName("app_input_")
 	os.Mkdir(inputDir, 0755)
-	ioutil.WriteFile(filepath.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
+	ioutil.WriteFile(filepath.Join(inputDir, internal.ComposeFileName), []byte(composeData), 0644)
 	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
 	defer os.RemoveAll(inputDir)
 
@@ -186,7 +186,7 @@ targets:
 		"init",
 		testAppName,
 		"-c",
-		filepath.Join(inputDir, "docker-compose.yml"),
+		filepath.Join(inputDir, internal.ComposeFileName),
 		"-d",
 		"my cool app",
 		"-m", "bob",
@@ -196,9 +196,9 @@ targets:
 	manifest := fs.Expected(
 		t,
 		fs.WithMode(0755),
-		fs.WithFile("metadata.yml", meta, fs.WithMode(0644)), // too many variables, cheating
-		fs.WithFile("docker-compose.yml", composeData, fs.WithMode(0644)),
-		fs.WithFile("settings.yml", "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
+		fs.WithFile(internal.MetadataFileName, meta, fs.WithMode(0644)), // too many variables, cheating
+		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
+		fs.WithFile(internal.SettingsFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
 	)
 
 	assert.Assert(t, fs.Equal(dirName, manifest))
@@ -208,7 +208,7 @@ targets:
 		"init",
 		"tac",
 		"-c",
-		filepath.Join(inputDir, "docker-compose.yml"),
+		filepath.Join(inputDir, internal.ComposeFileName),
 		"-d",
 		"my cool app",
 		"-m", "bob",

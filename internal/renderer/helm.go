@@ -173,7 +173,7 @@ func convertTemplates(dict map[interface{}]interface{}) error {
 }
 
 func makeChart(appname, targetDir string) error {
-	metaFile := filepath.Join(appname, "metadata.yml")
+	metaFile := filepath.Join(appname, internal.MetadataFileName)
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
 		return errors.Wrap(err, "failed to read application metadata")
@@ -286,7 +286,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if render {
 		return helmRender(appname, targetDir, composeFiles, settingsFile, env)
 	}
-	data, err := ioutil.ReadFile(filepath.Join(appname, "docker-compose.yml"))
+	data, err := ioutil.ReadFile(filepath.Join(appname, internal.ComposeFileName))
 	if err != nil {
 		return errors.Wrap(err, "failed to read application Compose file")
 	}
@@ -304,13 +304,13 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 // makeValues updates helm values.yaml with used variables from settings and env
 func makeValues(appname, targetDir string, settingsFile []string, env map[string]string, variables []string) error {
 	// merge our variables into Values.yaml
-	sf := []string{filepath.Join(appname, "settings.yml")}
+	sf := []string{filepath.Join(appname, internal.SettingsFileName)}
 	sf = append(sf, settingsFile...)
 	settings, err := loadSettings(sf)
 	if err != nil {
 		return err
 	}
-	metaFile := filepath.Join(appname, "metadata.yml")
+	metaFile := filepath.Join(appname, internal.MetadataFileName)
 	meta := make(map[interface{}]interface{})
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
