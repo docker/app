@@ -34,8 +34,8 @@ func helmCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if stackVersion != "v1beta2" && stackVersion != "v1beta1" {
-				return fmt.Errorf("invalid stack version %q (accepted values: v1beta1, v1beta2)", stackVersion)
+			if stackVersion != renderer.V1Beta1 && stackVersion != renderer.V1Beta2 {
+				return fmt.Errorf("invalid stack version %q (accepted values: %s, %s)", stackVersion, renderer.V1Beta1, renderer.V1Beta2)
 			}
 			return renderer.Helm(appname, helmComposeFiles, helmSettingsFile, d, helmRender, stackVersion)
 		},
@@ -49,6 +49,6 @@ be rendered instead of exported as a template.`
 	}
 	cmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override settings values")
-	cmd.Flags().StringVarP(&stackVersion, "stack-version", "", "v1beta2", "Version of the stack specification for the produced helm chart")
+	cmd.Flags().StringVarP(&stackVersion, "stack-version", "", renderer.V1Beta2, "Version of the stack specification for the produced helm chart")
 	return cmd
 }

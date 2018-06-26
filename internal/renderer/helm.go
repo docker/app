@@ -39,6 +39,13 @@ post-process the serialized yaml to replace all 'template_'-prefixed keys
 with the appropriate content (value or template)
 */
 
+const (
+	// V1Beta1 is the string identifier for the v1beta1 version of the stack spec
+	V1Beta1 = "v1beta1"
+	// V1Beta2 is the string identifier for the v1beta2 version of the stack spec
+	V1Beta2 = "v1beta2"
+)
+
 type helmMaintainer struct {
 	Name string
 }
@@ -219,7 +226,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 		stack = v1beta2.Stack{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "stacks.compose.docker.com",
-				APIVersion: "v1beta2",
+				APIVersion: V1Beta2,
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: internal.AppNameFromDir(appname),
@@ -234,7 +241,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 		stack = v1beta1.Stack{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "stacks.compose.docker.com",
-				APIVersion: "v1beta1",
+				APIVersion: V1Beta1,
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: internal.AppNameFromDir(appname),
@@ -268,7 +275,7 @@ func makeStack(appname string, targetDir string, data []byte, beta1 bool) error 
 		stack = templatev1beta2.Stack{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "stacks.compose.docker.com",
-				APIVersion: "v1beta2",
+				APIVersion: V1Beta2,
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      internal.AppNameFromDir(appname),
@@ -284,7 +291,7 @@ func makeStack(appname string, targetDir string, data []byte, beta1 bool) error 
 		stack = v1beta1.Stack{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "stacks.compose.docker.com",
-				APIVersion: "v1beta1",
+				APIVersion: V1Beta1,
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      internal.AppNameFromDir(appname),
@@ -318,7 +325,7 @@ func makeStack(appname string, targetDir string, data []byte, beta1 bool) error 
 // Helm renders an app as an Helm Chart
 func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool, stackVersion string) error {
 	targetDir := internal.AppNameFromDir(appname) + ".chart"
-	beta1 := stackVersion == "v1beta1"
+	beta1 := stackVersion == V1Beta1
 	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}
