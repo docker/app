@@ -316,8 +316,9 @@ func makeStack(appname string, targetDir string, data []byte, beta1 bool) error 
 }
 
 // Helm renders an app as an Helm Chart
-func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render, beta1 bool) error {
+func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool, stackVersion string) error {
 	targetDir := internal.AppNameFromDir(appname) + ".chart"
+	beta1 := stackVersion == "v1beta1"
 	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}

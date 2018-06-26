@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/renderer"
@@ -9,11 +11,11 @@ import (
 )
 
 var (
-	beta1            bool
 	helmComposeFiles []string
 	helmSettingsFile []string
 	helmEnv          []string
 	helmRender       bool
+	stackVersion     string
 )
 
 func helmCmd() *cobra.Command {
@@ -32,7 +34,10 @@ func helmCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderer.Helm(appname, helmComposeFiles, helmSettingsFile, d, helmRender, beta1)
+			if stackVersion != "v1beta2" && stackVersion != "v1beta1" {
+				return fmt.Errorf("invalid stack version %q (accepted values: v1beta1, v1beta2)", stackVersion)
+			}
+			return renderer.Helm(appname, helmComposeFiles, helmSettingsFile, d, helmRender, stackVersion)
 		},
 	}
 	if internal.Experimental == "on" {
@@ -44,6 +49,6 @@ be rendered instead of exported as a template.`
 	}
 	cmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override settings values")
-	cmd.Flags().BoolVarP(&beta1, "beta1", "b", false, "Use an older specification to produce a chart compatible with Docker UCP 2.0")
+	cmd.Flags().StringVarP(&stackVersion, "stack-version", "", "v1beta2", "Version of the stack specification for the produced helm chart")
 	return cmd
 }
