@@ -1,0 +1,75 @@
+objectmeta:
+  annotations: {}
+  clustername: ""
+  creationtimestamp: "0001-01-01T00:00:00Z"
+  deletiongraceperiodseconds: null
+  deletiontimestamp: null
+  finalizers: []
+  generatename: ""
+  generation: 0
+  initializers: null
+  labels: {}
+  name: helm
+  namespace: default
+  ownerreferences: []
+  resourceversion: ""
+  selflink: ""
+  uid: ""
+spec:
+  composefile: |
+    version: "3.4"
+    services:
+      app-watcher:
+        image: {{.Values.watcher.image}}
+      debug:
+        deploy:
+          resources:
+            limits:
+              memory:
+                valuetemplate: {{.Values.memory}}
+        healthcheck:
+          test:
+          - /ping
+          - debug
+          timeout:
+            valuetemplate: {{.Values.timeout}}
+          interval:
+            value: 2m0s
+        image: busybox:latest
+        ports:
+        - mode: ingress
+          target:
+            valuetemplate: {{.Values.aport}}
+          protocol: tcp
+        - mode: ingress
+          target:
+            valuetemplate: {{.Values.sport}}
+          published:
+            valuetemplate: {{.Values.dport}}
+          protocol: tcp
+        template_privileged:
+          valuetemplate: {{.Values.privileged}}
+        read_only:
+          valuetemplate: {{.Values.read_only}}
+        stdin_open:
+          valuetemplate: {{.Values.stdin_open}}
+        tty:
+          valuetemplate: {{.Values.tty}}
+      front:
+        deploy:
+          replicas:
+            valuetemplate: {{.Values.myapp.nginx_replicas}}
+        image: nginx:{{.Values.myapp.nginx_version}}
+      monitor:
+        command:
+        - monitor
+        - --source
+        - {{.Values.app.name}}-{{.Values.app.version}}
+        - $dollar
+        image: busybox:latest
+status:
+  message: ""
+  phase: ""
+typemeta:
+  apiversion: v1beta1
+  kind: stacks.compose.docker.com
