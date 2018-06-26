@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	beta1            bool
 	helmComposeFiles []string
 	helmSettingsFile []string
 	helmEnv          []string
@@ -31,7 +32,7 @@ func helmCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderer.Helm(appname, helmComposeFiles, helmSettingsFile, d, helmRender)
+			return renderer.Helm(appname, helmComposeFiles, helmSettingsFile, d, helmRender, beta1)
 		},
 	}
 	if internal.Experimental == "on" {
@@ -43,5 +44,6 @@ be rendered instead of exported as a template.`
 	}
 	cmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override settings values")
+	cmd.Flags().BoolVarP(&beta1, "beta1", "b", false, "Use an older specification to produce a chart compatible with Docker UCP 2.0")
 	return cmd
 }
