@@ -153,7 +153,6 @@ func extractSingleFile(appname, appDir string) error {
 	if len(parts) != 3 {
 		return fmt.Errorf("malformed single-file application: expected 3 documents")
 	}
-	names := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
 	for i, p := range parts {
 		data := ""
 		if i == 0 {
@@ -164,7 +163,7 @@ func extractSingleFile(appname, appDir string) error {
 				data = d[1]
 			}
 		}
-		err = ioutil.WriteFile(filepath.Join(appDir, names[i]), []byte(data), 0644)
+		err = ioutil.WriteFile(filepath.Join(appDir, internal.FileNames[i]), []byte(data), 0644)
 		if err != nil {
 			return errors.Wrap(err, "failed to write application file")
 		}

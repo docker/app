@@ -14,6 +14,11 @@ const (
 	ImageLabel = "com.docker.application"
 )
 
+var (
+	// Application file names, in order.
+	FileNames = []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
+)
+
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
 
 // AppNameFromDir takes a path to an app directory and returns
