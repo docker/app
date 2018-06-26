@@ -297,6 +297,11 @@ func TestHelmV1Beta1Binary(t *testing.T) {
 	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack-v1beta1.yaml")
 }
 
+func TestHelmInvalidStackVersionBinary(t *testing.T) {
+	dockerApp, _ := getBinary(t)
+	assertCommandFailureOutput(t, "invalid-stack-version.golden", dockerApp, "helm", "helm", "--stack-version", "foobar")
+}
+
 func TestSplitMergeBinary(t *testing.T) {
 	dockerApp, hasExperimental := getBinary(t)
 	if !hasExperimental {
