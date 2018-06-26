@@ -159,7 +159,7 @@ func contains(list []string, needle string) bool {
 // Render renders the Compose file for this app, merging in settings files, other compose files, and env
 func Render(appname string, composeFiles []string, settingsFile []string, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
-	sf := []string{filepath.Join(appname, "settings.yml")}
+	sf := []string{filepath.Join(appname, internal.SettingsFileName)}
 	sf = append(sf, settingsFile...)
 	// load the settings into a struct
 	settings, err := loadSettings(sf)
@@ -167,7 +167,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		return nil, err
 	}
 	// inject our metadata
-	metaFile := filepath.Join(appname, "metadata.yml")
+	metaFile := filepath.Join(appname, internal.MetadataFileName)
 	meta := make(map[interface{}]interface{})
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
@@ -189,7 +189,7 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	finalEnv := make(map[string]string)
 	flatten(settings, finalEnv, "")
 	// prepend our app compose file to the list
-	composes := []string{filepath.Join(appname, "docker-compose.yml")}
+	composes := []string{filepath.Join(appname, internal.ComposeFileName)}
 	composes = append(composes, composeFiles...)
 	renderers := strings.Split(internal.Renderers, ",")
 	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {

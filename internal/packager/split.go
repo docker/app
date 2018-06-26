@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/docker/app/internal"
 )
 
 // Split converts an app package to the split version
@@ -13,8 +15,7 @@ func Split(appname string, outputDir string) error {
 	if err != nil {
 		return err
 	}
-	names := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
-	for _, n := range names {
+	for _, n := range internal.FileNames {
 		input, err := ioutil.ReadFile(filepath.Join(appname, n))
 		if err != nil {
 			return err
@@ -29,8 +30,7 @@ func Split(appname string, outputDir string) error {
 
 // Merge converts an app-package to the single-file merged version
 func Merge(appname string, target io.Writer) error {
-	names := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
-	for i, n := range names {
+	for i, n := range internal.FileNames {
 		input, err := ioutil.ReadFile(filepath.Join(appname, n))
 		if err != nil {
 			return err

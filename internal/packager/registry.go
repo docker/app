@@ -28,7 +28,7 @@ func Save(appname, namespace, tag string) (string, error) {
 		return "", err
 	}
 	defer cleanup()
-	metaFile := filepath.Join(appname, "metadata.yml")
+	metaFile := filepath.Join(appname, internal.MetadataFileName)
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read application metadata")

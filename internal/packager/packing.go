@@ -43,8 +43,7 @@ func tarAddDir(tarout *tar.Writer, path string) error {
 // Pack packs the app as a single file
 func Pack(appname string, target io.Writer) error {
 	tarout := tar.NewWriter(target)
-	files := []string{"metadata.yml", "docker-compose.yml", "settings.yml"}
-	for _, f := range files {
+	for _, f := range internal.FileNames {
 		err := tarAdd(tarout, f, filepath.Join(appname, f))
 		if err != nil {
 			return err

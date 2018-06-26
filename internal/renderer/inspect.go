@@ -8,6 +8,7 @@ import (
 	"sort"
 	"text/tabwriter"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/types"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
@@ -15,7 +16,7 @@ import (
 
 // Inspect dumps the metadata of an app
 func Inspect(out io.Writer, appname string) error {
-	metaFile := filepath.Join(appname, "metadata.yml")
+	metaFile := filepath.Join(appname, internal.MetadataFileName)
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
 		return errors.Wrap(err, "failed to read application metadata")
@@ -26,7 +27,7 @@ func Inspect(out io.Writer, appname string) error {
 		return err
 	}
 	// extract settings
-	settingsFile := filepath.Join(appname, "settings.yml")
+	settingsFile := filepath.Join(appname, internal.SettingsFileName)
 	settingsContent, err := ioutil.ReadFile(settingsFile)
 	if err != nil {
 		return errors.Wrap(err, "failed to read application settings")

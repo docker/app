@@ -33,7 +33,7 @@ type AppMetadata struct {
 	Version     string
 	Name        string
 	Description string
-	Namespace   string `yaml:"namespace"`
+	Namespace   string
 	Maintainers Maintainers
 	Targets     ApplicationTarget
 }
