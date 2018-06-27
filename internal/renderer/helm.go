@@ -215,13 +215,14 @@ func makeChart(appname, targetDir string) error {
 	return ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
 }
 
-func helmRender(appname string, targetDir string, composeFiles []string, settingsFile []string, env map[string]string, beta1 bool) error {
+func helmRender(appname string, targetDir string, composeFiles []string, settingsFile []string, env map[string]string, stackVersion string) error {
 	rendered, err := Render(appname, composeFiles, settingsFile, env)
 	if err != nil {
 		return err
 	}
 	var stack interface{}
-	if !beta1 {
+	switch stackVersion {
+	case V1Beta2:
 		stackSpec := conversion.FromComposeConfig(rendered)
 		stack = v1beta2.Stack{
 			TypeMeta: metav1.TypeMeta{
@@ -233,7 +234,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 			},
 			Spec: stackSpec,
 		}
-	} else {
+	case V1Beta1:
 		composeFile, err := yaml.Marshal(rendered)
 		if err != nil {
 			return err
@@ -250,6 +251,8 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 				ComposeFile: string(composeFile),
 			},
 		}
+	default:
+		return fmt.Errorf("invalid stack version %q", stackVersion)
 	}
 	stackData, err := yaml.Marshal(stack)
 	if err != nil {
@@ -259,7 +262,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 }
 
 //makeStack converts data into a helm template for a stack
-func makeStack(appname string, targetDir string, data []byte, beta1 bool) error {
+func makeStack(appname string, targetDir string, data []byte, stackVersion string) error {
 	parsed, err := loader.ParseYAML(data)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse template compose")
@@ -270,7 +273,8 @@ func makeStack(appname string, targetDir string, data []byte, beta1 bool) error 
 	}
 	os.Mkdir(filepath.Join(targetDir, "templates"), 0755)
 	var stack interface{}
-	if !beta1 {
+	switch stackVersion {
+	case V1Beta2:
 		stackSpec := templateconversion.FromComposeConfig(rendered)
 		stack = templatev1beta2.Stack{
 			TypeMeta: metav1.TypeMeta{
@@ -283,7 +287,7 @@ func makeStack(appname string, targetDir string, data []byte, beta1 bool) error 
 			},
 			Spec: stackSpec,
 		}
-	} else {
+	case V1Beta1:
 		composeFile, err := yaml.Marshal(rendered)
 		if err != nil {
 			return err
@@ -301,6 +305,8 @@ func makeStack(appname string, targetDir string, data []byte, beta1 bool) error 
 				ComposeFile: string(composeFile),
 			},
 		}
+	default:
+		return fmt.Errorf("invalid stack version %q", stackVersion)
 	}
 	stackData, err := yaml.Marshal(stack)
 	if err != nil {
@@ -325,7 +331,6 @@ func makeStack(appname string, targetDir string, data []byte, beta1 bool) error 
 // Helm renders an app as an Helm Chart
 func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool, stackVersion string) error {
 	targetDir := internal.AppNameFromDir(appname) + ".chart"
-	beta1 := stackVersion == V1Beta1
 	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}
@@ -334,7 +339,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 		return err
 	}
 	if render {
-		return helmRender(appname, targetDir, composeFiles, settingsFile, env, beta1)
+		return helmRender(appname, targetDir, composeFiles, settingsFile, env, stackVersion)
 	}
 	data, err := ioutil.ReadFile(filepath.Join(appname, internal.ComposeFileName))
 	if err != nil {
@@ -344,7 +349,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return errors.Wrap(err, "failed to parse docker-compose.yml, maybe because it is a template")
 	}
-	err = makeStack(appname, targetDir, data, beta1)
+	err = makeStack(appname, targetDir, data, stackVersion)
 	if err != nil {
 		return err
 	}
