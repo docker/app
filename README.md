@@ -212,21 +212,26 @@ We have lots of ideas for making Compose-based applications easier to share and 
 
 ```
 $ docker-app
-Docker App Packages
+Build and deploy Docker applications.
 
 Usage:
   docker-app [command]
 
 Available Commands:
-  helm        Render the Compose file for this app as an Helm package
+  deploy      Deploy or update an application
+  helm        Generate a Helm chart
   help        Help about any command
-  init        Initialize an app package in the current working directory
-  inspect     Retrieve metadata for a given app package
-  render      Render the Compose file for this app
+  init        Start building a Docker application
+  inspect     Shows metadata and settings for a given application
+  ls          List applications.
+  push        Push the application to a registry
+  render      Render the Compose file for the application
+  save        Save the application as an image to the docker daemon(in preparation for push)
   version     Print version information
 
 Flags:
-  -h, --help   help for docker-app
+      --debug   Enable debug mode
+  -h, --help    help for docker-app
 
 Use "docker-app [command] --help" for more information about a command.
 ```
