@@ -258,6 +258,8 @@ const (
 	V1Beta1 = "v1beta1"
 	// V1Beta2 is the string identifier for the v1beta2 version of the stack spec
 	V1Beta2 = "v1beta2"
+	// based on https://github.com/docker/compose/blob/1.21.2/compose/config/interpolation.py#L93-L104
+	envVarRegex = `(^|[^$])\$(?:(?P<named>[_a-zA-Z][_a-zA-Z0-9.]*)|{(?P<braced>[_a-zA-Z][_a-zA-Z0-9.]*)(?:(?P<sep>:?[-?])[^}]*)?})`
 )
 
 type helmMaintainer struct {
@@ -321,8 +323,8 @@ func filterVariables(s map[string]interface{}, variables []string, prefix string
 
 // toGoTemplate converts $foo and ${foo} into {{.foo}}
 func toGoTemplate(template string) (string, error) {
-	re := regexp.MustCompile(`(^|[^$])\${?([a-zA-Z0-9_.]+)}?`)
-	template = re.ReplaceAllString(template, "$1{{.Values.$2}}")
+	re := regexp.MustCompile(envVarRegex)
+	template = re.ReplaceAllString(template, "$1{{.Values.$named$braced}}")
 	template = strings.Replace(template, "$$", "$", -1)
 	return template, nil
 }
