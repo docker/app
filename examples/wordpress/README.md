@@ -186,34 +186,19 @@ REPOSITORY          TAG                 IMAGE ID            CREATED             
 wordpress.dockerapp   latest              61f8cafb7762        4 minutes ago       1.2kB
 ```
 
-The package can later be retrieved using `docker-app load`:
-
+The image can be pushed to the hub:
 ```
-$ rm -rf wordpress.dockerapp
-$ docker-app load wordpress.dockerapp
-$ tar -tf wordpress.dockerapp  # TODO: should unpack automatically?
-metadata.yml
-docker-compose.yml
-settings.yml
-$ mv wordpress.dockerapp wordpress  # TODO: fix UX
-$ docker-app unpack wordpress
-$ tree wordpress.dockerapp
-./wordpress.dockerapp/
-├── metadata.yml
-├── docker-compose.yml
-└── settings.yml
-
-0 directories, 3 files
+$ docker push --namespace <username> wordpress
+The push refers to repository [docker.io/<username>/wordpress.dockerapp]
+61f8cafb7762: Pushed
+latest: digest: sha256:91b9b526ac1e645e9c89663ff1453c2d7f68535e2dbbca6d4466d365e15ee155 size: 525
 ```
 
-### Archive app package
-
-`docker-app pack wordpress` creates a tar archive containing the relevant configuration files:
+One can now deploy the application using `docker-app deploy`:
 
 ```
-$ docker-app pack wordpress --output myapp.tar
-$ tar -tf myapp.tar
-metadata.yml
-docker-compose.yml
-settings.yml
+$ docker-app deploy <username>/wordpress
+Creating network wordpress_overlay
+Creating service wordpress_mysql
+Creating service wordpress_wordpress
 ```
