@@ -10,20 +10,26 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      endpoint_mode: dnsrr
     environment:
       MYSQL_DATABASE: wordpressdata
       MYSQL_PASSWORD: wordpress
       MYSQL_ROOT_PASSWORD: axx[<^cz3d.fPb
       MYSQL_USER: wordpress
-    image: mysql:8
+    image: mysql:5.6
+    networks:
+      overlay: null
     volumes:
     - type: volume
       source: db_data
       target: /var/lib/mysql
   wordpress:
+    depends_on:
+    - mysql
     deploy:
-      mode: global
-      replicas: 0
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
     environment:
       WORDPRESS_DB_HOST: mysql
       WORDPRESS_DB_NAME: wordpressdata
@@ -31,65 +37,69 @@ services:
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DEBUG: "true"
     image: wordpress
-networks: {}
+    networks:
+      overlay: null
+    ports:
+    - mode: ingress
+      target: 80
+      published: 8080
+      protocol: tcp
+networks:
+  overlay: {}
 volumes:
   db_data:
     name: db_data
-secrets: {}
-configs: {}
 ```
 
 **Merge with override Compose file**. This example replaces cleartext DB passwords to use secrets instead.
 
 ```yaml
-# docker-app render wordpress -c with-secrets.yml
+# docker-app render wordpress --settings-files with-secrets.yml
 version: "3.6"
 services:
   mysql:
     deploy:
       mode: replicated
       replicas: 1
+      endpoint_mode: dnsrr
     environment:
       MYSQL_DATABASE: wordpressdata
-      MYSQL_PASSWORD: ""
-      MYSQL_PASSWORD_FILE: /run/secrets/wordpress_app_userpass
-      MYSQL_ROOT_PASSWORD: ""
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/wordpress_app_rootpass
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: axx[<^cz3d.fPb
       MYSQL_USER: wordpress
-    image: mysql:8
-    secrets:
-    - source: mysql_rootpass
-    - source: mysql_userpass
+    image: mysql:5.6
+    networks:
+      overlay: null
     volumes:
     - type: volume
       source: db_data
       target: /var/lib/mysql
   wordpress:
+    depends_on:
+    - mysql
     deploy:
-      mode: global
-      replicas: 0
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
     environment:
       WORDPRESS_DB_HOST: mysql
       WORDPRESS_DB_NAME: wordpressdata
-      WORDPRESS_DB_PASSWORD: ""
-      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/sumple_app_userpass
+      WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DEBUG: "true"
     image: wordpress
-    secrets:
-    - source: mysql_userpass
-networks: {}
+    networks:
+      overlay: null
+    ports:
+    - mode: ingress
+      target: 80
+      published: 8080
+      protocol: tcp
+networks:
+  overlay: {}
 volumes:
   db_data:
     name: db_data
-secrets:
-  mysql_rootpass:
-    name: wordpress_app_rootpass
-    external: true
-  mysql_userpass:
-    name: wordpress_app_userpass
-    external: true
-configs: {}
 ```
 
 **Override default settings**. This example sets `debug` to false.
@@ -139,19 +149,22 @@ services:
 wordpress 0.1.0
 Maintained by: sakuya.izayoi <sizayoi@sdmansion.jp>
 
-
-
-Setting                  Default
--------                  -------
-mysql.user.password      wordpress
-mysql.rootpass           axx[<^cz3d.fPb
-mysql.database           wordpressdata
-mysql.user.name          wordpress
-volumes.db_data.name     db_data
-debug                    true
-mysql.image.version      8
-wordpress.scale.mode     global
-wordpress.scale.replicas 0
+Setting                       Default
+-------                       -------
+debug                         true
+mysql.database                wordpressdata
+mysql.image.version           5.6
+mysql.rootpass                axx[<^cz3d.fPb
+mysql.scale.endpoint_mode     dnsrr
+mysql.scale.mode              replicated
+mysql.scale.replicas          1
+mysql.user.name               wordpress
+mysql.user.password           wordpress
+volumes.db_data.name          db_data
+wordpress.port                8080
+wordpress.scale.endpoint_mode vip
+wordpress.scale.mode          replicated
+wordpress.scale.replicas      1
 ```
 
 ### Generate helm package
@@ -159,20 +172,25 @@ wordpress.scale.replicas 0
 `docker-app helm wordpress` will output a Helm package in the `./wordpress.helm` folder. `--compose-file` (or `-c`), `--set` (or `-e`) and `--settings-files` (or `-s`) flags apply the same way they do for the `render` subcommand.
 
 ```
-$ docker-app helm wordpress --compose-file with-secrets.yml --settings-files prod-settings.yml --set mysql.user.name=mollydock
-$ tree wordpress.helm
-wordpress.helm/
+$ docker-app helm wordpress --settings-files with-secrets.yml --settings-files prod-settings.yml --set mysql.user.name=mollydock
+$ tree wordpress.chart
+wordpress.chart
 ├── Chart.yaml
-└── templates
-    └── stack.yaml
+├── templates
+│   └── stack.yaml
+└── values.yaml
 
-1 directory, 2 files
+1 directory, 3 files
 $ cat wordpress.helm/templates/stack.yaml
-typemeta:
-  kind: stacks.compose.docker.com
-  apiversion: v1beta2
-objectmeta:
+apiversion: v1beta2
+kind: stacks.compose.docker.com
+metadata:
+  annotations: {}
 [...]
+spec:
+  services:
+  - deploy:
+  [...]
 ```
 
 ### Generate distributable app package
@@ -181,8 +199,8 @@ objectmeta:
 
 ```
 $ docker-app save wordpress
-$ docker images wordpress.dockerapp
-REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+$ docker-app ls
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
 wordpress.dockerapp   latest              61f8cafb7762        4 minutes ago       1.2kB
 ```
 
