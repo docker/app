@@ -1,21 +1,23 @@
-#
-# Metadata.
-#
+# This section contains your application metadata.
+# Version of the application
 version: 0.1.0
+# Name of the application
 name: hello-world
-description: "Hello world!"
-namespace: "myhubuser"
+# A short description of the application
+description: "Hello, World!"
+# Namespace to use when pushing to a registry. This is typically your Hub username.
+namespace: myHubUsername
+# List of application maitainers with name and email for each
 maintainers:
-- name: user
-  email: "user@email.com"
+  - name: user
+    email: "user@email.com"
+# Specify false here if your application doesn't support Swarm or Kubernetes
 targets:
   swarm: true
   kubernetes: true
 
 --
-#
-# Services.
-#
+# This section contains the Compose file that describes your application services.
 version: "3.6"
 services:
   hello:
@@ -25,8 +27,6 @@ services:
       - ${port}:5678
 
 --
-#
-# Settings.
-#
+# This section contains the default values for your application settings.
 port: 8080
-text: hello world!
+text: Hello, World!
