@@ -286,6 +286,22 @@ func TestHelmBinary(t *testing.T) {
 	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack.yaml")
 }
 
+func TestHelmV1Beta1Binary(t *testing.T) {
+	dockerApp, _ := getBinary(t)
+	assertCommand(t, dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2", "--stack-version", "v1beta1")
+	chart, _ := ioutil.ReadFile("helm.chart/Chart.yaml")
+	values, _ := ioutil.ReadFile("helm.chart/values.yaml")
+	stack, _ := ioutil.ReadFile("helm.chart/templates/stack.yaml")
+	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml")
+	golden.Assert(t, string(values), "helm-expected.chart/values.yaml")
+	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack-v1beta1.yaml")
+}
+
+func TestHelmInvalidStackVersionBinary(t *testing.T) {
+	dockerApp, _ := getBinary(t)
+	assertCommandFailureOutput(t, "invalid-stack-version.golden", dockerApp, "helm", "helm", "--stack-version", "foobar")
+}
+
 func TestSplitMergeBinary(t *testing.T) {
 	dockerApp, hasExperimental := getBinary(t)
 	if !hasExperimental {

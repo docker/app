@@ -16,6 +16,7 @@ import (
 	"github.com/docker/app/internal/types"
 	conversion "github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/compose/loader"
+	"github.com/docker/cli/kubernetes/compose/v1beta1"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
@@ -37,6 +38,13 @@ This package then invokes LoadTemplate, then templatev1beta2.convert, and
 post-process the serialized yaml to replace all 'template_'-prefixed keys
 with the appropriate content (value or template)
 */
+
+const (
+	// V1Beta1 is the string identifier for the v1beta1 version of the stack spec
+	V1Beta1 = "v1beta1"
+	// V1Beta2 is the string identifier for the v1beta2 version of the stack spec
+	V1Beta2 = "v1beta2"
+)
 
 type helmMaintainer struct {
 	Name string
@@ -207,21 +215,44 @@ func makeChart(appname, targetDir string) error {
 	return ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
 }
 
-func helmRender(appname string, targetDir string, composeFiles []string, settingsFile []string, env map[string]string) error {
+func helmRender(appname string, targetDir string, composeFiles []string, settingsFile []string, env map[string]string, stackVersion string) error {
 	rendered, err := Render(appname, composeFiles, settingsFile, env)
 	if err != nil {
 		return err
 	}
-	stackSpec := conversion.FromComposeConfig(rendered)
-	stack := v1beta2.Stack{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "stacks.compose.docker.com",
-			APIVersion: "v1beta2",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: internal.AppNameFromDir(appname),
-		},
-		Spec: stackSpec,
+	var stack interface{}
+	switch stackVersion {
+	case V1Beta2:
+		stackSpec := conversion.FromComposeConfig(rendered)
+		stack = v1beta2.Stack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "stacks.compose.docker.com",
+				APIVersion: V1Beta2,
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: internal.AppNameFromDir(appname),
+			},
+			Spec: stackSpec,
+		}
+	case V1Beta1:
+		composeFile, err := yaml.Marshal(rendered)
+		if err != nil {
+			return err
+		}
+		stack = v1beta1.Stack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "stacks.compose.docker.com",
+				APIVersion: V1Beta1,
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: internal.AppNameFromDir(appname),
+			},
+			Spec: v1beta1.StackSpec{
+				ComposeFile: string(composeFile),
+			},
+		}
+	default:
+		return fmt.Errorf("invalid stack version %q", stackVersion)
 	}
 	stackData, err := yaml.Marshal(stack)
 	if err != nil {
@@ -231,7 +262,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 }
 
 //makeStack converts data into a helm template for a stack
-func makeStack(appname string, targetDir string, data []byte) error {
+func makeStack(appname string, targetDir string, data []byte, stackVersion string) error {
 	parsed, err := loader.ParseYAML(data)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse template compose")
@@ -241,17 +272,41 @@ func makeStack(appname string, targetDir string, data []byte) error {
 		return errors.Wrap(err, "failed to load template compose")
 	}
 	os.Mkdir(filepath.Join(targetDir, "templates"), 0755)
-	stackSpec := templateconversion.FromComposeConfig(rendered)
-	stack := templatev1beta2.Stack{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "stacks.compose.docker.com",
-			APIVersion: "v1beta2",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      internal.AppNameFromDir(appname),
-			Namespace: "default", // FIXME
-		},
-		Spec: stackSpec,
+	var stack interface{}
+	switch stackVersion {
+	case V1Beta2:
+		stackSpec := templateconversion.FromComposeConfig(rendered)
+		stack = templatev1beta2.Stack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "stacks.compose.docker.com",
+				APIVersion: V1Beta2,
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      internal.AppNameFromDir(appname),
+				Namespace: "default", // FIXME
+			},
+			Spec: stackSpec,
+		}
+	case V1Beta1:
+		composeFile, err := yaml.Marshal(rendered)
+		if err != nil {
+			return err
+		}
+		stack = v1beta1.Stack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "stacks.compose.docker.com",
+				APIVersion: V1Beta1,
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      internal.AppNameFromDir(appname),
+				Namespace: "default", // FIXME
+			},
+			Spec: v1beta1.StackSpec{
+				ComposeFile: string(composeFile),
+			},
+		}
+	default:
+		return fmt.Errorf("invalid stack version %q", stackVersion)
 	}
 	stackData, err := yaml.Marshal(stack)
 	if err != nil {
@@ -274,7 +329,7 @@ func makeStack(appname string, targetDir string, data []byte) error {
 }
 
 // Helm renders an app as an Helm Chart
-func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool) error {
+func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool, stackVersion string) error {
 	targetDir := internal.AppNameFromDir(appname) + ".chart"
 	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to create Chart directory")
@@ -284,7 +339,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 		return err
 	}
 	if render {
-		return helmRender(appname, targetDir, composeFiles, settingsFile, env)
+		return helmRender(appname, targetDir, composeFiles, settingsFile, env, stackVersion)
 	}
 	data, err := ioutil.ReadFile(filepath.Join(appname, internal.ComposeFileName))
 	if err != nil {
@@ -294,7 +349,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return errors.Wrap(err, "failed to parse docker-compose.yml, maybe because it is a template")
 	}
-	err = makeStack(appname, targetDir, data)
+	err = makeStack(appname, targetDir, data, stackVersion)
 	if err != nil {
 		return err
 	}
