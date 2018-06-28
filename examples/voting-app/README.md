@@ -2,15 +2,16 @@
 
 ### Initialize project
 
-In this example, we will create an app from the existing Docker sample `example-voting-app`. First download the project [here](https://github.com/dockersamples/example-voting-app).
+In this example, we will create an app from the existing Docker sample `example-voting-app`. First download the `docker-stack.yml` [here](https://github.com/dockersamples/example-voting-app) ([direct link](https://raw.githubusercontent.com/dockersamples/example-voting-app/master/docker-stack.yml)
 
-Initialize the project using `docker-app init voting-app --compose-file example-voting-app/docker-stack.yml`.
+Initialize the project using `docker-app init voting-app --compose-file docker-stack.yml`.
 
 ### Edit metadata
 
 Go to `voting-app.dockerapp/` and open `metadata.yml` and fill the following fields:
 - description
 - maintainers
+- namespace
 
 ### Add variables to the compose file
 
@@ -37,7 +38,7 @@ Change default replicas, from:
 [voting-app.dockerapp/docker-compose.yml](voting-app.dockerapp/docker-compose.yml):
 ```yml
 [...]
-vote:
+  vote:
     image: ${vote.image.name}:${vote.image.tag}
     ports:
       - ${vote.port}:80
@@ -174,79 +175,4 @@ result:
 
 ### Wrap everything in a Makefile
 
-Add a Makefile to simplify rendering, deploying and killing your app.
-
----
-
-[voting-app.dockerapp/Makefile](voting-app.dockerapp/Makefile):
-```Makefile
-# Input.
-SETTINGS_DIR ?= settings
-APP_NAME := voting-app
-
-# Output.
-DEVELOPMENT_DIR := build/development
-PRODUCTION_DIR := build/production
-PACK := $(APP_NAME).pack
-
-#
-# Cleanup.
-#
-cleanup/production:
-	@rm -rf $(PRODUCTION_DIR)
-
-cleanup/development:
-	@rm -rf $(DEVELOPMENT_DIR)
-
-cleanup: cleanup/production cleanup/development
-
-#
-# Render.
-#
-render/production: cleanup/production
-	@mkdir -p $(PRODUCTION_DIR)
-	docker-app render --settings-files $(SETTINGS_DIR)/production.yml > $(PRODUCTION_DIR)/docker-compose.yml
-
-render/development: cleanup/development
-	@mkdir -p $(DEVELOPMENT_DIR)
-	docker-app render --settings-files $(SETTINGS_DIR)/development.yml > $(DEVELOPMENT_DIR)/docker-compose.yml
-
-render: render/production render/development
-
-#
-# Stop.
-#
-stop/production:
-	docker stack rm ${APP_NAME}
-
-stop/development:
-	docker stack rm ${APP_NAME}-dev
-
-stop: stop/production stop/development
-
-#
-# Deploy.
-#
-deploy/production: render/production stop/production
-	docker-app deploy --settings-files $(SETTINGS_DIR)/production.yml
-
-deploy/development: render/development stop/development
-	docker-app deploy --settings-files $(SETTINGS_DIR)/development.yml
-
-#
-# Pack.
-#
-pack:
-	docker-app pack -o $(PACK)
-
-#
-# Helm.
-#
-helm/production:
-	docker-app helm --settings-files $(SETTINGS_DIR)/production.yml
-
-helm/development:
-	docker-app helm --settings-files $(SETTINGS_DIR)/development.yml
-```
-
-You can add more commands, depending on your needs.
+Add a Makefile to simplify rendering, deploying and killing your app, see [voting-app.dockerapp/Makefile](voting-app.dockerapp/Makefile).
