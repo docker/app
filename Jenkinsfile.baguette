@@ -19,7 +19,6 @@ pipeline {
                     script {
                         try {
                             checkout scm
-                            sh 'docker image prune -f'
                             sh 'make -f docker.Makefile lint'
                             sh 'make -f docker.Makefile cross e2e-cross tars'
                             dir('bin') {
