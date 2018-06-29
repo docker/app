@@ -118,7 +118,7 @@ func ExtractWithOrigin(appname string) (ExtractedApp, error) {
 		}
 	}
 	originalAppname := appname
-
+	appname = filepath.Clean(appname)
 	// try appending our extension
 	appname = internal.DirNameFromAppName(appname)
 	s, err := os.Stat(appname)
