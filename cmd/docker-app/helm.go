@@ -49,6 +49,6 @@ be rendered instead of exported as a template.`
 	}
 	cmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override settings values")
-	cmd.Flags().StringVarP(&stackVersion, "stack-version", "", renderer.V1Beta2, "Version of the stack specification for the produced helm chart")
+	cmd.Flags().StringVarP(&stackVersion, "stack-version", "", renderer.V1Beta2, "Version of the stack specification for the produced helm chart (v1beta1 / v1beta2)")
 	return cmd
 }
