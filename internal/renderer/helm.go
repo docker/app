@@ -60,7 +60,7 @@ type helmMeta struct {
 
 func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
 	res := &helmMeta{
-		Name:        meta.Name,
+		Name:        meta.Name + ".chart",
 		Version:     meta.Version,
 		Description: meta.Description,
 	}
