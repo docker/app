@@ -263,8 +263,8 @@ func TestPackBinary(t *testing.T) {
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
 	os.Chdir(tempDir)
-	result = icmd.RunCommand(dockerApp, "helm", "test")
-	result.Assert(t, icmd.Success)
+	assertCommand(t, dockerApp, "helm", "test")
+	assertCommand(t, "helm", "lint", "test.chart")
 	_, err = os.Stat("test.chart/Chart.yaml")
 	assert.NilError(t, err)
 	os.Mkdir("output", 0755)
@@ -278,6 +278,7 @@ func TestPackBinary(t *testing.T) {
 func TestHelmBinary(t *testing.T) {
 	dockerApp, _ := getBinary(t)
 	assertCommand(t, dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2")
+	assertCommand(t, "helm", "lint", "helm.chart")
 	chart, _ := ioutil.ReadFile("helm.chart/Chart.yaml")
 	values, _ := ioutil.ReadFile("helm.chart/values.yaml")
 	stack, _ := ioutil.ReadFile("helm.chart/templates/stack.yaml")
@@ -289,6 +290,7 @@ func TestHelmBinary(t *testing.T) {
 func TestHelmV1Beta1Binary(t *testing.T) {
 	dockerApp, _ := getBinary(t)
 	assertCommand(t, dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2", "--stack-version", "v1beta1")
+	assertCommand(t, "helm", "lint", "helm.chart")
 	chart, _ := ioutil.ReadFile("helm.chart/Chart.yaml")
 	values, _ := ioutil.ReadFile("helm.chart/values.yaml")
 	stack, _ := ioutil.ReadFile("helm.chart/templates/stack.yaml")

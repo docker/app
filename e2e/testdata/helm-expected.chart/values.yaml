@@ -1,6 +1,6 @@
 aport: 10000
 app:
-  name: myapp
+  name: helm
   version: 0.1.0
 dport: 12000
 memory: "100000000"

@@ -3,5 +3,5 @@ keywords: []
 maintainers:
 - name: bearclaw <bearclaw@bearclaw.com>
 - name: bob <bob@bob.com>
-name: myapp.chart
+name: helm.chart
 version: 0.1.0
