@@ -38,9 +38,11 @@ func addCommands(cmd *cobra.Command, dockerCli *command.DockerCli) {
 		initCmd(),
 		inspectCmd(dockerCli),
 		lsCmd(),
+		mergeCmd(dockerCli),
 		pushCmd(),
 		renderCmd(dockerCli),
 		saveCmd(dockerCli),
+		splitCmd(),
 		versionCmd(dockerCli),
 	)
 	if internal.Experimental == "on" {
@@ -48,10 +50,8 @@ func addCommands(cmd *cobra.Command, dockerCli *command.DockerCli) {
 			imageAddCmd(),
 			imageLoadCmd(),
 			loadCmd(),
-			mergeCmd(dockerCli),
 			packCmd(dockerCli),
 			pullCmd(),
-			splitCmd(),
 			unpackCmd(),
 		)
 	}

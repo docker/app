@@ -14,6 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ExtractedApp represents a potentially extracted application package
+type ExtractedApp struct {
+	OriginalAppName string
+	AppName         string
+	Cleanup         func()
+}
+
 var (
 	noop = func() {}
 )
@@ -47,7 +54,7 @@ func findApp() (string, error) {
 }
 
 // extractImage extracts a docker application in a docker image to a temporary directory
-func extractImage(appname string) (string, func(), error) {
+func extractImage(appname string) (ExtractedApp, error) {
 	var imagename string
 	if strings.Contains(appname, ":") {
 		nametag := strings.Split(appname, ":")
@@ -65,42 +72,49 @@ func extractImage(appname string) (string, func(), error) {
 	}
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
-		return "", noop, errors.Wrap(err, "failed to create temporary directory")
+		return ExtractedApp{}, errors.Wrap(err, "failed to create temporary directory")
 	}
 	defer os.RemoveAll(tempDir)
 	err = Load(imagename, tempDir)
 	if err != nil {
 		if !strings.Contains(imagename, "/") {
-			return "", noop, fmt.Errorf("could not locate application in either filesystem or docker image")
+			return ExtractedApp{}, fmt.Errorf("could not locate application in either filesystem or docker image")
 		}
 		// Try to pull it
 		cmd := exec.Command("docker", "pull", imagename)
 		if err := cmd.Run(); err != nil {
-			return "", noop, fmt.Errorf("could not locate application in filesystem, docker image or registry")
+			return ExtractedApp{}, fmt.Errorf("could not locate application in filesystem, docker image or registry")
 		}
 		if err := Load(imagename, tempDir); err != nil {
-			return "", noop, errors.Wrap(err, "failed to load pulled image")
+			return ExtractedApp{}, errors.Wrap(err, "failed to load pulled image")
 		}
 	}
 	// this gave us a compressed app, run through extract again
-	return Extract(filepath.Join(tempDir, appname))
+	appname, cleanup, err := Extract(filepath.Join(tempDir, appname))
+	return ExtractedApp{"", appname, cleanup}, err
 }
 
-// Extract extracts the app content if argument is an archive, or does nothing if a dir.
-// It returns effective app name, and cleanup function
+// Extract extracts the app content if it's an archive or single-file
+func Extract(appname string) (string, func(), error) {
+	extracted, err := ExtractWithOrigin(appname)
+	return extracted.AppName, extracted.Cleanup, err
+}
+
+// ExtractWithOrigin extracts the app content if argument is an archive, or does nothing if a dir.
+// It returns source file, effective app name, and cleanup function
 // If appname is empty, it looks into cwd, and all subdirs for a single matching .dockerapp
 // If nothing is found, it looks for an image and loads it
-func Extract(appname string) (string, func(), error) {
+func ExtractWithOrigin(appname string) (ExtractedApp, error) {
 	if appname == "" {
 		var err error
 		if appname, err = findApp(); err != nil {
-			return "", nil, err
+			return ExtractedApp{}, err
 		}
 	}
 	if appname == "." {
 		var err error
 		if appname, err = os.Getwd(); err != nil {
-			return "", nil, errors.Wrap(err, "cannot resolve current working directory")
+			return ExtractedApp{}, errors.Wrap(err, "cannot resolve current working directory")
 		}
 	}
 	originalAppname := appname
@@ -118,12 +132,12 @@ func Extract(appname string) (string, func(), error) {
 	}
 	if s.IsDir() {
 		// directory: already decompressed
-		return appname, noop, nil
+		return ExtractedApp{appname, appname, noop}, nil
 	}
 	// not a dir: single-file or a tarball package, extract that in a temp dir
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
-		return "", noop, errors.Wrap(err, "failed to create temporary directory")
+		return ExtractedApp{}, errors.Wrap(err, "failed to create temporary directory")
 	}
 	defer func() {
 		if err != nil {
@@ -132,16 +146,16 @@ func Extract(appname string) (string, func(), error) {
 	}()
 	appDir := filepath.Join(tempDir, filepath.Base(appname))
 	if err = os.Mkdir(appDir, 0755); err != nil {
-		return "", noop, errors.Wrap(err, "failed to create application in temporary directory")
+		return ExtractedApp{}, errors.Wrap(err, "failed to create application in temporary directory")
 	}
 	if err = extract(appname, appDir); err == nil {
-		return appDir, func() { os.RemoveAll(tempDir) }, nil
+		return ExtractedApp{appname, appDir, func() { os.RemoveAll(tempDir) }}, nil
 	}
 	if err = extractSingleFile(appname, appDir); err != nil {
-		return "", noop, err
+		return ExtractedApp{}, err
 	}
 	// not a tarball, single-file then
-	return appDir, func() { os.RemoveAll(tempDir) }, nil
+	return ExtractedApp{appname, appDir, func() { os.RemoveAll(tempDir) }}, nil
 }
 
 func extractSingleFile(appname, appDir string) error {
@@ -177,6 +191,7 @@ func extract(appname, outputDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to open application package")
 	}
+	defer f.Close()
 	tarReader := tar.NewReader(f)
 	outputDir = outputDir + "/"
 	for {
