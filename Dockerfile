@@ -10,7 +10,13 @@ RUN apk add --no-cache \
   git \
   curl \
   util-linux \
-  coreutils
+  coreutils \
+  openssl
+
+RUN curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh && \
+    chmod 700 get_helm.sh && \
+    ./get_helm.sh
+
 RUN curl -Ls https://download.docker.com/linux/static/$DOCKERCLI_CHANNEL/x86_64/docker-$DOCKERCLI_VERSION.tgz | \
   tar -xz docker/docker && \
   mv docker/docker /usr/bin/docker
