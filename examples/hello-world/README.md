@@ -15,13 +15,19 @@ $ ls -l
 -rw-r--r-- 1 hello-world.dockerapp
 $ cat hello-world.dockerapp
 # This section contains your application metadata.
+# Version of the application
 version: 0.1.0
+# Name of the application
 name: hello-world
-description: ""
-namespace: ""
+# A short description of the application
+description:
+# Namespace to use when pushing to a registry. This is typically your Hub username.
+#namespace: myHubUsername
+# List of application maitainers with name and email for each
 maintainers:
-- name: dimrok
-  email: ""
+  - name: user
+    email:
+# Specify false here if your application doesn't support Swarm or Kubernetes
 targets:
   swarm: true
   kubernetes: true
@@ -39,7 +45,7 @@ Open `hello-world.dockerapp` with your favorite text editor.
 
 ### Edit metadata
 
-Edit the `description` and `maintainers` fields in the metadata section.
+Edit the `description`, `namespace` and `maintainers` fields in the metadata section.
 
 ### Add variables to the compose file
 
@@ -75,7 +81,7 @@ In the settings section, add every variables with the default value you want, e.
 ---
 # This section contains the default values for your application settings.
 port: 8080
-text: hello world!
+text: Hello, World!
 ```
 
 ### Render
@@ -86,11 +92,11 @@ Create a `render` directory and redirect the output of `docker-app render ...` t
 
 ```bash
 $ mkdir -p render
-$ docker-app render -s text="hello user" > render/docker-compose.yml
+$ docker-app render -s text="Hello user!" > render/docker-compose.yml
 ```
 
 ### Deploy
 
-You directly deploy your application by running `docker-app deploy --set text="hello user!"` or you can use the rendered version and run `docker stack deploy render/docker-compose.yml`.
+You directly deploy your application by running `docker-app deploy --set text="Hello user!"` or you can use the rendered version and run `docker stack deploy render/docker-compose.yml`.
 
 `http://<ip_of_your_node>:8080` will display your message, e.g. http://127.0.0.1:8080 if you deployed locally.

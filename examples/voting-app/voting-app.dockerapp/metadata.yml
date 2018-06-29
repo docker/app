@@ -1,9 +1,16 @@
+# Version of the application
 version: 0.1.0
+# Name of the application
 name: voting-app
+# A short description of the application
 description: "Dogs or cats?"
+# Namespace to use when pushing to a registry. This is typically your Hub username.
+namespace: myHubUsername
+# List of application maitainers with name and email for each
 maintainers:
-- name: dimrok
-  email: "antony.mechin@docker.com"
+  - name: user
+    email: user@email.com
+# Specify false here if your application doesn't support Swarm or Kubernetes
 targets:
   swarm: true
   kubernetes: true
