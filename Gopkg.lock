@@ -96,6 +96,7 @@
     "cli/compose/interpolation",
     "cli/compose/loader",
     "cli/compose/schema",
+    "cli/compose/schema/data",
     "cli/compose/template",
     "cli/compose/types",
     "cli/config",

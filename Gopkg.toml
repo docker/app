@@ -89,3 +89,7 @@ required = ["github.com/wadey/gocovmerge"]
   non-go = true
   unused-packages = true
   go-tests = true
+
+  [[prune.project]]
+    name = "github.com/docker/cli"
+    non-go = false
