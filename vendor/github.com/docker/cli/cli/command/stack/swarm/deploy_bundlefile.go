@@ -1,11 +1,10 @@
 package swarm
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
-
-	"golang.org/x/net/context"
 
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/bundlefile"
@@ -16,7 +15,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func deployBundle(ctx context.Context, dockerCli command.Cli, opts options.Deploy) error {
+// DeployBundle deploy a bundlefile (dab) on a swarm.
+func DeployBundle(ctx context.Context, dockerCli command.Cli, opts options.Deploy) error {
 	bundle, err := loadBundlefile(dockerCli.Err(), opts.Namespace, opts.Bundlefile)
 	if err != nil {
 		return err

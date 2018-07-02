@@ -43,7 +43,7 @@ func ParseYAML(source []byte) (map[string]interface{}, error) {
 }
 
 func processEnabled(configDict map[string]interface{}) bool {
-	if v, ok := configDict["enabled"]; ok {
+	if v, ok := configDict["x-enabled"]; ok {
 		e := fmt.Sprintf("%v", v)
 		e = strings.Trim(e, " ")
 		reverse := len(e) != 0 && e[0] == '!'
@@ -57,7 +57,7 @@ func processEnabled(configDict map[string]interface{}) bool {
 		if disabled {
 			return false
 		}
-		delete(configDict, "enabled")
+		delete(configDict, "x-enabled")
 	}
 	for k, v := range configDict {
 		if m, ok := v.(map[string]interface{}); ok {

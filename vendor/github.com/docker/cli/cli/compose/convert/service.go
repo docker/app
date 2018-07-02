@@ -150,6 +150,7 @@ func Service(
 				ReadOnly:        service.ReadOnly,
 				Privileges:      &privileges,
 				Isolation:       container.Isolation(service.Isolation),
+				Init:            service.Init,
 			},
 			LogDriver:     logDriver,
 			Resources:     resources,
@@ -159,9 +160,10 @@ func Service(
 				Preferences: getPlacementPreference(service.Deploy.Placement.Preferences),
 			},
 		},
-		EndpointSpec: endpoint,
-		Mode:         mode,
-		UpdateConfig: convertUpdateConfig(service.Deploy.UpdateConfig),
+		EndpointSpec:   endpoint,
+		Mode:           mode,
+		UpdateConfig:   convertUpdateConfig(service.Deploy.UpdateConfig),
+		RollbackConfig: convertUpdateConfig(service.Deploy.RollbackConfig),
 	}
 
 	// add an image label to serviceSpec

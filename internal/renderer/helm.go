@@ -14,7 +14,7 @@ import (
 	"github.com/docker/app/internal/templateloader"
 	"github.com/docker/app/internal/templatev1beta2"
 	"github.com/docker/app/internal/types"
-	conversion "github.com/docker/cli/cli/command/stack/kubernetes"
+	"github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/kubernetes/compose/v1beta1"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
@@ -215,40 +215,47 @@ func makeChart(appname, targetDir string) error {
 	return ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
 }
 
+func typeMeta(stackVersion string) metav1.TypeMeta {
+	return metav1.TypeMeta{
+		Kind:       "stacks.compose.docker.com",
+		APIVersion: stackVersion,
+	}
+}
+
+func objectMeta(appname string) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name: internal.AppNameFromDir(appname),
+	}
+}
+
 func helmRender(appname string, targetDir string, composeFiles []string, settingsFile []string, env map[string]string, stackVersion string) error {
 	rendered, err := Render(appname, composeFiles, settingsFile, env)
+	if err != nil {
+		return err
+	}
+	converter, err := kubernetes.NewStackConverter(stackVersion)
+	if err != nil {
+		return err
+	}
+	name := internal.AppNameFromDir(appname)
+	s, err := converter.FromCompose(ioutil.Discard, name, rendered)
 	if err != nil {
 		return err
 	}
 	var stack interface{}
 	switch stackVersion {
 	case V1Beta2:
-		stackSpec := conversion.FromComposeConfig(rendered)
 		stack = v1beta2.Stack{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "stacks.compose.docker.com",
-				APIVersion: V1Beta2,
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: internal.AppNameFromDir(appname),
-			},
-			Spec: stackSpec,
+			TypeMeta:   typeMeta(stackVersion),
+			ObjectMeta: objectMeta(appname),
+			Spec:       s.Spec,
 		}
 	case V1Beta1:
-		composeFile, err := yaml.Marshal(rendered)
-		if err != nil {
-			return err
-		}
 		stack = v1beta1.Stack{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "stacks.compose.docker.com",
-				APIVersion: V1Beta1,
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: internal.AppNameFromDir(appname),
-			},
+			TypeMeta:   typeMeta(stackVersion),
+			ObjectMeta: objectMeta(appname),
 			Spec: v1beta1.StackSpec{
-				ComposeFile: string(composeFile),
+				ComposeFile: s.ComposeFile,
 			},
 		}
 	default:
@@ -277,15 +284,9 @@ func makeStack(appname string, targetDir string, data []byte, stackVersion strin
 	case V1Beta2:
 		stackSpec := templateconversion.FromComposeConfig(rendered)
 		stack = templatev1beta2.Stack{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "stacks.compose.docker.com",
-				APIVersion: V1Beta2,
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      internal.AppNameFromDir(appname),
-				Namespace: "default", // FIXME
-			},
-			Spec: stackSpec,
+			TypeMeta:   typeMeta(stackVersion),
+			ObjectMeta: objectMeta(appname),
+			Spec:       stackSpec,
 		}
 	case V1Beta1:
 		composeFile, err := yaml.Marshal(rendered)
@@ -293,14 +294,8 @@ func makeStack(appname string, targetDir string, data []byte, stackVersion strin
 			return err
 		}
 		stack = v1beta1.Stack{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "stacks.compose.docker.com",
-				APIVersion: V1Beta1,
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      internal.AppNameFromDir(appname),
-				Namespace: "default", // FIXME
-			},
+			TypeMeta:   typeMeta(stackVersion),
+			ObjectMeta: objectMeta(appname),
 			Spec: v1beta1.StackSpec{
 				ComposeFile: string(composeFile),
 			},

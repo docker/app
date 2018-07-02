@@ -14,8 +14,8 @@ type Options struct {
 	LookupValue LookupValue
 	// TypeCastMapping maps key paths to functions to cast to a type
 	TypeCastMapping map[Path]Cast
-	// ErrOnMissingVariable if true causes an error if any missing variable is found
-	ErrOnMissingVariable bool
+	// Substitution function to use
+	Substitute func(string, template.Mapping) (string, error)
 }
 
 // LookupValue is a function which maps from variable names to values.
@@ -35,6 +35,9 @@ func Interpolate(config map[string]interface{}, opts Options) (map[string]interf
 	if opts.TypeCastMapping == nil {
 		opts.TypeCastMapping = make(map[Path]Cast)
 	}
+	if opts.Substitute == nil {
+		opts.Substitute = template.Substitute
+	}
 
 	out := map[string]interface{}{}
 
@@ -53,7 +56,7 @@ func recursiveInterpolate(value interface{}, path Path, opts Options) (interface
 	switch value := value.(type) {
 
 	case string:
-		newValue, err := template.Substitute(value, template.Mapping(opts.LookupValue), opts.ErrOnMissingVariable)
+		newValue, err := opts.Substitute(value, template.Mapping(opts.LookupValue))
 		if err != nil || newValue == value {
 			return value, newPathError(path, err)
 		}
@@ -71,11 +74,7 @@ func recursiveInterpolate(value interface{}, path Path, opts Options) (interface
 			if err != nil {
 				return nil, err
 			}
-			interpolatedKey, err := template.Substitute(key, template.Mapping(opts.LookupValue), opts.ErrOnMissingVariable)
-			if err != nil {
-				return nil, err
-			}
-			out[interpolatedKey] = interpolatedElem
+			out[key] = interpolatedElem
 		}
 		return out, nil
 

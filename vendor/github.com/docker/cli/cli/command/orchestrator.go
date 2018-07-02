@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -13,47 +14,64 @@ const (
 	OrchestratorKubernetes = Orchestrator("kubernetes")
 	// OrchestratorSwarm orchestrator
 	OrchestratorSwarm = Orchestrator("swarm")
+	// OrchestratorAll orchestrator
+	OrchestratorAll   = Orchestrator("all")
 	orchestratorUnset = Orchestrator("unset")
 
-	defaultOrchestrator      = OrchestratorSwarm
-	envVarDockerOrchestrator = "DOCKER_ORCHESTRATOR"
+	defaultOrchestrator           = OrchestratorSwarm
+	envVarDockerStackOrchestrator = "DOCKER_STACK_ORCHESTRATOR"
+	envVarDockerOrchestrator      = "DOCKER_ORCHESTRATOR"
 )
 
-func normalize(flag string) Orchestrator {
-	switch flag {
+// HasKubernetes returns true if defined orchestrator has Kubernetes capabilities.
+func (o Orchestrator) HasKubernetes() bool {
+	return o == OrchestratorKubernetes || o == OrchestratorAll
+}
+
+// HasSwarm returns true if defined orchestrator has Swarm capabilities.
+func (o Orchestrator) HasSwarm() bool {
+	return o == OrchestratorSwarm || o == OrchestratorAll
+}
+
+// HasAll returns true if defined orchestrator has both Swarm and Kubernetes capabilities.
+func (o Orchestrator) HasAll() bool {
+	return o == OrchestratorAll
+}
+
+func normalize(value string) (Orchestrator, error) {
+	switch value {
 	case "kubernetes":
-		return OrchestratorKubernetes
+		return OrchestratorKubernetes, nil
 	case "swarm":
-		return OrchestratorSwarm
+		return OrchestratorSwarm, nil
+	case "":
+		return orchestratorUnset, nil
+	case "all":
+		return OrchestratorAll, nil
 	default:
-		return orchestratorUnset
+		return defaultOrchestrator, fmt.Errorf("specified orchestrator %q is invalid, please use either kubernetes, swarm or all", value)
 	}
 }
 
-// GetOrchestrator checks DOCKER_ORCHESTRATOR environment variable and configuration file
+// GetStackOrchestrator checks DOCKER_STACK_ORCHESTRATOR environment variable and configuration file
 // orchestrator value and returns user defined Orchestrator.
-func GetOrchestrator(isExperimental bool, flagValue, value string) Orchestrator {
-	// Non experimental CLI has kubernetes disabled
-	if !isExperimental {
-		return defaultOrchestrator
-	}
+func GetStackOrchestrator(flagValue, value string, stderr io.Writer) (Orchestrator, error) {
 	// Check flag
-	if o := normalize(flagValue); o != orchestratorUnset {
-		return o
+	if o, err := normalize(flagValue); o != orchestratorUnset {
+		return o, err
 	}
 	// Check environment variable
-	env := os.Getenv(envVarDockerOrchestrator)
-	if o := normalize(env); o != orchestratorUnset {
-		return o
+	env := os.Getenv(envVarDockerStackOrchestrator)
+	if env == "" && os.Getenv(envVarDockerOrchestrator) != "" {
+		fmt.Fprintf(stderr, "WARNING: experimental environment variable %s is set. Please use %s instead\n", envVarDockerOrchestrator, envVarDockerStackOrchestrator)
+	}
+	if o, err := normalize(env); o != orchestratorUnset {
+		return o, err
 	}
 	// Check specified orchestrator
-	if o := normalize(value); o != orchestratorUnset {
-		return o
-	}
-
-	if value != "" {
-		fmt.Fprintf(os.Stderr, "Specified orchestrator %q is invalid. Please use either kubernetes or swarm\n", value)
+	if o, err := normalize(value); o != orchestratorUnset {
+		return o, err
 	}
 	// Nothing set, use default orchestrator
-	return defaultOrchestrator
+	return defaultOrchestrator, nil
 }

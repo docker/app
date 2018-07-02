@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -19,7 +20,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"golang.org/x/net/context"
 )
 
 func newUpdateCommand(dockerCli command.Cli) *cobra.Command {
@@ -94,6 +94,8 @@ func newUpdateCommand(dockerCli command.Cli) *cobra.Command {
 	flags.SetAnnotation(flagDNSSearchAdd, "version", []string{"1.25"})
 	flags.Var(&options.hosts, flagHostAdd, "Add a custom host-to-IP mapping (host:ip)")
 	flags.SetAnnotation(flagHostAdd, "version", []string{"1.25"})
+	flags.BoolVar(&options.init, flagInit, false, "Use an init inside each service container to forward signals and reap processes")
+	flags.SetAnnotation(flagInit, "version", []string{"1.37"})
 
 	// Add needs parsing, Remove only needs the key
 	flags.Var(newListOptsVar(), flagGenericResourcesRemove, "Remove a Generic resource")
@@ -235,6 +237,12 @@ func runUpdate(dockerCli command.Cli, flags *pflag.FlagSet, options *serviceOpti
 
 // nolint: gocyclo
 func updateService(ctx context.Context, apiClient client.NetworkAPIClient, flags *pflag.FlagSet, spec *swarm.ServiceSpec) error {
+	updateBoolPtr := func(flag string, field **bool) {
+		if flags.Changed(flag) {
+			b, _ := flags.GetBool(flag)
+			*field = &b
+		}
+	}
 	updateString := func(flag string, field *string) {
 		if flags.Changed(flag) {
 			*field, _ = flags.GetString(flag)
@@ -306,6 +314,7 @@ func updateService(ctx context.Context, apiClient client.NetworkAPIClient, flags
 	updateString(flagWorkdir, &cspec.Dir)
 	updateString(flagUser, &cspec.User)
 	updateString(flagHostname, &cspec.Hostname)
+	updateBoolPtr(flagInit, &cspec.Init)
 	if err := updateIsolation(flagIsolation, &cspec.Isolation); err != nil {
 		return err
 	}
@@ -313,13 +322,14 @@ func updateService(ctx context.Context, apiClient client.NetworkAPIClient, flags
 		return err
 	}
 
-	if flags.Changed(flagLimitCPU) || flags.Changed(flagLimitMemory) {
-		taskResources().Limits = &swarm.Resources{}
+	if anyChanged(flags, flagLimitCPU, flagLimitMemory) {
+		taskResources().Limits = spec.TaskTemplate.Resources.Limits
 		updateInt64Value(flagLimitCPU, &task.Resources.Limits.NanoCPUs)
 		updateInt64Value(flagLimitMemory, &task.Resources.Limits.MemoryBytes)
 	}
-	if flags.Changed(flagReserveCPU) || flags.Changed(flagReserveMemory) {
-		taskResources().Reservations = &swarm.Resources{}
+
+	if anyChanged(flags, flagReserveCPU, flagReserveMemory) {
+		taskResources().Reservations = spec.TaskTemplate.Resources.Reservations
 		updateInt64Value(flagReserveCPU, &task.Resources.Reservations.NanoCPUs)
 		updateInt64Value(flagReserveMemory, &task.Resources.Reservations.MemoryBytes)
 	}
@@ -963,45 +973,99 @@ func updateReplicas(flags *pflag.FlagSet, serviceMode *swarm.ServiceMode) error 
 	return nil
 }
 
+type hostMapping struct {
+	IPAddr string
+	Host   string
+}
+
 // updateHosts performs a diff between existing host entries, entries to be
 // removed, and entries to be added. Host entries preserve the order in which they
 // were added, as the specification mentions that in case multiple entries for a
 // host exist, the first entry should be used (by default).
+//
+// Note that, even though unsupported by the the CLI, the service specs format
+// allow entries with both a _canonical_ hostname, and one or more aliases
+// in an entry (IP-address canonical_hostname [alias ...])
+//
+// Entries can be removed by either a specific `<host-name>:<ip-address>` mapping,
+// or by `<host>` alone:
+//
+// - If both IP-address and host-name is provided, the hostname is removed only
+//   from entries that match the given IP-address.
+// - If only a host-name is provided, the hostname is removed from any entry it
+//   is part of (either as canonical host-name, or as alias).
+// - If, after removing the host-name from an entry, no host-names remain in
+//   the entry, the entry itself is removed.
+//
+// For example, the list of host-entries before processing could look like this:
+//
+//    hosts = &[]string{
+//        "127.0.0.2 host3 host1 host2 host4",
+//        "127.0.0.1 host1 host4",
+//        "127.0.0.3 host1",
+//        "127.0.0.1 host1",
+//    }
+//
+// Removing `host1` removes every occurrence:
+//
+//    hosts = &[]string{
+//        "127.0.0.2 host3 host2 host4",
+//        "127.0.0.1 host4",
+//    }
+//
+// Removing `host1:127.0.0.1` on the other hand, only remove the host if the
+// IP-address matches:
+//
+//    hosts = &[]string{
+//        "127.0.0.2 host3 host1 host2 host4",
+//        "127.0.0.1 host4",
+//        "127.0.0.3 host1",
+//    }
 func updateHosts(flags *pflag.FlagSet, hosts *[]string) error {
-	// Combine existing Hosts (in swarmkit format) with the host to add (convert to swarmkit format)
-	if flags.Changed(flagHostAdd) {
-		values := convertExtraHostsToSwarmHosts(flags.Lookup(flagHostAdd).Value.(*opts.ListOpts).GetAll())
-		*hosts = append(*hosts, values...)
-	}
-	// Remove duplicate
-	*hosts = removeDuplicates(*hosts)
-
-	keysToRemove := make(map[string]struct{})
+	var toRemove []hostMapping
 	if flags.Changed(flagHostRemove) {
-		var empty struct{}
 		extraHostsToRemove := flags.Lookup(flagHostRemove).Value.(*opts.ListOpts).GetAll()
 		for _, entry := range extraHostsToRemove {
-			key := strings.SplitN(entry, ":", 2)[0]
-			keysToRemove[key] = empty
+			v := strings.SplitN(entry, ":", 2)
+			if len(v) > 1 {
+				toRemove = append(toRemove, hostMapping{IPAddr: v[1], Host: v[0]})
+			} else {
+				toRemove = append(toRemove, hostMapping{Host: v[0]})
+			}
 		}
 	}
 
-	newHosts := []string{}
+	var newHosts []string
 	for _, entry := range *hosts {
-		// Since this is in swarmkit format, we need to find the key, which is canonical_hostname of:
+		// Since this is in SwarmKit format, we need to find the key, which is canonical_hostname of:
 		// IP_address canonical_hostname [aliases...]
 		parts := strings.Fields(entry)
-		if len(parts) > 1 {
-			key := parts[1]
-			if _, exists := keysToRemove[key]; !exists {
-				newHosts = append(newHosts, entry)
+		if len(parts) == 0 {
+			continue
+		}
+		ip := parts[0]
+		hostNames := parts[1:]
+		for _, rm := range toRemove {
+			if rm.IPAddr != "" && rm.IPAddr != ip {
+				continue
 			}
-		} else {
-			newHosts = append(newHosts, entry)
+			for i, h := range hostNames {
+				if h == rm.Host {
+					hostNames = append(hostNames[:i], hostNames[i+1:]...)
+				}
+			}
+		}
+		if len(hostNames) > 0 {
+			newHosts = append(newHosts, fmt.Sprintf("%s %s", ip, strings.Join(hostNames, " ")))
 		}
 	}
 
-	*hosts = newHosts
+	// Append new hosts (in SwarmKit format)
+	if flags.Changed(flagHostAdd) {
+		values := convertExtraHostsToSwarmHosts(flags.Lookup(flagHostAdd).Value.(*opts.ListOpts).GetAll())
+		newHosts = append(newHosts, values...)
+	}
+	*hosts = removeDuplicates(newHosts)
 	return nil
 }
 

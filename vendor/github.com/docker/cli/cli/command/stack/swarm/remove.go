@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -11,18 +12,16 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 )
 
 // RunRemove is the swarm implementation of docker stack remove
 func RunRemove(dockerCli command.Cli, opts options.Remove) error {
-	namespaces := opts.Namespaces
 	client := dockerCli.Client()
 	ctx := context.Background()
 
 	var errs []string
-	for _, namespace := range namespaces {
-		services, err := getServices(ctx, client, namespace)
+	for _, namespace := range opts.Namespaces {
+		services, err := getStackServices(ctx, client, namespace)
 		if err != nil {
 			return err
 		}

@@ -10,7 +10,7 @@ objectmeta:
   initializers: null
   labels: {}
   name: helm
-  namespace: default
+  namespace: ""
   ownerreferences: []
   resourceversion: ""
   selflink: ""
