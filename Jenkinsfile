@@ -69,6 +69,8 @@ pipeline {
                         dir('src/github.com/docker/app') {
                             checkout scm
                             sh 'make -f docker.Makefile coverage'
+                            archiveArtifacts '_build/ci-cov/all.out'
+                            archiveArtifacts '_build/ci-cov/coverage.html'
                         }
                     }
                 }

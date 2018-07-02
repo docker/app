@@ -221,7 +221,6 @@ func cDate(t time.Time) []byte {
 type Mechanism struct {
 	Mechanism uint
 	Parameter []byte
-	arena     arena
 }
 
 // NewMechanism returns a pointer to an initialized Mechanism.
@@ -234,7 +233,7 @@ func NewMechanism(mech uint, x interface{}) *Mechanism {
 
 	switch x.(type) {
 	case *GCMParams:
-		m.arena, m.Parameter = cGCMParams(x.(*GCMParams))
+		m.Parameter = cGCMParams(x.(*GCMParams))
 	default:
 		m.Parameter = x.([]byte)
 	}
@@ -256,7 +255,6 @@ func cMechanismList(m []*Mechanism) (arena, C.ckMechPtr, C.CK_ULONG) {
 		}
 
 		pm[i].pParameter, pm[i].ulParameterLen = arena.Allocate(m[i].Parameter)
-		arena = append(arena, m[i].arena...)
 	}
 	return arena, C.ckMechPtr(&pm[0]), C.CK_ULONG(len(m))
 }

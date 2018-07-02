@@ -39,11 +39,19 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "k8s.io/kubernetes"
-  revision = "v1.8.2"
+  revision = "v1.8.14"
+
+[[override]]
+  name = "k8s.io/api"
+  revision = "kubernetes-1.8.14"
 
 [[override]]
   name = "k8s.io/apimachinery"
-  revision = "kubernetes-1.8.2"
+  revision = "kubernetes-1.8.14"
+
+[[override]]
+  name = "k8s.io/client-go"
+  revision = "kubernetes-1.8.14"
 
 [[override]]
   name = "github.com/xeipuuv/gojsonschema"
@@ -68,6 +76,10 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "google.golang.org/grpc"
   revision = "v1.3.0"
+
+[[constraint]]
+  name = "github.com/spf13/pflag"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/wadey/gocovmerge"
