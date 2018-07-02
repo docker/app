@@ -12,6 +12,8 @@ import (
 	"testing"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/cli/cli/compose/loader"
+	"github.com/xeipuuv/gojsonschema"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
@@ -151,8 +153,17 @@ targets:
 		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
 		fs.WithFile(internal.SettingsFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
 	)
-
 	assert.Assert(t, fs.Equal(dirName, manifest))
+
+	// validate metadata with JSON Schema
+	schemaLoader := gojsonschema.NewReferenceLoader("file://../specification/schemas/metadata_schema_v0.2.json")
+	assert.Check(t, schemaLoader != nil)
+	data, err := loader.ParseYAML([]byte(meta))
+	assert.NilError(t, err)
+	dataLoader := gojsonschema.NewGoLoader(data)
+	result, err := gojsonschema.Validate(schemaLoader, dataLoader)
+	assert.NilError(t, err)
+	assert.Check(t, result.Valid())
 
 	// test single-file init
 	args = []string{
