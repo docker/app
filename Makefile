@@ -48,7 +48,7 @@ coverage-test-unit:
 	@$(call mkdir,_build/cov)
 	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
 
-coverage-test-e2e: coverage-bin
+coverage-test-e2e: coverage-bin bin/yamlschema
 	@echo "Running e2e tests (coverage)..."
 	@$(call mkdir,_build/cov)
 	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
