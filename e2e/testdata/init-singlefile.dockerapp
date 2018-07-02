@@ -18,7 +18,7 @@ targets:
   swarm: true
   kubernetes: true
 
---
+---
 # This section contains the Compose file that describes your application services.
 version: "3.2"
 services:
@@ -26,7 +26,7 @@ services:
     image: nginx:${NGINX_VERSION}
     command: nginx $NGINX_ARGS
 
---
+---
 # This section contains the default values for your application settings.
 NGINX_ARGS: FILL ME
 NGINX_VERSION: latest

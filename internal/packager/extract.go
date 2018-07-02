@@ -164,7 +164,7 @@ func extractSingleFile(appname, appDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read single-file application package")
 	}
-	parts := strings.Split(string(data), "\n--")
+	parts := strings.Split(string(data), "\n---")
 	if len(parts) != 3 {
 		return fmt.Errorf("malformed single-file application: expected 3 documents")
 	}
