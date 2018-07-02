@@ -156,6 +156,7 @@ tar xf docker-app-linux.tar.gz
 cp docker-app-linux /usr/local/bin/docker-app
 ```
 
+**Note:** To use Application Packages as images (i.e.: `save`, `push`, or `deploy` when package is not present locally) on Windows, one must be in Linux container mode.
 
 ## Integrating with Helm
 

@@ -195,6 +195,8 @@ spec:
 
 ### Generate distributable app package
 
+**Note:** If using Windows, this only works in Linux container mode.
+
 `docker-app save wordpress` creates a Docker image packaging the relevant configuration files:
 
 ```
