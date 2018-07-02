@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"io"
 	"net"
 	"net/http"
@@ -28,7 +29,6 @@ import (
 	"github.com/theupdateframework/notary"
 	notaryclient "github.com/theupdateframework/notary/client"
 	"github.com/theupdateframework/notary/passphrase"
-	"golang.org/x/net/context"
 )
 
 // Streams is an interface which exposes the standard input and output streams
@@ -162,15 +162,18 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 	if err != nil {
 		return err
 	}
-	hasExperimental, err := isEnabled(cli.configFile.Experimental)
+	var experimentalValue string
+	// Environment variable always overrides configuration
+	if experimentalValue = os.Getenv("DOCKER_CLI_EXPERIMENTAL"); experimentalValue == "" {
+		experimentalValue = cli.configFile.Experimental
+	}
+	hasExperimental, err := isEnabled(experimentalValue)
 	if err != nil {
 		return errors.Wrap(err, "Experimental field")
 	}
-	orchestrator := GetOrchestrator(hasExperimental, opts.Common.Orchestrator, cli.configFile.Orchestrator)
 	cli.clientInfo = ClientInfo{
 		DefaultVersion:  cli.client.ClientVersion(),
 		HasExperimental: hasExperimental,
-		Orchestrator:    orchestrator,
 	}
 	cli.initializeFromClient()
 	return nil
@@ -236,12 +239,6 @@ type ServerInfo struct {
 type ClientInfo struct {
 	HasExperimental bool
 	DefaultVersion  string
-	Orchestrator    Orchestrator
-}
-
-// HasKubernetes checks if kubernetes orchestrator is enabled
-func (c ClientInfo) HasKubernetes() bool {
-	return c.HasExperimental && c.Orchestrator == OrchestratorKubernetes
 }
 
 // NewDockerCli returns a DockerCli instance with IO output and error streams set by in, out and err.

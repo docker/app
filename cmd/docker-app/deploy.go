@@ -1,20 +1,15 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"os"
-
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/stack/kubernetes"
+	"github.com/docker/cli/cli/command/stack"
 	"github.com/docker/cli/cli/command/stack/options"
-	"github.com/docker/cli/cli/command/stack/swarm"
-	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 type deployOptions struct {
@@ -37,7 +32,7 @@ func deployCmd(dockerCli *command.DockerCli) *cobra.Command {
 		Long:  `Deploy the application on either Swarm or Kubernetes.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeploy(dockerCli, firstOrEmpty(args), opts)
+			return runDeploy(dockerCli, cmd.Flags(), firstOrEmpty(args), opts)
 		},
 	}
 
@@ -53,18 +48,15 @@ func deployCmd(dockerCli *command.DockerCli) *cobra.Command {
 	return cmd
 }
 
-func runDeploy(dockerCli *command.DockerCli, appname string, opts deployOptions) error {
+func runDeploy(dockerCli *command.DockerCli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
 	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
-	deployOrchestrator := opts.deployOrchestrator
-	if do, ok := os.LookupEnv("DOCKER_ORCHESTRATOR"); ok {
-		deployOrchestrator = do
-	}
-	if deployOrchestrator != "swarm" && deployOrchestrator != "kubernetes" {
-		return fmt.Errorf("orchestrator must be either 'swarm' or 'kubernetes'")
+	deployOrchestrator, err := command.GetStackOrchestrator(opts.deployOrchestrator, dockerCli.ConfigFile().StackOrchestrator, dockerCli.Err())
+	if err != nil {
+		return err
 	}
 	d, err := parseSettings(opts.deployEnv)
 	if err != nil {
@@ -74,28 +66,11 @@ func runDeploy(dockerCli *command.DockerCli, appname string, opts deployOptions)
 	if err != nil {
 		return err
 	}
-	dockerCli.Initialize(&cliflags.ClientOptions{
-		Common: &cliflags.CommonOptions{
-			Orchestrator: deployOrchestrator,
-		},
-	})
 	stackName := opts.deployStackName
 	if stackName == "" {
 		stackName = internal.AppNameFromDir(appname)
 	}
-	if deployOrchestrator == "swarm" {
-		ctx := context.Background()
-		return swarm.DeployCompose(ctx, dockerCli, rendered, options.Deploy{
-			Namespace: stackName,
-		})
-	}
-	// kube mode
-	kubeCli, err := kubernetes.WrapCli(dockerCli, kubernetes.Options{
-		Namespace: opts.deployNamespace,
-		Config:    opts.deployKubeConfig,
+	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
+		Namespace: stackName,
 	})
-	if err != nil {
-		return err
-	}
-	return kubernetes.DeployStack(kubeCli, options.Deploy{Namespace: stackName}, rendered)
 }

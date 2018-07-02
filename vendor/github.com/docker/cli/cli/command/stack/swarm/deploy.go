@@ -1,15 +1,16 @@
 package swarm
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/compose/convert"
+	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 )
 
 // Resolve image constants
@@ -21,23 +22,14 @@ const (
 )
 
 // RunDeploy is the swarm implementation of docker stack deploy
-func RunDeploy(dockerCli command.Cli, opts options.Deploy) error {
+func RunDeploy(dockerCli command.Cli, opts options.Deploy, cfg *composetypes.Config) error {
 	ctx := context.Background()
 
 	if err := validateResolveImageFlag(dockerCli, &opts); err != nil {
 		return err
 	}
 
-	switch {
-	case opts.Bundlefile == "" && len(opts.Composefiles) == 0:
-		return errors.Errorf("Please specify either a bundle file (with --bundle-file) or a Compose file (with --compose-file).")
-	case opts.Bundlefile != "" && len(opts.Composefiles) != 0:
-		return errors.Errorf("You cannot specify both a bundle file and a Compose file.")
-	case opts.Bundlefile != "":
-		return deployBundle(ctx, dockerCli, opts)
-	default:
-		return deployCompose(ctx, dockerCli, opts)
-	}
+	return deployCompose(ctx, dockerCli, opts, cfg)
 }
 
 // validateResolveImageFlag validates the opts.resolveImage command line option
@@ -73,9 +65,9 @@ func checkDaemonIsSwarmManager(ctx context.Context, dockerCli command.Cli) error
 func pruneServices(ctx context.Context, dockerCli command.Cli, namespace convert.Namespace, services map[string]struct{}) {
 	client := dockerCli.Client()
 
-	oldServices, err := getServices(ctx, client, namespace.Name())
+	oldServices, err := getStackServices(ctx, client, namespace.Name())
 	if err != nil {
-		fmt.Fprintf(dockerCli.Err(), "Failed to list services: %s", err)
+		fmt.Fprintf(dockerCli.Err(), "Failed to list services: %s\n", err)
 	}
 
 	pruneServices := []swarm.Service{}

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strconv"
@@ -18,7 +19,6 @@ import (
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	"golang.org/x/net/context"
 )
 
 type int64Value interface {
@@ -480,6 +480,7 @@ type serviceOptions struct {
 	user            string
 	groups          opts.ListOpts
 	credentialSpec  credentialSpecOpt
+	init            bool
 	stopSignal      string
 	tty             bool
 	readOnly        bool
@@ -624,6 +625,7 @@ func (options *serviceOptions) ToService(ctx context.Context, apiClient client.N
 				TTY:        options.tty,
 				ReadOnly:   options.readOnly,
 				Mounts:     options.mounts.Value(),
+				Init:       &options.init,
 				DNSConfig: &swarm.DNSConfig{
 					Nameservers: options.dns.GetAll(),
 					Search:      options.dnsSearch.GetAll(),
@@ -645,7 +647,7 @@ func (options *serviceOptions) ToService(ctx context.Context, apiClient client.N
 		},
 		Mode:           serviceMode,
 		UpdateConfig:   options.update.updateConfig(flags),
-		RollbackConfig: options.update.rollbackConfig(flags),
+		RollbackConfig: options.rollback.rollbackConfig(flags),
 		EndpointSpec:   options.endpoint.ToEndpointSpec(),
 	}
 
@@ -875,6 +877,7 @@ const (
 	flagRollbackMonitor         = "rollback-monitor"
 	flagRollbackOrder           = "rollback-order"
 	flagRollbackParallelism     = "rollback-parallelism"
+	flagInit                    = "init"
 	flagStopGracePeriod         = "stop-grace-period"
 	flagStopSignal              = "stop-signal"
 	flagTTY                     = "tty"

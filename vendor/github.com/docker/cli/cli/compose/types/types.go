@@ -56,11 +56,10 @@ type ConfigFile struct {
 
 // ConfigDetails are the details about a group of ConfigFiles
 type ConfigDetails struct {
-	Version              string
-	WorkingDir           string
-	ConfigFiles          []ConfigFile
-	Environment          map[string]string
-	ErrOnMissingVariable bool
+	Version     string
+	WorkingDir  string
+	ConfigFiles []ConfigFile
+	Environment map[string]string
 }
 
 // LookupEnv provides a lookup function for environment variables
@@ -78,6 +77,7 @@ type Config struct {
 	Volumes  map[string]VolumeConfig    `yaml:",omitempty"`
 	Secrets  map[string]SecretConfig    `yaml:",omitempty"`
 	Configs  map[string]ConfigObjConfig `yaml:",omitempty"`
+	Extras   map[string]interface{}     `yaml:",inline"`
 }
 
 // Services is a list of ServiceConfig
@@ -119,7 +119,9 @@ type ServiceConfig struct {
 	Hostname        string                           `yaml:",omitempty"`
 	HealthCheck     *HealthCheckConfig               `yaml:",omitempty"`
 	Image           string                           `yaml:",omitempty"`
+	Init            *bool                            `yaml:",omitempty"`
 	Ipc             string                           `yaml:",omitempty"`
+	Isolation       string                           `mapstructure:"isolation" yaml:"isolation,omitempty"`
 	Labels          Labels                           `yaml:",omitempty"`
 	Links           []string                         `yaml:",omitempty"`
 	Logging         *LoggingConfig                   `yaml:",omitempty"`
@@ -142,7 +144,8 @@ type ServiceConfig struct {
 	User            string                           `yaml:",omitempty"`
 	Volumes         []ServiceVolumeConfig            `yaml:",omitempty"`
 	WorkingDir      string                           `mapstructure:"working_dir" yaml:"working_dir,omitempty"`
-	Isolation       string                           `mapstructure:"isolation" yaml:"isolation,omitempty"`
+
+	Extras map[string]interface{} `yaml:",inline"`
 }
 
 // BuildConfig is a type for build
@@ -191,14 +194,15 @@ type LoggingConfig struct {
 
 // DeployConfig the deployment configuration for a service
 type DeployConfig struct {
-	Mode          string         `yaml:",omitempty"`
-	Replicas      *uint64        `yaml:",omitempty"`
-	Labels        Labels         `yaml:",omitempty"`
-	UpdateConfig  *UpdateConfig  `mapstructure:"update_config" yaml:"update_config,omitempty"`
-	Resources     Resources      `yaml:",omitempty"`
-	RestartPolicy *RestartPolicy `mapstructure:"restart_policy" yaml:"restart_policy,omitempty"`
-	Placement     Placement      `yaml:",omitempty"`
-	EndpointMode  string         `mapstructure:"endpoint_mode" yaml:"endpoint_mode,omitempty"`
+	Mode           string         `yaml:",omitempty"`
+	Replicas       *uint64        `yaml:",omitempty"`
+	Labels         Labels         `yaml:",omitempty"`
+	UpdateConfig   *UpdateConfig  `mapstructure:"update_config" yaml:"update_config,omitempty"`
+	RollbackConfig *UpdateConfig  `mapstructure:"rollback_config" yaml:"rollback_config,omitempty"`
+	Resources      Resources      `yaml:",omitempty"`
+	RestartPolicy  *RestartPolicy `mapstructure:"restart_policy" yaml:"restart_policy,omitempty"`
+	Placement      Placement      `yaml:",omitempty"`
+	EndpointMode   string         `mapstructure:"endpoint_mode" yaml:"endpoint_mode,omitempty"`
 }
 
 // HealthCheckConfig the healthcheck configuration for a service
@@ -354,14 +358,15 @@ func (u *UlimitsConfig) MarshalYAML() (interface{}, error) {
 
 // NetworkConfig for a network
 type NetworkConfig struct {
-	Name       string            `yaml:",omitempty"`
-	Driver     string            `yaml:",omitempty"`
-	DriverOpts map[string]string `mapstructure:"driver_opts" yaml:"driver_opts,omitempty"`
-	Ipam       IPAMConfig        `yaml:",omitempty"`
-	External   External          `yaml:",omitempty"`
-	Internal   bool              `yaml:",omitempty"`
-	Attachable bool              `yaml:",omitempty"`
-	Labels     Labels            `yaml:",omitempty"`
+	Name       string                 `yaml:",omitempty"`
+	Driver     string                 `yaml:",omitempty"`
+	DriverOpts map[string]string      `mapstructure:"driver_opts" yaml:"driver_opts,omitempty"`
+	Ipam       IPAMConfig             `yaml:",omitempty"`
+	External   External               `yaml:",omitempty"`
+	Internal   bool                   `yaml:",omitempty"`
+	Attachable bool                   `yaml:",omitempty"`
+	Labels     Labels                 `yaml:",omitempty"`
+	Extras     map[string]interface{} `yaml:",inline"`
 }
 
 // IPAMConfig for a network
@@ -377,11 +382,12 @@ type IPAMPool struct {
 
 // VolumeConfig for a volume
 type VolumeConfig struct {
-	Name       string            `yaml:",omitempty"`
-	Driver     string            `yaml:",omitempty"`
-	DriverOpts map[string]string `mapstructure:"driver_opts" yaml:"driver_opts,omitempty"`
-	External   External          `yaml:",omitempty"`
-	Labels     Labels            `yaml:",omitempty"`
+	Name       string                 `yaml:",omitempty"`
+	Driver     string                 `yaml:",omitempty"`
+	DriverOpts map[string]string      `mapstructure:"driver_opts" yaml:"driver_opts,omitempty"`
+	External   External               `yaml:",omitempty"`
+	Labels     Labels                 `yaml:",omitempty"`
+	Extras     map[string]interface{} `yaml:",inline"`
 }
 
 // External identifies a Volume or Network as a reference to a resource that is
@@ -408,10 +414,11 @@ type CredentialSpecConfig struct {
 
 // FileObjectConfig is a config type for a file used by a service
 type FileObjectConfig struct {
-	Name     string   `yaml:",omitempty"`
-	File     string   `yaml:",omitempty"`
-	External External `yaml:",omitempty"`
-	Labels   Labels   `yaml:",omitempty"`
+	Name     string                 `yaml:",omitempty"`
+	File     string                 `yaml:",omitempty"`
+	External External               `yaml:",omitempty"`
+	Labels   Labels                 `yaml:",omitempty"`
+	Extras   map[string]interface{} `yaml:",inline"`
 }
 
 // SecretConfig for a secret

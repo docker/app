@@ -1,10 +1,10 @@
 package swarm
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/stack/loader"
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/compose/convert"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -14,19 +14,9 @@ import (
 	apiclient "github.com/docker/docker/client"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 )
 
-func deployCompose(ctx context.Context, dockerCli command.Cli, opts options.Deploy) error {
-	config, err := loader.LoadComposefile(dockerCli, opts)
-	if err != nil {
-		return err
-	}
-	return DeployCompose(ctx, dockerCli, config, opts)
-}
-
-// DeployCompose deploys the given parsed compose file
-func DeployCompose(ctx context.Context, dockerCli command.Cli, config *composetypes.Config, opts options.Deploy) error {
+func deployCompose(ctx context.Context, dockerCli command.Cli, opts options.Deploy, config *composetypes.Config) error {
 	if err := checkDaemonIsSwarmManager(ctx, dockerCli); err != nil {
 		return err
 	}
@@ -213,7 +203,7 @@ func deployServices(
 	apiClient := dockerCli.Client()
 	out := dockerCli.Out()
 
-	existingServices, err := getServices(ctx, apiClient, namespace.Name())
+	existingServices, err := getStackServices(ctx, apiClient, namespace.Name())
 	if err != nil {
 		return err
 	}
@@ -252,6 +242,12 @@ func deployServices(
 				// service update.
 				serviceSpec.TaskTemplate.ContainerSpec.Image = service.Spec.TaskTemplate.ContainerSpec.Image
 			}
+
+			// Stack deploy does not have a `--force` option. Preserve existing ForceUpdate
+			// value so that tasks are not re-deployed if not updated.
+			// TODO move this to API client?
+			serviceSpec.TaskTemplate.ForceUpdate = service.Spec.TaskTemplate.ForceUpdate
+
 			response, err := apiClient.ServiceUpdate(
 				ctx,
 				service.ID,

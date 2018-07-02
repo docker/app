@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -13,9 +14,22 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/yatee"
 	"github.com/docker/cli/cli/compose/loader"
+	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
+)
+
+var (
+	delimiter    = "\\$"
+	substitution = "[_a-z][._a-z0-9]*(?::?[-?][^}]*)?"
+
+	patternString = fmt.Sprintf(
+		"%s(?i:(?P<escaped>%s)|(?P<named>%s)|{(?P<braced>%s)}|(?P<invalid>))",
+		delimiter, delimiter, substitution, substitution,
+	)
+
+	pattern = regexp.MustCompile(patternString)
 )
 
 //flattenYAML reads a YAML file and return a flattened view
@@ -218,11 +232,59 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		}
 		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
 	}
+	return render(configFiles, finalEnv)
+}
+
+func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (*composetypes.Config, error) {
 	rendered, err := loader.Load(composetypes.ConfigDetails{
-		WorkingDir:           ".",
-		ConfigFiles:          configFiles,
-		Environment:          finalEnv,
-		ErrOnMissingVariable: true,
+		WorkingDir:  ".",
+		ConfigFiles: configFiles,
+		Environment: finalEnv,
+	}, func(opts *loader.Options) {
+		opts.Interpolate.Substitute = substitute
 	})
-	return rendered, errors.Wrap(err, "failed to load Compose file")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load Compose file")
+	}
+	processEnabled(rendered)
+	return rendered, nil
+}
+
+func substitute(template string, mapping composetemplate.Mapping) (string, error) {
+	return composetemplate.SubstituteWith(template, mapping, pattern, errorIfMissing)
+}
+
+func errorIfMissing(substitution string, mapping composetemplate.Mapping) (string, bool, error) {
+	value, found := mapping(substitution)
+	if !found {
+		return "", true, &composetemplate.InvalidTemplateError{
+			Template: "required variable" + substitution + "is missing a value",
+		}
+	}
+	return value, true, nil
+}
+
+func processEnabled(config *composetypes.Config) {
+	services := []composetypes.ServiceConfig{}
+	for _, service := range config.Services {
+		if service.Extras != nil {
+			if xEnabled, ok := service.Extras["x-enabled"]; ok && !isEnabled(xEnabled.(string)) {
+				continue
+			}
+		}
+		services = append(services, service)
+	}
+	config.Services = services
+}
+
+func isEnabled(e string) bool {
+	e = strings.ToLower(e)
+	switch {
+	case e == "", e == "0", e == "false":
+		return false
+	case strings.HasPrefix(e, "!"):
+		return !isEnabled(e[1:])
+	default:
+		return true
+	}
 }
