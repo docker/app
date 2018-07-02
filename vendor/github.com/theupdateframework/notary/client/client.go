@@ -39,6 +39,7 @@ func init() {
 
 // repository stores all the information needed to operate on a notary repository.
 type repository struct {
+	baseDir        string
 	gun            data.GUN
 	baseURL        string
 	changelist     changelist.Changelist
@@ -55,8 +56,7 @@ type repository struct {
 // NewFileCachedRepository is a wrapper for NewRepository that initializes
 // a file cache from the provided repository, local config information and a crypto service.
 // It also retrieves the remote store associated to the base directory under where all the
-// trust files will be stored (This is normally defaults to "~/.notary" or "~/.docker/trust"
-// when enabling Docker content trust) and the specified GUN.
+// trust files will be stored and the specified GUN.
 //
 // In case of a nil RoundTripper, a default offline store is used instead.
 func NewFileCachedRepository(baseDir string, gun data.GUN, baseURL string, rt http.RoundTripper,
@@ -90,13 +90,16 @@ func NewFileCachedRepository(baseDir string, gun data.GUN, baseURL string, rt ht
 		return nil, err
 	}
 
-	return NewRepository(gun, baseURL, remoteStore, cache, trustPinning, cryptoService, cl)
+	return NewRepository(baseDir, gun, baseURL, remoteStore, cache, trustPinning, cryptoService, cl)
 }
 
 // NewRepository is the base method that returns a new notary repository.
+// It takes the base directory under where all the trust files will be stored
+// (This is normally defaults to "~/.notary" or "~/.docker/trust" when enabling
+// docker content trust).
 // It expects an initialized cache. In case of a nil remote store, a default
 // offline store is used.
-func NewRepository(gun data.GUN, baseURL string, remoteStore store.RemoteStore, cache store.MetadataStore,
+func NewRepository(baseDir string, gun data.GUN, baseURL string, remoteStore store.RemoteStore, cache store.MetadataStore,
 	trustPinning trustpinning.TrustPinConfig, cryptoService signed.CryptoService, cl changelist.Changelist) (Repository, error) {
 
 	// Repo's remote store is either a valid remote store or an OfflineStore
@@ -111,6 +114,7 @@ func NewRepository(gun data.GUN, baseURL string, remoteStore store.RemoteStore, 
 	nRepo := &repository{
 		gun:            gun,
 		baseURL:        baseURL,
+		baseDir:        baseDir,
 		changelist:     cl,
 		cache:          cache,
 		remoteStore:    remoteStore,

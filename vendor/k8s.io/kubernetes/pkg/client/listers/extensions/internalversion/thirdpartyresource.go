@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package internalversion
 
 import (
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 	extensions "k8s.io/kubernetes/pkg/apis/extensions"
@@ -55,8 +54,7 @@ func (s *thirdPartyResourceLister) List(selector labels.Selector) (ret []*extens
 
 // Get retrieves the ThirdPartyResource from the index for a given name.
 func (s *thirdPartyResourceLister) Get(name string) (*extensions.ThirdPartyResource, error) {
-	key := &extensions.ThirdPartyResource{ObjectMeta: v1.ObjectMeta{Name: name}}
-	obj, exists, err := s.indexer.Get(key)
+	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}

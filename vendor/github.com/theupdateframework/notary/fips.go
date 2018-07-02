@@ -3,7 +3,7 @@ package notary
 import (
 	"crypto"
 	// Need to import md5 so can test availability.
-	_ "crypto/md5" // #nosec
+	_ "crypto/md5"
 )
 
 // FIPSEnabled returns true if running in FIPS mode.

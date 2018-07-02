@@ -137,7 +137,7 @@ func (f *FilesystemStore) GetSized(name string, size int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	file, err := os.Open(p)
+	file, err := os.OpenFile(p, os.O_RDONLY, notary.PrivNoExecPerms)
 	if err != nil {
 		if os.IsNotExist(err) {
 			err = ErrMetaNotFound{Resource: name}
