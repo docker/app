@@ -76,7 +76,7 @@ func (c *commandConfig) run(args ...string) *icmd.Result {
 }
 
 func TestLsCmd(t *testing.T) {
-	app, _ := getBinary(t)
+	app, _ := getDockerAppBinary(t)
 	dind := startDind(t)
 	defer dind.stop(t)
 	dockerApp := &commandConfig{
