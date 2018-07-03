@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -156,7 +157,10 @@ targets:
 	assert.Assert(t, fs.Equal(dirName, manifest))
 
 	// validate metadata with JSON Schema
-	schemaLoader := gojsonschema.NewReferenceLoader("file://../specification/schemas/metadata_schema_v0.2.json")
+	absPath, err := filepath.Abs(path.Join("..", "specification", "schemas", "metadata_schema_v0.2.json"))
+	assert.NilError(t, err)
+	absPath = filepath.ToSlash(absPath)
+	schemaLoader := gojsonschema.NewReferenceLoader("file://" + absPath)
 	assert.Check(t, schemaLoader != nil)
 	data, err := loader.ParseYAML([]byte(meta))
 	assert.NilError(t, err)

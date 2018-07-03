@@ -1,38 +1,42 @@
-# Docker App Specification
+# Docker App Package Specification
 
-This section describes all the requirements for docker-app interoperability.
+This section describes all the requirements for interoperability.
 
 ## YAML Documents
 
-A Docker App is a set of 3 YAML documents:
+A Docker App Package is a set of 3 YAML documents:
 * `metadata`
 * `docker-compose`
 * `settings`
 
 These documents can be split in 3 different files or merged into one YAML file, using the [multi document YAML feature](http://yaml.org/spec/1.2/spec.html#id2760395).
+The order of the documents in a multi-documents YAML is **strict**:
+1. metadata
+1. docker-compose
+1. settings
 
 ### metadata.yml
 
-`metadata.yml` defines some informations to describe the application in a standard `YAML` file.
+`metadata.yml` defines some informations to describe the application in a standard `YAML` file.  
 See [JSON Schemas](schemas/) for validation.
 
 ### docker-compose.yml
 
-`docker-compose.yml` is a standard [Compose file](https://docs.docker.com/compose/compose-file/) with variable replacement.
-`Compose` minimal version is **v3.2**, see [JSON Schemas](https://github.com/docker/cli/tree/master/cli/compose/schema/data) for validation.
+`docker-compose.yml` is a standard [Compose file](https://docs.docker.com/compose/compose-file/) with variable replacement.  
+`Compose` minimum version is **v3.2**, see [JSON Schemas](https://github.com/docker/cli/tree/master/cli/compose/schema/data) for validation.
 
 ### settings.yml
 
-`settings.yml` is a simple Key-Value file used to replace the variables defined in the `docker-compose` file. As it is an opened document, there is no schema for this one.
+`settings.yml` is a simple Key-Value file used to replace the variables defined in the `docker-compose` file. As it is an open document, there is no schema for this one.
 
 ## Validation
 
-The tool `yamlschema` included in `cmd/yamlschema` helps you validating a `YAML document` against its `JSON Schema`. 
+The tool `yamlschema` included in `cmd/yamlschema` helps you validate a `YAML document` against its `JSON Schema`. 
 
 Here is an example:
 
 ```sh
-# Init an empty docker application
+# Init an empty docker application package
 $ docker-app init my-app
 # Build the YAML schema validator
 $ make bin/yamlschema
@@ -59,7 +63,3 @@ $ ./bin/yamlschema my-app.dockerapp/docker-compose.yml https://raw.githubusercon
 $ echo $?
 0
 ```
-
-## Helm
-
-`docker-app` can produce a [Helm Chart v2](https://docs.helm.sh/developing_charts/#charts) from a `Docker Application`. The chart needs a Kubernetes Compose component to work, which is included by default in `Docker for Desktop` and `Docker Entreprise Edition`. It uses by default the **v1beta2** `Stack resource` definition, but can also handle the **v1beta** version. 

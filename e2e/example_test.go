@@ -9,20 +9,17 @@ import (
 	"strings"
 	"testing"
 
-	"gotest.tools/assert"
-
 	"github.com/docker/app/internal"
-
-	"gotest.tools/icmd"
-
 	_ "github.com/docker/cli/cli/compose/schema/data"
+	"gotest.tools/assert"
+	"gotest.tools/icmd"
 )
 
 const (
-	metadataJsonSchemaVersion = "v0.2"
-	metadataJsonSchema        = "specification/schemas/metadata_schema_" + metadataJsonSchemaVersion + ".json"
-	composeJsonSchemaVersion  = "v3.6"
-	composeJsonSchema         = "vendor/github.com/docker/cli/cli/compose/schema/data/config_schema_" + composeJsonSchemaVersion + ".json"
+	metadataJSONSchemaVersion = "v0.2"
+	metadataJSONSchema        = "specification/schemas/metadata_schema_" + metadataJSONSchemaVersion + ".json"
+	composeJSONSchemaVersion  = "v3.6"
+	composeJSONSchema         = "vendor/github.com/docker/cli/cli/compose/schema/data/config_schema_" + composeJSONSchemaVersion + ".json"
 )
 
 func TestExamplesAreValid(t *testing.T) {
@@ -30,13 +27,11 @@ func TestExamplesAreValid(t *testing.T) {
 		if !strings.HasSuffix(path.Base(p), internal.AppExtension) {
 			return nil
 		}
+		validateRenderedComposeFile(t, p)
 		if info.IsDir() {
-			validateMetadata(t, path.Join(p, internal.MetadataFileName))
-			validateRenderedComposeFile(t, p)
-		} else {
-			validateMetadata(t, p)
-			validateRenderedComposeFile(t, p)
+			p = path.Join(p, internal.MetadataFileName)
 		}
+		validateMetadata(t, p)
 		return filepath.SkipDir
 	})
 }
@@ -44,7 +39,7 @@ func TestExamplesAreValid(t *testing.T) {
 func validateMetadata(t *testing.T, p string) {
 	data, err := ioutil.ReadFile(p)
 	assert.NilError(t, err)
-	validateYaml(t, data, "../"+metadataJsonSchema, p)
+	validateYaml(t, data, metadataJSONSchema, p)
 }
 
 func validateRenderedComposeFile(t *testing.T, p string) {
@@ -57,10 +52,11 @@ func validateRenderedComposeFile(t *testing.T, p string) {
 	}
 	result := icmd.RunCmd(cmd)
 	result.Assert(t, icmd.Success)
-	validateYaml(t, buf.Bytes(), "../"+composeJsonSchema, p)
+	validateYaml(t, buf.Bytes(), composeJSONSchema, p)
 }
 
 func validateYaml(t *testing.T, yaml []byte, schema string, file string) {
+	schema = filepath.Join("..", schema)
 	yamlschema := getYamlschemaBinary(t)
 	cmd := icmd.Cmd{
 		Command: []string{yamlschema, "-", schema},

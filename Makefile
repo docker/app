@@ -15,7 +15,7 @@ e2e-cross: bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-
 
 .PHONY: bin/$(BIN_NAME)-e2e-windows
 bin/$(BIN_NAME)-e2e-%.exe bin/$(BIN_NAME)-e2e-%: e2e bin/$(BIN_NAME)-%
-	GOOS=$* $(GO_TEST) -c -o $@ ./$<
+	GOOS=$* $(GO_TEST) -c -o $@ ./e2e/
 
 .PHONY: bin/$(BIN_NAME)-windows
 bin/$(BIN_NAME)-%.exe bin/$(BIN_NAME)-%: cmd/$(BIN_NAME) check_go_env
@@ -32,7 +32,7 @@ lint: ## run linter(s)
 	@echo "Linting..."
 	@gometalinter --config=gometalinter.json ./...
 
-test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
+test-e2e: bin/$(BIN_NAME) bin/yamlschema ## run end-to-end tests
 	@echo "Running e2e tests..."
 	$(GO_TEST) -v ./e2e/
 

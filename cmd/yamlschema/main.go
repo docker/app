@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/cli/cli/compose/loader"
@@ -21,7 +22,7 @@ func main() {
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			yaml, schema := args[0], args[1]
-			parsedYaml, err := loadYaml(yaml, index)
+			parsedYaml, err := loadYaml(yaml, int(index))
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
@@ -36,7 +37,7 @@ func main() {
 	}
 }
 
-func loadYaml(file string, index uint) (map[string]interface{}, error) {
+func loadYaml(file string, index int) (map[string]interface{}, error) {
 	var (
 		data []byte
 		err  error
@@ -53,15 +54,21 @@ func loadYaml(file string, index uint) (map[string]interface{}, error) {
 		}
 	}
 	yamls := bytes.Split(data, []byte("\n---"))
-	if index >= uint(len(yamls)) {
+	if index >= len(yamls) {
 		return nil, fmt.Errorf("yaml index '%d' out of bounds '%d'", index, len(yamls))
 	}
-	return loader.ParseYAML(yamls[int(index)])
+	return loader.ParseYAML(yamls[index])
 }
 
 func validateYaml(schema string, yaml map[string]interface{}) {
-	if !strings.HasPrefix(schema, "http") {
-		schema = fmt.Sprintf("file://%s", schema)
+	if !strings.HasPrefix(schema, "http://") && !strings.HasPrefix(schema, "https://") {
+		abs, err := filepath.Abs(schema)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		schema = filepath.ToSlash(abs)
+		schema = "file://" + schema
 	}
 	schemaLoader := gojsonschema.NewReferenceLoader(schema)
 	dataLoader := gojsonschema.NewGoLoader(yaml)

@@ -34,11 +34,21 @@ pipeline {
                                 try {
                                     checkout scm
                                     sh 'make -f docker.Makefile cross e2e-cross tars'
+                                    sh 'BIN_NAME=yamlschema make -f docker.Makefile cross'
                                     dir('bin') {
                                         stash name: 'binaries'
                                     }
                                     dir('e2e') {
                                         stash name: 'e2e'
+                                    }
+                                    dir('vendor') {
+                                        stash name: 'vendor'
+                                    }
+                                    dir('specification') {
+                                        stash name: 'specification'
+                                    }
+                                    dir('examples') {
+                                        stash name: 'examples'
                                     }
                                     if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
                                         stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
@@ -110,9 +120,20 @@ pipeline {
                     }
                     steps  {
                         dir('src/github.com/docker/app') {
-                            unstash 'binaries'
-                            unstash 'e2e'
-                            sh './docker-app-e2e-linux'
+                            unstash "binaries"
+                            dir('vendor') {
+                                unstash "vendor"
+                            }
+                            dir('specification') {
+                                unstash "specification"
+                            }
+                            dir('examples') {
+                                unstash "examples"
+                            }
+                            dir('e2e'){
+                                unstash "e2e"
+                            }
+                            sh './docker-app-e2e-linux --e2e-path=e2e'
                         }
                     }
                     post {
