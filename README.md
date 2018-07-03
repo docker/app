@@ -54,7 +54,7 @@ targets:
   swarm: true
   kubernetes: true
 
---
+---
 version: '3.2'
 services:
   hello:
@@ -63,7 +63,7 @@ services:
     ports:
       - 5678:5678
 
---
+---
 {}
 ```
 
