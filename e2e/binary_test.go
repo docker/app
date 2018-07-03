@@ -275,23 +275,39 @@ func TestPackBinary(t *testing.T) {
 	os.Chdir(cwd)
 }
 
-func TestHelmBinary(t *testing.T) {
+func runHelmCommand(t *testing.T, args ...string) *fs.Dir {
+	t.Helper()
 	dockerApp, _ := getBinary(t)
-	assertCommand(t, dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2")
-	chart, _ := ioutil.ReadFile("helm.chart/Chart.yaml")
-	values, _ := ioutil.ReadFile("helm.chart/values.yaml")
-	stack, _ := ioutil.ReadFile("helm.chart/templates/stack.yaml")
+	abs, err := filepath.Abs(".")
+	assert.NilError(t, err)
+	dir := fs.NewDir(t, t.Name(), fs.FromDir(abs))
+	result := icmd.RunCmd(icmd.Cmd{
+		Command: append([]string{dockerApp}, args...),
+		Dir:     dir.Path(),
+	})
+	result.Assert(t, icmd.Success)
+	return dir
+}
+
+func TestHelmBinary(t *testing.T) {
+	dir := runHelmCommand(t, "helm", "helm", "-s", "myapp.nginx_version=2")
+	defer dir.Remove()
+
+	chart, _ := ioutil.ReadFile(dir.Join("helm.chart/Chart.yaml"))
+	values, _ := ioutil.ReadFile(dir.Join("helm.chart/values.yaml"))
+	stack, _ := ioutil.ReadFile(dir.Join("helm.chart/templates/stack.yaml"))
 	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml")
 	golden.Assert(t, string(values), "helm-expected.chart/values.yaml")
 	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack.yaml")
 }
 
 func TestHelmV1Beta1Binary(t *testing.T) {
-	dockerApp, _ := getBinary(t)
-	assertCommand(t, dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2", "--stack-version", "v1beta1")
-	chart, _ := ioutil.ReadFile("helm.chart/Chart.yaml")
-	values, _ := ioutil.ReadFile("helm.chart/values.yaml")
-	stack, _ := ioutil.ReadFile("helm.chart/templates/stack.yaml")
+	dir := runHelmCommand(t, "helm", "helm", "-s", "myapp.nginx_version=2", "--stack-version", "v1beta1")
+	defer dir.Remove()
+
+	chart, _ := ioutil.ReadFile(dir.Join("helm.chart/Chart.yaml"))
+	values, _ := ioutil.ReadFile(dir.Join("helm.chart/values.yaml"))
+	stack, _ := ioutil.ReadFile(dir.Join("helm.chart/templates/stack.yaml"))
 	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml")
 	golden.Assert(t, string(values), "helm-expected.chart/values.yaml")
 	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack-v1beta1.yaml")

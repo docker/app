@@ -8,7 +8,6 @@ myapp:
   debug: false
   nginx_replicas: 2
   nginx_version: 2
-preserved: 12
 privileged: false
 read_only: true
 sport: 11000
