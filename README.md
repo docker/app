@@ -213,7 +213,6 @@ We have lots of ideas for making Compose-based applications easier to share and 
 * Docker images which launch the application when run
 * Built-in commands for running applications
 * Saving required images into the application artifact to support offline installation
-* Automatically validating Compose files against the schema for the specified version
 * Signing applications with notary
 
 
