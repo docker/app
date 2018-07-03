@@ -32,12 +32,12 @@ targets:
   swarm: true
   kubernetes: true
 
---
+---
 # This section contains the Compose file that describes your application services.
 version: "3.6"
 services: {}
 
---
+---
 # This section contains the default values for your application settings.
 ```
 
