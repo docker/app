@@ -170,6 +170,14 @@ This will create a folder, `<my-application-name>.chart`, in the current directo
 
 _Note that this requires the Compose Kubernetes controller available in Docker for Windows and Docker for Mac, and in Docker Enterprise Edition._
 
+### Helm chart for Docker EE 2.0
+
+In order to create a helm chart that is compatible with version 2.0 of Docker Enterprise Edition, you will need to use the `--stack-version` flag to create a compatible version of the helm chart using `v1beta1` like so:
+
+```bash
+$ docker-app helm --stack-version=v1beta1
+```
+
 ## Single file or directory representation
 
 If you prefer having the three documents in separate YAML files, omit the `-s` option to
