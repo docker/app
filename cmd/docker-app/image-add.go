@@ -6,6 +6,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/renderer"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +36,11 @@ subdirectory.`,
 			if err != nil {
 				return err
 			}
-			if err := image.Add(appname, args[1:], imageAddComposeFiles, imageAddSettingsFile, d); err != nil {
+			config, err := renderer.Render(appname, imageAddComposeFiles, imageAddSettingsFile, d)
+			if err != nil {
+				return err
+			}
+			if err := image.Add(appname, args[1:], config); err != nil {
 				return err
 			}
 			// check if source was a tarball

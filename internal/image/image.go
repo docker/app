@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/renderer"
+	composetypes "github.com/docker/cli/cli/compose/types"
+	"github.com/pkg/errors"
 )
 
 func contains(list []string, needle string) bool {
@@ -20,12 +21,10 @@ func contains(list []string, needle string) bool {
 }
 
 // Add add service images to the app package
-func Add(appname string, services []string, composeFiles []string, settingsFile []string, env map[string]string) error {
-	config, err := renderer.Render(appname, composeFiles, settingsFile, env)
-	if err != nil {
-		return err
+func Add(appname string, services []string, config *composetypes.Config) error {
+	if err := os.Mkdir(filepath.Join(appname, "images"), 0755); err != nil {
+		return errors.Wrap(err, "cannot create 'images' folder")
 	}
-	os.Mkdir(filepath.Join(appname, "images"), 0755)
 	for _, s := range config.Services {
 		if len(services) != 0 && !contains(services, s.Name) {
 			continue
