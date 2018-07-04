@@ -24,7 +24,7 @@ func Inspect(out io.Writer, appname string) error {
 	var meta types.AppMetadata
 	err = yaml.Unmarshal(metaContent, &meta)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse application metadata")
 	}
 	// extract settings
 	settingsFile := filepath.Join(appname, internal.SettingsFileName)
