@@ -17,9 +17,10 @@ func tarAdd(tarout *tar.Writer, path, file string) error {
 		return err
 	}
 	h := &tar.Header{
-		Name: path,
-		Size: int64(len(payload)),
-		Mode: 0644,
+		Name:     path,
+		Size:     int64(len(payload)),
+		Mode:     0644,
+		Typeflag: tar.TypeReg,
 	}
 	err = tarout.WriteHeader(h)
 	if err != nil {
