@@ -238,11 +238,6 @@ func TestDetectAppBinary(t *testing.T) {
 	assertCommandFailureOutput(t, "inspect-multiple-apps.golden", dockerApp, "inspect")
 }
 
-func TestInspectBinary(t *testing.T) {
-	dockerApp, _ := getBinary(t)
-	assertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "render/envvariables")
-}
-
 func TestPackBinary(t *testing.T) {
 	dockerApp, hasExperimental := getBinary(t)
 	if !hasExperimental {
