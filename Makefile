@@ -30,7 +30,7 @@ test: test-unit test-e2e ## run all tests
 
 lint: ## run linter(s)
 	@echo "Linting..."
-	@gometalinter --config=gometalinter.json
+	@gometalinter --config=gometalinter.json ./...
 
 test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."

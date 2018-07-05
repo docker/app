@@ -19,12 +19,14 @@ type container struct {
 	container   string
 }
 
+//nolint: deadcode
 func startRegistry(t *testing.T) *container {
 	c := &container{image: "registry:2", privatePort: 5000}
 	c.start(t)
 	return c
 }
 
+//nolint: deadcode
 func startDind(t *testing.T) *container {
 	c := &container{image: "docker:dind", privatePort: 2375}
 	c.start(t)

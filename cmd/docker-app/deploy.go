@@ -23,7 +23,7 @@ type deployOptions struct {
 }
 
 // deployCmd represents the deploy command
-func deployCmd(dockerCli *command.DockerCli) *cobra.Command {
+func deployCmd(dockerCli command.Cli) *cobra.Command {
 	var opts deployOptions
 
 	cmd := &cobra.Command{
@@ -48,7 +48,7 @@ func deployCmd(dockerCli *command.DockerCli) *cobra.Command {
 	return cmd
 }
 
-func runDeploy(dockerCli *command.DockerCli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
+func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
 	appname, cleanup, err := packager.Extract(appname)
 	if err != nil {
 		return err

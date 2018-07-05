@@ -10,7 +10,7 @@ import (
 const (
 	// AppExtension is the extension used by an application.
 	AppExtension = ".dockerapp"
-	// The label used to distinguish applications from Docker images.
+	// ImageLabel is the label used to distinguish applications from Docker images.
 	ImageLabel = "com.docker.application"
 	// MetadataFileName is metadata file name
 	MetadataFileName = "metadata.yml"
@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	// Application file names, in order.
+	// FileNames lists the application file names, in order.
 	FileNames = []string{MetadataFileName, ComposeFileName, SettingsFileName}
 )
 

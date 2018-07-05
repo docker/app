@@ -2,6 +2,9 @@
   "Vendor": true,
   "Deadline": "10m",
   "Sort": ["linter", "severity", "path", "line"],
+  "Exclude": [
+    "templateloader"
+  ],
   "EnableGC": true,
   "Linters": {
       "nakedret": {
