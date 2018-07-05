@@ -17,10 +17,9 @@ func tarAdd(tarout *tar.Writer, path, file string) error {
 		return err
 	}
 	h := &tar.Header{
-		Name:     path,
-		Size:     int64(len(payload)),
-		Mode:     0644,
-		Typeflag: tar.TypeReg,
+		Name: path,
+		Size: int64(len(payload)),
+		Mode: 0644,
 	}
 	err = tarout.WriteHeader(h)
 	if err != nil {
@@ -28,16 +27,6 @@ func tarAdd(tarout *tar.Writer, path, file string) error {
 	}
 	_, err = tarout.Write(payload)
 	return err
-}
-
-func tarAddDir(tarout *tar.Writer, path string) error {
-	h := &tar.Header{
-		Name:     path,
-		Size:     0,
-		Typeflag: tar.TypeDir,
-		Mode:     0755,
-	}
-	return tarout.WriteHeader(h)
 }
 
 // Pack packs the app as a single file
@@ -50,13 +39,17 @@ func Pack(appname string, target io.Writer) error {
 		}
 	}
 	// check for images
-	_, err := os.Stat(filepath.Join(appname, "images"))
+	dir := "images"
+	_, err := os.Stat(filepath.Join(appname, dir))
 	if err == nil {
-		err = tarAddDir(tarout, "images")
-		if err != nil {
+		if err := tarout.WriteHeader(&tar.Header{
+			Typeflag: tar.TypeDir,
+			Name:     dir,
+			Mode:     0755,
+		}); err != nil {
 			return err
 		}
-		imageDir, err := os.Open(filepath.Join(appname, "images"))
+		imageDir, err := os.Open(filepath.Join(appname, dir))
 		if err != nil {
 			return err
 		}
@@ -65,7 +58,7 @@ func Pack(appname string, target io.Writer) error {
 			return err
 		}
 		for _, i := range images {
-			err = tarAdd(tarout, filepath.Join("images", i), filepath.Join(appname, "images", i))
+			err = tarAdd(tarout, filepath.Join(dir, i), filepath.Join(appname, dir, i))
 			if err != nil {
 				return err
 			}

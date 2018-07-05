@@ -12,7 +12,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 // FIXME(vdemeester) use command.Cli interface
-func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
+func newRootCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "docker-app",
 		Short:        "Docker App Packages",
@@ -31,7 +31,7 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 }
 
 // addCommands adds all the commands from cli/command to the root command
-func addCommands(cmd *cobra.Command, dockerCli *command.DockerCli) {
+func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 	cmd.AddCommand(
 		deployCmd(dockerCli),
 		helmCmd(),
