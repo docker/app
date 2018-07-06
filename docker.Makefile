@@ -65,12 +65,19 @@ test-e2e: build_dev_image ## run end-to-end tests
 	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
-coverage: build_dev_image ## run tests with coverage
+coverage: coverage-run ## run tests with coverage
+	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
+	COVERAGE_EXIT=$(shell docker wait $(COV_CTNR_NAME))
+	ifneq ("$(COVERAGE_EXIT)" "0")
+		docker rm $(COV_CTNR_NAME)
+		$(error coverage failed)
+	endif
+	docker rm $(COV_CTNR_NAME)
+
+coverage-run: build_dev_image
 	@$(call mkdir,_build)
 	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -tid $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} coverage
 	docker logs -f $(COV_CTNR_NAME)
-	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
-	docker rm $(COV_CTNR_NAME)
 
 gradle-test:
 	tar cf - Dockerfile.gradle bin/docker-app-linux integrations/gradle | docker build -t $(GRADLE_IMAGE_NAME) -f Dockerfile.gradle -
