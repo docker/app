@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -20,12 +19,16 @@ func (ms Maintainers) String() string {
 	for i, m := range ms {
 		res[i] = m.String()
 	}
-	return strings.Join(res, ",")
+	return strings.Join(res, ", ")
 }
 
 // String gives a string representation of a maintainer
 func (m Maintainer) String() string {
-	return fmt.Sprintf("%s <%s>", m.Name, m.Email)
+	s := m.Name
+	if m.Email != "" {
+		s += " <" + m.Email + ">"
+	}
+	return s
 }
 
 // AppMetadata is the format of the data found inside the metadata.yml file

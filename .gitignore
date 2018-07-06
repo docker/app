@@ -4,3 +4,5 @@ _build/
 bin/
 !examples/simple/*.dockerapp
 .gradle
+coverage.html
+cover.out
