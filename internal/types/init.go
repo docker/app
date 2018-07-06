@@ -1,22 +1,22 @@
 package types
 
-// InitialComposeFile TODO
+const defaultComposefileVersion = "3.6"
+
+// InitialComposeFile represents an initial composefile (used by the init command)
 type InitialComposeFile struct {
 	Version  string
-	Services *map[string]InitialService
+	Services map[string]InitialService
 }
 
-// InitialService TODO
+// InitialService represents an initial service (used by the init command)
 type InitialService struct {
 	Image string
 }
 
 // NewInitialComposeFile returns an empty InitialComposeFile object
 func NewInitialComposeFile() InitialComposeFile {
-	services := make(map[string]InitialService)
-
 	return InitialComposeFile{
-		Version:  "3.6",
-		Services: &services,
+		Version:  defaultComposefileVersion,
+		Services: map[string]InitialService{},
 	}
 }
