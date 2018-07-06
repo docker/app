@@ -184,6 +184,8 @@ If you prefer having the three documents in separate YAML files, omit the `-s` o
 the `docker-app init` command. This will create a directory instead of a singe file, containing
 `metadata.yml`, `docker-compose.yml` and `settings.yml`.
 
+Converting between the two formats can be achieved by using the `docker-app split` and `docker-app merge` commands.
+
 ## Sharing your application on the Hub
 
 You can push any application to the Hub using `docker-app push`:
@@ -232,9 +234,11 @@ Available Commands:
   init        Start building a Docker application
   inspect     Shows metadata and settings for a given application
   ls          List applications.
+  merge       Merge a multi-file application into a single file
   push        Push the application to a registry
   render      Render the Compose file for the application
   save        Save the application as an image to the docker daemon(in preparation for push)
+  split       Split a single-file application into multiple files
   version     Print version information
 
 Flags:
