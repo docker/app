@@ -42,7 +42,7 @@ func extraFiles(appname string) ([]string, error) {
 func mergeCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "merge [<app-name>] [-o output_file]",
-		Short: "Merge the application as a single file multi-document YAML",
+		Short: "Merge a multi-file application into a single file",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			extractedApp, err := packager.ExtractWithOrigin(firstOrEmpty(args))
