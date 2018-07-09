@@ -47,27 +47,60 @@ func Save(appname, namespace, tag string) (string, error) {
 	if namespace != "" && !strings.HasSuffix(namespace, "/") {
 		namespace += "/"
 	}
-	dockerfile := fmt.Sprintf(`
+	dockerfile := []byte(fmt.Sprintf(`
 FROM scratch
 LABEL %s=%s
 LABEL maintainers="%v"
+LABEL %s=%s
 COPY / /
-`, internal.ImageLabel, meta.Name, meta.Maintainers)
-	df := filepath.Join(appname, "__Dockerfile-docker-app__")
-	if err := ioutil.WriteFile(df, []byte(dockerfile), 0644); err != nil {
-		return "", errors.Wrapf(err, "cannot create file %s", df)
-	}
-	defer os.Remove(df)
-	di := filepath.Join(appname, ".dockerignore")
-	if err := ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644); err != nil {
-		return "", errors.Wrapf(err, "cannot create file %s", di)
-	}
-	defer os.Remove(di)
+`, internal.ImageLabel, meta.Name, meta.Maintainers, internal.ToolchainVersionLabel, internal.Version))
+
+	reader, writer := io.Pipe()
+	defer reader.Close()
+
+	go func() {
+		defer writer.Close()
+		tw := tar.NewWriter(writer)
+		defer tw.Close()
+		defer tw.Flush()
+		if err := PackInto(appname, tw); err != nil {
+			writer.CloseWithError(err)
+			return
+		}
+		// add dockerfile
+		if err := tw.WriteHeader(&tar.Header{
+			Name: "__Dockerfile-docker-app__",
+			Mode: 0644,
+			Size: int64(len(dockerfile)),
+		}); err != nil {
+			writer.CloseWithError(err)
+			return
+		}
+		if _, err := tw.Write(dockerfile); err != nil {
+			writer.CloseWithError(err)
+			return
+		}
+		// add dockerignore
+		ignorePayload := []byte("__Dockerfile-docker-app__\n.dockerignore")
+		if err := tw.WriteHeader(&tar.Header{
+			Name: ".dockerignore",
+			Mode: 0644,
+			Size: int64(len(ignorePayload)),
+		}); err != nil {
+			writer.CloseWithError(err)
+			return
+		}
+		if _, err := tw.Write(ignorePayload); err != nil {
+			writer.CloseWithError(err)
+			return
+		}
+	}()
 	imageName := namespace + appName(appname) + internal.AppExtension + ":" + tag
-	args := []string{"build", "-t", imageName, "-f", df, appname}
+	args := []string{"build", "-t", imageName, "-f", "__Dockerfile-docker-app__", "-"}
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = ioutil.Discard
 	cmd.Stderr = os.Stderr
+	cmd.Stdin = reader
 	err = cmd.Run()
 	return imageName, err
 }

@@ -11,9 +11,6 @@ import (
 	"github.com/docker/app/internal"
 )
 
-// ToolchainVersionFile is the file name used to store the Toolchain version used when authoring the package
-const ToolchainVersionFile = ".docker-app.toolchainversion"
-
 func tarAdd(tarout *tar.Writer, path, file string) error {
 	payload, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -36,7 +33,7 @@ func tarAdd(tarout *tar.Writer, path, file string) error {
 func tarToolchainVersion(tarout *tar.Writer) error {
 	payload := []byte(internal.Version)
 	if err := tarout.WriteHeader(&tar.Header{
-		Name: ToolchainVersionFile,
+		Name: internal.ToolchainVersionFile,
 		Mode: 0644,
 		Size: int64(len(payload)),
 	}); err != nil {
@@ -49,6 +46,12 @@ func tarToolchainVersion(tarout *tar.Writer) error {
 // Pack packs the app as a single file
 func Pack(appname string, target io.Writer) error {
 	tarout := tar.NewWriter(target)
+	defer tarout.Close()
+	return PackInto(appname, tarout)
+}
+
+// PackInto packs an image into an existing TarWriter
+func PackInto(appname string, tarout *tar.Writer) error {
 	for _, f := range internal.FileNames {
 		err := tarAdd(tarout, f, filepath.Join(appname, f))
 		if err != nil {
@@ -82,10 +85,7 @@ func Pack(appname string, target io.Writer) error {
 		}
 	}
 	// inject toolchain version
-	if err = tarToolchainVersion(tarout); err != nil {
-		return err
-	}
-	return tarout.Close()
+	return tarToolchainVersion(tarout)
 }
 
 // Unpack extracts a packed app

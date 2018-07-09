@@ -12,6 +12,11 @@ const (
 	AppExtension = ".dockerapp"
 	// ImageLabel is the label used to distinguish applications from Docker images.
 	ImageLabel = "com.docker.application"
+
+	// ToolchainVersionFile is the file name used to store the Toolchain version used when authoring the package
+	ToolchainVersionFile = ".docker-app.toolchainversion"
+	// ToolchainVersionLabel is the label name used to store the Toolchain version used when authoring the package
+	ToolchainVersionLabel = "com.docker.toolchainversion"
 	// MetadataFileName is metadata file name
 	MetadataFileName = "metadata.yml"
 	// ComposeFileName is compose file name
