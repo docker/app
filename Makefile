@@ -17,12 +17,18 @@ e2e-cross: bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-
 bin/$(BIN_NAME)-e2e-%.exe bin/$(BIN_NAME)-e2e-%: e2e bin/$(BIN_NAME)-%
 	GOOS=$* $(GO_TEST) -c -o $@ ./$<
 
-.PHONY: bin/$(BIN_NAME)-windows
+.PHONY: bin/$(BIN_NAME)-windows deploy-image
 bin/$(BIN_NAME)-%.exe bin/$(BIN_NAME)-%: cmd/$(BIN_NAME) check_go_env
 	GOOS=$* $(GO_BUILD) -ldflags=$(LDFLAGS) -o $@ ./$<
 
-bin/%: cmd/% check_go_env
+bin/%: cmd/% check_go_env deploy-image
 	$(GO_BUILD) -ldflags=$(LDFLAGS) -o $@$(EXEC_EXT) ./$<
+
+bin/deploy: cmd/deploy check_go_env
+	$(GO_BUILD) -ldflags=$(LDFLAGS) -o $@$(EXEC_EXT) ./$<
+
+deploy-image: cmd/deploy
+	docker build -t docker/app-deploy:$(TAG) --target deploy .
 
 check: lint test
 

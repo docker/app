@@ -23,7 +23,13 @@ RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DE
     chmod +x /usr/bin/dep
 COPY . .
 
-# FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
+FROM dev AS deploy-build
+RUN make bin/deploy
+
+FROM scratch AS deploy
+COPY --from=deploy-build /go/src/github.com/docker/app/bin/deploy /
+ENTRYPOINT ["/deploy"]
+
 FROM dev AS cross
 RUN make cross
 
