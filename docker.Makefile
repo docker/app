@@ -26,10 +26,10 @@ build_dev_image:
 shell: build_dev_image ## run a shell in the docker build image
 	docker run -ti --rm $(DEV_IMAGE_NAME) bash
 
-deploy-image:
-	docker build --target=deploy -t docker/app-deploy:$(TAG) .
+backend-image:
+	docker build --target=backend -t docker/app-backend:$(TAG) .
 
-cross: create_bin deploy-image ## cross-compile binaries (linux, darwin, windows)
+cross: create_bin backend-image ## cross-compile binaries (linux, darwin, windows)
 	docker build --target=cross -t $(CROSS_IMAGE_NAME)  .
 	docker create --name $(CROSS_CTNR_NAME) $(CROSS_IMAGE_NAME) noop
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux

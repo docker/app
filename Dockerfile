@@ -23,12 +23,12 @@ RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DE
     chmod +x /usr/bin/dep
 COPY . .
 
-FROM dev AS deploy-build
-RUN make bin/deploy
+FROM dev AS backend-build
+RUN make bin/app-backend
 
-FROM scratch AS deploy
-COPY --from=deploy-build /go/src/github.com/docker/app/bin/deploy /
-ENTRYPOINT ["/deploy"]
+FROM scratch AS backend
+COPY --from=backend-build /go/src/github.com/docker/app/bin/app-backend /
+ENTRYPOINT ["/app-backend"]
 
 FROM dev AS cross
 RUN make cross
