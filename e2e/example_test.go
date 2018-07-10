@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	metadataJSONSchemaVersion = "v0.2"
+	metadataJSONSchemaVersion = "v0.1"
 	metadataJSONSchema        = "specification/schemas/metadata_schema_" + metadataJSONSchemaVersion + ".json"
 	composeJSONSchemaVersion  = "v3.6"
 	composeJSONSchema         = "vendor/github.com/docker/cli/cli/compose/schema/data/config_schema_" + composeJSONSchemaVersion + ".json"

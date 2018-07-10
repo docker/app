@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "id": "metadata_schema_v0.2.json",
+    "id": "metadata_schema_v0.1.json",
     "type": "object",
     "properties": {
         "name": {

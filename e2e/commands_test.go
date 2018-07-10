@@ -157,7 +157,7 @@ targets:
 	assert.Assert(t, fs.Equal(dirName, manifest))
 
 	// validate metadata with JSON Schema
-	absPath, err := filepath.Abs(path.Join("..", "specification", "schemas", "metadata_schema_v0.2.json"))
+	absPath, err := filepath.Abs(path.Join("..", "specification", "schemas", "metadata_schema_v0.1.json"))
 	assert.NilError(t, err)
 	absPath = filepath.ToSlash(absPath)
 	schemaLoader := gojsonschema.NewReferenceLoader("file://" + absPath)
