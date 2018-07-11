@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/cli/cli"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +14,7 @@ func splitCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "split [<app-name>] [-o output]",
 		Short: "Split a single-file application into multiple files",
-		Args:  cli.RequiresMaxArgs(1),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			extractedApp, err := packager.ExtractWithOrigin(firstOrEmpty(args))
 			if err != nil {

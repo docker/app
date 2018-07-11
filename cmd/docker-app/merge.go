@@ -9,7 +9,6 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -43,7 +42,7 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "merge [<app-name>] [-o output_file]",
 		Short: "Merge a multi-file application into a single file",
-		Args:  cli.RequiresMaxArgs(1),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			extractedApp, err := packager.ExtractWithOrigin(firstOrEmpty(args))
 			if err != nil {
