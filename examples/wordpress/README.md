@@ -51,58 +51,7 @@ volumes:
     name: db_data
 ```
 
-**Merge with override Compose file**. This example replaces cleartext DB passwords to use secrets instead.
-
-```yaml
-# docker-app render wordpress --settings-files with-secrets.yml
-version: "3.6"
-services:
-  mysql:
-    deploy:
-      mode: replicated
-      replicas: 1
-      endpoint_mode: dnsrr
-    environment:
-      MYSQL_DATABASE: wordpressdata
-      MYSQL_PASSWORD: wordpress
-      MYSQL_ROOT_PASSWORD: axx[<^cz3d.fPb
-      MYSQL_USER: wordpress
-    image: mysql:5.6
-    networks:
-      overlay: null
-    volumes:
-    - type: volume
-      source: db_data
-      target: /var/lib/mysql
-  wordpress:
-    depends_on:
-    - mysql
-    deploy:
-      mode: replicated
-      replicas: 1
-      endpoint_mode: vip
-    environment:
-      WORDPRESS_DB_HOST: mysql
-      WORDPRESS_DB_NAME: wordpressdata
-      WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_USER: wordpress
-      WORDPRESS_DEBUG: "true"
-    image: wordpress
-    networks:
-      overlay: null
-    ports:
-    - mode: ingress
-      target: 80
-      published: 8080
-      protocol: tcp
-networks:
-  overlay: {}
-volumes:
-  db_data:
-    name: db_data
-```
-
-**Override default settings**. This example sets `debug` to false.
+**Override default settings with file**. This example sets `debug` to false and the wordpress service published port to 80 as defined in `prod-settings.yml`.
 
 ```yaml
 # docker-app render wordpress --settings-files prod-settings.yml
@@ -115,10 +64,15 @@ version: "3.6"
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DEBUG: "false"
 [...]
+    ports:
+    - mode: ingress
+      target: 80
+      published: 80
+      protocol: tcp
+[...]
 ```
 
-**Override from the command line**. This example sets `debug` to false and the database user to a
-different value.
+**Override from the command line**. This example sets `debug` to false and the database user to a different value.
 ```yaml
 # docker-app render wordpress --set debug=true --set mysql.user.name=mollydock
 version: "3.6"
@@ -138,7 +92,7 @@ services:
       WORDPRESS_DB_NAME: wordpressdata
       WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_DB_USER: mollydock
-      WORDPRESS_DEBUG: "false"
+      WORDPRESS_DEBUG: "true"
 [...]
 ```
 
@@ -169,10 +123,10 @@ wordpress.scale.replicas      1
 
 ### Generate helm package
 
-`docker-app helm wordpress` will output a Helm package in the `./wordpress.helm` folder. `--compose-file` (or `-c`), `--set` (or `-e`) and `--settings-files` (or `-s`) flags apply the same way they do for the `render` subcommand.
+`docker-app helm wordpress` will output a Helm package in the `./wordpress.helm` folder. `--compose-file` (or `-c`), `--set` (or `-e`) and `--settings-files` (or `-f`) flags apply the same way they do for the `render` subcommand.
 
 ```
-$ docker-app helm wordpress --settings-files with-secrets.yml --settings-files prod-settings.yml --set mysql.user.name=mollydock
+$ docker-app helm wordpress --settings-files prod-settings.yml --set mysql.user.name=mollydock
 $ tree wordpress.chart
 wordpress.chart
 ├── Chart.yaml
@@ -181,7 +135,7 @@ wordpress.chart
 └── values.yaml
 
 1 directory, 3 files
-$ cat wordpress.helm/templates/stack.yaml
+$ cat wordpress.chart/templates/stack.yaml
 apiversion: v1beta2
 kind: stacks.compose.docker.com
 metadata:
