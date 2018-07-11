@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/renderer"
+	"github.com/docker/app/internal/render"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack"
@@ -62,7 +62,7 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	if err != nil {
 		return err
 	}
-	rendered, err := renderer.Render(appname, opts.deployComposeFiles, opts.deploySettingsFiles, d)
+	rendered, err := render.Render(appname, opts.deployComposeFiles, opts.deploySettingsFiles, d)
 	if err != nil {
 		return err
 	}

@@ -5,9 +5,6 @@ E2E_NAME := $(BIN_NAME)-e2e
 # Enable experimental features. "on" or "off"
 EXPERIMENTAL := off
 
-# Comma-separated list of renderers
-RENDERERS := "none"
-
 # Failing to resolve sh.exe to a full path denotes a windows vanilla shell.
 # Although 'simple' commands are still exec'ed, 'complex' ones are batch'ed instead of sh'ed.
 ifeq ($(SHELL),sh.exe)
@@ -44,12 +41,16 @@ ifeq ($(BUILDTIME),)
   $(error unable to set BUILDTIME, ensure that you have GNU date installed or set manually)
 endif
 
+BUILDTAGS=""
+ifeq ($(EXPERIMENTAL),on)
+  BUILDTAGS="experimental"
+endif
+
 LDFLAGS := "-s -w \
-	-X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
-	-X $(PKG_NAME)/internal.Version=$(TAG)      \
-	-X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL) \
-	-X $(PKG_NAME)/internal.Renderers=$(RENDERERS) \
-	-X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
+  -X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
+  -X $(PKG_NAME)/internal.Version=$(TAG)      \
+  -X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL) \
+  -X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
 
 EXEC_EXT :=
 ifeq ($(OS),Windows_NT)

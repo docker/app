@@ -6,7 +6,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/renderer"
+	"github.com/docker/app/internal/render"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -36,7 +36,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			rendered, err := renderer.Render(appname, renderComposeFiles, renderSettingsFile, d)
+			rendered, err := render.Render(appname, renderComposeFiles, renderSettingsFile, d)
 			if err != nil {
 				return err
 			}

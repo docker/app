@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/renderer"
 	"gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 )
@@ -42,7 +40,7 @@ func gather(t *testing.T, dir string) ([]string, []string, map[string]string) {
 	return settings, overrides, env
 }
 
-// checkRenderer returns false if appname requires a renderer that is not in enabled
+// checkRenderers returns false if appname requires a renderer that is not in enabled
 func checkRenderers(appname string, enabled string) bool {
 	renderers := []string{"gotemplate", "yatee", "mustache"}
 	for _, r := range renderers {
@@ -65,31 +63,6 @@ func checkResult(t *testing.T, result string, resultErr error, dir string) {
 	} else {
 		expectedRender := readFile(t, filepath.Join(dir, "expected.txt"))
 		assert.Equal(t, string(expectedRender), result, "rendering missmatch")
-	}
-}
-
-func TestRender(t *testing.T) {
-	apps, err := ioutil.ReadDir("render")
-	assert.NilError(t, err, "unable to get apps")
-	for _, app := range apps {
-		if app.Name() == "testdata" {
-			continue
-		}
-		t.Log("testing", app.Name())
-		if !checkRenderers(app.Name(), internal.Renderers) {
-			t.Log("Required renderer not enabled.")
-			continue
-		}
-		settings, overrides, env := gather(t, filepath.Join("render", app.Name()))
-		// run the render
-		config, resultErr := renderer.Render(filepath.Join("render", app.Name()), overrides, settings, env)
-		var result string
-		if resultErr == nil {
-			var bytes []byte
-			bytes, resultErr = yaml.Marshal(config)
-			result = string(bytes)
-		}
-		checkResult(t, result, resultErr, filepath.Join("render", app.Name()))
 	}
 }
 
