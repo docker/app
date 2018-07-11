@@ -56,7 +56,7 @@ lint: ## run linter(s)
 	@echo "Linting..."
 	@gometalinter --config=gometalinter.json ./...
 
-test-e2e: bin/$(BIN_NAME) bin/yamlschema ## run end-to-end tests
+test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."
 	$(GO_TEST) -v ./e2e/
 
@@ -72,7 +72,7 @@ coverage-test-unit:
 	@$(call mkdir,_build/cov)
 	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
 
-coverage-test-e2e: coverage-bin bin/yamlschema
+coverage-test-e2e: coverage-bin
 	@echo "Running e2e tests (coverage)..."
 	@$(call mkdir,_build/cov)
 	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e

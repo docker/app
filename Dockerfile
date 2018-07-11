@@ -28,7 +28,6 @@ COPY . .
 FROM dev AS cross
 ARG EXPERIMENTAL="off"
 RUN make EXPERIMENTAL=${EXPERIMENTAL} cross
-RUN BIN_NAME=yamlschema make cross
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross
