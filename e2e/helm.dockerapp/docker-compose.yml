@@ -1,4 +1,4 @@
-version: "3.4"
+version: "3.7"
 services:
   front:
     image: nginx:${myapp.nginx_version}
@@ -24,6 +24,6 @@ services:
   monitor:
     image: busybox:latest
     command: monitor --source ${app.name}-${app.version} $$dollar
-    enabled: "! ${myapp.debug}"
+    x-enabled: "! ${myapp.debug}"
   app-watcher:
     image: $watcher.image

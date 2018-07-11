@@ -1,7 +1,7 @@
 include vars.mk
 
-GO_BUILD := CGO_ENABLED=0 go build
-GO_TEST := CGO_ENABLED=0 go test
+GO_BUILD := CGO_ENABLED=0 go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
+GO_TEST := CGO_ENABLED=0 go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 
 all: bin/$(BIN_NAME) test
 
@@ -19,10 +19,10 @@ bin/$(BIN_NAME)-e2e-%.exe bin/$(BIN_NAME)-e2e-%: e2e bin/$(BIN_NAME)-%
 
 .PHONY: bin/$(BIN_NAME)-windows
 bin/$(BIN_NAME)-%.exe bin/$(BIN_NAME)-%: cmd/$(BIN_NAME) check_go_env
-	GOOS=$* $(GO_BUILD) -ldflags=$(LDFLAGS) -o $@ ./$<
+	GOOS=$* $(GO_BUILD) -o $@ ./$<
 
 bin/%: cmd/% check_go_env
-	$(GO_BUILD) -ldflags=$(LDFLAGS) -o $@$(EXEC_EXT) ./$<
+	$(GO_BUILD) -o $@$(EXEC_EXT) ./$<
 
 check: lint test
 
@@ -41,7 +41,7 @@ test-unit: ## run unit tests
 	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
 
 coverage-bin:
-	$(GO_TEST) -coverpkg="./..." -c -ldflags=$(LDFLAGS) -tags testrunmain -o _build/$(BIN_NAME).cov ./cmd/docker-app
+	CGO_ENABLED=0 go test -tags="$(BUILDTAGS) testrunmain" -ldflags=$(LDFLAGS) -coverpkg="./..." -c -o _build/$(BIN_NAME).cov ./cmd/docker-app
 
 coverage-test-unit:
 	@echo "Running unit tests (coverage)..."

@@ -74,6 +74,17 @@ pipeline {
                         }
                     }
                 }
+                stage("Coverage (experimental)") {
+                    agent {
+                        label 'ubuntu-1604-aufs-edge'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            checkout scm
+                            sh 'make EXPERIMENTAL=on -f docker.Makefile coverage'
+                        }
+                    }
+                }
                 stage("Gradle test") {
                     agent {
                         label 'ubuntu-1604-aufs-edge'

@@ -6,7 +6,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/renderer"
+	"github.com/docker/app/internal/render"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +36,7 @@ subdirectory.`,
 			if err != nil {
 				return err
 			}
-			config, err := renderer.Render(appname, imageAddComposeFiles, imageAddSettingsFile, d)
+			config, err := render.Render(appname, imageAddComposeFiles, imageAddSettingsFile, d)
 			if err != nil {
 				return err
 			}

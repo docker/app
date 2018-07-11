@@ -25,8 +25,10 @@ COPY . .
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM dev AS cross
-RUN make cross
+ARG EXPERIMENTAL="off"
+RUN make EXPERIMENTAL=${EXPERIMENTAL} cross
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross
-RUN make e2e-cross
+ARG EXPERIMENTAL="off"
+RUN make EXPERIMENTAL=${EXPERIMENTAL} e2e-cross

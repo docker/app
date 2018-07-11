@@ -1,23 +1,27 @@
-package renderer
+package render
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"text/template"
 
-	"github.com/cbroglie/mustache"
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/yatee"
+	"github.com/docker/app/internal/renderer"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
+
+	// Register gotemplate renderer
+	_ "github.com/docker/app/internal/renderer/gotemplate"
+	// Register mustache renderer
+	_ "github.com/docker/app/internal/renderer/mustache"
+	// Register yatee renderer
+	_ "github.com/docker/app/internal/renderer/yatee"
 )
 
 var (
@@ -122,45 +126,6 @@ func mergeSettings(settings map[string]interface{}, env map[string]string) error
 	return nil
 }
 
-func applyRenderers(data []byte, renderers []string, settings map[string]interface{}) ([]byte, error) {
-	for _, r := range renderers {
-		switch r {
-		case "gotemplate":
-			tmpl, err := template.New("compose").Parse(string(data))
-			if err != nil {
-				return nil, err
-			}
-			tmpl.Option("missingkey=error")
-			yaml := bytes.NewBuffer(nil)
-			err = tmpl.Execute(yaml, settings)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to execute gotemplate")
-			}
-			data = yaml.Bytes()
-		case "yatee":
-			yateed, err := yatee.Process(string(data), settings, yatee.OptionErrOnMissingKey)
-			if err != nil {
-				return nil, err
-			}
-			m, err := yaml.Marshal(yateed)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to execute yatee template")
-			}
-			data = []byte(strings.Replace(string(m), "$", "$$", -1))
-		case "mustache":
-			mdata, err := mustache.Render(string(data), settings)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to execute mustache template")
-			}
-			data = []byte(mdata)
-		case "none":
-		default:
-			return nil, fmt.Errorf("unknown renderer %s", r)
-		}
-	}
-	return data, nil
-}
-
 func contains(list []string, needle string) bool {
 	for _, e := range list {
 		if e == needle {
@@ -205,11 +170,11 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 	// prepend our app compose file to the list
 	composes := []string{filepath.Join(appname, internal.ComposeFileName)}
 	composes = append(composes, composeFiles...)
-	renderers := strings.Split(internal.Renderers, ",")
+	renderers := renderer.Drivers()
 	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
 		rl := strings.Split(r, ",")
 		for _, r := range rl {
-			if r != "none" && !contains(renderers, r) {
+			if !contains(renderer.Drivers(), r) {
 				return nil, fmt.Errorf("renderer '%s' not found", r)
 			}
 		}
@@ -222,11 +187,11 @@ func Render(appname string, composeFiles []string, settingsFile []string, env ma
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to read Compose file %s", c)
 		}
-		data, err = applyRenderers(data, renderers, settings)
+		s, err := renderer.Apply(string(data), settings, renderers...)
 		if err != nil {
 			return nil, err
 		}
-		parsed, err := loader.ParseYAML(data)
+		parsed, err := loader.ParseYAML([]byte(s))
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse Compose file %s", c)
 		}

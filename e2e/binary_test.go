@@ -110,9 +110,12 @@ func TestRenderBinary(t *testing.T) {
 			continue
 		}
 		t.Log("testing", app.Name())
+		envs := []string{}
 		if !checkRenderers(app.Name(), renderers) {
 			t.Log("Required renderer not enabled.")
 			continue
+		} else if strings.HasPrefix(app.Name(), "template-") {
+			envs = append(envs, "DOCKERAPP_RENDERERS="+strings.TrimPrefix(strings.TrimSuffix(app.Name(), ".dockerapp"), "template-"))
 		}
 		settings, overrides, env := gather(t, filepath.Join("render", app.Name()))
 		args := []string{
@@ -128,8 +131,9 @@ func TestRenderBinary(t *testing.T) {
 		for k, v := range env {
 			args = append(args, "-s", fmt.Sprintf("%s=%s", k, v))
 		}
-		t.Logf("executing with %v", args)
+		t.Logf("executing with %v (envs %v)", args, envs)
 		cmd := exec.Command(dockerApp, args...)
+		cmd.Env = envs
 		output, err := cmd.CombinedOutput()
 		checkResult(t, string(output), err, filepath.Join("render", app.Name()))
 	}
