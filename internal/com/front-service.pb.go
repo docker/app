@@ -8,7 +8,6 @@
 		github.com/docker/app/internal/com/front-service.proto
 
 	It has these top-level messages:
-		PrintRequest
 		FileStat
 */
 package com
@@ -18,8 +17,6 @@ import fmt "fmt"
 import math "math"
 import google_protobuf "github.com/gogo/protobuf/types"
 import google_protobuf1 "github.com/gogo/protobuf/types"
-
-import bytes "bytes"
 
 import strings "strings"
 import reflect "reflect"
@@ -40,29 +37,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
-type PrintRequest struct {
-	Bytes     []byte `protobuf:"bytes,1,opt,name=Bytes,proto3" json:"Bytes,omitempty"`
-	UseStdErr bool   `protobuf:"varint,2,opt,name=UseStdErr,proto3" json:"UseStdErr,omitempty"`
-}
-
-func (m *PrintRequest) Reset()                    { *m = PrintRequest{} }
-func (*PrintRequest) ProtoMessage()               {}
-func (*PrintRequest) Descriptor() ([]byte, []int) { return fileDescriptorFrontService, []int{0} }
-
-func (m *PrintRequest) GetBytes() []byte {
-	if m != nil {
-		return m.Bytes
-	}
-	return nil
-}
-
-func (m *PrintRequest) GetUseStdErr() bool {
-	if m != nil {
-		return m.UseStdErr
-	}
-	return false
-}
-
 type FileStat struct {
 	Name  string `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
 	Mode  int32  `protobuf:"varint,2,opt,name=Mode,proto3" json:"Mode,omitempty"`
@@ -71,7 +45,7 @@ type FileStat struct {
 
 func (m *FileStat) Reset()                    { *m = FileStat{} }
 func (*FileStat) ProtoMessage()               {}
-func (*FileStat) Descriptor() ([]byte, []int) { return fileDescriptorFrontService, []int{1} }
+func (*FileStat) Descriptor() ([]byte, []int) { return fileDescriptorFrontService, []int{0} }
 
 func (m *FileStat) GetName() string {
 	if m != nil {
@@ -95,35 +69,7 @@ func (m *FileStat) GetIsDir() bool {
 }
 
 func init() {
-	proto.RegisterType((*PrintRequest)(nil), "com.PrintRequest")
 	proto.RegisterType((*FileStat)(nil), "com.FileStat")
-}
-func (this *PrintRequest) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*PrintRequest)
-	if !ok {
-		that2, ok := that.(PrintRequest)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if !bytes.Equal(this.Bytes, that1.Bytes) {
-		return false
-	}
-	if this.UseStdErr != that1.UseStdErr {
-		return false
-	}
-	return true
 }
 func (this *FileStat) Equal(that interface{}) bool {
 	if that == nil {
@@ -154,17 +100,6 @@ func (this *FileStat) Equal(that interface{}) bool {
 		return false
 	}
 	return true
-}
-func (this *PrintRequest) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 6)
-	s = append(s, "&com.PrintRequest{")
-	s = append(s, "Bytes: "+fmt.Sprintf("%#v", this.Bytes)+",\n")
-	s = append(s, "UseStdErr: "+fmt.Sprintf("%#v", this.UseStdErr)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
 }
 func (this *FileStat) GoString() string {
 	if this == nil {
@@ -198,8 +133,6 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for FrontService service
 
 type FrontServiceClient interface {
-	Prompt(ctx context.Context, in *google_protobuf1.BytesValue, opts ...grpc.CallOption) (*google_protobuf1.BytesValue, error)
-	Print(ctx context.Context, in *PrintRequest, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	FileContent(ctx context.Context, in *google_protobuf1.StringValue, opts ...grpc.CallOption) (FrontService_FileContentClient, error)
 	FileList(ctx context.Context, in *google_protobuf1.StringValue, opts ...grpc.CallOption) (FrontService_FileListClient, error)
 }
@@ -210,24 +143,6 @@ type frontServiceClient struct {
 
 func NewFrontServiceClient(cc *grpc.ClientConn) FrontServiceClient {
 	return &frontServiceClient{cc}
-}
-
-func (c *frontServiceClient) Prompt(ctx context.Context, in *google_protobuf1.BytesValue, opts ...grpc.CallOption) (*google_protobuf1.BytesValue, error) {
-	out := new(google_protobuf1.BytesValue)
-	err := grpc.Invoke(ctx, "/com.FrontService/Prompt", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *frontServiceClient) Print(ctx context.Context, in *PrintRequest, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
-	out := new(google_protobuf.Empty)
-	err := grpc.Invoke(ctx, "/com.FrontService/Print", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *frontServiceClient) FileContent(ctx context.Context, in *google_protobuf1.StringValue, opts ...grpc.CallOption) (FrontService_FileContentClient, error) {
@@ -297,50 +212,12 @@ func (x *frontServiceFileListClient) Recv() (*FileStat, error) {
 // Server API for FrontService service
 
 type FrontServiceServer interface {
-	Prompt(context.Context, *google_protobuf1.BytesValue) (*google_protobuf1.BytesValue, error)
-	Print(context.Context, *PrintRequest) (*google_protobuf.Empty, error)
 	FileContent(*google_protobuf1.StringValue, FrontService_FileContentServer) error
 	FileList(*google_protobuf1.StringValue, FrontService_FileListServer) error
 }
 
 func RegisterFrontServiceServer(s *grpc.Server, srv FrontServiceServer) {
 	s.RegisterService(&_FrontService_serviceDesc, srv)
-}
-
-func _FrontService_Prompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(google_protobuf1.BytesValue)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FrontServiceServer).Prompt(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/com.FrontService/Prompt",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FrontServiceServer).Prompt(ctx, req.(*google_protobuf1.BytesValue))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _FrontService_Print_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PrintRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FrontServiceServer).Print(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/com.FrontService/Print",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FrontServiceServer).Print(ctx, req.(*PrintRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _FrontService_FileContent_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -388,16 +265,7 @@ func (x *frontServiceFileListServer) Send(m *FileStat) error {
 var _FrontService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "com.FrontService",
 	HandlerType: (*FrontServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Prompt",
-			Handler:    _FrontService_Prompt_Handler,
-		},
-		{
-			MethodName: "Print",
-			Handler:    _FrontService_Print_Handler,
-		},
-	},
+	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "FileContent",
@@ -413,38 +281,229 @@ var _FrontService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "github.com/docker/app/internal/com/front-service.proto",
 }
 
-func (m *PrintRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+// Client API for RemoteStdStreams service
+
+type RemoteStdStreamsClient interface {
+	Stdin(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (RemoteStdStreams_StdinClient, error)
+	Stdout(ctx context.Context, opts ...grpc.CallOption) (RemoteStdStreams_StdoutClient, error)
+	Stderr(ctx context.Context, opts ...grpc.CallOption) (RemoteStdStreams_StderrClient, error)
+}
+
+type remoteStdStreamsClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewRemoteStdStreamsClient(cc *grpc.ClientConn) RemoteStdStreamsClient {
+	return &remoteStdStreamsClient{cc}
+}
+
+func (c *remoteStdStreamsClient) Stdin(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (RemoteStdStreams_StdinClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RemoteStdStreams_serviceDesc.Streams[0], c.cc, "/com.RemoteStdStreams/Stdin", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return dAtA[:n], nil
+	x := &remoteStdStreamsStdinClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
 
-func (m *PrintRequest) MarshalTo(dAtA []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Bytes) > 0 {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintFrontService(dAtA, i, uint64(len(m.Bytes)))
-		i += copy(dAtA[i:], m.Bytes)
+type RemoteStdStreams_StdinClient interface {
+	Recv() (*google_protobuf1.BytesValue, error)
+	grpc.ClientStream
+}
+
+type remoteStdStreamsStdinClient struct {
+	grpc.ClientStream
+}
+
+func (x *remoteStdStreamsStdinClient) Recv() (*google_protobuf1.BytesValue, error) {
+	m := new(google_protobuf1.BytesValue)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
 	}
-	if m.UseStdErr {
-		dAtA[i] = 0x10
-		i++
-		if m.UseStdErr {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i++
+	return m, nil
+}
+
+func (c *remoteStdStreamsClient) Stdout(ctx context.Context, opts ...grpc.CallOption) (RemoteStdStreams_StdoutClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RemoteStdStreams_serviceDesc.Streams[1], c.cc, "/com.RemoteStdStreams/Stdout", opts...)
+	if err != nil {
+		return nil, err
 	}
-	return i, nil
+	x := &remoteStdStreamsStdoutClient{stream}
+	return x, nil
+}
+
+type RemoteStdStreams_StdoutClient interface {
+	Send(*google_protobuf1.BytesValue) error
+	CloseAndRecv() (*google_protobuf.Empty, error)
+	grpc.ClientStream
+}
+
+type remoteStdStreamsStdoutClient struct {
+	grpc.ClientStream
+}
+
+func (x *remoteStdStreamsStdoutClient) Send(m *google_protobuf1.BytesValue) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *remoteStdStreamsStdoutClient) CloseAndRecv() (*google_protobuf.Empty, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(google_protobuf.Empty)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *remoteStdStreamsClient) Stderr(ctx context.Context, opts ...grpc.CallOption) (RemoteStdStreams_StderrClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RemoteStdStreams_serviceDesc.Streams[2], c.cc, "/com.RemoteStdStreams/Stderr", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &remoteStdStreamsStderrClient{stream}
+	return x, nil
+}
+
+type RemoteStdStreams_StderrClient interface {
+	Send(*google_protobuf1.BytesValue) error
+	CloseAndRecv() (*google_protobuf.Empty, error)
+	grpc.ClientStream
+}
+
+type remoteStdStreamsStderrClient struct {
+	grpc.ClientStream
+}
+
+func (x *remoteStdStreamsStderrClient) Send(m *google_protobuf1.BytesValue) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *remoteStdStreamsStderrClient) CloseAndRecv() (*google_protobuf.Empty, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(google_protobuf.Empty)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// Server API for RemoteStdStreams service
+
+type RemoteStdStreamsServer interface {
+	Stdin(*google_protobuf.Empty, RemoteStdStreams_StdinServer) error
+	Stdout(RemoteStdStreams_StdoutServer) error
+	Stderr(RemoteStdStreams_StderrServer) error
+}
+
+func RegisterRemoteStdStreamsServer(s *grpc.Server, srv RemoteStdStreamsServer) {
+	s.RegisterService(&_RemoteStdStreams_serviceDesc, srv)
+}
+
+func _RemoteStdStreams_Stdin_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(google_protobuf.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RemoteStdStreamsServer).Stdin(m, &remoteStdStreamsStdinServer{stream})
+}
+
+type RemoteStdStreams_StdinServer interface {
+	Send(*google_protobuf1.BytesValue) error
+	grpc.ServerStream
+}
+
+type remoteStdStreamsStdinServer struct {
+	grpc.ServerStream
+}
+
+func (x *remoteStdStreamsStdinServer) Send(m *google_protobuf1.BytesValue) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _RemoteStdStreams_Stdout_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RemoteStdStreamsServer).Stdout(&remoteStdStreamsStdoutServer{stream})
+}
+
+type RemoteStdStreams_StdoutServer interface {
+	SendAndClose(*google_protobuf.Empty) error
+	Recv() (*google_protobuf1.BytesValue, error)
+	grpc.ServerStream
+}
+
+type remoteStdStreamsStdoutServer struct {
+	grpc.ServerStream
+}
+
+func (x *remoteStdStreamsStdoutServer) SendAndClose(m *google_protobuf.Empty) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *remoteStdStreamsStdoutServer) Recv() (*google_protobuf1.BytesValue, error) {
+	m := new(google_protobuf1.BytesValue)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _RemoteStdStreams_Stderr_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RemoteStdStreamsServer).Stderr(&remoteStdStreamsStderrServer{stream})
+}
+
+type RemoteStdStreams_StderrServer interface {
+	SendAndClose(*google_protobuf.Empty) error
+	Recv() (*google_protobuf1.BytesValue, error)
+	grpc.ServerStream
+}
+
+type remoteStdStreamsStderrServer struct {
+	grpc.ServerStream
+}
+
+func (x *remoteStdStreamsStderrServer) SendAndClose(m *google_protobuf.Empty) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *remoteStdStreamsStderrServer) Recv() (*google_protobuf1.BytesValue, error) {
+	m := new(google_protobuf1.BytesValue)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+var _RemoteStdStreams_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "com.RemoteStdStreams",
+	HandlerType: (*RemoteStdStreamsServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Stdin",
+			Handler:       _RemoteStdStreams_Stdin_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Stdout",
+			Handler:       _RemoteStdStreams_Stdout_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "Stderr",
+			Handler:       _RemoteStdStreams_Stderr_Handler,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "github.com/docker/app/internal/com/front-service.proto",
 }
 
 func (m *FileStat) Marshal() (dAtA []byte, err error) {
@@ -495,19 +554,6 @@ func encodeVarintFrontService(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return offset + 1
 }
-func (m *PrintRequest) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Bytes)
-	if l > 0 {
-		n += 1 + l + sovFrontService(uint64(l))
-	}
-	if m.UseStdErr {
-		n += 2
-	}
-	return n
-}
-
 func (m *FileStat) Size() (n int) {
 	var l int
 	_ = l
@@ -537,17 +583,6 @@ func sovFrontService(x uint64) (n int) {
 func sozFrontService(x uint64) (n int) {
 	return sovFrontService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (this *PrintRequest) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&PrintRequest{`,
-		`Bytes:` + fmt.Sprintf("%v", this.Bytes) + `,`,
-		`UseStdErr:` + fmt.Sprintf("%v", this.UseStdErr) + `,`,
-		`}`,
-	}, "")
-	return s
-}
 func (this *FileStat) String() string {
 	if this == nil {
 		return "nil"
@@ -567,107 +602,6 @@ func valueToStringFrontService(v interface{}) string {
 	}
 	pv := reflect.Indirect(rv).Interface()
 	return fmt.Sprintf("*%v", pv)
-}
-func (m *PrintRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowFrontService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PrintRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrintRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Bytes", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFrontService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthFrontService
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Bytes = append(m.Bytes[:0], dAtA[iNdEx:postIndex]...)
-			if m.Bytes == nil {
-				m.Bytes = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UseStdErr", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFrontService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.UseStdErr = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipFrontService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthFrontService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *FileStat) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -897,29 +831,28 @@ func init() {
 }
 
 var fileDescriptorFrontService = []byte{
-	// 375 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x90, 0x4f, 0x4f, 0xe2, 0x40,
-	0x18, 0xc6, 0x3b, 0xb0, 0x10, 0x98, 0x65, 0x0f, 0x3b, 0xd9, 0x6c, 0x48, 0x21, 0x13, 0xc2, 0x89,
-	0xc3, 0x6e, 0x4b, 0x30, 0x31, 0xf1, 0x5a, 0x85, 0xa8, 0x51, 0x43, 0xda, 0xe8, 0xbd, 0x94, 0x97,
-	0x3a, 0xb1, 0xed, 0xd4, 0xe9, 0x54, 0xc3, 0xcd, 0x2f, 0x60, 0xe2, 0xc7, 0xf0, 0xa3, 0x78, 0xe4,
-	0xe8, 0x51, 0xea, 0xc5, 0x23, 0x1f, 0xc1, 0x74, 0x1a, 0xa2, 0x91, 0x44, 0x6e, 0xef, 0xfb, 0xbc,
-	0x7f, 0x7f, 0x0f, 0xde, 0xf5, 0x99, 0xbc, 0x4c, 0x27, 0x86, 0xc7, 0x43, 0x73, 0xca, 0xbd, 0x2b,
-	0x10, 0xa6, 0x1b, 0xc7, 0x26, 0x8b, 0x24, 0x88, 0xc8, 0x0d, 0xcc, 0x5c, 0x9f, 0x09, 0x1e, 0xc9,
-	0xff, 0x09, 0x88, 0x1b, 0xe6, 0x81, 0x11, 0x0b, 0x2e, 0x39, 0x29, 0x7b, 0x3c, 0xd4, 0x5b, 0x3e,
-	0xe7, 0x7e, 0x00, 0xa6, 0x92, 0x26, 0xe9, 0xcc, 0x84, 0x30, 0x96, 0xf3, 0xa2, 0x43, 0xa7, 0x5f,
-	0x8b, 0xb7, 0xc2, 0x8d, 0x63, 0x10, 0x49, 0x51, 0xef, 0x5a, 0xb8, 0x31, 0x16, 0x2c, 0x92, 0x36,
-	0x5c, 0xa7, 0x90, 0x48, 0xf2, 0x07, 0x57, 0xac, 0xb9, 0x84, 0xa4, 0x89, 0x3a, 0xa8, 0xd7, 0xb0,
-	0x8b, 0x84, 0xb4, 0x71, 0xfd, 0x3c, 0x01, 0x47, 0x4e, 0x87, 0x42, 0x34, 0x4b, 0x1d, 0xd4, 0xab,
-	0xd9, 0x1f, 0x42, 0xf7, 0x10, 0xd7, 0x46, 0x2c, 0x00, 0x47, 0xba, 0x92, 0x10, 0xfc, 0xe3, 0xcc,
-	0x0d, 0x41, 0x8d, 0xd7, 0x6d, 0x15, 0xe7, 0xda, 0x29, 0x9f, 0x82, 0x1a, 0xac, 0xd8, 0x2a, 0xce,
-	0xef, 0x1c, 0x25, 0x07, 0x4c, 0x34, 0xcb, 0x6a, 0x5b, 0x91, 0x0c, 0xee, 0x4b, 0xb8, 0x31, 0xca,
-	0x39, 0x9d, 0x02, 0x93, 0x58, 0xb8, 0x3a, 0x16, 0x3c, 0x8c, 0x25, 0x69, 0x19, 0x05, 0x89, 0xb1,
-	0x26, 0x31, 0xd4, 0x6b, 0x17, 0x6e, 0x90, 0x82, 0xfe, 0x5d, 0x91, 0x0c, 0x70, 0x45, 0x21, 0x92,
-	0xdf, 0xb9, 0xbf, 0xc6, 0x67, 0x5c, 0xfd, 0xef, 0xc6, 0xe0, 0x30, 0x37, 0x8f, 0x1c, 0xe3, 0x9f,
-	0x39, 0xd2, 0x3e, 0x8f, 0x24, 0x44, 0x92, 0xb4, 0x37, 0xda, 0x1c, 0x29, 0x58, 0xe4, 0x6f, 0xbf,
-	0xde, 0x47, 0x64, 0xaf, 0xb0, 0xe7, 0x84, 0x25, 0xdb, 0x16, 0xfd, 0x52, 0x0f, 0xae, 0xbd, 0xec,
-	0x23, 0xeb, 0xdf, 0x62, 0x49, 0xb5, 0xe7, 0x25, 0xd5, 0x56, 0x4b, 0x8a, 0xee, 0x32, 0x8a, 0x1e,
-	0x33, 0x8a, 0x9e, 0x32, 0x8a, 0x16, 0x19, 0x45, 0x2f, 0x19, 0x45, 0x6f, 0x19, 0xd5, 0x56, 0x19,
-	0x45, 0x0f, 0xaf, 0x54, 0x9b, 0x54, 0xd5, 0xd2, 0x9d, 0xf7, 0x00, 0x00, 0x00, 0xff, 0xff, 0x08,
-	0x6a, 0xfe, 0xc6, 0x4e, 0x02, 0x00, 0x00,
+	// 364 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x90, 0xc1, 0x4a, 0xeb, 0x40,
+	0x14, 0x86, 0x33, 0xb7, 0xb7, 0xa5, 0x77, 0xee, 0xbd, 0x20, 0x83, 0x48, 0x49, 0x65, 0x28, 0xae,
+	0xb2, 0xd0, 0xa4, 0x54, 0x10, 0xdc, 0x28, 0x54, 0x2d, 0x2a, 0xea, 0x22, 0x01, 0xf7, 0x69, 0x72,
+	0x1a, 0x07, 0x93, 0x4c, 0x98, 0x9c, 0x28, 0xdd, 0xf9, 0x08, 0x6e, 0x7c, 0x07, 0x1f, 0xc5, 0x65,
+	0x17, 0x2e, 0x5c, 0xda, 0xb8, 0x71, 0xd9, 0x47, 0x90, 0x24, 0x74, 0x63, 0xd1, 0x82, 0xbb, 0x93,
+	0xff, 0x3f, 0xf9, 0xf8, 0xe6, 0xd0, 0x9d, 0x40, 0xe0, 0x55, 0x36, 0x34, 0x3d, 0x19, 0x59, 0xbe,
+	0xf4, 0xae, 0x41, 0x59, 0x6e, 0x92, 0x58, 0x22, 0x46, 0x50, 0xb1, 0x1b, 0x5a, 0x45, 0x3e, 0x52,
+	0x32, 0xc6, 0xad, 0x14, 0xd4, 0x8d, 0xf0, 0xc0, 0x4c, 0x94, 0x44, 0xc9, 0x6a, 0x9e, 0x8c, 0xf4,
+	0x76, 0x20, 0x65, 0x10, 0x82, 0x55, 0x46, 0xc3, 0x6c, 0x64, 0x41, 0x94, 0xe0, 0xb8, 0xda, 0xd0,
+	0xf9, 0xe7, 0xf2, 0x56, 0xb9, 0x49, 0x02, 0x2a, 0xad, 0xfa, 0x8d, 0x63, 0xda, 0x1c, 0x88, 0x10,
+	0x1c, 0x74, 0x91, 0x31, 0xfa, 0xfb, 0xc2, 0x8d, 0xa0, 0x45, 0x3a, 0xc4, 0xf8, 0x63, 0x97, 0x73,
+	0x91, 0x9d, 0x4b, 0x1f, 0x5a, 0xbf, 0x3a, 0xc4, 0xa8, 0xdb, 0xe5, 0xcc, 0x56, 0x69, 0xfd, 0x24,
+	0x3d, 0x14, 0xaa, 0x55, 0xeb, 0x10, 0xa3, 0x69, 0x57, 0x1f, 0xbd, 0x07, 0x42, 0xff, 0x0d, 0x0a,
+	0x47, 0xa7, 0x52, 0x64, 0xa7, 0xf4, 0x6f, 0x81, 0x3e, 0x90, 0x31, 0x42, 0x8c, 0x6c, 0xdd, 0xac,
+	0x54, 0xcc, 0xb9, 0x8a, 0xe9, 0xa0, 0x12, 0x71, 0x70, 0xe9, 0x86, 0x19, 0xe8, 0xed, 0x85, 0xb6,
+	0x3f, 0x46, 0x48, 0xcb, 0xb2, 0x4b, 0xd8, 0x6e, 0xa5, 0x79, 0x26, 0xd2, 0x65, 0xa0, 0xff, 0xc5,
+	0x11, 0xcd, 0xf9, 0x9b, 0xba, 0xa4, 0xf7, 0x4c, 0xe8, 0x8a, 0x0d, 0x91, 0x44, 0x70, 0xd0, 0x77,
+	0x50, 0x81, 0x1b, 0xa5, 0x6c, 0x8f, 0xd6, 0x1d, 0xf4, 0x45, 0xcc, 0xd6, 0x16, 0x60, 0x47, 0xc5,
+	0xf5, 0x96, 0xf9, 0xec, 0xd3, 0x86, 0x83, 0xbe, 0xcc, 0x90, 0x7d, 0xb7, 0xa8, 0x7f, 0x41, 0x37,
+	0xe6, 0x00, 0x50, 0xea, 0x87, 0x80, 0xfe, 0xe6, 0x64, 0xca, 0xb5, 0x97, 0x29, 0xd7, 0x66, 0x53,
+	0x4e, 0xee, 0x72, 0x4e, 0x1e, 0x73, 0x4e, 0x9e, 0x72, 0x4e, 0x26, 0x39, 0x27, 0xaf, 0x39, 0x27,
+	0xef, 0x39, 0xd7, 0x66, 0x39, 0x27, 0xf7, 0x6f, 0x5c, 0x1b, 0x36, 0xca, 0xff, 0xb7, 0x3f, 0x02,
+	0x00, 0x00, 0xff, 0xff, 0x05, 0x84, 0xb8, 0x25, 0x69, 0x02, 0x00, 0x00,
 }

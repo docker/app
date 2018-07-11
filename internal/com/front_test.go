@@ -2,6 +2,7 @@ package com
 
 import (
 	"io"
+	"io/ioutil"
 	"testing"
 
 	"context"
@@ -11,21 +12,8 @@ import (
 )
 
 type testSvc struct {
-	promptedText string
-	promptInput  string
-	printedText  string
 	statsToSend  []FileStat
 	chunksToSend [][]byte
-}
-
-func (s *testSvc) Prompt(ctx context.Context, in *protobuf.BytesValue) (*protobuf.BytesValue, error) {
-	s.promptedText = string(in.Value)
-	return &protobuf.BytesValue{Value: []byte(s.promptInput)}, nil
-}
-
-func (s *testSvc) Print(ctx context.Context, in *PrintRequest) (*protobuf.Empty, error) {
-	s.printedText = string(in.Bytes)
-	return &protobuf.Empty{}, nil
 }
 
 func (s *testSvc) FileContent(_ *protobuf.StringValue, stream FrontService_FileContentServer) error {
@@ -53,7 +41,12 @@ func TestComOverPipe(t *testing.T) {
 	defer serverWriter.Close()
 	defer serverReader.Close()
 	defer clientWriter.Close()
-	s := &testSvc{promptInput: "response",
+
+	stdInReader, stdInWriter := io.Pipe()
+	stdOutReader, stdOutWriter := io.Pipe()
+	stdErrReader, stdErrWriter := io.Pipe()
+
+	s := &testSvc{
 		chunksToSend: [][]byte{
 			[]byte("Hello"),
 			[]byte("World"),
@@ -72,17 +65,10 @@ func TestComOverPipe(t *testing.T) {
 		},
 	}
 	go func() {
-		RunFrontService(s, serverReader, serverWriter)
+		RunFrontService(s, serverReader, serverWriter, stdInReader, stdOutWriter, stdErrWriter)
 	}()
-	c, err := ConnectToFront(clientReader, clientWriter)
+	c, remoteStreams, err := ConnectToFront(clientReader, clientWriter)
 	assert.NilError(t, err)
-	res, err := c.Prompt(context.Background(), &protobuf.BytesValue{Value: []byte("request")})
-	assert.NilError(t, err)
-	assert.Equal(t, string(res.Value), "response")
-	assert.Equal(t, s.promptedText, "request")
-	_, err = c.Print(context.Background(), &PrintRequest{Bytes: []byte("hello")})
-	assert.NilError(t, err)
-	assert.Equal(t, s.printedText, "hello")
 
 	var chunksReceived [][]byte
 	chunks, err := c.FileContent(context.Background(), &protobuf.StringValue{Value: ""})
@@ -108,4 +94,34 @@ func TestComOverPipe(t *testing.T) {
 		statsReceived = append(statsReceived, *stat)
 	}
 	assert.DeepEqual(t, s.statsToSend, statsReceived)
+
+	go func() {
+		stdInWriter.Write([]byte("stdin"))
+		stdInWriter.Close()
+	}()
+
+	outResult := make(chan []byte)
+	errResult := make(chan []byte)
+	defer close(outResult)
+	defer close(errResult)
+	go func() {
+		res, err := ioutil.ReadAll(stdOutReader)
+		assert.NilError(t, err)
+		outResult <- res
+	}()
+	go func() {
+		res, err := ioutil.ReadAll(stdErrReader)
+		assert.NilError(t, err)
+		errResult <- res
+	}()
+
+	readMessage, err := ioutil.ReadAll(remoteStreams.In)
+	assert.NilError(t, err)
+	remoteStreams.Out.Write([]byte("stdout"))
+	remoteStreams.Out.Close()
+	remoteStreams.Err.Write([]byte("stderr"))
+	remoteStreams.Err.Close()
+	assert.Equal(t, "stdin", string(readMessage))
+	assert.Equal(t, "stdout", string(<-outResult))
+	assert.Equal(t, "stderr", string(<-errResult))
 }
