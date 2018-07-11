@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package com;
+
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+message PrintRequest{
+    bytes Bytes  = 1;
+    bool UseStdErr = 2;
+}
+
+message FileStat{
+    string Name = 1;
+    int32 Mode = 2;
+    bool IsDir  = 3;
+}
+
+service FrontService{
+    rpc Prompt(google.protobuf.BytesValue) returns(google.protobuf.BytesValue);
+    rpc Print(PrintRequest) returns(google.protobuf.Empty);
+    rpc FileContent(google.protobuf.StringValue) returns (stream google.protobuf.BytesValue);
+    rpc FileList(google.protobuf.StringValue) returns (stream FileStat);
+}

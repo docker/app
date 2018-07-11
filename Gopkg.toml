@@ -39,7 +39,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "k8s.io/kubernetes"
-  revision = "v1.8.14"
+  version = "=v1.8.14"
 
 [[override]]
   name = "k8s.io/api"
@@ -75,7 +75,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "google.golang.org/grpc"
-  revision = "v1.3.0"
+  version = "v1.3.0"
 
 [[constraint]]
   name = "github.com/spf13/pflag"

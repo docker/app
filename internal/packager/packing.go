@@ -30,9 +30,28 @@ func tarAdd(tarout *tar.Writer, path, file string) error {
 	return err
 }
 
+func tarToolchainVersion(tarout *tar.Writer) error {
+	payload := []byte(internal.Version)
+	if err := tarout.WriteHeader(&tar.Header{
+		Name: internal.ToolchainVersionFile,
+		Mode: 0644,
+		Size: int64(len(payload)),
+	}); err != nil {
+		return err
+	}
+	_, err := tarout.Write(payload)
+	return err
+}
+
 // Pack packs the app as a single file
 func Pack(appname string, target io.Writer) error {
 	tarout := tar.NewWriter(target)
+	defer tarout.Close()
+	return PackInto(appname, tarout)
+}
+
+// PackInto packs an image into an existing TarWriter
+func PackInto(appname string, tarout *tar.Writer) error {
 	for _, f := range internal.FileNames {
 		err := tarAdd(tarout, f, filepath.Join(appname, f))
 		if err != nil {
@@ -65,7 +84,8 @@ func Pack(appname string, target io.Writer) error {
 			}
 		}
 	}
-	return tarout.Close()
+	// inject toolchain version
+	return tarToolchainVersion(tarout)
 }
 
 // Unpack extracts a packed app

@@ -688,21 +688,33 @@
   name = "google.golang.org/grpc"
   packages = [
     ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
     "codes",
+    "connectivity",
     "credentials",
-    "grpclb/grpc_lb_v1",
+    "encoding",
+    "encoding/proto",
     "grpclog",
     "internal",
+    "internal/backoff",
+    "internal/channelz",
+    "internal/grpcrand",
     "keepalive",
     "metadata",
     "naming",
     "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
     "stats",
     "status",
     "tap",
     "transport"
   ]
-  revision = "v1.3.0"
+  revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
+  version = "v1.13.0"
 
 [[projects]]
   name = "gopkg.in/inf.v0"
@@ -867,7 +879,8 @@
 [[projects]]
   name = "k8s.io/kubernetes"
   packages = ["pkg/api/v1/pod"]
-  revision = "v1.8.14"
+  revision = "9d72fafc46543ebdad024b7577012268bab543a7"
+  version = "v1.8.14"
 
 [[projects]]
   branch = "master"
@@ -878,6 +891,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6fd62a5920084193fcce423a519fa6edd39bd3cd95669a542718c55dd15682c9"
+  inputs-digest = "e2a911c23e0ba3119afc6fbfb4865839830d30bdec88092c53d320a3c0fa86d9"
   solver-name = "gps-cdcl"
   solver-version = 1
