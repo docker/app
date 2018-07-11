@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
@@ -18,7 +17,7 @@ func packCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pack [<app-name>] [-o output_file]",
 		Short: "Pack the application as a single file",
-		Args:  cli.RequiresMaxArgs(1),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appname := firstOrEmpty(args)
 			appname, cleanup, err := packager.Extract(appname)

@@ -4,7 +4,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/render"
-	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack"
 	"github.com/docker/cli/cli/command/stack/options"
@@ -30,7 +29,7 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 		Use:   "deploy [<app-name>]",
 		Short: "Deploy or update an application",
 		Long:  `Deploy the application on either Swarm or Kubernetes.`,
-		Args:  cli.RequiresMaxArgs(1),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runDeploy(dockerCli, cmd.Flags(), firstOrEmpty(args), opts)
 		},

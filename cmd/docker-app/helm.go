@@ -6,7 +6,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/render"
-	"github.com/docker/cli/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +22,7 @@ func helmCmd() *cobra.Command {
 		Use:   "helm [<app-name>] [-s key=value...] [-f settings-file...]",
 		Short: "Generate a Helm chart",
 		Long:  `Generate a Helm chart for the application.`,
-		Args:  cli.RequiresMaxArgs(1),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {

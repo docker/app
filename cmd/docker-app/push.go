@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/cli/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +15,7 @@ func pushCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "push [<app-name>]",
 		Short: "Push the application to a registry",
-		Args:  cli.RequiresMaxArgs(1),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return packager.Push(firstOrEmpty(args), opts.namespace, opts.tag)
 		},
