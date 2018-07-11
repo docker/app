@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -61,7 +63,7 @@ func RunFrontService(impl FrontServiceServer, reader io.Reader, writer io.Writer
 
 // RemoteStreams represents the standard streams of the front-end
 type RemoteStreams struct {
-	In  io.Reader
+	In  io.ReadCloser
 	Out io.WriteCloser
 	Err io.WriteCloser
 }
@@ -100,6 +102,7 @@ func ConnectToFront(reader io.Reader, writer io.Writer) (FrontServiceClient, *Re
 		input, err := streamsClient.Stdin(context.Background(), &protobuf.Empty{})
 		if err != nil {
 			inWriter.CloseWithError(err)
+			fmt.Fprintf(os.Stderr, "error on streamsClient.Stdin: %q\n", err)
 			return
 		}
 		for {
@@ -109,9 +112,11 @@ func ConnectToFront(reader io.Reader, writer io.Writer) (FrontServiceClient, *Re
 				return
 			case err != nil:
 				inWriter.CloseWithError(err)
+				fmt.Fprintf(os.Stderr, "error on stdin message.Recv: %q\n", err)
 				return
 			}
 			if _, err := inWriter.Write(message.Value); err != nil {
+				fmt.Fprintf(os.Stderr, "error on inWriter.Write: %q\n", err)
 				inWriter.CloseWithError(err)
 				return
 			}
@@ -120,11 +125,12 @@ func ConnectToFront(reader io.Reader, writer io.Writer) (FrontServiceClient, *Re
 
 	go func() {
 		output, err := streamsClient.Stdout(context.Background())
-		defer output.CloseSend()
 		if err != nil {
 			outReader.CloseWithError(err)
+			fmt.Fprintf(os.Stderr, "error on streamsClient.Stdout: %q\n", err)
 			return
 		}
+		defer output.CloseSend()
 
 		reader := bufio.NewReader(outReader)
 		buffer := make([]byte, 1024)
@@ -146,11 +152,12 @@ func ConnectToFront(reader io.Reader, writer io.Writer) (FrontServiceClient, *Re
 	}()
 	go func() {
 		output, err := streamsClient.Stderr(context.Background())
-		defer output.CloseSend()
 		if err != nil {
 			errReader.CloseWithError(err)
+			fmt.Fprintf(os.Stderr, "error on streamsClient.Stderr: %q\n", err)
 			return
 		}
+		defer output.CloseSend()
 
 		reader := bufio.NewReader(errReader)
 		buffer := make([]byte, 1024)
@@ -185,6 +192,7 @@ type remoteStreamServer struct {
 }
 
 func (s *remoteStreamServer) Stdin(_ *protobuf.Empty, output RemoteStdStreams_StdinServer) error {
+	fmt.Println("Received stdin")
 	reader := bufio.NewReader(s.in)
 	buffer := make([]byte, 1024)
 	for {
@@ -223,8 +231,10 @@ func bytesReceiverToOutputStream(input bytesReceiver, output io.WriteCloser) err
 }
 
 func (s *remoteStreamServer) Stdout(input RemoteStdStreams_StdoutServer) error {
+	fmt.Println("Received stdout")
 	return bytesReceiverToOutputStream(input, s.out)
 }
 func (s *remoteStreamServer) Stderr(input RemoteStdStreams_StderrServer) error {
+	fmt.Println("Received stderr")
 	return bytesReceiverToOutputStream(input, s.err)
 }

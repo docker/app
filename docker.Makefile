@@ -26,10 +26,7 @@ build_dev_image:
 shell: build_dev_image ## run a shell in the docker build image
 	docker run -ti --rm $(DEV_IMAGE_NAME) bash
 
-backend-image:
-	docker build --target=backend -t docker/app-backend:$(TAG) .
-
-cross: create_bin backend-image ## cross-compile binaries (linux, darwin, windows)
+cross: create_bin ## cross-compile binaries (linux, darwin, windows)
 	docker build --target=cross -t $(CROSS_IMAGE_NAME)  .
 	docker create --name $(CROSS_CTNR_NAME) $(CROSS_IMAGE_NAME) noop
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
@@ -87,6 +84,9 @@ lint: ## run linter(s)
 vendor: build_dev_image
 	$(info Vendoring...)
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"
+
+backend: 
+	docker build -t docker/app-backend:$(TAG) --target backend  .
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
