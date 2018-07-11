@@ -1,0 +1,9 @@
+version = "unstable"
+generator = "gogoslick"
+plugins = ["grpc"]
+
+[includes]
+    packages = ["github.com/gogo/protobuf/protobuf"]
+[packages]
+  "google/protobuf/wrappers.proto" = "github.com/gogo/protobuf/types"
+  "google/protobuf/empty.proto"    = "github.com/gogo/protobuf/types"
