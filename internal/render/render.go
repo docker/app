@@ -44,7 +44,9 @@ func flattenYAML(content []byte) (map[string]string, error) {
 		return nil, err
 	}
 	out := make(map[string]interface{})
-	merge(out, in)
+	if err := merge(out, in); err != nil {
+		return nil, err
+	}
 	res := make(map[string]string)
 	flatten(out, res, "")
 	return res, nil
@@ -64,11 +66,11 @@ func flatten(in map[string]interface{}, out map[string]string, prefix string) {
 	}
 }
 
-func merge(res map[string]interface{}, src map[interface{}]interface{}) {
+func merge(res map[string]interface{}, src map[interface{}]interface{}) error {
 	for k, v := range src {
 		kk, ok := k.(string)
 		if !ok {
-			panic(fmt.Sprintf("fatal error, key %v in %#v is not a string", k, src))
+			return fmt.Errorf("key %v in %#v is not a string", k, src)
 		}
 		eval, ok := res[kk]
 		switch vv := v.(type) {
@@ -80,11 +82,14 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 					res[kk] = make(map[string]interface{})
 				}
 			}
-			merge(res[kk].(map[string]interface{}), vv)
+			if err := merge(res[kk].(map[string]interface{}), vv); err != nil {
+				return err
+			}
 		default:
 			res[kk] = vv
 		}
 	}
+	return nil
 }
 
 // LoadSettings loads a set of settings file and produce a property dictionary
@@ -100,7 +105,9 @@ func loadSettings(files []string) (map[string]interface{}, error) {
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse settings file %s", f)
 		}
-		merge(res, s)
+		if err := merge(res, s); err != nil {
+			return nil, err
+		}
 	}
 	return res, nil
 }
@@ -122,7 +129,9 @@ func mergeSettings(settings map[string]interface{}, env map[string]string) error
 			return err
 		}
 		val[ss[len(ss)-1]] = converted
-		merge(settings, valroot)
+		if err := merge(settings, valroot); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -135,7 +144,7 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 	// load the settings into a struct
 	settings, err := loadSettings(sf)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to load settings")
 	}
 	// inject our metadata
 	metaFile := filepath.Join(appname, internal.MetadataFileName)
@@ -144,16 +153,16 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read package metadata file")
 	}
-	err = yaml.Unmarshal(metaContent, &meta)
-	if err != nil {
+	if err := yaml.Unmarshal(metaContent, &meta); err != nil {
 		return nil, errors.Wrap(err, "failed to parse package metadata file")
 	}
 	metaPrefixed := make(map[interface{}]interface{})
 	metaPrefixed["app"] = meta
-	merge(settings, metaPrefixed)
+	if err := merge(settings, metaPrefixed); err != nil {
+		return nil, errors.Wrap(err, "failed to merge settings")
+	}
 	// inject the user-provided env
-	err = mergeSettings(settings, env)
-	if err != nil {
+	if err := mergeSettings(settings, env); err != nil {
 		return nil, errors.Wrap(err, "failed to merge settings")
 	}
 	// flatten settings for variable expension
