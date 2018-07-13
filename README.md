@@ -236,6 +236,7 @@ Available Commands:
   render      Render the Compose file for the application
   save        Save the application as an image to the docker daemon(in preparation for push)
   split       Split a single-file application into multiple files
+  validate    Checks the rendered application is syntactically correct
   version     Print version information
 
 Flags:
