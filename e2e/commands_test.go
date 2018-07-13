@@ -109,7 +109,7 @@ services:
 	meta := `# Version of the application
 version: 0.1.0
 # Name of the application
-name: app_test
+name: app-test
 # A short description of the application
 description: my cool app
 # Namespace to use when pushing to a registry. This is typically your Hub username.
@@ -128,7 +128,7 @@ maintainers:
 	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
 	defer os.RemoveAll(inputDir)
 
-	testAppName := "app_test"
+	testAppName := "app-test"
 	dirName := internal.DirNameFromAppName(testAppName)
 	defer os.RemoveAll(dirName)
 

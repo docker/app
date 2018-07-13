@@ -5,7 +5,7 @@
     "properties": {
         "name": {
             "type": "string",
-            "regex": "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+            "format": "hostname"
         },
         "version": {
             "type": "string"
@@ -30,7 +30,8 @@
                         "type": [
                             "string",
                             "null"
-                        ]
+                        ],
+                        "format": "email"
                     }
                 }
             }
