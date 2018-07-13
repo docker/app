@@ -68,6 +68,7 @@ If you don't have Go installed but Docker is present, you can also use
 ```sh
 make -f docker.Makefile           # builds cross binaries build and tests
 make -f docker.Makefile cross     # builds cross binaries (linux, darwin, windows)
+make -f docker.Makefile schemas   # update the embedded schemas
 
 make -f docker.Makefile lint      # run the linter on the sources
 make -f docker.Makefile test-unit # run the unit tests

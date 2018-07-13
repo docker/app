@@ -95,5 +95,8 @@ vendor: ## update vendoring
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
+schemas: ## generate specification/bindata.go from json schemas
+	go generate github.com/docker/app/specification
+
 .PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor help
 .DEFAULT: all
