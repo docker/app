@@ -10,7 +10,3 @@ namespace: myHubUsername
 maintainers:
   - name: user
     email: user@email.com
-# Specify false here if your application doesn't support Swarm or Kubernetes
-targets:
-  swarm: true
-  kubernetes: true

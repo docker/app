@@ -5,6 +5,3 @@ namespace: "alice"
 maintainers:
   - name: bearclaw
     email: bearclaw@bearclaw.bearclaw
-targets:
-  swarm: true
-  kubernetes: true

@@ -120,10 +120,6 @@ maintainers:
     email: 
   - name: joe
     email: joe@joe.com
-# Specify false here if your application doesn't support Swarm or Kubernetes
-targets:
-  swarm: true
-  kubernetes: true
 `
 	envData := "# some comment\nNGINX_VERSION=latest"
 	inputDir := randomName("app_input_")

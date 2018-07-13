@@ -4,6 +4,3 @@ description: ""
 maintainers:
   - name: sakuya.izayoi
     email: sizayoi@sdmansion.jp
-targets:
-  swarm: true
-  kubernetes: true

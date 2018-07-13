@@ -50,9 +50,6 @@ namespace: ""
 maintainers:
 - name: yourusername
   email: ""
-targets:
-  swarm: true
-  kubernetes: true
 
 ---
 version: '3.2'

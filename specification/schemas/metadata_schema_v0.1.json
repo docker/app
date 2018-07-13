@@ -34,16 +34,6 @@
                     }
                 }
             }
-        },
-        "targets": {
-            "properties": {
-                "swarm": {
-                    "type": "boolean"
-                },
-                "kubernetes": {
-                    "type": "boolean"
-                }
-            }
         }
     },
     "required": [

@@ -27,10 +27,6 @@ description:
 maintainers:
   - name: user
     email:
-# Specify false here if your application doesn't support Swarm or Kubernetes
-targets:
-  swarm: true
-  kubernetes: true
 
 ---
 # This section contains the Compose file that describes your application services.
