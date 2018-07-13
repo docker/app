@@ -17,7 +17,6 @@ import (
 
 var (
 	dockerApp       = ""
-	yamlschemaApp   = ""
 	hasExperimental = false
 	renderers       = ""
 )
@@ -42,20 +41,6 @@ func getDockerAppBinary(t *testing.T) (string, bool) {
 	i := strings.Index(sOutput, "Renderers")
 	renderers = sOutput[i+10:]
 	return dockerApp, hasExperimental
-}
-
-func getYamlschemaBinary(t *testing.T) string {
-	t.Helper()
-	if yamlschemaApp != "" {
-		return yamlschemaApp
-	}
-	binName := findBinary("yamlschema")
-	assert.Assert(t, binName != "", "cannot locate yamlschema binary")
-	var err error
-	binName, err = filepath.Abs(binName)
-	assert.NilError(t, err, "failed to convert yamlschema path to absolute")
-	yamlschemaApp = binName
-	return yamlschemaApp
 }
 
 func findBinary(app string, options ...string) string {
