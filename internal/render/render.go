@@ -136,10 +136,10 @@ func contains(list []string, needle string) bool {
 }
 
 // Render renders the Compose file for this app, merging in settings files, other compose files, and env
-func Render(appname string, composeFiles []string, settingsFile []string, env map[string]string) (*composetypes.Config, error) {
+func Render(appname string, composeFiles []string, settingsFiles []string, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
 	sf := []string{filepath.Join(appname, internal.SettingsFileName)}
-	sf = append(sf, settingsFile...)
+	sf = append(sf, settingsFiles...)
 	// load the settings into a struct
 	settings, err := loadSettings(sf)
 	if err != nil {

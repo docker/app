@@ -7,70 +7,20 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/cli/cli/compose/loader"
+	"github.com/xeipuuv/gojsonschema"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 	"gotest.tools/golden"
 	"gotest.tools/icmd"
 )
-
-var (
-	dockerApp       = ""
-	hasExperimental = false
-	renderers       = ""
-)
-
-func getBinary(t *testing.T) (string, bool) {
-	t.Helper()
-	if dockerApp != "" {
-		return dockerApp, hasExperimental
-	}
-	binName := findBinary()
-	if binName == "" {
-		t.Error("cannot locate docker-app binary")
-	}
-	var err error
-	binName, err = filepath.Abs(binName)
-	assert.NilError(t, err, "failed to convert dockerApp path to absolute")
-	cmd := exec.Command(binName, "version")
-	output, err := cmd.CombinedOutput()
-	assert.NilError(t, err, "failed to execute %s", binName)
-	dockerApp = binName
-	sOutput := string(output)
-	hasExperimental = strings.Contains(sOutput, "Experimental: on")
-	i := strings.Index(sOutput, "Renderers")
-	renderers = sOutput[i+10:]
-	return dockerApp, hasExperimental
-}
-
-func findBinary() string {
-	binNames := []string{
-		os.Getenv("DOCKERAPP_BINARY"),
-		"./docker-app-" + runtime.GOOS + binExt(),
-		"./docker-app" + binExt(),
-		"../bin/docker-app-" + runtime.GOOS + binExt(),
-		"../bin/docker-app" + binExt(),
-	}
-	for _, binName := range binNames {
-		if _, err := os.Stat(binName); err == nil {
-			return binName
-		}
-	}
-	return ""
-}
-
-func binExt() string {
-	if runtime.GOOS == "windows" {
-		return ".exe"
-	}
-	return ""
-}
 
 // just run a command discarding everything
 func runCommand(exe string, args ...string) {
@@ -102,7 +52,7 @@ func assertCommandFailureOutput(t *testing.T, goldenFile string, exe string, arg
 }
 
 func TestRenderBinary(t *testing.T) {
-	getBinary(t)
+	getDockerAppBinary(t)
 	apps, err := ioutil.ReadDir("render")
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
@@ -149,7 +99,7 @@ func randomName(prefix string) string {
 }
 
 func TestInitBinary(t *testing.T) {
-	getBinary(t)
+	getDockerAppBinary(t)
 	composeData := `version: "3.2"
 services:
   nginx:
@@ -204,8 +154,20 @@ targets:
 		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
 		fs.WithFile(internal.SettingsFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
 	)
-
 	assert.Assert(t, fs.Equal(dirName, manifest))
+
+	// validate metadata with JSON Schema
+	absPath, err := filepath.Abs(path.Join("..", "specification", "schemas", "metadata_schema_v0.1.json"))
+	assert.NilError(t, err)
+	absPath = filepath.ToSlash(absPath)
+	schemaLoader := gojsonschema.NewReferenceLoader("file://" + absPath)
+	assert.Check(t, schemaLoader != nil)
+	data, err := loader.ParseYAML([]byte(meta))
+	assert.NilError(t, err)
+	dataLoader := gojsonschema.NewGoLoader(data)
+	result, err := gojsonschema.Validate(schemaLoader, dataLoader)
+	assert.NilError(t, err)
+	assert.Check(t, result.Valid())
 
 	// test single-file init
 	args = []string{
@@ -229,7 +191,7 @@ targets:
 }
 
 func TestDetectAppBinary(t *testing.T) {
-	dockerApp, _ := getBinary(t)
+	dockerApp, _ := getDockerAppBinary(t)
 	// cwd = e2e
 	assertCommand(t, dockerApp, "inspect")
 	cwd, err := os.Getwd()
@@ -243,7 +205,7 @@ func TestDetectAppBinary(t *testing.T) {
 }
 
 func TestPackBinary(t *testing.T) {
-	dockerApp, hasExperimental := getBinary(t)
+	dockerApp, hasExperimental := getDockerAppBinary(t)
 	if !hasExperimental {
 		t.Skip("experimental mode needed for this test")
 	}
@@ -276,7 +238,7 @@ func TestPackBinary(t *testing.T) {
 
 func runHelmCommand(t *testing.T, args ...string) *fs.Dir {
 	t.Helper()
-	dockerApp, _ := getBinary(t)
+	dockerApp, _ := getDockerAppBinary(t)
 	abs, err := filepath.Abs(".")
 	assert.NilError(t, err)
 	dir := fs.NewDir(t, t.Name(), fs.FromDir(abs))
@@ -313,12 +275,12 @@ func TestHelmV1Beta1Binary(t *testing.T) {
 }
 
 func TestHelmInvalidStackVersionBinary(t *testing.T) {
-	dockerApp, _ := getBinary(t)
+	dockerApp, _ := getDockerAppBinary(t)
 	assertCommandFailureOutput(t, "invalid-stack-version.golden", dockerApp, "helm", "helm", "--stack-version", "foobar")
 }
 
 func TestSplitMergeBinary(t *testing.T) {
-	dockerApp, _ := getBinary(t)
+	dockerApp, _ := getDockerAppBinary(t)
 	app := "render/envvariables"
 	assertCommand(t, dockerApp, "merge", app, "-o", "remerged.dockerapp")
 	defer os.Remove("remerged.dockerapp")
@@ -334,7 +296,7 @@ func TestSplitMergeBinary(t *testing.T) {
 }
 
 func TestImageBinary(t *testing.T) {
-	dockerApp, _ := getBinary(t)
+	dockerApp, _ := getDockerAppBinary(t)
 	r := startRegistry(t)
 	defer r.stop(t)
 	registry := r.getAddress(t)

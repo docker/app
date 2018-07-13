@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "metadata_schema_v0.1.json",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "regex": "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+        },
+        "version": {
+            "type": "string"
+        },
+        "description": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "namespace": {
+            "type": "string"
+        },
+        "maintainers": {
+            "type": "array",
+            "items": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            }
+        },
+        "targets": {
+            "properties": {
+                "swarm": {
+                    "type": "boolean"
+                },
+                "kubernetes": {
+                    "type": "boolean"
+                }
+            }
+        }
+    },
+    "required": [
+        "name",
+        "version"
+    ]
+}
