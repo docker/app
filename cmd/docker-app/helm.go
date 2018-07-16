@@ -7,6 +7,7 @@ import (
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/render"
 	"github.com/docker/cli/cli"
+	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -30,10 +31,7 @@ func helmCmd() *cobra.Command {
 				return err
 			}
 			defer cleanup()
-			d, err := parseSettings(helmEnv)
-			if err != nil {
-				return err
-			}
+			d := cliopts.ConvertKVStringsToMap(helmEnv)
 			if stackVersion != render.V1Beta1 && stackVersion != render.V1Beta2 {
 				return fmt.Errorf("invalid stack version %q (accepted values: %s, %s)", stackVersion, render.V1Beta1, render.V1Beta2)
 			}
