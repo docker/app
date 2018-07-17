@@ -38,4 +38,16 @@ type AppMetadata struct {
 	Description string
 	Namespace   string
 	Maintainers Maintainers
+	Parents     Parents
+}
+
+// Parents is a list of ParentMetadata items
+type Parents []ParentMetadata
+
+// ParentMetadata contains historical data of forked packages
+type ParentMetadata struct {
+	Name        string
+	Namespace   string
+	Version     string
+	Maintainers Maintainers
 }
