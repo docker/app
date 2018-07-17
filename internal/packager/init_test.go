@@ -86,15 +86,10 @@ description:
 maintainers:
   - name: bearclaw
     email: bearclaw
-# Specify false here if your application doesn't support Swarm or Kubernetes
-targets:
-  swarm: true
-  kubernetes: true
 `
 	assert.NilError(t, err)
 
-	manifest := fs.Expected(
-		t,
+	manifest := fs.Expected(t,
 		fs.WithFile(internal.MetadataFileName, data, fs.WithMode(0644)),
 	)
 	assert.Assert(t, fs.Equal(tmpdir.Path(), manifest))

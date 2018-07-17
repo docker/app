@@ -6,6 +6,3 @@ maintainers:
     email: bearclaw@bearclaw.com
   - name: bob
     email: bob@bob.com
-targets:
-  swarm: true
-  kubernetes: true

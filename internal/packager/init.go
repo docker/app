@@ -247,11 +247,7 @@ description: {{ .Description }}
 {{ end }}{{ else }}#maintainers:
 #  - name: John Doe
 #    email: john@doe.com
-{{ end }}# Specify false here if your application doesn't support Swarm or Kubernetes
-targets:
-  swarm: true
-  kubernetes: true
-`
+{{ end }}`
 
 func writeMetadataFile(name, dirName string, description string, maintainers []string) error {
 	meta := newMetadata(name, description, maintainers)
@@ -267,13 +263,8 @@ func writeMetadataFile(name, dirName string, description string, maintainers []s
 }
 
 func newMetadata(name string, description string, maintainers []string) types.AppMetadata {
-	target := types.ApplicationTarget{
-		Swarm:      true,
-		Kubernetes: true,
-	}
 	res := types.AppMetadata{
 		Version:     "0.1.0",
-		Targets:     target,
 		Name:        name,
 		Description: description,
 	}

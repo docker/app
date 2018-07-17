@@ -38,12 +38,4 @@ type AppMetadata struct {
 	Description string
 	Namespace   string
 	Maintainers Maintainers
-	Targets     ApplicationTarget
-}
-
-// ApplicationTarget represents which platform(s) / orchestrator(s) the
-// app package is designed to run on
-type ApplicationTarget struct {
-	Swarm      bool
-	Kubernetes bool
 }
