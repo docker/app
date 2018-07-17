@@ -13,6 +13,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/types"
+	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -97,12 +98,12 @@ func Load(repotag string, outputDir string) error {
 			if err != nil && err != io.EOF {
 				return errors.Wrap(err, "error reading tar data")
 			}
-			repoComps := strings.Split(repotag, ":")
-			repo := repoComps[0]
-			if len(repoComps) == 3 || (len(repoComps) == 2 && strings.Contains(repoComps[1], "/")) {
-				repo = repoComps[1]
+			img, err := splitImageName(repotag)
+			if err != nil {
+				return err
 			}
-			err = ioutil.WriteFile(filepath.Join(outputDir, internal.DirNameFromAppName(filepath.Base(repo))), data, 0644)
+			appName := img.Name
+			err = ioutil.WriteFile(filepath.Join(outputDir, internal.DirNameFromAppName(appName)), data, 0644)
 			return errors.Wrap(err, "error writing output file")
 		}
 	}
@@ -128,11 +129,41 @@ func Push(appname, namespace, tag string) error {
 
 // Pull pulls an app from a registry
 func Pull(repotag string) error {
+	if err := pullImage(repotag); err != nil {
+		return err
+	}
+	return Load(repotag, ".")
+}
+
+func pullImage(repotag string) error {
 	cmd := exec.Command("docker", "pull", repotag)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return errors.Wrapf(err, "error pulling image %s", repotag)
 	}
-	return Load(repotag, ".")
+	return nil
+}
+
+type imageComponents struct {
+	Name       string
+	Namespace  string
+	Repository string
+	Tag        string
+}
+
+func splitImageName(repotag string) (*imageComponents, error) {
+	named, err := reference.ParseNormalizedNamed(repotag)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse image name")
+	}
+	res := &imageComponents{
+		Repository: named.Name(),
+	}
+	res.Name = res.Repository[strings.LastIndex(res.Repository, "/")+1:]
+	res.Namespace = strings.TrimSuffix(res.Repository, res.Name)
+	if tagged, ok := named.(reference.Tagged); ok {
+		res.Tag = tagged.Tag()
+	}
+	return res, nil
 }
