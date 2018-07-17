@@ -7,6 +7,7 @@ import (
 	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/render"
+	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -31,11 +32,7 @@ subdirectory.`,
 				return err
 			}
 			defer cleanup()
-
-			d, err := parseSettings(imageAddEnv)
-			if err != nil {
-				return err
-			}
+			d := cliopts.ConvertKVStringsToMap(imageAddEnv)
 			config, err := render.Render(appname, imageAddComposeFiles, imageAddSettingsFile, d)
 			if err != nil {
 				return err

@@ -9,6 +9,7 @@ import (
 	"github.com/docker/app/internal/render"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -32,10 +33,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 				return err
 			}
 			defer cleanup()
-			d, err := parseSettings(renderEnv)
-			if err != nil {
-				return err
-			}
+			d := cliopts.ConvertKVStringsToMap(renderEnv)
 			rendered, err := render.Render(appname, renderComposeFiles, renderSettingsFile, d)
 			if err != nil {
 				return err

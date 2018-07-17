@@ -8,6 +8,7 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack"
 	"github.com/docker/cli/cli/command/stack/options"
+	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -58,10 +59,7 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	if err != nil {
 		return err
 	}
-	d, err := parseSettings(opts.deployEnv)
-	if err != nil {
-		return err
-	}
+	d := cliopts.ConvertKVStringsToMap(opts.deployEnv)
 	rendered, err := render.Render(appname, opts.deployComposeFiles, opts.deploySettingsFiles, d)
 	if err != nil {
 		return err
