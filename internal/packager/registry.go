@@ -147,7 +147,6 @@ func pullImage(repotag string) error {
 
 type imageComponents struct {
 	Name       string
-	Namespace  string
 	Repository string
 	Tag        string
 }
@@ -161,7 +160,6 @@ func splitImageName(repotag string) (*imageComponents, error) {
 		Repository: named.Name(),
 	}
 	res.Name = res.Repository[strings.LastIndex(res.Repository, "/")+1:]
-	res.Namespace = strings.TrimSuffix(res.Repository, res.Name)
 	if tagged, ok := named.(reference.Tagged); ok {
 		res.Tag = tagged.Tag()
 	}
