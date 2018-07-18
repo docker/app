@@ -30,29 +30,3 @@ endif
 ifeq ($(COMMIT),)
   COMMIT := $(shell git rev-parse --short HEAD 2> $(NULL))
 endif
-
-ifeq ($(BUILDTIME),)
-  BUILDTIME := $(shell date --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/')
-endif
-ifeq ($(BUILDTIME),)
-  BUILDTIME := $(shell gdate --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/')
-endif
-ifeq ($(BUILDTIME),)
-  $(error unable to set BUILDTIME, ensure that you have GNU date installed or set manually)
-endif
-
-BUILDTAGS=""
-ifeq ($(EXPERIMENTAL),on)
-  BUILDTAGS="experimental"
-endif
-
-LDFLAGS := "-s -w \
-  -X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
-  -X $(PKG_NAME)/internal.Version=$(TAG)      \
-  -X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL) \
-  -X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
-
-EXEC_EXT :=
-ifeq ($(OS),Windows_NT)
-  EXEC_EXT := .exe
-endif
