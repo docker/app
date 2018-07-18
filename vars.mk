@@ -32,16 +32,11 @@ ifeq ($(COMMIT),)
 endif
 
 ifeq ($(BUILDTIME),)
-  BUILDTIME := $(shell date --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/')
-endif
-ifeq ($(BUILDTIME),)
-  BUILDTIME := $(shell gdate --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/')
-endif
-ifeq ($(BUILDTIME),)
   BUILDTIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
 endif
 ifeq ($(BUILDTIME),)
-  $(error unable to set BUILDTIME. Set the value manually)
+  BUILDTIME := unknown
+  $(warning unable to set BUILDTIME. Set the value manually)
 endif
 
 BUILDTAGS=""
