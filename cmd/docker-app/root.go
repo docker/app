@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command"
 	log "github.com/sirupsen/logrus"
@@ -21,8 +23,10 @@ func newRootCmd(dockerCli command.Cli) *cobra.Command {
 			}
 			return nil
 		},
+		Version: fmt.Sprintf("%s, build %s", internal.Version, internal.GitCommit),
 	}
 	cmd.PersistentFlags().BoolVar(&internal.Debug, "debug", false, "Enable debug mode")
+	cmd.SetVersionTemplate("docker-app version {{.Version}}\n")
 	addCommands(cmd, dockerCli)
 	return cmd
 }
