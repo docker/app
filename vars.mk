@@ -38,7 +38,10 @@ ifeq ($(BUILDTIME),)
   BUILDTIME := $(shell gdate --utc --rfc-3339 ns 2> /dev/null | sed -e 's/ /T/')
 endif
 ifeq ($(BUILDTIME),)
-  $(error unable to set BUILDTIME, ensure that you have GNU date installed or set manually)
+  BUILDTIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
+endif
+ifeq ($(BUILDTIME),)
+  $(error unable to set BUILDTIME. Set the value manually)
 endif
 
 BUILDTAGS=""
