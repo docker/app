@@ -12,6 +12,8 @@ import (
 	"testing"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/types"
+	yaml "gopkg.in/yaml.v2"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
@@ -311,4 +313,50 @@ func TestImageBinary(t *testing.T) {
 	// various commands from an image
 	assertCommand(t, dockerApp, "inspect", "alice/envvariables:0.1.0")
 	assertCommand(t, dockerApp, "inspect", "alice/envvariables.dockerapp:0.1.0")
+}
+
+func TestForkBinary(t *testing.T) {
+	dockerApp, _ := getDockerAppBinary(t)
+	r := startRegistry(t)
+	defer r.stop(t)
+	registry := r.getAddress(t)
+	assertCommand(t, dockerApp, "save", "--namespace", registry+"/acmecorp", "fork/simple")
+	assertCommand(t, dockerApp, "push", "--namespace", registry+"/acmecorp", "fork/simple")
+
+	tempDir, err := ioutil.TempDir("", "dockerapptest")
+	assert.NilError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	assertCommand(t, dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil", "-p", tempDir, "-m", "Remilia Scarlet:remilia@acmecorp.cool")
+	metadata, err := ioutil.ReadFile(filepath.Join(tempDir, "scarlet.devil.dockerapp", "metadata.yml"))
+	assert.NilError(t, err)
+	var decodedMeta types.AppMetadata
+	err = yaml.Unmarshal(metadata, &decodedMeta)
+	assert.NilError(t, err)
+	var expected = types.AppMetadata{
+		Name:        "scarlet.devil",
+		Namespace:   "acmecorp",
+		Version:     "1.1.0-beta1",
+		Description: "new fancy webapp with microservices",
+		Maintainers: types.Maintainers{
+			{Name: "Remilia Scarlet", Email: "remilia@acmecorp.cool"},
+		},
+		Targets: types.ApplicationTarget{
+			Swarm:      true,
+			Kubernetes: false,
+		},
+		Parents: types.Parents{
+			{
+				Name:      "simple",
+				Namespace: "acmecorp",
+				Version:   "1.1.0-beta1",
+				Maintainers: types.Maintainers{
+					{Name: "John Developer", Email: "john.dev@acmecorp.cool"},
+					{Name: "Jane Developer", Email: "jane.dev@acmecorp.cool"},
+				},
+			},
+		},
+	}
+
+	assert.DeepEqual(t, decodedMeta, expected)
 }
