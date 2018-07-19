@@ -28,13 +28,13 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 		Long:  `Render the Compose file for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			app, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {
 				return err
 			}
-			defer cleanup()
+			defer app.Cleanup()
 			d := cliopts.ConvertKVStringsToMap(renderEnv)
-			rendered, err := render.Render(appname, renderComposeFiles, renderSettingsFile, d)
+			rendered, err := render.Render(app.AppName, renderComposeFiles, renderSettingsFile, d)
 			if err != nil {
 				return err
 			}

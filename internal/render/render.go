@@ -180,7 +180,6 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 		}
 		renderers = rl
 	}
-	// go-template, then parse, then expand the compose files
 	configFiles := []composetypes.ConfigFile{}
 	for _, c := range composes {
 		data, err := ioutil.ReadFile(c)

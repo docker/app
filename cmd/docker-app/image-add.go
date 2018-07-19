@@ -27,17 +27,17 @@ subdirectory.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			oappname := args[0]
-			appname, cleanup, err := packager.Extract(oappname)
+			app, err := packager.Extract(oappname)
 			if err != nil {
 				return err
 			}
-			defer cleanup()
+			defer app.Cleanup()
 			d := cliopts.ConvertKVStringsToMap(imageAddEnv)
-			config, err := render.Render(appname, imageAddComposeFiles, imageAddSettingsFile, d)
+			config, err := render.Render(app.AppName, imageAddComposeFiles, imageAddSettingsFile, d)
 			if err != nil {
 				return err
 			}
-			if err := image.Add(appname, args[1:], config); err != nil {
+			if err := image.Add(app.AppName, args[1:], config); err != nil {
 				return err
 			}
 			// check if source was a tarball
@@ -56,7 +56,7 @@ subdirectory.`,
 					return err
 				}
 				// source was a tarball, rebuild it
-				return packager.Pack(appname, target)
+				return packager.Pack(app.AppName, target)
 			}
 			return nil
 		},

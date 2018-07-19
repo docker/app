@@ -15,12 +15,12 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Shows metadata and settings for a given application",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			app, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {
 				return err
 			}
-			defer cleanup()
-			return render.Inspect(dockerCli.Out(), appname)
+			defer app.Cleanup()
+			return render.Inspect(dockerCli.Out(), app.AppName)
 		},
 	}
 }

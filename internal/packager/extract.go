@@ -90,21 +90,15 @@ func extractImage(appname string) (ExtractedApp, error) {
 		}
 	}
 	// this gave us a compressed app, run through extract again
-	appname, cleanup, err := Extract(filepath.Join(tempDir, appname))
-	return ExtractedApp{"", appname, cleanup}, err
+	app, err := Extract(filepath.Join(tempDir, appname))
+	return ExtractedApp{"", app.AppName, app.Cleanup}, err
 }
 
-// Extract extracts the app content if it's an archive or single-file
-func Extract(appname string) (string, func(), error) {
-	extracted, err := ExtractWithOrigin(appname)
-	return extracted.AppName, extracted.Cleanup, err
-}
-
-// ExtractWithOrigin extracts the app content if argument is an archive, or does nothing if a dir.
+// Extract extracts the app content if argument is an archive, or does nothing if a dir.
 // It returns source file, effective app name, and cleanup function
 // If appname is empty, it looks into cwd, and all subdirs for a single matching .dockerapp
 // If nothing is found, it looks for an image and loads it
-func ExtractWithOrigin(appname string) (ExtractedApp, error) {
+func Extract(appname string) (ExtractedApp, error) {
 	if appname == "" {
 		var err error
 		if appname, err = findApp(); err != nil {
