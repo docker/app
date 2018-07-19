@@ -211,7 +211,7 @@ func writeMetadataFile(name, dirName string, description string, maintainers []s
 func parseMaintainersData(maintainers []string) []types.Maintainer {
 	var res []types.Maintainer
 	for _, m := range maintainers {
-		ne := strings.Split(m, ":")
+		ne := strings.SplitN(m, ":", 2)
 		email := ""
 		if len(ne) > 1 {
 			email = ne[1]
