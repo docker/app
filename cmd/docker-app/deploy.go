@@ -50,23 +50,23 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
-	appname, cleanup, err := packager.Extract(appname)
+	app, err := packager.Extract(appname)
 	if err != nil {
 		return err
 	}
-	defer cleanup()
+	defer app.Cleanup()
 	deployOrchestrator, err := command.GetStackOrchestrator(opts.deployOrchestrator, dockerCli.ConfigFile().StackOrchestrator, dockerCli.Err())
 	if err != nil {
 		return err
 	}
 	d := cliopts.ConvertKVStringsToMap(opts.deployEnv)
-	rendered, err := render.Render(appname, opts.deployComposeFiles, opts.deploySettingsFiles, d)
+	rendered, err := render.Render(app.AppName, opts.deployComposeFiles, opts.deploySettingsFiles, d)
 	if err != nil {
 		return err
 	}
 	stackName := opts.deployStackName
 	if stackName == "" {
-		stackName = internal.AppNameFromDir(appname)
+		stackName = internal.AppNameFromDir(app.AppName)
 	}
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
 		Namespace: stackName,

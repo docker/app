@@ -20,12 +20,11 @@ func packCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Pack the application as a single file",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appname := firstOrEmpty(args)
-			appname, cleanup, err := packager.Extract(appname)
+			app, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {
 				return err
 			}
-			defer cleanup()
+			defer app.Cleanup()
 			var target io.Writer
 			if packOutputFile == "-" {
 				if terminal.IsTerminal(int(dockerCli.Out().FD())) {
@@ -37,7 +36,7 @@ func packCmd(dockerCli command.Cli) *cobra.Command {
 					return err
 				}
 			}
-			return packager.Pack(appname, target)
+			return packager.Pack(app.AppName, target)
 		},
 	}
 	cmd.Flags().StringVarP(&packOutputFile, "output", "o", "-", "Output file (- for stdout)")

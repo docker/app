@@ -17,18 +17,14 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-func appName(appname string) string {
-	return internal.AppNameFromDir(appname)
-}
-
 // Save saves an app to docker and returns the image name.
 func Save(appname, namespace, tag string) (string, error) {
-	appname, cleanup, err := Extract(appname)
+	app, err := Extract(appname)
 	if err != nil {
 		return "", err
 	}
-	defer cleanup()
-	metaFile := filepath.Join(appname, internal.MetadataFileName)
+	defer app.Cleanup()
+	metaFile := filepath.Join(app.AppName, internal.MetadataFileName)
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read application metadata")
@@ -53,18 +49,18 @@ LABEL %s=%s
 LABEL maintainers="%v"
 COPY / /
 `, internal.ImageLabel, meta.Name, meta.Maintainers)
-	df := filepath.Join(appname, "__Dockerfile-docker-app__")
+	df := filepath.Join(app.AppName, "__Dockerfile-docker-app__")
 	if err := ioutil.WriteFile(df, []byte(dockerfile), 0644); err != nil {
 		return "", errors.Wrapf(err, "cannot create file %s", df)
 	}
 	defer os.Remove(df)
-	di := filepath.Join(appname, ".dockerignore")
+	di := filepath.Join(app.AppName, ".dockerignore")
 	if err := ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644); err != nil {
 		return "", errors.Wrapf(err, "cannot create file %s", di)
 	}
 	defer os.Remove(di)
-	imageName := namespace + appName(appname) + internal.AppExtension + ":" + tag
-	args := []string{"build", "-t", imageName, "-f", df, appname}
+	imageName := namespace + internal.AppNameFromDir(app.AppName) + internal.AppExtension + ":" + tag
+	args := []string{"build", "-t", imageName, "-f", df, app.AppName}
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = ioutil.Discard
 	cmd.Stderr = os.Stderr
@@ -115,12 +111,12 @@ func Load(repotag string, outputDir string) error {
 
 // Push pushes an app to a registry
 func Push(appname, namespace, tag string) error {
-	appname, cleanup, err := Extract(appname)
+	app, err := Extract(appname)
 	if err != nil {
 		return err
 	}
-	defer cleanup()
-	imageName, err := Save(appname, namespace, tag)
+	defer app.Cleanup()
+	imageName, err := Save(app.AppName, namespace, tag)
 	if err != nil {
 		return err
 	}

@@ -26,16 +26,16 @@ func helmCmd() *cobra.Command {
 		Long:  `Generate a Helm chart for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			app, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {
 				return err
 			}
-			defer cleanup()
+			defer app.Cleanup()
 			d := cliopts.ConvertKVStringsToMap(helmEnv)
 			if stackVersion != render.V1Beta1 && stackVersion != render.V1Beta2 {
 				return fmt.Errorf("invalid stack version %q (accepted values: %s, %s)", stackVersion, render.V1Beta1, render.V1Beta2)
 			}
-			return render.Helm(appname, helmComposeFiles, helmSettingsFile, d, helmRender, stackVersion)
+			return render.Helm(app.AppName, helmComposeFiles, helmSettingsFile, d, helmRender, stackVersion)
 		},
 	}
 	if internal.Experimental == "on" {
