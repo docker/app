@@ -18,6 +18,10 @@ import (
 
 // Fork pulls an application and creates a local fork for the user to modify
 func Fork(originName, forkName, outputDir string, maintainers []string) error {
+    imgRef, err := splitImageName(originName)
+    if err != nil {
+        return errors.Wrapf(err, "origin %q is not a valid image name", originName)
+    }
     log.Debugf("Pulling latest version of package %s", originName)
     if err := pullImage(originName); err != nil {
         return err
@@ -38,7 +42,6 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
     os.MkdirAll(appPath, 0755)
 
     // iterate tar contents
-    imgRef, err := splitImageName(originName)
     tarfile, err := os.Open(filepath.Join(tmpdir, internal.DirNameFromAppName(imgRef.Name)))
     if err != nil {
         return errors.Wrap(err, "failed to open package archive")
@@ -54,7 +57,7 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
             return errors.Wrap(err, "error reading tar data")
         }
 
-        if header.Name == "metadata.yml" {
+        if header.Name == internal.MetadataFileName {
             log.Debug("Loading app metadata")
             data, err = updateMetadata(data, namespace, name, maintainers)
             if err != nil {
@@ -80,23 +83,16 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
         return yamlMeta, err
     }
     // insert retrieved data in fork history section
-    log.Debug("Generating fork data")
-    forkData := types.ParentMetadata{
-        Name:        meta.Name,
-        Namespace:   meta.Namespace,
-        Version:     meta.Version,
-        Maintainers: meta.Maintainers,
-    }
-    log.Debug("Updating package history")
-    meta.Parents = append(meta.Parents, forkData)
-
-    // overwrite maintainer and app name info
-    meta.Name = name
-    meta.Namespace = namespace
-    meta.Maintainers = parseMaintainersData(maintainers)
+    log.Debug("Generating fork metadata")
+    newmeta := types.MetadataFrom(
+        meta,
+        types.WithName(name),
+        types.WithNamespace(namespace),
+        types.WithMaintainers(parseMaintainersData(maintainers)),
+    )
 
     // update metadata file
-    yamlMeta, err = yaml.Marshal(meta)
+    yamlMeta, err = yaml.Marshal(newmeta)
     if err != nil {
         return yamlMeta, errors.Wrap(err, "failed to render metadata structure")
     }

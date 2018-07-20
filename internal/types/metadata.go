@@ -51,3 +51,54 @@ type ParentMetadata struct {
 	Version     string
 	Maintainers Maintainers
 }
+
+// MetadataModifier is a function signature that takes and returns an AppMetadata object
+type MetadataModifier func(AppMetadata) AppMetadata
+
+// MetadataFrom returns an AppMetadata instance based on the provided AppMetadata
+// and applicable modifier functions
+func MetadataFrom(orig AppMetadata, modifiers ...MetadataModifier) AppMetadata {
+	parent := ParentMetadata{
+		Name:        orig.Name,
+		Namespace:   orig.Namespace,
+		Version:     orig.Version,
+		Maintainers: orig.Maintainers,
+	}
+
+	result := AppMetadata{
+		Version:     orig.Version,
+		Name:        orig.Name,
+		Namespace:   orig.Namespace,
+		Description: orig.Description,
+		Maintainers: orig.Maintainers,
+		Parents:     append(orig.Parents, parent),
+	}
+	for _, f := range modifiers {
+		result = f(result)
+	}
+	return result
+}
+
+// WithMaintainers returns a modified AppMetadata with updated maintainers field
+func WithMaintainers(maintainers Maintainers) MetadataModifier {
+	return func(parent AppMetadata) AppMetadata {
+		parent.Maintainers = maintainers
+		return parent
+	}
+}
+
+// WithName returns a modified AppMetadata with updated name field
+func WithName(name string) MetadataModifier {
+	return func(parent AppMetadata) AppMetadata {
+		parent.Name = name
+		return parent
+	}
+}
+
+// WithNamespace returns a modified AppMetadata with updated namespace field
+func WithNamespace(namespace string) MetadataModifier {
+	return func(parent AppMetadata) AppMetadata {
+		parent.Namespace = namespace
+		return parent
+	}
+}

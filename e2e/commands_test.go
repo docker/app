@@ -341,10 +341,6 @@ func TestForkBinary(t *testing.T) {
 		Maintainers: types.Maintainers{
 			{Name: "Remilia Scarlet", Email: "remilia@acmecorp.cool"},
 		},
-		Targets: types.ApplicationTarget{
-			Swarm:      true,
-			Kubernetes: false,
-		},
 		Parents: types.Parents{
 			{
 				Name:      "simple",
