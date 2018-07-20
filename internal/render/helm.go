@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/internal/templateconversion"
 	"github.com/docker/app/internal/templateloader"
 	"github.com/docker/app/internal/templatev1beta2"
@@ -98,7 +99,7 @@ func filterVariables(settings map[string]interface{}, variables []string, prefix
 				delete(settings, k)
 			}
 		default:
-			if !contains(variables, prefix+k) {
+			if !slices.ContainsString(variables, prefix+k) {
 				delete(settings, k)
 			}
 		}

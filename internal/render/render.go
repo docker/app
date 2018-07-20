@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/renderer"
+	"github.com/docker/app/internal/slices"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -126,15 +127,6 @@ func mergeSettings(settings map[string]interface{}, env map[string]string) error
 	return nil
 }
 
-func contains(list []string, needle string) bool {
-	for _, e := range list {
-		if e == needle {
-			return true
-		}
-	}
-	return false
-}
-
 // Render renders the Compose file for this app, merging in settings files, other compose files, and env
 func Render(appname string, composeFiles []string, settingsFiles []string, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
@@ -174,7 +166,7 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
 		rl := strings.Split(r, ",")
 		for _, r := range rl {
-			if !contains(renderer.Drivers(), r) {
+			if !slices.ContainsString(renderer.Drivers(), r) {
 				return nil, fmt.Errorf("renderer '%s' not found", r)
 			}
 		}
