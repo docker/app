@@ -1487,6 +1487,12 @@ func (sc *serverConn) processSettings(f *SettingsFrame) error {
 		}
 		return nil
 	}
+	if f.NumSettings() > 100 || f.HasDuplicates() {
+		// This isn't actually in the spec, but hang up on
+		// suspiciously large settings frames or those with
+		// duplicate entries.
+		return ConnectionError(ErrCodeProtocol)
+	}
 	if err := f.ForeachSetting(sc.processSetting); err != nil {
 		return err
 	}
@@ -1574,6 +1580,12 @@ func (sc *serverConn) processData(f *DataFrame) error {
 		// treated as a connection error (Section 5.4.1) of
 		// type PROTOCOL_ERROR."
 		return ConnectionError(ErrCodeProtocol)
+	}
+	// RFC 7540, sec 6.1: If a DATA frame is received whose stream is not in
+	// "open" or "half-closed (local)" state, the recipient MUST respond with a
+	// stream error (Section 5.4.2) of type STREAM_CLOSED.
+	if state == stateClosed {
+		return streamError(id, ErrCodeStreamClosed)
 	}
 	if st == nil || state != stateOpen || st.gotTrailerHeader || st.resetQueued {
 		// This includes sending a RST_STREAM if the stream is
@@ -1720,6 +1732,13 @@ func (sc *serverConn) processHeaders(f *MetaHeadersFrame) error {
 			// We're sending RST_STREAM to close the stream, so don't bother
 			// processing this frame.
 			return nil
+		}
+		// RFC 7540, sec 5.1: If an endpoint receives additional frames, other than
+		// WINDOW_UPDATE, PRIORITY, or RST_STREAM, for a stream that is in
+		// this state, it MUST respond with a stream error (Section 5.4.2) of
+		// type STREAM_CLOSED.
+		if st.state == stateHalfClosedRemote {
+			return streamError(id, ErrCodeStreamClosed)
 		}
 		return st.processTrailerHeaders(f)
 	}

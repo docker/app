@@ -22,14 +22,6 @@
 required = ["github.com/wadey/gocovmerge"]
 
 [[constraint]]
-  name = "github.com/spf13/cobra"
-  version = "0.0.2"
-
-[[constraint]]
-  name = "gopkg.in/yaml.v2"
-  version = "2.2.1"
-
-[[constraint]]
   name = "github.com/docker/cli"
   branch = "master"
 
@@ -56,6 +48,22 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "github.com/docker/swarmkit"
   revision = "edd5641391926a50bc5f7040e20b7efc05003c26"
+
+[[override]]
+  name = "k8s.io/kubernetes"
+  revision = "v1.8.14"
+
+[[override]]
+  name = "k8s.io/api"
+  revision = "kubernetes-1.8.14"
+
+[[override]]
+  name = "k8s.io/apimachinery"
+  revision = "kubernetes-1.8.14"
+
+[[override]]
+  name = "k8s.io/client-go"
+  revision = "kubernetes-1.8.14"
 
 [[override]]
   name = "google.golang.org/grpc"
