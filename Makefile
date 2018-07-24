@@ -98,5 +98,5 @@ help: ## this help
 schemas: ## generate specification/bindata.go from json schemas
 	go generate github.com/docker/app/specification
 
-.PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor help
+.PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor help schemas
 .DEFAULT: all
