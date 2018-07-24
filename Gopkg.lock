@@ -398,10 +398,11 @@
   revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
 
 [[projects]]
+  branch = "append-slice-without-pancking"
   name = "github.com/imdario/mergo"
   packages = ["."]
-  revision = "9316a62528ac99aaecb4e47eadd6dc8aa6533d58"
-  version = "v0.3.5"
+  revision = "9a471d776ecf785c2da33e9d4e84e8aa60c9c2c9"
+  source = "github.com/vdemeester/mergo"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
@@ -879,6 +880,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fafbc8191d06deddf8dd22103c49a431fc2093c0053df93af22b910dbd4c03b5"
+  inputs-digest = "44be787f0b10b4d298647dc3c299233eca920baff4cf33006320f97715d78ec4"
   solver-name = "gps-cdcl"
   solver-version = 1

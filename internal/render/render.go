@@ -10,12 +10,12 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/renderer"
+	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 
 	// Register gotemplate renderer
 	_ "github.com/docker/app/internal/renderer/gotemplate"
@@ -37,137 +37,30 @@ var (
 	pattern = regexp.MustCompile(patternString)
 )
 
-//flattenYAML reads a YAML file and return a flattened view
-func flattenYAML(content []byte) (map[string]string, error) {
-	in := make(map[interface{}]interface{})
-	if err := yaml.Unmarshal(content, in); err != nil {
-		return nil, err
-	}
-	out := make(map[string]interface{})
-	if err := merge(out, in); err != nil {
-		return nil, err
-	}
-	res := make(map[string]string)
-	flatten(out, res, "")
-	return res, nil
-}
-
-// flatten flattens a structure: foo.bar.baz -> foo_bar_baz
-func flatten(in map[string]interface{}, out map[string]string, prefix string) {
-	for k, v := range in {
-		switch vv := v.(type) {
-		case string:
-			out[prefix+k] = vv
-		case map[string]interface{}:
-			flatten(vv, out, prefix+k+".")
-		default:
-			out[prefix+k] = fmt.Sprintf("%v", v)
-		}
-	}
-}
-
-func merge(res map[string]interface{}, src map[interface{}]interface{}) error {
-	for k, v := range src {
-		kk, ok := k.(string)
-		if !ok {
-			return fmt.Errorf("key %v in %#v is not a string", k, src)
-		}
-		eval, ok := res[kk]
-		switch vv := v.(type) {
-		case map[interface{}]interface{}:
-			if !ok {
-				res[kk] = make(map[string]interface{})
-			} else {
-				if _, ok2 := eval.(map[string]interface{}); !ok2 {
-					res[kk] = make(map[string]interface{})
-				}
-			}
-			if err := merge(res[kk].(map[string]interface{}), vv); err != nil {
-				return err
-			}
-		default:
-			res[kk] = vv
-		}
-	}
-	return nil
-}
-
-// LoadSettings loads a set of settings file and produce a property dictionary
-func loadSettings(files []string) (map[string]interface{}, error) {
-	res := make(map[string]interface{})
-	for _, f := range files {
-		data, err := ioutil.ReadFile(f)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to read settings file %s", f)
-		}
-		s := make(map[interface{}]interface{})
-		err = yaml.Unmarshal(data, &s)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse settings file %s", f)
-		}
-		if err := merge(res, s); err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-// MergeSettings merges a flattened settings map into an expanded one
-func mergeSettings(settings map[string]interface{}, env map[string]string) error {
-	for k, v := range env {
-		ss := strings.Split(k, ".")
-		valroot := make(map[interface{}]interface{})
-		val := valroot
-		for _, s := range ss[:len(ss)-1] {
-			m := make(map[interface{}]interface{})
-			val[s] = m
-			val = m
-		}
-		var converted interface{}
-		err := yaml.Unmarshal([]byte(v), &converted)
-		if err != nil {
-			return err
-		}
-		val[ss[len(ss)-1]] = converted
-		if err := merge(settings, valroot); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Render renders the Compose file for this app, merging in settings files, other compose files, and env
 func Render(appname string, composeFiles []string, settingsFiles []string, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
 	sf := []string{filepath.Join(appname, internal.SettingsFileName)}
 	sf = append(sf, settingsFiles...)
 	// load the settings into a struct
-	settings, err := loadSettings(sf)
+	fileSettings, err := settings.LoadFiles(sf)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load settings")
 	}
 	// inject our metadata
 	metaFile := filepath.Join(appname, internal.MetadataFileName)
-	meta := make(map[interface{}]interface{})
-	metaContent, err := ioutil.ReadFile(metaFile)
+	metaPrefixed, err := settings.LoadFile(metaFile, settings.WithPrefix("app"))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read package metadata file")
+		return nil, err
 	}
-	if err := yaml.Unmarshal(metaContent, &meta); err != nil {
-		return nil, errors.Wrap(err, "failed to parse package metadata file")
+	envSettings, err := settings.FromFlatten(env)
+	if err != nil {
+		return nil, err
 	}
-	metaPrefixed := make(map[interface{}]interface{})
-	metaPrefixed["app"] = meta
-	if err := merge(settings, metaPrefixed); err != nil {
+	allSettings, err := settings.Merge(fileSettings, metaPrefixed, envSettings)
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to merge settings")
 	}
-	// inject the user-provided env
-	if err := mergeSettings(settings, env); err != nil {
-		return nil, errors.Wrap(err, "failed to merge settings")
-	}
-	// flatten settings for variable expension
-	finalEnv := make(map[string]string)
-	flatten(settings, finalEnv, "")
 	// prepend our app compose file to the list
 	composes := []string{filepath.Join(appname, internal.ComposeFileName)}
 	composes = append(composes, composeFiles...)
@@ -187,7 +80,7 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to read Compose file %s", c)
 		}
-		s, err := renderer.Apply(string(data), settings, renderers...)
+		s, err := renderer.Apply(string(data), allSettings, renderers...)
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +90,7 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 		}
 		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
 	}
-	return render(configFiles, finalEnv)
+	return render(configFiles, allSettings.Flatten())
 }
 
 func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (*composetypes.Config, error) {

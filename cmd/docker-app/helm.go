@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/helm"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/render"
 	"github.com/docker/cli/cli"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
@@ -32,10 +32,10 @@ func helmCmd() *cobra.Command {
 			}
 			defer app.Cleanup()
 			d := cliopts.ConvertKVStringsToMap(helmEnv)
-			if stackVersion != render.V1Beta1 && stackVersion != render.V1Beta2 {
-				return fmt.Errorf("invalid stack version %q (accepted values: %s, %s)", stackVersion, render.V1Beta1, render.V1Beta2)
+			if stackVersion != helm.V1Beta1 && stackVersion != helm.V1Beta2 {
+				return fmt.Errorf("invalid stack version %q (accepted values: %s, %s)", stackVersion, helm.V1Beta1, helm.V1Beta2)
 			}
-			return render.Helm(app.AppName, helmComposeFiles, helmSettingsFile, d, helmRender, stackVersion)
+			return helm.Helm(app.AppName, helmComposeFiles, helmSettingsFile, d, helmRender, stackVersion)
 		},
 	}
 	if internal.Experimental == "on" {
@@ -47,6 +47,6 @@ be rendered instead of exported as a template.`
 	}
 	cmd.Flags().StringArrayVarP(&helmSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&helmEnv, "set", "s", []string{}, "Override settings values")
-	cmd.Flags().StringVarP(&stackVersion, "stack-version", "", render.V1Beta2, "Version of the stack specification for the produced helm chart (v1beta1 / v1beta2)")
+	cmd.Flags().StringVarP(&stackVersion, "stack-version", "", helm.V1Beta2, "Version of the stack specification for the produced helm chart (v1beta1 / v1beta2)")
 	return cmd
 }

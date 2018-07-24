@@ -21,6 +21,11 @@
 
 required = ["github.com/wadey/gocovmerge"]
 
+[[override]]
+  name = "github.com/imdario/mergo"
+  branch = "append-slice-without-pancking"
+  source = "github.com/vdemeester/mergo"
+
 [[constraint]]
   name = "github.com/docker/cli"
   branch = "master"

@@ -58,7 +58,7 @@ my-settings:
 		fs.WithFile(internal.SettingsFileName, brokenSettings))
 	defer dir.Remove()
 	err := Validate(dir.Path(), nil, nil)
-	assert.Error(t, err, `failed to load settings: key 1 in map[interface {}]interface {}{1:"toto"} is not a string`)
+	assert.ErrorContains(t, err, `Non-string key in my-settings: 1`)
 }
 
 func TestValidateBrokenComposeFile(t *testing.T) {
