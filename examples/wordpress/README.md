@@ -51,7 +51,7 @@ volumes:
     name: db_data
 ```
 
-**Override default settings with file**. This example sets `debug` to false and the wordpress service published port to 80 as defined in `prod-settings.yml`.
+**Override default settings with file**. This example sets `debug` to `"false"` and the wordpress service published port to 80 as defined in `prod-settings.yml`.
 
 ```yaml
 # docker-app render wordpress --settings-files prod-settings.yml
@@ -72,9 +72,9 @@ version: "3.6"
 [...]
 ```
 
-**Override from the command line**. This example sets `debug` to false and the database user to a different value.
+**Override from the command line**. This example sets `debug` to `"false"` and the database user to a different value.
 ```yaml
-# docker-app render wordpress --set debug=true --set mysql.user.name=mollydock
+# docker-app render wordpress --set debug=\"true\" --set mysql.user.name=mollydock
 version: "3.6"
 services:
   mysql:
