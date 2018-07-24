@@ -13,11 +13,6 @@ import (
 	"github.com/docker/app/specification"
 )
 
-const (
-	// Current metadata version
-	metadataVersion = "v0.1"
-)
-
 // Validate checks an application definition meets the specifications (metadata and rendered compose file)
 func Validate(appname string, settingsFiles []string, env map[string]string) error {
 	if err := checkExistingFiles(appname); err != nil {
@@ -54,7 +49,7 @@ func validateMetadata(appname string) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse application metadata: %s", err)
 	}
-	if err := specification.Validate(metadataYaml, metadataVersion); err != nil {
+	if err := specification.Validate(metadataYaml, internal.MetadataVersion); err != nil {
 		return fmt.Errorf("failed to validate metadata:\n%s", err)
 	}
 	return nil
