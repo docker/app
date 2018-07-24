@@ -31,35 +31,33 @@ See [JSON Schemas](schemas/) for validation.
 
 ## Validation
 
-The tool `yamlschema` included in `cmd/yamlschema` helps you validate a `YAML document` against its `JSON Schema`. 
+Use the `validate` command:
+```
+Checks the rendered application is syntactically correct
+
+Usage:
+  docker-app validate [<app-name>] [-s key=value...] [-f settings-file...] [flags]
+
+Flags:
+  -h, --help                         help for validate
+  -s, --set stringArray              Override settings values
+  -f, --settings-files stringArray   Override settings files
+```
 
 Here is an example:
 
 ```sh
-# Init an empty docker application package
-$ docker-app init my-app
-# Build the YAML schema validator
-$ make bin/yamlschema
+# Init an empty docker application package, with an invalid mail for a maintainer
+$ docker-app init my-app --maintainer "name:invalid#mail.com"
+# Try to validate the application package
+$ docker-app validate my-app
+Error: failed to validate metadata:
+- maintainers.0.email: Does not match format 'email'
 
-# Validate the metadata.yml freshly created against its schema. It should fail as some information values are missing.
-$ ./bin/yamlschema my-app.dockerapp/metadata.yml specification/schemas/metadata_schema_v0.2.json
-The document is not valid. See errors :
-- description: Invalid type. Expected: string, given: null
-
-$ echo $?
-1
-
-# Fill the missing parts
+# Fix the metadata file
 $ vi my-app.dockerapp/metadata.yml
-# ... and re-invoke the validator
-$ cat my-app.dockerapp/metadata.yml | ./bin/yamlschema - schema/data/metadata_schema_v0.2.json
-$ echo $?
-0
-
-# Now edit your docker-compose.yml
-$ vi my.app.dockerapp/docker-compose.yml
-# ... and validate it against the compose schema from the docker/cli
-$ ./bin/yamlschema my-app.dockerapp/docker-compose.yml https://raw.githubusercontent.com/docker/cli/master/cli/compose/schema/data/config_schema_v3.2.json
+# And re-try validation
+$ docker-app validate my-app
 $ echo $?
 0
 ```

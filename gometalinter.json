@@ -3,6 +3,7 @@
   "Deadline": "10m",
   "Sort": ["linter", "severity", "path", "line"],
   "Exclude": [
+    "specification/bindata.go",
     "templateloader"
   ],
   "EnableGC": true,

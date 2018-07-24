@@ -11,6 +11,7 @@ BIN_CTNR_NAME := $(BIN_NAME)-bin-$(TAG)
 CROSS_CTNR_NAME := $(BIN_NAME)-cross-$(TAG)
 E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
 COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
+SCHEMAS_CTNR_NAME := $(BIN_NAME)-schemas-$(TAG)
 
 BUILD_ARGS="--build-arg=EXPERIMENTAL=$(EXPERIMENTAL)"
 
@@ -64,7 +65,7 @@ test-unit: build_dev_image ## run unit tests
 	docker run --rm $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) test-unit
 
 test-e2e: build_dev_image ## run end-to-end tests
-	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) bin/yamlschema bin/$(BIN_NAME) test-e2e
+	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
 coverage: build_dev_image ## run tests with coverage
@@ -86,6 +87,11 @@ lint: ## run linter(s)
 vendor: build_dev_image
 	$(info Vendoring...)
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"
+
+schemas: build_dev_image
+	docker run --name $(SCHEMAS_CTNR_NAME) $(DEV_IMAGE_NAME) sh -c "make schemas"
+	docker cp $(SCHEMAS_CTNR_NAME):$(PKG_PATH)/specification/bindata.go ./specification/
+	docker rm $(SCHEMAS_CTNR_NAME)
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort

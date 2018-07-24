@@ -1,4 +1,4 @@
-debug: true
+debug: "true"
 mysql:
   image:
     version: 5.6

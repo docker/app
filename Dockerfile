@@ -22,13 +22,16 @@ ENV PATH=${PATH}:/go/src/github.com/docker/app/bin/
 ARG DEP_VERSION=v0.4.1
 RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
     chmod +x /usr/bin/dep
+RUN go get -d gopkg.in/mjibson/esc.v0 && \
+    cd /go/src/github.com/mjibson/esc && \
+    go build -v -o /usr/bin/esc . && \
+    rm -rf /go/src/* /go/pkg/* /go/bin/*
 COPY . .
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM dev AS cross
 ARG EXPERIMENTAL="off"
 RUN make EXPERIMENTAL=${EXPERIMENTAL} cross
-RUN BIN_NAME=yamlschema make cross
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross

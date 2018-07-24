@@ -96,7 +96,6 @@
     "cli/compose/interpolation",
     "cli/compose/loader",
     "cli/compose/schema",
-    "cli/compose/schema/data",
     "cli/compose/template",
     "cli/compose/types",
     "cli/config",
@@ -880,6 +879,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "503f9b2ddbe1220bfc7c84f13ac74e82ee8fb48d7cd77a898da44369a16ee60c"
+  inputs-digest = "fafbc8191d06deddf8dd22103c49a431fc2093c0053df93af22b910dbd4c03b5"
   solver-name = "gps-cdcl"
   solver-version = 1

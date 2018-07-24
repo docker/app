@@ -56,7 +56,7 @@ lint: ## run linter(s)
 	@echo "Linting..."
 	@gometalinter --config=gometalinter.json ./...
 
-test-e2e: bin/$(BIN_NAME) bin/yamlschema ## run end-to-end tests
+test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."
 	$(GO_TEST) -v ./e2e/
 
@@ -72,7 +72,7 @@ coverage-test-unit:
 	@$(call mkdir,_build/cov)
 	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
 
-coverage-test-e2e: coverage-bin bin/yamlschema
+coverage-test-e2e: coverage-bin
 	@echo "Running e2e tests (coverage)..."
 	@$(call mkdir,_build/cov)
 	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
@@ -94,6 +94,9 @@ vendor: ## update vendoring
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
+
+schemas: ## generate specification/bindata.go from json schemas
+	go generate github.com/docker/app/specification
 
 .PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor help
 .DEFAULT: all

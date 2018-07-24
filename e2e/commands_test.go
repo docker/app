@@ -7,14 +7,11 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/cli/cli/compose/loader"
-	"github.com/xeipuuv/gojsonschema"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
@@ -109,7 +106,7 @@ services:
 	meta := `# Version of the application
 version: 0.1.0
 # Name of the application
-name: app_test
+name: app-test
 # A short description of the application
 description: my cool app
 # Namespace to use when pushing to a registry. This is typically your Hub username.
@@ -128,7 +125,7 @@ maintainers:
 	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
 	defer os.RemoveAll(inputDir)
 
-	testAppName := "app_test"
+	testAppName := "app-test"
 	dirName := internal.DirNameFromAppName(testAppName)
 	defer os.RemoveAll(dirName)
 
@@ -153,17 +150,7 @@ maintainers:
 	assert.Assert(t, fs.Equal(dirName, manifest))
 
 	// validate metadata with JSON Schema
-	absPath, err := filepath.Abs(path.Join("..", "specification", "schemas", "metadata_schema_v0.1.json"))
-	assert.NilError(t, err)
-	absPath = filepath.ToSlash(absPath)
-	schemaLoader := gojsonschema.NewReferenceLoader("file://" + absPath)
-	assert.Check(t, schemaLoader != nil)
-	data, err := loader.ParseYAML([]byte(meta))
-	assert.NilError(t, err)
-	dataLoader := gojsonschema.NewGoLoader(data)
-	result, err := gojsonschema.Validate(schemaLoader, dataLoader)
-	assert.NilError(t, err)
-	assert.Check(t, result.Valid())
+	assertCommand(t, dockerApp, "validate", testAppName)
 
 	// test single-file init
 	args = []string{
