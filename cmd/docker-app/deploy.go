@@ -8,6 +8,7 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack"
 	"github.com/docker/cli/cli/command/stack/options"
+	"github.com/docker/cli/cli/command/stack/swarm"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -69,6 +70,7 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 		stackName = internal.AppNameFromDir(app.AppName)
 	}
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
-		Namespace: stackName,
+		Namespace:    stackName,
+		ResolveImage: swarm.ResolveImageAlways,
 	})
 }
