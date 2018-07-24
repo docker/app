@@ -91,7 +91,11 @@ func extractImage(appname string) (ExtractedApp, error) {
 	}
 	// this gave us a compressed app, run through extract again
 	app, err := Extract(filepath.Join(tempDir, appname))
-	return ExtractedApp{"", app.AppName, app.Cleanup}, err
+	return ExtractedApp{
+		OriginalAppName: "",
+		AppName:         app.AppName,
+		Cleanup:         app.Cleanup,
+	}, err
 }
 
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.
@@ -126,7 +130,11 @@ func Extract(appname string) (ExtractedApp, error) {
 	}
 	if s.IsDir() {
 		// directory: already decompressed
-		return ExtractedApp{appname, appname, noop}, nil
+		return ExtractedApp{
+			OriginalAppName: appname,
+			AppName:         appname,
+			Cleanup:         noop,
+		}, nil
 	}
 	// not a dir: single-file or a tarball package, extract that in a temp dir
 	tempDir, err := ioutil.TempDir("", "dockerapp")
@@ -143,13 +151,21 @@ func Extract(appname string) (ExtractedApp, error) {
 		return ExtractedApp{}, errors.Wrap(err, "failed to create application in temporary directory")
 	}
 	if err = extract(appname, appDir); err == nil {
-		return ExtractedApp{appname, appDir, func() { os.RemoveAll(tempDir) }}, nil
+		return ExtractedApp{
+			OriginalAppName: appname,
+			AppName:         appDir,
+			Cleanup:         func() { os.RemoveAll(tempDir) },
+		}, nil
 	}
 	if err = extractSingleFile(appname, appDir); err != nil {
 		return ExtractedApp{}, err
 	}
 	// not a tarball, single-file then
-	return ExtractedApp{appname, appDir, func() { os.RemoveAll(tempDir) }}, nil
+	return ExtractedApp{
+		OriginalAppName: appname,
+		AppName:         appDir,
+		Cleanup:         func() { os.RemoveAll(tempDir) },
+	}, nil
 }
 
 func extractSingleFile(appname, appDir string) error {
