@@ -198,7 +198,9 @@ func extract(appname, outputDir string) error {
 		}
 		switch header.Typeflag {
 		case tar.TypeDir: // = directory
-			os.Mkdir(outputDir+header.Name, 0755)
+			if err := os.Mkdir(outputDir+header.Name, 0755); err != nil {
+				return err
+			}
 		case tar.TypeReg: // = regular file
 			data := make([]byte, header.Size)
 			_, err := tarReader.Read(data)
