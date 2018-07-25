@@ -7,7 +7,7 @@ import (
 )
 
 func TestSplitImageName(t *testing.T) {
-	var input = []string{
+	input := []string{
 		"official.dockerapp",
 		"touhou/reimu.dockerapp",
 		"tagged.dockerapp:1.2.25",
@@ -15,7 +15,7 @@ func TestSplitImageName(t *testing.T) {
 		"private.registry.co.uk/docker/anne.boleyn/annulment.dockerapp:15.28",
 	}
 
-	var output = []imageComponents{
+	output := []imageComponents{
 		{Name: "official.dockerapp", Repository: "docker.io/library/official.dockerapp"},
 		{Name: "reimu.dockerapp", Repository: "docker.io/touhou/reimu.dockerapp"},
 		{Name: "tagged.dockerapp", Repository: "docker.io/library/tagged.dockerapp", Tag: "1.2.25"},
@@ -29,7 +29,7 @@ func TestSplitImageName(t *testing.T) {
 		assert.DeepEqual(t, out, &output[i])
 	}
 
-	var invalids = []string{
+	invalids := []string{
 		"__.dockerapp",
 		"colon:colon:colon.dockerapp:colon",
 		"nametag.dockerapp:",

@@ -32,7 +32,7 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 	}
 	defer os.RemoveAll(tmpdir)
 	log.Debugf("Extracting original app data to %s", tmpdir)
-	if err = Load(originName, tmpdir); err != nil {
+	if err := Load(originName, tmpdir); err != nil {
 		return err
 	}
 
@@ -53,7 +53,7 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 			break
 		}
 		data := make([]byte, header.Size)
-		if _, err = tarReader.Read(data); err != nil && err != io.EOF {
+		if _, err := tarReader.Read(data); err != nil && err != io.EOF {
 			return errors.Wrap(err, "error reading tar data")
 		}
 
@@ -67,7 +67,7 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 
 		dest := filepath.Join(appPath, header.Name)
 		log.Debugf("Writing file at %s", dest)
-		if err = ioutil.WriteFile(dest, data, 0644); err != nil {
+		if err := ioutil.WriteFile(dest, data, 0644); err != nil {
 			return errors.Wrap(err, "error writing output file")
 		}
 	}
@@ -84,7 +84,7 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
 	}
 	// insert retrieved data in fork history section
 	log.Debug("Generating fork metadata")
-	newmeta := types.MetadataFrom(
+	newMeta := types.MetadataFrom(
 		meta,
 		types.WithName(name),
 		types.WithNamespace(namespace),
@@ -92,7 +92,7 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
 	)
 
 	// update metadata file
-	yamlMeta, err = yaml.Marshal(newmeta)
+	yamlMeta, err = yaml.Marshal(newMeta)
 	if err != nil {
 		return yamlMeta, errors.Wrap(err, "failed to render metadata structure")
 	}

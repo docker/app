@@ -217,7 +217,7 @@ This command will create a local, editable copy of the app on your system. By de
 For example, the following will create the `/opt/myapps/hello2.dockerapp` folder containing the forked app's files:
 
 ```bash
-$ docker-app fork remote/hello.dockerapp:1.0.0 mine/hello2 -p /opt/myapps
+$ docker-app fork remote/hello.dockerapp:1.0.0 mine/hello2 --path /opt/myapps
 ```
 
 ## Next steps

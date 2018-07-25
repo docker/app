@@ -141,7 +141,7 @@ maintainers:
 }
 
 func TestParseMaintainersData(t *testing.T) {
-	var input = []string{
+	input := []string{
 		"sakuya:sakuya.izayoi@touhou.jp",
 		"marisa.kirisame",
 		"Reimu Hakurei",
@@ -150,7 +150,7 @@ func TestParseMaintainersData(t *testing.T) {
 		"perfect:cherry:blossom",
 	}
 
-	var expectedOutput = []types.Maintainer{
+	expectedOutput := []types.Maintainer{
 		{Name: "sakuya", Email: "sakuya.izayoi@touhou.jp"},
 		{Name: "marisa.kirisame", Email: ""},
 		{Name: "Reimu Hakurei", Email: ""},
@@ -158,7 +158,7 @@ func TestParseMaintainersData(t *testing.T) {
 		{Name: "    ", Email: "    "},
 		{Name: "perfect", Email: "cherry:blossom"},
 	}
-	var output = parseMaintainersData(input)
+	output := parseMaintainersData(input)
 
 	assert.DeepEqual(t, output, expectedOutput)
 }
