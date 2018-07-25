@@ -34,8 +34,8 @@ func TestInspectErrorsOnFiles(t *testing.T) {
 		"inexistent-app":           "failed to read application metadata",
 		"empty-app":                "failed to read application metadata",
 		"unparseable-metadata-app": "failed to parse application metadat",
-		"no-settings-app":          "failed to read application settings",
-		"unparseable-settings-app": "failed to parse application settings",
+		"no-settings-app":          "failed to load application settings",
+		"unparseable-settings-app": "failed to load application settings",
 	} {
 		err := Inspect(ioutil.Discard, dir.Join(appname))
 		assert.Check(t, is.ErrorContains(err, expectedError))

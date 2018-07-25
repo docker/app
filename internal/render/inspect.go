@@ -9,6 +9,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/types"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
@@ -28,17 +29,14 @@ func Inspect(out io.Writer, appname string) error {
 	}
 	// extract settings
 	settingsFile := filepath.Join(appname, internal.SettingsFileName)
-	settingsContent, err := ioutil.ReadFile(settingsFile)
+	s, err := settings.LoadFile(settingsFile)
 	if err != nil {
-		return errors.Wrap(err, "failed to read application settings")
+		return errors.Wrap(err, "failed to load application settings")
 	}
-	settings, err := flattenYAML(settingsContent)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse application settings")
-	}
+	fs := s.Flatten()
 	// sort the keys to get consistent output
 	var settingsKeys []string
-	for k := range settings {
+	for k := range fs {
 		settingsKeys = append(settingsKeys, k)
 	}
 	sort.Slice(settingsKeys, func(i, j int) bool { return settingsKeys[i] < settingsKeys[j] })
@@ -57,7 +55,7 @@ func Inspect(out io.Writer, appname string) error {
 	fmt.Fprintln(w, "Setting\tDefault")
 	fmt.Fprintln(w, "-------\t-------")
 	for _, k := range settingsKeys {
-		fmt.Fprintf(w, "%s\t%s\n", k, settings[k])
+		fmt.Fprintf(w, "%s\t%s\n", k, fs[k])
 	}
 	w.Flush()
 	return nil
