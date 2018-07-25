@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -14,7 +15,6 @@ import (
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/render"
 	"github.com/docker/app/internal/settings"
-	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/internal/templateconversion"
 	"github.com/docker/app/internal/templateloader"
 	"github.com/docker/app/internal/templatev1beta2"
@@ -312,7 +312,7 @@ func filterVariables(s map[string]interface{}, variables []string, prefix string
 				delete(s, k)
 			}
 		default:
-			if !slices.ContainsString(variables, prefix+k) {
+			if sort.StringSlice(variables).Search(prefix+k) == 0 {
 				delete(s, k)
 			}
 		}

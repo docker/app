@@ -6,12 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/app/internal/settings"
-	"github.com/docker/app/internal/slices"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -68,7 +68,7 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
 		rl := strings.Split(r, ",")
 		for _, r := range rl {
-			if !slices.ContainsString(renderer.Drivers(), r) {
+			if sort.StringSlice(renderer.Drivers()).Search(r) == 0 {
 				return nil, fmt.Errorf("renderer '%s' not found", r)
 			}
 		}
