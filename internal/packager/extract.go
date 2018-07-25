@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -50,38 +49,24 @@ func extractImage(appname string, ops ...func(*types.App) error) (*types.App, er
 		nametag := strings.Split(appname, ":")
 		if len(nametag) == 3 || strings.Contains(nametag[1], "/") {
 			nametag[1] = internal.DirNameFromAppName(nametag[1])
-			appname = filepath.Base(nametag[1])
 		} else {
 			nametag[0] = internal.DirNameFromAppName(nametag[0])
-			appname = filepath.Base(nametag[0])
 		}
 		imagename = strings.Join(nametag, ":")
 	} else {
 		imagename = internal.DirNameFromAppName(appname)
-		appname = filepath.Base(imagename)
 	}
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary directory")
 	}
-	defer os.RemoveAll(tempDir)
-	err = Load(imagename, tempDir)
+	path, err := Pull(imagename, tempDir)
 	if err != nil {
-		if !strings.Contains(imagename, "/") {
-			return nil, fmt.Errorf("could not locate application in either filesystem or docker image")
-		}
-		// Try to pull it
-		cmd := exec.Command("docker", "pull", imagename)
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
-		if err := cmd.Run(); err != nil {
-			return nil, fmt.Errorf("could not locate application in filesystem, docker image or registry")
-		}
-		if err := Load(imagename, tempDir); err != nil {
-			return nil, errors.Wrap(err, "failed to load pulled image")
-		}
+		os.RemoveAll(tempDir)
+		return nil, err
 	}
-	return loader.LoadFromTar(filepath.Join(tempDir, appname), ops...)
+	ops = append(ops, types.WithCleanup(func() { os.RemoveAll(tempDir) }))
+	return Extract(path, ops...)
 }
 
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.

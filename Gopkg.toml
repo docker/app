@@ -21,6 +21,12 @@
 
 required = ["github.com/wadey/gocovmerge"]
 
+# We need runc at least 0.0.9 to get otherwise missing stubs for non-linux platforms.
+# We need > 0.1.1 as it depends on uppercase Sirupsen/logrus.
+[[override]]
+  name = "github.com/opencontainers/runc"
+  version = "v1.0.0-rc5"
+
 [[constraint]]
   name = "github.com/docker/cli"
   branch = "master"
@@ -48,10 +54,6 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "github.com/docker/swarmkit"
   revision = "edd5641391926a50bc5f7040e20b7efc05003c26"
-
-[[override]]
-  name = "github.com/opencontainers/runc"
-  revision = "ad0f5255060d36872be04de22f8731f38ef2d7b1"
 
 [[override]]
   name = "k8s.io/kubernetes"
