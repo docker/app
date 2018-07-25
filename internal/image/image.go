@@ -5,9 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/slices"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
 )
@@ -18,7 +18,7 @@ func Add(appname string, services []string, config *composetypes.Config) error {
 		return errors.Wrap(err, "cannot create 'images' folder")
 	}
 	for _, s := range config.Services {
-		if len(services) != 0 && !slices.ContainsString(services, s.Name) {
+		if len(services) != 0 && sort.StringSlice(services).Search(s.Name) == 0 {
 			continue
 		}
 		cmd := exec.Command("docker", "save", "-o", filepath.Join(appname, "images", s.Name), s.Image)
@@ -42,7 +42,7 @@ func Load(appname string, services []string) error {
 		return err
 	}
 	for _, i := range images {
-		if len(services) != 0 && !slices.ContainsString(services, i) {
+		if len(services) != 0 && sort.StringSlice(services).Search(i) == 0 {
 			continue
 		}
 		cmd := exec.Command("docker", "load", "-i", filepath.Join(appname, "images", i))
