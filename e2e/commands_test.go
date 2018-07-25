@@ -330,6 +330,8 @@ func TestForkBinary(t *testing.T) {
 	assertCommand(t, dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil", "-p", tempDir, "-m", "Remilia Scarlet:remilia@acmecorp.cool")
 	metadata, err := ioutil.ReadFile(filepath.Join(tempDir, "scarlet.devil.dockerapp", "metadata.yml"))
 	assert.NilError(t, err)
+
+	golden.Assert(t, string(metadata), "expected-fork-metadata.golden")
 	var decodedMeta types.AppMetadata
 	err = yaml.Unmarshal(metadata, &decodedMeta)
 	assert.NilError(t, err)
