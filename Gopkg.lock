@@ -120,7 +120,7 @@
     "service/logs",
     "templates"
   ]
-  revision = "601131634e619fa6ff2beed98a1b7b94f9b8e1eb"
+  revision = "b3b2ace735601a3ec996d45fd3a48ff91fc6f849"
 
 [[projects]]
   name = "github.com/docker/distribution"
@@ -880,6 +880,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "44be787f0b10b4d298647dc3c299233eca920baff4cf33006320f97715d78ec4"
+  inputs-digest = "76033eef49dca4d690b8fef3633b0c79afa81c875f21aef87d693f3413177f56"
   solver-name = "gps-cdcl"
   solver-version = 1
