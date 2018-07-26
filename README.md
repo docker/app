@@ -225,9 +225,9 @@ Usage:
   docker-app [command]
 
 Available Commands:
+  completion  Generates bash completion scripts
   deploy      Deploy or update an application
   helm        Generate a Helm chart
-  help        Help about any command
   init        Start building a Docker application
   inspect     Shows metadata and settings for a given application
   ls          List applications.

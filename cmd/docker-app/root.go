@@ -54,6 +54,7 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		splitCmd(),
 		validateCmd(),
 		versionCmd(dockerCli),
+		completionCmd(dockerCli, cmd),
 	)
 	if internal.Experimental == "on" {
 		cmd.AddCommand(
