@@ -120,7 +120,9 @@ func makeStack(appname string, targetDir string, data []byte, stackVersion strin
 	if err != nil {
 		return errors.Wrap(err, "failed to load template compose")
 	}
-	os.Mkdir(filepath.Join(targetDir, "templates"), 0755)
+	if err := os.MkdirAll(filepath.Join(targetDir, "templates"), 0755); err != nil {
+		return err
+	}
 	var stack interface{}
 	switch stackVersion {
 	case V1Beta2:
@@ -342,7 +344,9 @@ func convertTemplatesList(list []interface{}) error {
 				return err
 			}
 		case []interface{}:
-			convertTemplatesList(vv)
+			if err := convertTemplatesList(vv); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

@@ -35,9 +35,13 @@ func Merge(appname string, target io.Writer) error {
 		if err != nil {
 			return err
 		}
-		target.Write(input)
+		if _, err := target.Write(input); err != nil {
+			return err
+		}
 		if i != 2 {
-			io.WriteString(target, "\n---\n")
+			if _, err := io.WriteString(target, "\n---\n"); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

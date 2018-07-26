@@ -42,40 +42,6 @@ func ParseYAML(source []byte) (map[string]interface{}, error) {
 	return converted.(map[string]interface{}), nil
 }
 
-func processEnabled(configDict map[string]interface{}) bool {
-	if v, ok := configDict["x-enabled"]; ok {
-		e := fmt.Sprintf("%v", v)
-		e = strings.Trim(e, " ")
-		reverse := len(e) != 0 && e[0] == '!'
-		if reverse {
-			e = strings.Trim(e[1:], " ")
-		}
-		disabled := e == "" || e == "0" || e == "false" || e == "FALSE"
-		if reverse {
-			disabled = !disabled
-		}
-		if disabled {
-			return false
-		}
-		delete(configDict, "x-enabled")
-	}
-	for k, v := range configDict {
-		if m, ok := v.(map[string]interface{}); ok {
-			if !processEnabled(m) {
-				delete(configDict, k)
-			}
-		}
-	}
-	return true
-}
-
-func resolveEnabled(configDict map[string]interface{}) (map[string]interface{}, error) {
-	if !processEnabled(configDict) {
-		return map[string]interface{}{}, nil
-	}
-	return configDict, nil
-}
-
 // LoadTemplate loads a config without resolving the variables
 func LoadTemplate(configDict map[string]interface{}) (*types.Config, error) {
 	if err := validateForbidden(configDict); err != nil {
@@ -83,54 +49,6 @@ func LoadTemplate(configDict map[string]interface{}) (*types.Config, error) {
 	}
 	return loadSections(configDict, types.ConfigDetails{})
 }
-
-// Load reads a ConfigDetails and returns a fully loaded configuration
-/*
-func Load(configDetails types.ConfigDetails) (*types.Config, error) {
-	if len(configDetails.ConfigFiles) < 1 {
-		return nil, errors.Errorf("No files specified")
-	}
-
-	configs := []*types.Config{}
-
-	for _, file := range configDetails.ConfigFiles {
-		configDict := file.Config
-		version := schema.Version(configDict)
-		if configDetails.Version == "" {
-			configDetails.Version = version
-		}
-		if configDetails.Version != version {
-			return nil, errors.Errorf("version mismatched between two composefiles : %v and %v", configDetails.Version, version)
-		}
-
-		if err := validateForbidden(configDict); err != nil {
-			return nil, err
-		}
-
-		var err error
-		configDict, err = interpolateConfig(configDict, configDetails.LookupEnv)
-		if err != nil {
-			return nil, err
-		}
-		configDict, err = resolveEnabled(configDict)
-		if err != nil {
-			return nil, err
-		}
-		if err := schema.Validate(configDict, configDetails.Version); err != nil {
-			return nil, err
-		}
-
-		cfg, err := loadSections(configDict, configDetails)
-		if err != nil {
-			return nil, err
-		}
-		cfg.Filename = file.Filename
-
-		configs = append(configs, cfg)
-	}
-
-	return merge(configs)
-}*/
 
 func validateForbidden(configDict map[string]interface{}) error {
 	servicesDict, ok := configDict["services"].(map[string]interface{})

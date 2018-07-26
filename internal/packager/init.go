@@ -18,10 +18,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func prependToFile(filename, text string) {
+func prependToFile(filename, text string) error {
 	content, _ := ioutil.ReadFile(filename)
 	content = append([]byte(text), content...)
-	ioutil.WriteFile(filename, content, 0644)
+	return ioutil.WriteFile(filename, content, 0644)
 }
 
 // Init is the entrypoint initialization function.
@@ -62,9 +62,16 @@ func Init(name string, composeFile string, description string, maintainers []str
 	}
 	// Merge as a single file
 	// Add some helfpful comments to distinguish the sections
-	prependToFile(filepath.Join(dirName, internal.ComposeFileName), "# This section contains the Compose file that describes your application services.\n")
-	prependToFile(filepath.Join(dirName, internal.SettingsFileName), "# This section contains the default values for your application settings.\n")
-	prependToFile(filepath.Join(dirName, internal.MetadataFileName), "# This section contains your application metadata.\n")
+	if err := prependToFile(filepath.Join(dirName, internal.ComposeFileName), "# This section contains the Compose file that describes your application services.\n"); err != nil {
+		return err
+	}
+	if err := prependToFile(filepath.Join(dirName, internal.SettingsFileName), "# This section contains the default values for your application settings.\n"); err != nil {
+		return err
+	}
+	if err := prependToFile(filepath.Join(dirName, internal.MetadataFileName), "# This section contains your application metadata.\n"); err != nil {
+		return err
+	}
+
 	temp := "_temp_dockerapp__.dockerapp"
 	err = os.Rename(dirName, temp)
 	if err != nil {
