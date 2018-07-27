@@ -13,11 +13,15 @@ var (
 
 func forkCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "fork <origin-name> <fork-name> [-p outputdir] [-m name:email ...]",
+		Use:   "fork <origin-name> [fork-name] [-p outputdir] [-m name:email ...]",
 		Short: "Create a fork of an existing application to be modified",
-		Args:  cli.ExactArgs(2),
+		Args:  cli.RequiresRangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return packager.Fork(args[0], args[1], outputDir, forkMaintainers)
+			forkName := ""
+			if len(args) >= 2 {
+				forkName = args[1]
+			}
+			return packager.Fork(args[0], forkName, outputDir, forkMaintainers)
 		},
 	}
 	cmd.Flags().StringArrayVarP(&forkMaintainers, "maintainer", "m", []string{}, "Maintainer (name:email) (optional)")

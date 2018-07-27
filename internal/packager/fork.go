@@ -22,6 +22,9 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 	if err != nil {
 		return errors.Wrapf(err, "origin %q is not a valid image name", originName)
 	}
+	if forkName == "" {
+		forkName = internal.AppNameFromDir(imgRef.Name)
+	}
 	log.Debugf("Pulling latest version of package %s", originName)
 	if err := pullImage(originName); err != nil {
 		return err

@@ -12,8 +12,6 @@ import (
 	"testing"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/types"
-	yaml "gopkg.in/yaml.v2"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
@@ -332,29 +330,10 @@ func TestForkBinary(t *testing.T) {
 	assert.NilError(t, err)
 
 	golden.Assert(t, string(metadata), "expected-fork-metadata.golden")
-	var decodedMeta types.AppMetadata
-	err = yaml.Unmarshal(metadata, &decodedMeta)
-	assert.NilError(t, err)
-	var expected = types.AppMetadata{
-		Name:        "scarlet.devil",
-		Namespace:   "acmecorp",
-		Version:     "1.1.0-beta1",
-		Description: "new fancy webapp with microservices",
-		Maintainers: types.Maintainers{
-			{Name: "Remilia Scarlet", Email: "remilia@acmecorp.cool"},
-		},
-		Parents: types.Parents{
-			{
-				Name:      "simple",
-				Namespace: "acmecorp",
-				Version:   "1.1.0-beta1",
-				Maintainers: types.Maintainers{
-					{Name: "John Developer", Email: "john.dev@acmecorp.cool"},
-					{Name: "Jane Developer", Email: "jane.dev@acmecorp.cool"},
-				},
-			},
-		},
-	}
 
-	assert.DeepEqual(t, decodedMeta, expected)
+	assertCommand(t, dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "-p", tempDir, "-m", "Remilia Scarlet:remilia@acmecorp.cool")
+	metadata2, err := ioutil.ReadFile(filepath.Join(tempDir, "simple.dockerapp", "metadata.yml"))
+	assert.NilError(t, err)
+
+	golden.Assert(t, string(metadata2), "expected-fork-metadata-no-rename.golden")
 }
