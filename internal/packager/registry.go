@@ -83,31 +83,30 @@ func Load(repotag string, outputDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to open temporary image file")
 	}
-	tarReader := tar.NewReader(f)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "error reading next tar header")
-		}
+	ok, err := handleTarWithStatus(f, func(tarReader *tar.Reader, header *tar.Header) (bool, error) {
 		if filepath.Base(header.Name) == "layer.tar" {
 			data := make([]byte, header.Size)
 			_, err := tarReader.Read(data)
 			if err != nil && err != io.EOF {
-				return errors.Wrap(err, "error reading tar data")
+				return false, errors.Wrap(err, "error reading tar data")
 			}
 			img, err := splitImageName(repotag)
 			if err != nil {
-				return err
+				return false, err
 			}
 			appName := img.Name
 			err = ioutil.WriteFile(filepath.Join(outputDir, internal.DirNameFromAppName(appName)), data, 0644)
-			return errors.Wrap(err, "error writing output file")
+			return err == nil, errors.Wrap(err, "error writing output file")
 		}
+		return false, nil
+	})
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("failed to find our layer in tarball")
+	if !ok {
+		return fmt.Errorf("failed to find our layer in tarball")
+	}
+	return nil
 }
 
 // Push pushes an app to a registry

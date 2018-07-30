@@ -49,12 +49,7 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to open package archive")
 	}
-	tarReader := tar.NewReader(tarfile)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
+	err = handleTar(tarfile, func(tarReader *tar.Reader, header *tar.Header) error {
 		data := make([]byte, header.Size)
 		if _, err := tarReader.Read(data); err != nil && err != io.EOF {
 			return errors.Wrap(err, "error reading tar data")
@@ -70,12 +65,11 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 
 		dest := filepath.Join(appPath, header.Name)
 		log.Debugf("Writing file at %s", dest)
-		if err := ioutil.WriteFile(dest, data, 0644); err != nil {
-			return errors.Wrap(err, "error writing output file")
-		}
-	}
+		err := ioutil.WriteFile(dest, data, 0644)
+		return errors.Wrap(err, "error writing output file")
+	})
 
-	return nil
+	return err
 }
 
 func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([]byte, error) {

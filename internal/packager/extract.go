@@ -195,16 +195,10 @@ func extract(appname, outputDir string) error {
 		return errors.Wrap(err, "failed to open application package")
 	}
 	defer f.Close()
-	tarReader := tar.NewReader(f)
+
 	outputDir = outputDir + "/"
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "error reading from tar header")
-		}
+
+	err = handleTar(f, func(tarReader *tar.Reader, header *tar.Header) error {
 		switch header.Typeflag {
 		case tar.TypeDir: // = directory
 			if err := os.Mkdir(outputDir+header.Name, 0755); err != nil {
@@ -221,6 +215,7 @@ func extract(appname, outputDir string) error {
 				return errors.Wrap(err, "error writing output file")
 			}
 		}
-	}
-	return nil
+		return nil
+	})
+	return err
 }
