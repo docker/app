@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	types "github.com/docker/app/internal/templatetypes"
+	types "github.com/docker/app/internal/helm/templatetypes"
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/cli/compose/template"
 	"github.com/docker/cli/opts"

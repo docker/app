@@ -5,7 +5,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	types "github.com/docker/app/internal/templatetypes"
+	types "github.com/docker/app/internal/helm/templatetypes"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/pkg/errors"
 )
