@@ -11,17 +11,28 @@ import (
 	"time"
 
 	"github.com/docker/app/internal/helm/templatetypes"
+	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/cli/compose/template"
 	"github.com/docker/cli/cli/compose/types"
 	"github.com/docker/cli/opts"
-	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/go-connections/nat"
 	units "github.com/docker/go-units"
-	shellwords "github.com/mattn/go-shellwords"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	transformers = []loader.Transformer{
+		{TypeOf: reflect.TypeOf(templatetypes.UnitBytesOrTemplate{}), Func: transformSize},
+		{TypeOf: reflect.TypeOf([]templatetypes.ServicePortConfig{}), Func: transformServicePort},
+		{TypeOf: reflect.TypeOf(templatetypes.ServiceSecretConfig{}), Func: transformStringSourceMap},
+		{TypeOf: reflect.TypeOf(templatetypes.ServiceConfigObjConfig{}), Func: transformStringSourceMap},
+		{TypeOf: reflect.TypeOf(templatetypes.ServiceVolumeConfig{}), Func: transformServiceVolumeConfig},
+		{TypeOf: reflect.TypeOf(templatetypes.BoolOrTemplate{}), Func: transformBoolOrTemplate},
+		{TypeOf: reflect.TypeOf(templatetypes.UInt64OrTemplate{}), Func: transformUInt64OrTemplate},
+		{TypeOf: reflect.TypeOf(templatetypes.DurationOrTemplate{}), Func: transformDurationOrTemplate},
+	}
 )
 
 // LoadTemplate loads a config without resolving the variables
@@ -64,28 +75,28 @@ func loadSections(config map[string]interface{}, configDetails types.ConfigDetai
 		{
 			key: "networks",
 			fnc: func(config map[string]interface{}) error {
-				cfg.Networks, err = LoadNetworks(config, configDetails.Version)
+				cfg.Networks, err = loader.LoadNetworks(config, configDetails.Version)
 				return err
 			},
 		},
 		{
 			key: "volumes",
 			fnc: func(config map[string]interface{}) error {
-				cfg.Volumes, err = LoadVolumes(config, configDetails.Version)
+				cfg.Volumes, err = loader.LoadVolumes(config, configDetails.Version)
 				return err
 			},
 		},
 		{
 			key: "secrets",
 			fnc: func(config map[string]interface{}) error {
-				cfg.Secrets, err = LoadSecrets(config, configDetails)
+				cfg.Secrets, err = loader.LoadSecrets(config, configDetails)
 				return err
 			},
 		},
 		{
 			key: "configs",
 			fnc: func(config map[string]interface{}) error {
-				cfg.Configs, err = LoadConfigObjs(config, configDetails)
+				cfg.Configs, err = loader.LoadConfigObjs(config, configDetails)
 				return err
 			},
 		},
@@ -185,56 +196,6 @@ func getServices(configDict map[string]interface{}) map[string]interface{} {
 	return map[string]interface{}{}
 }
 
-func transform(source map[string]interface{}, target interface{}) error {
-	data := mapstructure.Metadata{}
-	config := &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			createTransformHook(),
-			mapstructure.StringToTimeDurationHookFunc()),
-		Result:   target,
-		Metadata: &data,
-	}
-	decoder, err := mapstructure.NewDecoder(config)
-	if err != nil {
-		return err
-	}
-	return decoder.Decode(source)
-}
-
-func createTransformHook() mapstructure.DecodeHookFuncType {
-	transforms := map[reflect.Type]func(interface{}) (interface{}, error){
-		reflect.TypeOf(types.External{}):                         transformExternal,
-		reflect.TypeOf(types.HealthCheckTest{}):                  transformHealthCheckTest,
-		reflect.TypeOf(types.ShellCommand{}):                     transformShellCommand,
-		reflect.TypeOf(types.StringList{}):                       transformStringList,
-		reflect.TypeOf(map[string]string{}):                      transformMapStringString,
-		reflect.TypeOf(types.UlimitsConfig{}):                    transformUlimits,
-		reflect.TypeOf(templatetypes.UnitBytesOrTemplate{}):      transformSize,
-		reflect.TypeOf([]templatetypes.ServicePortConfig{}):      transformServicePort,
-		reflect.TypeOf(templatetypes.ServiceSecretConfig{}):      transformStringSourceMap,
-		reflect.TypeOf(templatetypes.ServiceConfigObjConfig{}):   transformStringSourceMap,
-		reflect.TypeOf(types.StringOrNumberList{}):               transformStringOrNumberList,
-		reflect.TypeOf(map[string]*types.ServiceNetworkConfig{}): transformServiceNetworkMap,
-		reflect.TypeOf(types.MappingWithEquals{}):                transformMappingOrListFunc("=", true),
-		reflect.TypeOf(types.Labels{}):                           transformMappingOrListFunc("=", false),
-		reflect.TypeOf(types.MappingWithColon{}):                 transformMappingOrListFunc(":", false),
-		reflect.TypeOf(types.HostsList{}):                        transformListOrMappingFunc(":", false),
-		reflect.TypeOf(templatetypes.ServiceVolumeConfig{}):      transformServiceVolumeConfig,
-		reflect.TypeOf(types.BuildConfig{}):                      transformBuildConfig,
-		reflect.TypeOf(templatetypes.BoolOrTemplate{}):           transformBoolOrTemplate,
-		reflect.TypeOf(templatetypes.UInt64OrTemplate{}):         transformUInt64OrTemplate,
-		reflect.TypeOf(templatetypes.DurationOrTemplate{}):       transformDurationOrTemplate,
-	}
-
-	return func(_ reflect.Type, target reflect.Type, data interface{}) (interface{}, error) {
-		transform, ok := transforms[target]
-		if !ok {
-			return data, nil
-		}
-		return transform(data)
-	}
-}
-
 // LoadServices produces a ServiceConfig map from a compose file Dict
 // the servicesDict is not validated if directly used. Use Load() to enable validation
 func LoadServices(servicesDict map[string]interface{}, workingDir string, lookupEnv template.Mapping) ([]templatetypes.ServiceConfig, error) {
@@ -255,7 +216,7 @@ func LoadServices(servicesDict map[string]interface{}, workingDir string, lookup
 // the serviceDict is not validated if directly used. Use Load() to enable validation
 func LoadService(name string, serviceDict map[string]interface{}, workingDir string, lookupEnv template.Mapping) (*templatetypes.ServiceConfig, error) {
 	serviceConfig := &templatetypes.ServiceConfig{}
-	if err := transform(serviceDict, serviceConfig); err != nil {
+	if err := loader.Transform(serviceDict, serviceConfig, transformers...); err != nil {
 		return nil, err
 	}
 	serviceConfig.Name = name
@@ -343,179 +304,11 @@ func expandUser(path string, lookupEnv template.Mapping) string {
 	return path
 }
 
-func transformUlimits(data interface{}) (interface{}, error) {
-	switch value := data.(type) {
-	case int:
-		return types.UlimitsConfig{Single: value}, nil
-	case map[string]interface{}:
-		ulimit := types.UlimitsConfig{}
-		ulimit.Soft = value["soft"].(int)
-		ulimit.Hard = value["hard"].(int)
-		return ulimit, nil
-	default:
-		return data, errors.Errorf("invalid type %T for ulimits", value)
-	}
-}
-
-// LoadNetworks produces a NetworkConfig map from a compose file Dict
-// the source Dict is not validated if directly used. Use Load() to enable validation
-func LoadNetworks(source map[string]interface{}, version string) (map[string]types.NetworkConfig, error) {
-	networks := make(map[string]types.NetworkConfig)
-	err := transform(source, &networks)
-	if err != nil {
-		return networks, err
-	}
-	for name, network := range networks {
-		if !network.External.External {
-			continue
-		}
-		switch {
-		case network.External.Name != "":
-			if network.Name != "" {
-				return nil, errors.Errorf("network %s: network.external.name and network.name conflict; only use network.name", name)
-			}
-			if versions.GreaterThanOrEqualTo(version, "3.5") {
-				logrus.Warnf("network %s: network.external.name is deprecated in favor of network.name", name)
-			}
-			network.Name = network.External.Name
-			network.External.Name = ""
-		case network.Name == "":
-			network.Name = name
-		}
-		networks[name] = network
-	}
-	return networks, nil
-}
-
-func externalVolumeError(volume, key string) error {
-	return errors.Errorf(
-		"conflicting parameters \"external\" and %q specified for volume %q",
-		key, volume)
-}
-
-// LoadVolumes produces a VolumeConfig map from a compose file Dict
-// the source Dict is not validated if directly used. Use Load() to enable validation
-func LoadVolumes(source map[string]interface{}, version string) (map[string]types.VolumeConfig, error) {
-	volumes := make(map[string]types.VolumeConfig)
-	if err := transform(source, &volumes); err != nil {
-		return volumes, err
-	}
-
-	for name, volume := range volumes {
-		if !volume.External.External {
-			continue
-		}
-		switch {
-		case volume.Driver != "":
-			return nil, externalVolumeError(name, "driver")
-		case len(volume.DriverOpts) > 0:
-			return nil, externalVolumeError(name, "driver_opts")
-		case len(volume.Labels) > 0:
-			return nil, externalVolumeError(name, "labels")
-		case volume.External.Name != "":
-			if volume.Name != "" {
-				return nil, errors.Errorf("volume %s: volume.external.name and volume.name conflict; only use volume.name", name)
-			}
-			if versions.GreaterThanOrEqualTo(version, "3.4") {
-				logrus.Warnf("volume %s: volume.external.name is deprecated in favor of volume.name", name)
-			}
-			volume.Name = volume.External.Name
-			volume.External.Name = ""
-		case volume.Name == "":
-			volume.Name = name
-		}
-		volumes[name] = volume
-	}
-	return volumes, nil
-}
-
-// LoadSecrets produces a SecretConfig map from a compose file Dict
-// the source Dict is not validated if directly used. Use Load() to enable validation
-func LoadSecrets(source map[string]interface{}, details types.ConfigDetails) (map[string]types.SecretConfig, error) {
-	secrets := make(map[string]types.SecretConfig)
-	if err := transform(source, &secrets); err != nil {
-		return secrets, err
-	}
-	for name, secret := range secrets {
-		obj, err := loadFileObjectConfig(name, "secret", types.FileObjectConfig(secret), details)
-		if err != nil {
-			return nil, err
-		}
-		secrets[name] = types.SecretConfig(obj)
-	}
-	return secrets, nil
-}
-
-// LoadConfigObjs produces a ConfigObjConfig map from a compose file Dict
-// the source Dict is not validated if directly used. Use Load() to enable validation
-func LoadConfigObjs(source map[string]interface{}, details types.ConfigDetails) (map[string]types.ConfigObjConfig, error) {
-	configs := make(map[string]types.ConfigObjConfig)
-	if err := transform(source, &configs); err != nil {
-		return configs, err
-	}
-	for name, config := range configs {
-		obj, err := loadFileObjectConfig(name, "config", types.FileObjectConfig(config), details)
-		if err != nil {
-			return nil, err
-		}
-		configs[name] = types.ConfigObjConfig(obj)
-	}
-	return configs, nil
-}
-
-func loadFileObjectConfig(name string, objType string, obj types.FileObjectConfig, details types.ConfigDetails) (types.FileObjectConfig, error) {
-	// if "external: true"
-	if obj.External.External {
-		// handle deprecated external.name
-		if obj.External.Name != "" {
-			if obj.Name != "" {
-				return obj, errors.Errorf("%[1]s %[2]s: %[1]s.external.name and %[1]s.name conflict; only use %[1]s.name", objType, name)
-			}
-			if versions.GreaterThanOrEqualTo(details.Version, "3.5") {
-				logrus.Warnf("%[1]s %[2]s: %[1]s.external.name is deprecated in favor of %[1]s.name", objType, name)
-			}
-			obj.Name = obj.External.Name
-			obj.External.Name = ""
-		} else {
-			if obj.Name == "" {
-				obj.Name = name
-			}
-		}
-		// if not "external: true"
-	} else {
-		obj.File = absPath(details.WorkingDir, obj.File)
-	}
-
-	return obj, nil
-}
-
 func absPath(workingDir string, filePath string) string {
 	if filepath.IsAbs(filePath) {
 		return filePath
 	}
 	return filepath.Join(workingDir, filePath)
-}
-
-func transformMapStringString(data interface{}) (interface{}, error) {
-	switch value := data.(type) {
-	case map[string]interface{}:
-		return toMapStringString(value, false), nil
-	case map[string]string:
-		return value, nil
-	default:
-		return data, errors.Errorf("invalid type %T for map[string]string", value)
-	}
-}
-
-func transformExternal(data interface{}) (interface{}, error) {
-	switch value := data.(type) {
-	case bool:
-		return map[string]interface{}{"external": value}, nil
-	case map[string]interface{}:
-		return map[string]interface{}{"external": true, "name": value["name"]}, nil
-	default:
-		return data, errors.Errorf("invalid type %T for external", value)
-	}
 }
 
 func transformServicePort(data interface{}) (interface{}, error) {
@@ -562,17 +355,6 @@ func transformStringSourceMap(data interface{}) (interface{}, error) {
 	}
 }
 
-func transformBuildConfig(data interface{}) (interface{}, error) {
-	switch value := data.(type) {
-	case string:
-		return map[string]interface{}{"context": value}, nil
-	case map[string]interface{}:
-		return data, nil
-	default:
-		return data, errors.Errorf("invalid type %T for service build", value)
-	}
-}
-
 func transformServiceVolumeConfig(data interface{}) (interface{}, error) {
 	switch value := data.(type) {
 	case string:
@@ -581,100 +363,6 @@ func transformServiceVolumeConfig(data interface{}) (interface{}, error) {
 		return data, nil
 	default:
 		return data, errors.Errorf("invalid type %T for service volume", value)
-	}
-}
-
-func transformServiceNetworkMap(value interface{}) (interface{}, error) {
-	if list, ok := value.([]interface{}); ok {
-		mapValue := map[interface{}]interface{}{}
-		for _, name := range list {
-			mapValue[name] = nil
-		}
-		return mapValue, nil
-	}
-	return value, nil
-}
-
-func transformStringOrNumberList(value interface{}) (interface{}, error) {
-	list := value.([]interface{})
-	result := make([]string, len(list))
-	for i, item := range list {
-		result[i] = fmt.Sprint(item)
-	}
-	return result, nil
-}
-
-func transformStringList(data interface{}) (interface{}, error) {
-	switch value := data.(type) {
-	case string:
-		return []string{value}, nil
-	case []interface{}:
-		return value, nil
-	default:
-		return data, errors.Errorf("invalid type %T for string list", value)
-	}
-}
-
-func transformMappingOrListFunc(sep string, allowNil bool) func(interface{}) (interface{}, error) {
-	return func(data interface{}) (interface{}, error) {
-		return transformMappingOrList(data, sep, allowNil), nil
-	}
-}
-
-func transformListOrMappingFunc(sep string, allowNil bool) func(interface{}) (interface{}, error) {
-	return func(data interface{}) (interface{}, error) {
-		return transformListOrMapping(data, sep, allowNil), nil
-	}
-}
-
-func transformListOrMapping(listOrMapping interface{}, sep string, allowNil bool) interface{} {
-	switch value := listOrMapping.(type) {
-	case map[string]interface{}:
-		return toStringList(value, sep, allowNil)
-	case []interface{}:
-		return listOrMapping
-	}
-	panic(errors.Errorf("expected a map or a list, got %T: %#v", listOrMapping, listOrMapping))
-}
-
-func transformMappingOrList(mappingOrList interface{}, sep string, allowNil bool) interface{} {
-	switch value := mappingOrList.(type) {
-	case map[string]interface{}:
-		return toMapStringString(value, allowNil)
-	case ([]interface{}):
-		result := make(map[string]interface{})
-		for _, value := range value {
-			parts := strings.SplitN(value.(string), sep, 2)
-			key := parts[0]
-			switch {
-			case len(parts) == 1 && allowNil:
-				result[key] = nil
-			case len(parts) == 1 && !allowNil:
-				result[key] = ""
-			default:
-				result[key] = parts[1]
-			}
-		}
-		return result
-	}
-	panic(errors.Errorf("expected a map or a list, got %T: %#v", mappingOrList, mappingOrList))
-}
-
-func transformShellCommand(value interface{}) (interface{}, error) {
-	if str, ok := value.(string); ok {
-		return shellwords.Parse(str)
-	}
-	return value, nil
-}
-
-func transformHealthCheckTest(data interface{}) (interface{}, error) {
-	switch value := data.(type) {
-	case string:
-		return append([]string{"CMD-SHELL"}, value), nil
-	case []interface{}:
-		return value, nil
-	default:
-		return value, errors.Errorf("invalid type %T for healthcheck.test", value)
 	}
 }
 
@@ -799,35 +487,4 @@ func toServicePortConfigs(value string) ([]interface{}, error) {
 	}
 
 	return portConfigs, nil
-}
-
-func toMapStringString(value map[string]interface{}, allowNil bool) map[string]interface{} {
-	output := make(map[string]interface{})
-	for key, value := range value {
-		output[key] = toString(value, allowNil)
-	}
-	return output
-}
-
-func toString(value interface{}, allowNil bool) interface{} {
-	switch {
-	case value != nil:
-		return fmt.Sprint(value)
-	case allowNil:
-		return nil
-	default:
-		return ""
-	}
-}
-
-func toStringList(value map[string]interface{}, separator string, allowNil bool) []string {
-	output := []string{}
-	for key, value := range value {
-		if value == nil && !allowNil {
-			continue
-		}
-		output = append(output, fmt.Sprintf("%s%s%s", key, separator, value))
-	}
-	sort.Strings(output)
-	return output
 }
