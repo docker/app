@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/render"
@@ -15,29 +16,31 @@ import (
 
 // Validate checks an application definition meets the specifications (metadata and rendered compose file)
 func Validate(appname string, settingsFiles []string, env map[string]string) error {
+	var errs []string
 	if err := checkExistingFiles(appname); err != nil {
-		return err
+		errs = append(errs, err.Error())
 	}
 	if err := validateMetadata(appname); err != nil {
-		return err
+		errs = append(errs, err.Error())
 	}
 	if _, err := render.Render(appname, nil, settingsFiles, env); err != nil {
-		return err
+		errs = append(errs, err.Error())
 	}
-	return nil
+	return concatenateErrors(errs)
 }
 
 func checkExistingFiles(appname string) error {
+	var errs []string
 	if _, err := os.Stat(filepath.Join(appname, internal.SettingsFileName)); err != nil {
-		return errors.New("failed to read application settings")
+		errs = append(errs, "failed to read application settings")
 	}
 	if _, err := os.Stat(filepath.Join(appname, internal.MetadataFileName)); err != nil {
-		return errors.New("failed to read application metadata")
+		errs = append(errs, "failed to read application metadata")
 	}
 	if _, err := os.Stat(filepath.Join(appname, internal.ComposeFileName)); err != nil {
-		return errors.New("failed to read application compose")
+		errs = append(errs, "failed to read application compose")
 	}
-	return nil
+	return concatenateErrors(errs)
 }
 
 func validateMetadata(appname string) error {
@@ -51,6 +54,13 @@ func validateMetadata(appname string) error {
 	}
 	if err := specification.Validate(metadataYaml, internal.MetadataVersion); err != nil {
 		return fmt.Errorf("failed to validate metadata:\n%s", err)
+	}
+	return nil
+}
+
+func concatenateErrors(errs []string) error {
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "\n"))
 	}
 	return nil
 }
