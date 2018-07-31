@@ -11,15 +11,13 @@ import (
 
 func TestValidateMissingFileApplication(t *testing.T) {
 	dir := fs.NewDir(t, t.Name(),
-		fs.WithDir("no-settings-app", fs.WithFile(internal.MetadataFileName, ""), fs.WithFile(internal.ComposeFileName, "")),
-		fs.WithDir("no-metadata-app", fs.WithFile(internal.SettingsFileName, ""), fs.WithFile(internal.ComposeFileName, "")),
-		fs.WithDir("no-compose-app", fs.WithFile(internal.MetadataFileName, ""), fs.WithFile(internal.SettingsFileName, "")),
+		fs.WithDir("bad-app"),
 	)
 	defer dir.Remove()
-
-	assert.ErrorContains(t, Validate(dir.Join("no-settings-app"), nil, nil), "failed to read application settings")
-	assert.ErrorContains(t, Validate(dir.Join("no-metadata-app"), nil, nil), "failed to read application metadata")
-	assert.ErrorContains(t, Validate(dir.Join("no-compose-app"), nil, nil), "failed to read application compose")
+	errs := Validate(dir.Join("bad-app"), nil, nil)
+	assert.ErrorContains(t, errs, "failed to read application settings")
+	assert.ErrorContains(t, errs, "failed to read application metadata")
+	assert.ErrorContains(t, errs, "failed to read application compose")
 }
 
 func TestValidateBrokenMetadata(t *testing.T) {
@@ -33,9 +31,10 @@ maintainers:
     - name: bad-user
       email: bad-email
 unknown: property`
+	composeFile := `version: "3.6"`
 	dir := fs.NewDir(t, t.Name(),
 		fs.WithFile(internal.MetadataFileName, brokenMetadata),
-		fs.WithFile(internal.ComposeFileName, ""),
+		fs.WithFile(internal.ComposeFileName, composeFile),
 		fs.WithFile(internal.SettingsFileName, ""))
 	defer dir.Remove()
 	err := Validate(dir.Path(), nil, nil)
