@@ -9,8 +9,8 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/render"
-	"github.com/docker/app/internal/templateloader"
 	"github.com/docker/app/specification"
+	"github.com/docker/cli/cli/compose/loader"
 )
 
 // Validate checks an application definition meets the specifications (metadata and rendered compose file)
@@ -45,7 +45,7 @@ func validateMetadata(appname string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read application metadata: %s", err)
 	}
-	metadataYaml, err := templateloader.ParseYAML(metadata)
+	metadataYaml, err := loader.ParseYAML(metadata)
 	if err != nil {
 		return fmt.Errorf("failed to parse application metadata: %s", err)
 	}

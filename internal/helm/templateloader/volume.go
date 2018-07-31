@@ -5,7 +5,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	types "github.com/docker/app/internal/helm/templatetypes"
+	"github.com/docker/app/internal/helm/templatetypes"
+	"github.com/docker/cli/cli/compose/types"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/pkg/errors"
 )
@@ -13,8 +14,8 @@ import (
 const endOfSpec = rune(0)
 
 // ParseVolume parses a volume spec without any knowledge of the target platform
-func ParseVolume(spec string) (types.ServiceVolumeConfig, error) {
-	volume := types.ServiceVolumeConfig{}
+func ParseVolume(spec string) (templatetypes.ServiceVolumeConfig, error) {
+	volume := templatetypes.ServiceVolumeConfig{}
 
 	switch len(spec) {
 	case 0:
@@ -49,7 +50,7 @@ func isWindowsDrive(buffer []rune, char rune) bool {
 	return char == ':' && len(buffer) == 1 && unicode.IsLetter(buffer[0])
 }
 
-func populateFieldFromBuffer(char rune, buffer []rune, volume *types.ServiceVolumeConfig) error {
+func populateFieldFromBuffer(char rune, buffer []rune, volume *templatetypes.ServiceVolumeConfig) error {
 	strBuffer := string(buffer)
 	switch {
 	case len(buffer) == 0:
@@ -70,9 +71,9 @@ func populateFieldFromBuffer(char rune, buffer []rune, volume *types.ServiceVolu
 	for _, option := range strings.Split(strBuffer, ",") {
 		switch option {
 		case "ro":
-			volume.ReadOnly = types.BoolOrTemplate{Value: true}
+			volume.ReadOnly = templatetypes.BoolOrTemplate{Value: true}
 		case "rw":
-			volume.ReadOnly = types.BoolOrTemplate{Value: false}
+			volume.ReadOnly = templatetypes.BoolOrTemplate{Value: false}
 		case "nocopy":
 			volume.Volume = &types.ServiceVolumeVolume{NoCopy: true}
 		default:
@@ -94,7 +95,7 @@ func isBindOption(option string) bool {
 	return false
 }
 
-func populateType(volume *types.ServiceVolumeConfig) {
+func populateType(volume *templatetypes.ServiceVolumeConfig) {
 	switch {
 	// Anonymous volume
 	case volume.Source == "":
