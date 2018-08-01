@@ -23,7 +23,7 @@ name: hello-world
 description:
 # Namespace to use when pushing to a registry. This is typically your Hub username.
 #namespace: myHubUsername
-# List of application maitainers with name and email for each
+# List of application maintainers with name and email for each
 maintainers:
   - name: user
     email:

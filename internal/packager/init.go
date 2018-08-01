@@ -247,7 +247,7 @@ name: {{ .Name }}
 description: {{ .Description }}
 # Namespace to use when pushing to a registry. This is typically your Hub username.
 {{ if len .Namespace}}namespace: {{ .Namespace }} {{ else }}#namespace: myHubUsername{{ end }}
-# List of application maitainers with name and email for each
+# List of application maintainers with name and email for each
 {{ if len .Maintainers }}maintainers:
 {{ range .Maintainers }}  - name: {{ .Name  }}
     email: {{ .Email }}
