@@ -120,7 +120,7 @@
     "service/logs",
     "templates"
   ]
-  revision = "70d5cb0dd01dbd62c69476285eb2facf70f19385"
+  revision = "da544e893879e2b506165f49684afd44311d0cdb"
 
 [[projects]]
   name = "github.com/docker/distribution"

@@ -13,6 +13,9 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/types"
+	"github.com/docker/cli/cli/compose/loader"
+	dtemplate "github.com/docker/cli/cli/compose/template"
+	"github.com/docker/cli/opts"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -102,118 +105,39 @@ func initFromScratch(name string) error {
 	return ioutil.WriteFile(filepath.Join(dirName, internal.SettingsFileName), []byte{'\n'}, 0644)
 }
 
-func parseEnv(env string, target map[string]string) {
-	envlines := strings.Split(env, "\n")
-	for _, l := range envlines {
-		l = strings.Trim(l, "\r ")
-		if l == "" || l[0] == '#' {
-			continue
-		}
-		kv := strings.SplitN(l, "=", 2)
-		if len(kv) != 2 {
-			continue
-		}
-		target[kv[0]] = kv[1]
-	}
-}
-
-func isAlNum(b byte) bool {
-	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '_' || b == '.'
-}
-
-func extractString(data string, res *[]string) {
-	for {
-		dollar := strings.Index(data, "$")
-		if dollar == -1 || len(data) == dollar+1 {
-			break
-		}
-		if data[dollar+1] == '$' {
-			data = data[dollar+2:]
-			continue
-		}
-		dollar++
-		if data[dollar] == '{' {
-			dollar++
-		}
-		start := dollar
-		for dollar < len(data) && isAlNum(data[dollar]) {
-			dollar++
-		}
-		*res = append(*res, data[start:dollar])
-		data = data[dollar:]
-	}
-}
-
-func extractRecurseList(node []interface{}, res *[]string) error {
-	for _, v := range node {
-		switch vv := v.(type) {
-		case string:
-			extractString(vv, res)
-		case []interface{}:
-			if err := extractRecurseList(vv, res); err != nil {
-				return err
-			}
-		case map[interface{}]interface{}:
-			if err := extractRecurse(vv, res); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func extractRecurse(node map[interface{}]interface{}, res *[]string) error {
-	for _, v := range node {
-		switch vv := v.(type) {
-		case string:
-			extractString(vv, res)
-		case []interface{}:
-			if err := extractRecurseList(vv, res); err != nil {
-				return err
-			}
-		case map[interface{}]interface{}:
-			if err := extractRecurse(vv, res); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// ExtractVariables returns the list of variables used by given compose raw data
-func ExtractVariables(composeRaw string) ([]string, error) {
-	compose := make(map[interface{}]interface{})
-	err := yaml.Unmarshal([]byte(composeRaw), compose)
-	if err != nil {
-		return nil, err
-	}
-	var res []string
-	err = extractRecurse(compose, &res)
-	return res, err
-}
-
 func initFromComposeFile(name string, composeFile string) error {
 	log.Debug("init from compose")
 
 	dirName := internal.DirNameFromAppName(name)
+
 	composeRaw, err := ioutil.ReadFile(composeFile)
 	if err != nil {
 		return errors.Wrap(err, "failed to read compose file")
 	}
-	settings := make(map[string]string)
-	envRaw, err := ioutil.ReadFile(filepath.Join(filepath.Dir(composeFile), ".env"))
-	if err == nil {
-		parseEnv(string(envRaw), settings)
-	}
-	keys, err := ExtractVariables(string(composeRaw))
+	cfgMap, err := loader.ParseYAML(composeRaw)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}
+	settings := make(map[string]string)
+	envs, err := opts.ParseEnvFile(filepath.Join(filepath.Dir(composeFile), ".env"))
+	if err == nil {
+		for _, v := range envs {
+			kv := strings.SplitN(v, "=", 2)
+			if len(kv) == 2 {
+				settings[kv[0]] = kv[1]
+			}
+		}
+	}
+	vars := dtemplate.ExtractVariables(cfgMap)
 	needsFilling := false
-	for _, k := range keys {
+	for k, v := range vars {
 		if _, ok := settings[k]; !ok {
-			settings[k] = "FILL ME"
-			needsFilling = true
+			if v != "" {
+				settings[k] = v
+			} else {
+				settings[k] = "FILL ME"
+				needsFilling = true
+			}
 		}
 	}
 	settingsYAML, err := yaml.Marshal(settings)
