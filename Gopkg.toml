@@ -39,7 +39,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/docker"
-  revision = "c752b0991e31ba9869ab6a0661af57e9423874fb"
+  revision = "b711437bbd8596312c962d4189e9ad4d2108c2dc"
 
 [[override]]
   name = "github.com/docker/distribution"
@@ -50,20 +50,24 @@ required = ["github.com/wadey/gocovmerge"]
   revision = "edd5641391926a50bc5f7040e20b7efc05003c26"
 
 [[override]]
+  name = "github.com/opencontainers/runc"
+  revision = "ad0f5255060d36872be04de22f8731f38ef2d7b1"
+
+[[override]]
   name = "k8s.io/kubernetes"
-  revision = "v1.8.14"
+  revision = "v1.11.1"
 
 [[override]]
   name = "k8s.io/api"
-  revision = "kubernetes-1.8.14"
+  revision = "kubernetes-1.11.1"
 
 [[override]]
   name = "k8s.io/apimachinery"
-  revision = "kubernetes-1.8.14"
+  revision = "kubernetes-1.11.1"
 
 [[override]]
   name = "k8s.io/client-go"
-  revision = "kubernetes-1.8.14"
+  revision = "kubernetes-1.11.1"
 
 [[override]]
   name = "google.golang.org/grpc"
