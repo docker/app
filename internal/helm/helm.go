@@ -14,13 +14,13 @@ import (
 	"github.com/docker/app/internal/helm/templateconversion"
 	"github.com/docker/app/internal/helm/templateloader"
 	"github.com/docker/app/internal/helm/templatev1beta2"
-	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/render"
 	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/internal/types"
 	"github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/compose/loader"
+	"github.com/docker/cli/cli/compose/template"
 	"github.com/docker/cli/kubernetes/compose/v1beta1"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
 	"github.com/pkg/errors"
@@ -60,9 +60,15 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return errors.Wrap(err, "failed to read application Compose file")
 	}
-	variables, err := packager.ExtractVariables(string(data))
+	cfgMap, err := loader.ParseYAML(data)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse docker-compose.yml, maybe because it is a template")
+		return errors.Wrap(err, "failed to parse compose file")
+	}
+	vars := template.ExtractVariables(cfgMap)
+	// FIXME(vdemeester): remove the need to create this slice
+	variables := []string{}
+	for k := range vars {
+		variables = append(variables, k)
 	}
 	err = makeStack(appname, targetDir, data, stackVersion)
 	if err != nil {
