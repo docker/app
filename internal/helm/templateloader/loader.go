@@ -10,9 +10,10 @@ import (
 	"strings"
 	"time"
 
-	types "github.com/docker/app/internal/templatetypes"
+	"github.com/docker/app/internal/helm/templatetypes"
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/cli/compose/template"
+	"github.com/docker/cli/cli/compose/types"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/go-connections/nat"
@@ -21,29 +22,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
 )
 
-// ParseYAML reads the bytes from a file, parses the bytes into a mapping
-// structure, and returns it.
-func ParseYAML(source []byte) (map[string]interface{}, error) {
-	var cfg interface{}
-	if err := yaml.Unmarshal(source, &cfg); err != nil {
-		return nil, err
-	}
-	cfgMap, ok := cfg.(map[interface{}]interface{})
-	if !ok {
-		return nil, errors.Errorf("Top-level object must be a mapping")
-	}
-	converted, err := convertToStringKeysRecursive(cfgMap, "")
-	if err != nil {
-		return nil, err
-	}
-	return converted.(map[string]interface{}), nil
-}
-
 // LoadTemplate loads a config without resolving the variables
-func LoadTemplate(configDict map[string]interface{}) (*types.Config, error) {
+func LoadTemplate(configDict map[string]interface{}) (*templatetypes.Config, error) {
 	if err := validateForbidden(configDict); err != nil {
 		return nil, err
 	}
@@ -62,9 +44,9 @@ func validateForbidden(configDict map[string]interface{}) error {
 	return nil
 }
 
-func loadSections(config map[string]interface{}, configDetails types.ConfigDetails) (*types.Config, error) {
+func loadSections(config map[string]interface{}, configDetails types.ConfigDetails) (*templatetypes.Config, error) {
 	var err error
-	cfg := types.Config{
+	cfg := templatetypes.Config{
 		Version: schema.Version(config),
 	}
 
@@ -227,21 +209,21 @@ func createTransformHook() mapstructure.DecodeHookFuncType {
 		reflect.TypeOf(types.StringList{}):                       transformStringList,
 		reflect.TypeOf(map[string]string{}):                      transformMapStringString,
 		reflect.TypeOf(types.UlimitsConfig{}):                    transformUlimits,
-		reflect.TypeOf(types.UnitBytesOrTemplate{}):              transformSize,
-		reflect.TypeOf([]types.ServicePortConfig{}):              transformServicePort,
-		reflect.TypeOf(types.ServiceSecretConfig{}):              transformStringSourceMap,
-		reflect.TypeOf(types.ServiceConfigObjConfig{}):           transformStringSourceMap,
+		reflect.TypeOf(templatetypes.UnitBytesOrTemplate{}):      transformSize,
+		reflect.TypeOf([]templatetypes.ServicePortConfig{}):      transformServicePort,
+		reflect.TypeOf(templatetypes.ServiceSecretConfig{}):      transformStringSourceMap,
+		reflect.TypeOf(templatetypes.ServiceConfigObjConfig{}):   transformStringSourceMap,
 		reflect.TypeOf(types.StringOrNumberList{}):               transformStringOrNumberList,
 		reflect.TypeOf(map[string]*types.ServiceNetworkConfig{}): transformServiceNetworkMap,
 		reflect.TypeOf(types.MappingWithEquals{}):                transformMappingOrListFunc("=", true),
 		reflect.TypeOf(types.Labels{}):                           transformMappingOrListFunc("=", false),
 		reflect.TypeOf(types.MappingWithColon{}):                 transformMappingOrListFunc(":", false),
 		reflect.TypeOf(types.HostsList{}):                        transformListOrMappingFunc(":", false),
-		reflect.TypeOf(types.ServiceVolumeConfig{}):              transformServiceVolumeConfig,
+		reflect.TypeOf(templatetypes.ServiceVolumeConfig{}):      transformServiceVolumeConfig,
 		reflect.TypeOf(types.BuildConfig{}):                      transformBuildConfig,
-		reflect.TypeOf(types.BoolOrTemplate{}):                   transformBoolOrTemplate,
-		reflect.TypeOf(types.UInt64OrTemplate{}):                 transformUInt64OrTemplate,
-		reflect.TypeOf(types.DurationOrTemplate{}):               transformDurationOrTemplate,
+		reflect.TypeOf(templatetypes.BoolOrTemplate{}):           transformBoolOrTemplate,
+		reflect.TypeOf(templatetypes.UInt64OrTemplate{}):         transformUInt64OrTemplate,
+		reflect.TypeOf(templatetypes.DurationOrTemplate{}):       transformDurationOrTemplate,
 	}
 
 	return func(_ reflect.Type, target reflect.Type, data interface{}) (interface{}, error) {
@@ -253,58 +235,10 @@ func createTransformHook() mapstructure.DecodeHookFuncType {
 	}
 }
 
-// keys needs to be converted to strings for jsonschema
-func convertToStringKeysRecursive(value interface{}, keyPrefix string) (interface{}, error) {
-	if mapping, ok := value.(map[interface{}]interface{}); ok {
-		dict := make(map[string]interface{})
-		for key, entry := range mapping {
-			str, ok := key.(string)
-			if !ok {
-				return nil, formatInvalidKeyError(keyPrefix, key)
-			}
-			var newKeyPrefix string
-			if keyPrefix == "" {
-				newKeyPrefix = str
-			} else {
-				newKeyPrefix = fmt.Sprintf("%s.%s", keyPrefix, str)
-			}
-			convertedEntry, err := convertToStringKeysRecursive(entry, newKeyPrefix)
-			if err != nil {
-				return nil, err
-			}
-			dict[str] = convertedEntry
-		}
-		return dict, nil
-	}
-	if list, ok := value.([]interface{}); ok {
-		var convertedList []interface{}
-		for index, entry := range list {
-			newKeyPrefix := fmt.Sprintf("%s[%d]", keyPrefix, index)
-			convertedEntry, err := convertToStringKeysRecursive(entry, newKeyPrefix)
-			if err != nil {
-				return nil, err
-			}
-			convertedList = append(convertedList, convertedEntry)
-		}
-		return convertedList, nil
-	}
-	return value, nil
-}
-
-func formatInvalidKeyError(keyPrefix string, key interface{}) error {
-	var location string
-	if keyPrefix == "" {
-		location = "at top level"
-	} else {
-		location = fmt.Sprintf("in %s", keyPrefix)
-	}
-	return errors.Errorf("Non-string key %s: %#v", location, key)
-}
-
 // LoadServices produces a ServiceConfig map from a compose file Dict
 // the servicesDict is not validated if directly used. Use Load() to enable validation
-func LoadServices(servicesDict map[string]interface{}, workingDir string, lookupEnv template.Mapping) ([]types.ServiceConfig, error) {
-	var services []types.ServiceConfig
+func LoadServices(servicesDict map[string]interface{}, workingDir string, lookupEnv template.Mapping) ([]templatetypes.ServiceConfig, error) {
+	var services []templatetypes.ServiceConfig
 
 	for name, serviceDef := range servicesDict {
 		serviceConfig, err := LoadService(name, serviceDef.(map[string]interface{}), workingDir, lookupEnv)
@@ -319,8 +253,8 @@ func LoadServices(servicesDict map[string]interface{}, workingDir string, lookup
 
 // LoadService produces a single ServiceConfig from a compose file Dict
 // the serviceDict is not validated if directly used. Use Load() to enable validation
-func LoadService(name string, serviceDict map[string]interface{}, workingDir string, lookupEnv template.Mapping) (*types.ServiceConfig, error) {
-	serviceConfig := &types.ServiceConfig{}
+func LoadService(name string, serviceDict map[string]interface{}, workingDir string, lookupEnv template.Mapping) (*templatetypes.ServiceConfig, error) {
+	serviceConfig := &templatetypes.ServiceConfig{}
 	if err := transform(serviceDict, serviceConfig); err != nil {
 		return nil, err
 	}
@@ -348,7 +282,7 @@ func updateEnvironment(environment map[string]*string, vars map[string]*string, 
 	}
 }
 
-func resolveEnvironment(serviceConfig *types.ServiceConfig, workingDir string, lookupEnv template.Mapping) error {
+func resolveEnvironment(serviceConfig *templatetypes.ServiceConfig, workingDir string, lookupEnv template.Mapping) error {
 	environment := make(map[string]*string)
 
 	if len(serviceConfig.EnvFile) > 0 {
@@ -371,7 +305,7 @@ func resolveEnvironment(serviceConfig *types.ServiceConfig, workingDir string, l
 	return nil
 }
 
-func resolveVolumePaths(volumes []types.ServiceVolumeConfig, workingDir string, lookupEnv template.Mapping) error {
+func resolveVolumePaths(volumes []templatetypes.ServiceVolumeConfig, workingDir string, lookupEnv template.Mapping) error {
 	for i, volume := range volumes {
 		if volume.Type != "bind" {
 			continue
@@ -747,15 +681,15 @@ func transformHealthCheckTest(data interface{}) (interface{}, error) {
 func transformBoolOrTemplate(value interface{}) (interface{}, error) {
 	switch value := value.(type) {
 	case int:
-		return types.BoolOrTemplate{Value: value != 0}, nil
+		return templatetypes.BoolOrTemplate{Value: value != 0}, nil
 	case bool:
-		return types.BoolOrTemplate{Value: value}, nil
+		return templatetypes.BoolOrTemplate{Value: value}, nil
 	case string:
 		b, err := toBoolean(value)
 		if err == nil {
-			return types.BoolOrTemplate{Value: b.(bool)}, nil
+			return templatetypes.BoolOrTemplate{Value: b.(bool)}, nil
 		}
-		return types.BoolOrTemplate{ValueTemplate: value}, nil
+		return templatetypes.BoolOrTemplate{ValueTemplate: value}, nil
 	default:
 		return value, errors.Errorf("invali type %T for boolean", value)
 	}
@@ -765,13 +699,13 @@ func transformUInt64OrTemplate(value interface{}) (interface{}, error) {
 	switch value := value.(type) {
 	case int:
 		v := uint64(value)
-		return types.UInt64OrTemplate{Value: &v}, nil
+		return templatetypes.UInt64OrTemplate{Value: &v}, nil
 	case string:
 		v, err := strconv.ParseUint(value, 0, 64)
 		if err == nil {
-			return types.UInt64OrTemplate{Value: &v}, nil
+			return templatetypes.UInt64OrTemplate{Value: &v}, nil
 		}
-		return types.UInt64OrTemplate{ValueTemplate: value}, nil
+		return templatetypes.UInt64OrTemplate{ValueTemplate: value}, nil
 	default:
 		return value, errors.Errorf("invali type %T for boolean", value)
 	}
@@ -781,13 +715,13 @@ func transformDurationOrTemplate(value interface{}) (interface{}, error) {
 	switch value := value.(type) {
 	case int:
 		d := time.Duration(value)
-		return types.DurationOrTemplate{Value: &d}, nil
+		return templatetypes.DurationOrTemplate{Value: &d}, nil
 	case string:
 		d, err := time.ParseDuration(value)
 		if err == nil {
-			return types.DurationOrTemplate{Value: &d}, nil
+			return templatetypes.DurationOrTemplate{Value: &d}, nil
 		}
-		return types.DurationOrTemplate{ValueTemplate: value}, nil
+		return templatetypes.DurationOrTemplate{ValueTemplate: value}, nil
 	default:
 		return nil, errors.Errorf("invalid type for duration %T", value)
 	}
@@ -796,13 +730,13 @@ func transformDurationOrTemplate(value interface{}) (interface{}, error) {
 func transformSize(value interface{}) (interface{}, error) {
 	switch value := value.(type) {
 	case int:
-		return types.UnitBytesOrTemplate{Value: int64(value)}, nil
+		return templatetypes.UnitBytesOrTemplate{Value: int64(value)}, nil
 	case string:
 		v, err := units.RAMInBytes(value)
 		if err == nil {
-			return types.UnitBytesOrTemplate{Value: int64(v)}, nil
+			return templatetypes.UnitBytesOrTemplate{Value: int64(v)}, nil
 		}
-		return types.UnitBytesOrTemplate{ValueTemplate: value}, nil
+		return templatetypes.UnitBytesOrTemplate{ValueTemplate: value}, nil
 	}
 	return nil, errors.Errorf("invalid type for size %T", value)
 }
@@ -821,14 +755,14 @@ func toServicePortConfigs(value string) ([]interface{}, error) {
 		}
 		portPort := strings.Split(portsProtocol[0], ":")
 		tgt, _ := transformUInt64OrTemplate(portPort[0]) // can't fail on string
-		pub := types.UInt64OrTemplate{}
+		pub := templatetypes.UInt64OrTemplate{}
 		if len(portPort) > 1 {
 			ipub, _ := transformUInt64OrTemplate(portPort[1])
-			pub = ipub.(types.UInt64OrTemplate)
+			pub = ipub.(templatetypes.UInt64OrTemplate)
 		}
-		portConfigs = append(portConfigs, types.ServicePortConfig{
+		portConfigs = append(portConfigs, templatetypes.ServicePortConfig{
 			Protocol:  protocol,
-			Target:    tgt.(types.UInt64OrTemplate),
+			Target:    tgt.(templatetypes.UInt64OrTemplate),
 			Published: pub,
 			Mode:      "ingress",
 		})
@@ -855,10 +789,10 @@ func toServicePortConfigs(value string) ([]interface{}, error) {
 		for _, p := range portConfig {
 			tp := uint64(p.TargetPort)
 			pp := uint64(p.PublishedPort)
-			portConfigs = append(portConfigs, types.ServicePortConfig{
+			portConfigs = append(portConfigs, templatetypes.ServicePortConfig{
 				Protocol:  string(p.Protocol),
-				Target:    types.UInt64OrTemplate{Value: &tp},
-				Published: types.UInt64OrTemplate{Value: &pp},
+				Target:    templatetypes.UInt64OrTemplate{Value: &tp},
+				Published: templatetypes.UInt64OrTemplate{Value: &pp},
 				Mode:      string(p.PublishMode),
 			})
 		}

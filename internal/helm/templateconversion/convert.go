@@ -6,12 +6,13 @@ import (
 	"strconv"
 	"strings"
 
-	composeTypes "github.com/docker/app/internal/templatetypes"
-	v1beta2 "github.com/docker/app/internal/templatev1beta2"
+	"github.com/docker/app/internal/helm/templatetypes"
+	v1beta2 "github.com/docker/app/internal/helm/templatev1beta2"
+	"github.com/docker/cli/cli/compose/types"
 )
 
 // FromComposeConfig converts a compose.Config into a StackSpec
-func FromComposeConfig(c *composeTypes.Config) *v1beta2.StackSpec {
+func FromComposeConfig(c *templatetypes.Config) *v1beta2.StackSpec {
 	if c == nil {
 		return nil
 	}
@@ -29,7 +30,7 @@ func FromComposeConfig(c *composeTypes.Config) *v1beta2.StackSpec {
 	}
 }
 
-func fromComposeSecrets(s map[string]composeTypes.SecretConfig) map[string]v1beta2.SecretConfig {
+func fromComposeSecrets(s map[string]types.SecretConfig) map[string]v1beta2.SecretConfig {
 	if s == nil {
 		return nil
 	}
@@ -48,7 +49,7 @@ func fromComposeSecrets(s map[string]composeTypes.SecretConfig) map[string]v1bet
 	return m
 }
 
-func fromComposeConfigs(s map[string]composeTypes.ConfigObjConfig) map[string]v1beta2.ConfigObjConfig {
+func fromComposeConfigs(s map[string]types.ConfigObjConfig) map[string]v1beta2.ConfigObjConfig {
 	if s == nil {
 		return nil
 	}
@@ -67,7 +68,7 @@ func fromComposeConfigs(s map[string]composeTypes.ConfigObjConfig) map[string]v1
 	return m
 }
 
-func fromComposeServiceConfig(s composeTypes.ServiceConfig) v1beta2.ServiceConfig {
+func fromComposeServiceConfig(s templatetypes.ServiceConfig) v1beta2.ServiceConfig {
 	var userID *int64
 	if s.User != "" {
 		numerical, err := strconv.Atoi(s.User)
@@ -114,7 +115,7 @@ func fromComposeServiceConfig(s composeTypes.ServiceConfig) v1beta2.ServiceConfi
 	}
 }
 
-func fromComposePorts(ports []composeTypes.ServicePortConfig) []v1beta2.ServicePortConfig {
+func fromComposePorts(ports []templatetypes.ServicePortConfig) []v1beta2.ServicePortConfig {
 	if ports == nil {
 		return nil
 	}
@@ -130,7 +131,7 @@ func fromComposePorts(ports []composeTypes.ServicePortConfig) []v1beta2.ServiceP
 	return p
 }
 
-func fromComposeServiceSecrets(secrets []composeTypes.ServiceSecretConfig) []v1beta2.ServiceSecretConfig {
+func fromComposeServiceSecrets(secrets []templatetypes.ServiceSecretConfig) []v1beta2.ServiceSecretConfig {
 	if secrets == nil {
 		return nil
 	}
@@ -146,7 +147,7 @@ func fromComposeServiceSecrets(secrets []composeTypes.ServiceSecretConfig) []v1b
 	return c
 }
 
-func fromComposeServiceConfigs(configs []composeTypes.ServiceConfigObjConfig) []v1beta2.ServiceConfigObjConfig {
+func fromComposeServiceConfigs(configs []templatetypes.ServiceConfigObjConfig) []v1beta2.ServiceConfigObjConfig {
 	if configs == nil {
 		return nil
 	}
@@ -162,7 +163,7 @@ func fromComposeServiceConfigs(configs []composeTypes.ServiceConfigObjConfig) []
 	return c
 }
 
-func fromComposeHealthcheck(h *composeTypes.HealthCheckConfig) *v1beta2.HealthCheckConfig {
+func fromComposeHealthcheck(h *templatetypes.HealthCheckConfig) *v1beta2.HealthCheckConfig {
 	if h == nil {
 		return nil
 	}
@@ -174,7 +175,7 @@ func fromComposeHealthcheck(h *composeTypes.HealthCheckConfig) *v1beta2.HealthCh
 	}
 }
 
-func fromComposePlacement(p composeTypes.Placement) v1beta2.Placement {
+func fromComposePlacement(p types.Placement) v1beta2.Placement {
 	return v1beta2.Placement{
 		Constraints: fromComposeConstraints(p.Constraints),
 	}
@@ -222,14 +223,14 @@ func fromComposeConstraints(s []string) *v1beta2.Constraints {
 	return constraints
 }
 
-func fromComposeResources(r composeTypes.Resources) v1beta2.Resources {
+func fromComposeResources(r templatetypes.Resources) v1beta2.Resources {
 	return v1beta2.Resources{
 		Limits:       fromComposeResourcesResource(r.Limits),
 		Reservations: fromComposeResourcesResource(r.Reservations),
 	}
 }
 
-func fromComposeResourcesResource(r *composeTypes.Resource) *v1beta2.Resource {
+func fromComposeResourcesResource(r *templatetypes.Resource) *v1beta2.Resource {
 	if r == nil {
 		return nil
 	}
@@ -239,7 +240,7 @@ func fromComposeResourcesResource(r *composeTypes.Resource) *v1beta2.Resource {
 	}
 }
 
-func fromComposeUpdateConfig(u *composeTypes.UpdateConfig) *v1beta2.UpdateConfig {
+func fromComposeUpdateConfig(u *templatetypes.UpdateConfig) *v1beta2.UpdateConfig {
 	if u == nil {
 		return nil
 	}
@@ -248,7 +249,7 @@ func fromComposeUpdateConfig(u *composeTypes.UpdateConfig) *v1beta2.UpdateConfig
 	}
 }
 
-func fromComposeRestartPolicy(r *composeTypes.RestartPolicy) *v1beta2.RestartPolicy {
+func fromComposeRestartPolicy(r *types.RestartPolicy) *v1beta2.RestartPolicy {
 	if r == nil {
 		return nil
 	}
@@ -257,7 +258,7 @@ func fromComposeRestartPolicy(r *composeTypes.RestartPolicy) *v1beta2.RestartPol
 	}
 }
 
-func fromComposeServiceVolumeConfig(vs []composeTypes.ServiceVolumeConfig) []v1beta2.ServiceVolumeConfig {
+func fromComposeServiceVolumeConfig(vs []templatetypes.ServiceVolumeConfig) []v1beta2.ServiceVolumeConfig {
 	if vs == nil {
 		return nil
 	}

@@ -11,13 +11,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/helm/templateconversion"
+	"github.com/docker/app/internal/helm/templateloader"
+	"github.com/docker/app/internal/helm/templatev1beta2"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/render"
 	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
-	"github.com/docker/app/internal/templateconversion"
-	"github.com/docker/app/internal/templateloader"
-	"github.com/docker/app/internal/templatev1beta2"
 	"github.com/docker/app/internal/types"
 	"github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/compose/loader"
@@ -46,7 +46,7 @@ with the appropriate content (value or template)
 // Helm renders an app as an Helm Chart
 func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool, stackVersion string) error {
 	targetDir := internal.AppNameFromDir(appname) + ".chart"
-	if err := os.Mkdir(targetDir, 0755); err != nil && !os.IsExist(err) {
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}
 	err := makeChart(appname, targetDir)
@@ -207,13 +207,6 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
-func typeMeta(stackVersion string) metav1.TypeMeta {
-	return metav1.TypeMeta{
-		Kind:       "stacks.compose.docker.com",
-		APIVersion: stackVersion,
-	}
-}
-
 func makeChart(appname, targetDir string) error {
 	metaFile := filepath.Join(appname, internal.MetadataFileName)
 	metaContent, err := ioutil.ReadFile(metaFile)
@@ -247,6 +240,13 @@ func makeChart(appname, targetDir string) error {
 		return errors.Wrap(err, "failed to marshal Chart")
 	}
 	return ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
+}
+
+func typeMeta(stackVersion string) metav1.TypeMeta {
+	return metav1.TypeMeta{
+		Kind:       "stacks.compose.docker.com",
+		APIVersion: stackVersion,
+	}
 }
 
 func objectMeta(appname string) metav1.ObjectMeta {
