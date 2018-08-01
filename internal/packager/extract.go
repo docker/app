@@ -121,10 +121,6 @@ func Extract(appname string) (ExtractedApp, error) {
 	appname = internal.DirNameFromAppName(appname)
 	s, err := os.Stat(appname)
 	if err != nil {
-		// try verbatim
-		s, err = os.Stat(originalAppname)
-	}
-	if err != nil {
 		// look for a docker image
 		return extractImage(originalAppname)
 	}
