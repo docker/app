@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/render"
 	"github.com/docker/app/internal/types"
 	"github.com/docker/cli/cli/compose/loader"
 	dtemplate "github.com/docker/cli/cli/compose/template"
@@ -128,7 +129,7 @@ func initFromComposeFile(name string, composeFile string) error {
 			}
 		}
 	}
-	vars := dtemplate.ExtractVariables(cfgMap)
+	vars := dtemplate.ExtractVariables(cfgMap, render.Pattern)
 	needsFilling := false
 	for k, v := range vars {
 		if _, ok := settings[k]; !ok {
