@@ -44,7 +44,7 @@ with the appropriate content (value or template)
 */
 
 // Helm renders an app as an Helm Chart
-func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, render bool, stackVersion string) error {
+func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, shouldRender bool, stackVersion string) error {
 	targetDir := internal.AppNameFromDir(appname) + ".chart"
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return errors.Wrap(err, "failed to create Chart directory")
@@ -53,7 +53,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return err
 	}
-	if render {
+	if shouldRender {
 		return helmRender(appname, targetDir, composeFiles, settingsFile, env, stackVersion)
 	}
 	data, err := ioutil.ReadFile(filepath.Join(appname, internal.ComposeFileName))
@@ -64,7 +64,7 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}
-	vars := template.ExtractVariables(cfgMap)
+	vars := template.ExtractVariables(cfgMap, render.Pattern)
 	// FIXME(vdemeester): remove the need to create this slice
 	variables := []string{}
 	for k := range vars {

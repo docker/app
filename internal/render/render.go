@@ -34,7 +34,8 @@ var (
 		delimiter, delimiter, substitution, substitution,
 	)
 
-	pattern = regexp.MustCompile(patternString)
+	// Pattern is the variable regexp pattern used to interpolate or extract variables when rendering
+	Pattern = regexp.MustCompile(patternString)
 )
 
 // Render renders the Compose file for this app, merging in settings files, other compose files, and env
@@ -109,7 +110,7 @@ func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (
 }
 
 func substitute(template string, mapping composetemplate.Mapping) (string, error) {
-	return composetemplate.SubstituteWith(template, mapping, pattern, errorIfMissing)
+	return composetemplate.SubstituteWith(template, mapping, Pattern, errorIfMissing)
 }
 
 func errorIfMissing(substitution string, mapping composetemplate.Mapping) (string, bool, error) {

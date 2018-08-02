@@ -240,9 +240,9 @@ func TestHelmBinary(t *testing.T) {
 	chart, _ := ioutil.ReadFile(dir.Join("helm.chart/Chart.yaml"))
 	values, _ := ioutil.ReadFile(dir.Join("helm.chart/values.yaml"))
 	stack, _ := ioutil.ReadFile(dir.Join("helm.chart/templates/stack.yaml"))
-	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml")
-	golden.Assert(t, string(values), "helm-expected.chart/values.yaml")
-	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack.yaml")
+	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml", "chart file is wrong")
+	golden.Assert(t, string(values), "helm-expected.chart/values.yaml", "values file is wrong")
+	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack.yaml", "stack file is wrong")
 }
 
 func TestHelmV1Beta1Binary(t *testing.T) {
@@ -252,9 +252,9 @@ func TestHelmV1Beta1Binary(t *testing.T) {
 	chart, _ := ioutil.ReadFile(dir.Join("helm.chart/Chart.yaml"))
 	values, _ := ioutil.ReadFile(dir.Join("helm.chart/values.yaml"))
 	stack, _ := ioutil.ReadFile(dir.Join("helm.chart/templates/stack.yaml"))
-	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml")
-	golden.Assert(t, string(values), "helm-expected.chart/values.yaml")
-	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack-v1beta1.yaml")
+	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml", "chart file is wrong")
+	golden.Assert(t, string(values), "helm-expected.chart/values.yaml", "values file is wrong")
+	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack-v1beta1.yaml", "stack file is wrong")
 }
 
 func TestHelmInvalidStackVersionBinary(t *testing.T) {
