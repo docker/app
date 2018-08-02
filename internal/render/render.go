@@ -41,7 +41,14 @@ var (
 func Render(appname string, composeFiles []string, settingsFiles []string, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
 	sf := []string{filepath.Join(appname, internal.SettingsFileName)}
-	sf = append(sf, settingsFiles...)
+  for _, path := range settingsFiles {
+    psf := filepath.Join(appname, path)
+    if _, err := os.Stat(psf); err == nil {
+      sf = append(sf, psf)
+    } else {
+      sf = append(sf, path)
+    }
+  }
 	// load the settings into a struct
 	fileSettings, err := settings.LoadFiles(sf)
 	if err != nil {
