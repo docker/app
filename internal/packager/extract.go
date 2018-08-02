@@ -1,9 +1,7 @@
 package packager
 
 import (
-	"archive/tar"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -11,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/docker/pkg/archive"
 	"github.com/pkg/errors"
 )
 
@@ -202,32 +201,7 @@ func extract(appname, outputDir string) error {
 		return errors.Wrap(err, "failed to open application package")
 	}
 	defer f.Close()
-	tarReader := tar.NewReader(f)
-	outputDir = outputDir + "/"
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "error reading from tar header")
-		}
-		switch header.Typeflag {
-		case tar.TypeDir: // = directory
-			if err := os.Mkdir(outputDir+header.Name, 0755); err != nil {
-				return err
-			}
-		case tar.TypeReg: // = regular file
-			data := make([]byte, header.Size)
-			_, err := tarReader.Read(data)
-			if err != nil && err != io.EOF {
-				return errors.Wrap(err, "error reading from tar data")
-			}
-			err = ioutil.WriteFile(outputDir+header.Name, data, 0644)
-			if err != nil {
-				return errors.Wrap(err, "error writing output file")
-			}
-		}
-	}
-	return nil
+	return archive.Untar(f, outputDir, &archive.TarOptions{
+		NoLchown: true,
+	})
 }

@@ -1,71 +1,32 @@
 package packager
 
 import (
-	"archive/tar"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/docker/pkg/archive"
+	"github.com/pkg/errors"
 )
-
-func tarAdd(tarout *tar.Writer, path, file string) error {
-	payload, err := ioutil.ReadFile(file)
-	if err != nil {
-		return err
-	}
-	h := &tar.Header{
-		Name:     path,
-		Size:     int64(len(payload)),
-		Mode:     0644,
-		Typeflag: tar.TypeReg,
-	}
-	err = tarout.WriteHeader(h)
-	if err != nil {
-		return err
-	}
-	_, err = tarout.Write(payload)
-	return err
-}
 
 // Pack packs the app as a single file
 func Pack(appname string, target io.Writer) error {
-	tarout := tar.NewWriter(target)
-	for _, f := range internal.FileNames {
-		err := tarAdd(tarout, f, filepath.Join(appname, f))
-		if err != nil {
-			return err
-		}
+	files := append([]string{}, internal.FileNames...)
+	// Include image if present
+	if _, err := os.Stat(filepath.Join(appname, "images")); err == nil {
+		files = append(files, "images")
 	}
-	// check for images
-	dir := "images"
-	_, err := os.Stat(filepath.Join(appname, dir))
-	if err == nil {
-		if err := tarout.WriteHeader(&tar.Header{
-			Typeflag: tar.TypeDir,
-			Name:     dir,
-			Mode:     0755,
-		}); err != nil {
-			return err
-		}
-		imageDir, err := os.Open(filepath.Join(appname, dir))
-		if err != nil {
-			return err
-		}
-		images, err := imageDir.Readdirnames(0)
-		if err != nil {
-			return err
-		}
-		for _, i := range images {
-			err = tarAdd(tarout, filepath.Join(dir, i), filepath.Join(appname, dir, i))
-			if err != nil {
-				return err
-			}
-		}
+	r, err := archive.TarWithOptions(appname, &archive.TarOptions{
+		IncludeFiles: files,
+		Compression:  archive.Uncompressed,
+	})
+	if err != nil {
+		return errors.Wrap(err, "cannot create an archive")
 	}
-	return tarout.Close()
+	_, err = io.Copy(target, r)
+	return err
 }
 
 // Unpack extracts a packed app

@@ -1,9 +1,7 @@
 package packager
 
 import (
-	"archive/tar"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -13,6 +11,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/types"
+	"github.com/docker/docker/pkg/archive"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -82,31 +81,27 @@ func Load(repotag string, outputDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to open temporary image file")
 	}
-	tarReader := tar.NewReader(f)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "error reading next tar header")
-		}
-		if filepath.Base(header.Name) == "layer.tar" {
-			data := make([]byte, header.Size)
-			_, err := tarReader.Read(data)
-			if err != nil && err != io.EOF {
-				return errors.Wrap(err, "error reading tar data")
-			}
-			repoComps := strings.Split(repotag, ":")
-			repo := repoComps[0]
-			if len(repoComps) == 3 || (len(repoComps) == 2 && strings.Contains(repoComps[1], "/")) {
-				repo = repoComps[1]
-			}
-			err = ioutil.WriteFile(filepath.Join(outputDir, internal.DirNameFromAppName(filepath.Base(repo))), data, 0644)
-			return errors.Wrap(err, "error writing output file")
-		}
+	repoComps := strings.Split(repotag, ":")
+	repo := repoComps[0]
+	if len(repoComps) == 3 || (len(repoComps) == 2 && strings.Contains(repoComps[1], "/")) {
+		repo = repoComps[1]
 	}
-	return fmt.Errorf("failed to find our layer in tarball")
+	tempDir, err := ioutil.TempDir("", "dockerapp-load")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tempDir)
+	if err := archive.Untar(f, tempDir, &archive.TarOptions{
+		NoLchown: true,
+	}); err != nil {
+		return errors.Wrap(err, "failed to extract image")
+	}
+	return filepath.Walk(tempDir, func(path string, fi os.FileInfo, err error) error {
+		if fi.Name() == "layer.tar" {
+			return os.Rename(path, filepath.Join(outputDir, internal.DirNameFromAppName(filepath.Base(repo))))
+		}
+		return nil
+	})
 }
 
 // Push pushes an app to a registry
