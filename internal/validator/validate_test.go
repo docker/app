@@ -6,6 +6,7 @@ import (
 	"gotest.tools/assert"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/types"
 	"gotest.tools/fs"
 )
 
@@ -14,7 +15,7 @@ func TestValidateMissingFileApplication(t *testing.T) {
 		fs.WithDir("bad-app"),
 	)
 	defer dir.Remove()
-	errs := Validate(dir.Join("bad-app"), nil, nil)
+	errs := Validate(types.NewApp(dir.Join("bad-app")), nil)
 	assert.ErrorContains(t, errs, "failed to read application settings")
 	assert.ErrorContains(t, errs, "failed to read application metadata")
 	assert.ErrorContains(t, errs, "failed to read application compose")
@@ -37,7 +38,7 @@ unknown: property`
 		fs.WithFile(internal.ComposeFileName, composeFile),
 		fs.WithFile(internal.SettingsFileName, ""))
 	defer dir.Remove()
-	err := Validate(dir.Path(), nil, nil)
+	err := Validate(types.NewApp(dir.Path()), nil)
 	assert.Error(t, err, `failed to validate metadata:
 - maintainers.2.email: Does not match format 'email'
 - name: Does not match format 'hostname'
@@ -56,7 +57,7 @@ my-settings:
 		fs.WithFile(internal.ComposeFileName, composeFile),
 		fs.WithFile(internal.SettingsFileName, brokenSettings))
 	defer dir.Remove()
-	err := Validate(dir.Path(), nil, nil)
+	err := Validate(types.NewApp(dir.Path()), nil)
 	assert.ErrorContains(t, err, `Non-string key in my-settings: 1`)
 }
 
@@ -71,7 +72,7 @@ unknown-property: value`
 		fs.WithFile(internal.ComposeFileName, brokenComposeFile),
 		fs.WithFile(internal.SettingsFileName, ""))
 	defer dir.Remove()
-	err := Validate(dir.Path(), nil, nil)
+	err := Validate(types.NewApp(dir.Path()), nil)
 	assert.Error(t, err, "failed to load Compose file: unknown-property Additional property unknown-property is not allowed")
 }
 
@@ -89,6 +90,6 @@ services:
 		fs.WithFile(internal.ComposeFileName, composeFile),
 		fs.WithFile(internal.SettingsFileName, settings))
 	defer dir.Remove()
-	err := Validate(dir.Path(), nil, nil)
+	err := Validate(types.NewApp(dir.Path()), nil)
 	assert.NilError(t, err)
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/render"
+	"github.com/docker/app/internal/types"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack"
@@ -51,7 +52,10 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
-	app, err := packager.Extract(appname)
+	app, err := packager.Extract(appname,
+		types.WithSettingsFiles(opts.deploySettingsFiles...),
+		types.WithComposeFiles(opts.deployComposeFiles...),
+	)
 	if err != nil {
 		return err
 	}
@@ -61,13 +65,13 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 		return err
 	}
 	d := cliopts.ConvertKVStringsToMap(opts.deployEnv)
-	rendered, err := render.Render(app.AppName, opts.deployComposeFiles, opts.deploySettingsFiles, d)
+	rendered, err := render.Render(app, d)
 	if err != nil {
 		return err
 	}
 	stackName := opts.deployStackName
 	if stackName == "" {
-		stackName = internal.AppNameFromDir(app.AppName)
+		stackName = internal.AppNameFromDir(app.Path)
 	}
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
 		Namespace:    stackName,

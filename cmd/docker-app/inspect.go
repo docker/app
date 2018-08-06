@@ -20,7 +20,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 				return err
 			}
 			defer app.Cleanup()
-			return render.Inspect(dockerCli.Out(), app.AppName)
+			return render.Inspect(dockerCli.Out(), app.Path)
 		},
 	}
 }
