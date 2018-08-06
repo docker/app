@@ -36,7 +36,7 @@ func packCmd(dockerCli command.Cli) *cobra.Command {
 					return err
 				}
 			}
-			return packager.Pack(app.AppName, target)
+			return packager.Pack(app.Path, target)
 		},
 	}
 	cmd.Flags().StringVarP(&packOutputFile, "output", "o", "-", "Output file (- for stdout)")

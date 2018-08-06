@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
+	"github.com/docker/app/internal/types"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -39,18 +38,16 @@ var (
 )
 
 // Render renders the Compose file for this app, merging in settings files, other compose files, and env
-func Render(appname string, composeFiles []string, settingsFiles []string, env map[string]string) (*composetypes.Config, error) {
+// appname string, composeFiles []string, settingsFiles []string
+func Render(app types.App, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
-	sf := []string{filepath.Join(appname, internal.SettingsFileName)}
-	sf = append(sf, settingsFiles...)
 	// load the settings into a struct
-	fileSettings, err := settings.LoadFiles(sf)
+	fileSettings, err := settings.LoadFiles(app.SettingsFiles)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load settings")
 	}
 	// inject our metadata
-	metaFile := filepath.Join(appname, internal.MetadataFileName)
-	metaPrefixed, err := settings.LoadFile(metaFile, settings.WithPrefix("app"))
+	metaPrefixed, err := settings.LoadFile(app.MetadataFile, settings.WithPrefix("app"))
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +60,6 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 		return nil, errors.Wrap(err, "failed to merge settings")
 	}
 	// prepend our app compose file to the list
-	composes := []string{filepath.Join(appname, internal.ComposeFileName)}
-	composes = append(composes, composeFiles...)
 	renderers := renderer.Drivers()
 	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
 		rl := strings.Split(r, ",")
@@ -76,7 +71,7 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 		renderers = rl
 	}
 	configFiles := []composetypes.ConfigFile{}
-	for _, c := range composes {
+	for _, c := range app.ComposeFiles {
 		data, err := ioutil.ReadFile(c)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to read Compose file %s", c)

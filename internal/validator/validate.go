@@ -10,20 +10,21 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/render"
+	"github.com/docker/app/internal/types"
 	"github.com/docker/app/specification"
 	"github.com/docker/cli/cli/compose/loader"
 )
 
 // Validate checks an application definition meets the specifications (metadata and rendered compose file)
-func Validate(appname string, settingsFiles []string, env map[string]string) error {
+func Validate(app types.App, env map[string]string) error {
 	var errs []string
-	if err := checkExistingFiles(appname); err != nil {
+	if err := checkExistingFiles(app.Path); err != nil {
 		errs = append(errs, err.Error())
 	}
-	if err := validateMetadata(appname); err != nil {
+	if err := validateMetadata(app.Path); err != nil {
 		errs = append(errs, err.Error())
 	}
-	if _, err := render.Render(appname, nil, settingsFiles, env); err != nil {
+	if _, err := render.Render(app, env); err != nil {
 		errs = append(errs, err.Error())
 	}
 	return concatenateErrors(errs)

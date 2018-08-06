@@ -24,7 +24,7 @@ func Save(appname, namespace, tag string) (string, error) {
 		return "", err
 	}
 	defer app.Cleanup()
-	metaFile := filepath.Join(app.AppName, internal.MetadataFileName)
+	metaFile := filepath.Join(app.Path, internal.MetadataFileName)
 	metaContent, err := ioutil.ReadFile(metaFile)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read application metadata")
@@ -49,18 +49,18 @@ LABEL %s=%s
 LABEL maintainers="%v"
 COPY / /
 `, internal.ImageLabel, meta.Name, meta.Maintainers)
-	df := filepath.Join(app.AppName, "__Dockerfile-docker-app__")
+	df := filepath.Join(app.Path, "__Dockerfile-docker-app__")
 	if err := ioutil.WriteFile(df, []byte(dockerfile), 0644); err != nil {
 		return "", errors.Wrapf(err, "cannot create file %s", df)
 	}
 	defer os.Remove(df)
-	di := filepath.Join(app.AppName, ".dockerignore")
+	di := filepath.Join(app.Path, ".dockerignore")
 	if err := ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644); err != nil {
 		return "", errors.Wrapf(err, "cannot create file %s", di)
 	}
 	defer os.Remove(di)
-	imageName := namespace + internal.AppNameFromDir(app.AppName) + internal.AppExtension + ":" + tag
-	args := []string{"build", "-t", imageName, "-f", df, app.AppName}
+	imageName := namespace + internal.AppNameFromDir(app.Path) + internal.AppExtension + ":" + tag
+	args := []string{"build", "-t", imageName, "-f", df, app.Path}
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = ioutil.Discard
 	cmd.Stderr = os.Stderr
@@ -116,7 +116,7 @@ func Push(appname, namespace, tag string) error {
 		return err
 	}
 	defer app.Cleanup()
-	imageName, err := Save(app.AppName, namespace, tag)
+	imageName, err := Save(app.Path, namespace, tag)
 	if err != nil {
 		return err
 	}

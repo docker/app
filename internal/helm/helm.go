@@ -44,19 +44,20 @@ with the appropriate content (value or template)
 */
 
 // Helm renders an app as an Helm Chart
-func Helm(appname string, composeFiles []string, settingsFile []string, env map[string]string, shouldRender bool, stackVersion string) error {
-	targetDir := internal.AppNameFromDir(appname) + ".chart"
+func Helm(app types.App, env map[string]string, shouldRender bool, stackVersion string) error {
+	targetDir := internal.AppNameFromDir(app.Path) + ".chart"
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}
-	err := makeChart(appname, targetDir)
+	err := makeChart(app.Path, targetDir)
 	if err != nil {
 		return err
 	}
 	if shouldRender {
-		return helmRender(appname, targetDir, composeFiles, settingsFile, env, stackVersion)
+		return helmRender(app, targetDir, env, stackVersion)
 	}
-	data, err := ioutil.ReadFile(filepath.Join(appname, internal.ComposeFileName))
+	// FIXME(vdemeester) handle that
+	data, err := ioutil.ReadFile(filepath.Join(app.Path, internal.ComposeFileName))
 	if err != nil {
 		return errors.Wrap(err, "failed to read application Compose file")
 	}
@@ -70,11 +71,11 @@ func Helm(appname string, composeFiles []string, settingsFile []string, env map[
 	for k := range vars {
 		variables = append(variables, k)
 	}
-	err = makeStack(appname, targetDir, data, stackVersion)
+	err = makeStack(app.Path, targetDir, data, stackVersion)
 	if err != nil {
 		return err
 	}
-	return makeValues(appname, targetDir, settingsFile, env, variables)
+	return makeValues(app.Path, targetDir, app.SettingsFiles, env, variables)
 }
 
 // makeValues updates helm values.yaml with used variables from settings and env
@@ -173,8 +174,8 @@ func makeStack(appname string, targetDir string, data []byte, stackVersion strin
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
-func helmRender(appname string, targetDir string, composeFiles []string, settingsFile []string, env map[string]string, stackVersion string) error {
-	rendered, err := render.Render(appname, composeFiles, settingsFile, env)
+func helmRender(app types.App, targetDir string, env map[string]string, stackVersion string) error {
+	rendered, err := render.Render(app, env)
 	if err != nil {
 		return err
 	}
@@ -182,7 +183,7 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 	if err != nil {
 		return err
 	}
-	name := internal.AppNameFromDir(appname)
+	name := internal.AppNameFromDir(app.Path)
 	s, err := converter.FromCompose(ioutil.Discard, name, rendered)
 	if err != nil {
 		return err
@@ -192,13 +193,13 @@ func helmRender(appname string, targetDir string, composeFiles []string, setting
 	case V1Beta2:
 		stack = v1beta2.Stack{
 			TypeMeta:   typeMeta(stackVersion),
-			ObjectMeta: objectMeta(appname),
+			ObjectMeta: objectMeta(app.Path),
 			Spec:       s.Spec,
 		}
 	case V1Beta1:
 		stack = v1beta1.Stack{
 			TypeMeta:   typeMeta(stackVersion),
-			ObjectMeta: objectMeta(appname),
+			ObjectMeta: objectMeta(app.Path),
 			Spec: v1beta1.StackSpec{
 				ComposeFile: s.ComposeFile,
 			},
