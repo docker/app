@@ -67,10 +67,11 @@ func LoadFromTarReader(r io.Reader, ops ...func(*types.App) error) (*types.App, 
 	if err := archive.Untar(r, dir, &archive.TarOptions{
 		NoLchown: true,
 	}); err != nil {
+		originalErr := errors.Wrap(err, "cannot load app from tar")
 		if err := os.RemoveAll(dir); err != nil {
-			return nil, errors.Wrap(err, "cannot remove temporary folder")
+			return nil, errors.Wrapf(originalErr, "cannot remove temporary folder : %s", err.Error())
 		}
-		return nil, errors.Wrap(err, "cannot load app from tar")
+		return nil, originalErr
 	}
 	appOps := append([]func(*types.App) error{
 		types.WithCleanup(func() {
