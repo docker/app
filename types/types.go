@@ -1,9 +1,11 @@
 package types
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/docker/app/internal"
 )
@@ -98,13 +100,11 @@ func WithCleanup(f func()) func(*App) error {
 // WithSettingsFiles adds the specified settings files to the app
 func WithSettingsFiles(files ...string) func(*App) error {
 	return func(app *App) error {
-		for _, file := range files {
-			d, err := ioutil.ReadFile(file)
-			if err != nil {
-				return err
-			}
-			app.settingsContent = append(app.settingsContent, d)
+		settingsContent, err := readFiles(files...)
+		if err != nil {
+			return err
 		}
+		app.settingsContent = append(app.settingsContent, settingsContent...)
 		return nil
 	}
 }
@@ -112,13 +112,11 @@ func WithSettingsFiles(files ...string) func(*App) error {
 // WithSettings adds the specified settings readers to the app
 func WithSettings(readers ...io.Reader) func(*App) error {
 	return func(app *App) error {
-		for _, r := range readers {
-			d, err := ioutil.ReadAll(r)
-			if err != nil {
-				return err
-			}
-			app.settingsContent = append(app.settingsContent, d)
+		settingsContent, err := readReaders(readers...)
+		if err != nil {
+			return err
 		}
+		app.settingsContent = append(app.settingsContent, settingsContent...)
 		return nil
 	}
 }
@@ -150,13 +148,11 @@ func Metadata(r io.Reader) func(*App) error {
 // WithComposeFiles adds the specified compose files to the app
 func WithComposeFiles(files ...string) func(*App) error {
 	return func(app *App) error {
-		for _, file := range files {
-			d, err := ioutil.ReadFile(file)
-			if err != nil {
-				return err
-			}
-			app.composesContent = append(app.composesContent, d)
+		composesContent, err := readFiles(files...)
+		if err != nil {
+			return err
 		}
+		app.composesContent = append(app.composesContent, composesContent...)
 		return nil
 	}
 }
@@ -164,13 +160,46 @@ func WithComposeFiles(files ...string) func(*App) error {
 // WithComposes adds the specified compose readers to the app
 func WithComposes(readers ...io.Reader) func(*App) error {
 	return func(app *App) error {
-		for _, r := range readers {
-			d, err := ioutil.ReadAll(r)
-			if err != nil {
-				return err
-			}
-			app.composesContent = append(app.composesContent, d)
+		composesContent, err := readReaders(readers...)
+		if err != nil {
+			return err
 		}
+		app.composesContent = append(app.composesContent, composesContent...)
 		return nil
 	}
+}
+
+func readReaders(readers ...io.Reader) ([][]byte, error) {
+	content := make([][]byte, len(readers))
+	var errs []string
+	for i, r := range readers {
+		d, err := ioutil.ReadAll(r)
+		if err != nil {
+			errs = append(errs, err.Error())
+			continue
+		}
+		content[i] = d
+	}
+	return content, newErrGroup(errs)
+}
+
+func readFiles(files ...string) ([][]byte, error) {
+	content := make([][]byte, len(files))
+	var errs []string
+	for i, file := range files {
+		d, err := ioutil.ReadFile(file)
+		if err != nil {
+			errs = append(errs, err.Error())
+			continue
+		}
+		content[i] = d
+	}
+	return content, newErrGroup(errs)
+}
+
+func newErrGroup(errs []string) error {
+	if len(errs) == 0 {
+		return nil
+	}
+	return errors.New(strings.Join(errs, "\n"))
 }
