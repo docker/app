@@ -57,9 +57,9 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 					return errors.Wrap(err, "error scanning application directory")
 				}
 				if len(extra) != 0 {
-					return fmt.Errorf("refusing to overwrite %s: extra files would be deleted: %s", extractedApp.OriginalPath, strings.Join(extra, ","))
+					return fmt.Errorf("refusing to overwrite %s: extra files would be deleted: %s", extractedApp.Path, strings.Join(extra, ","))
 				}
-				mergeOutputFile = extractedApp.OriginalPath + ".tmp"
+				mergeOutputFile = extractedApp.Path + ".tmp"
 			}
 			var target io.Writer
 			if mergeOutputFile == "-" {
@@ -70,7 +70,7 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 					return err
 				}
 			}
-			if err := packager.Merge(extractedApp.Path, target); err != nil {
+			if err := packager.Merge(extractedApp, target); err != nil {
 				return err
 			}
 			if mergeOutputFile != "-" {
@@ -78,10 +78,10 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 				target.(io.WriteCloser).Close()
 			}
 			if inPlace {
-				if err := os.RemoveAll(extractedApp.OriginalPath); err != nil {
+				if err := os.RemoveAll(extractedApp.Path); err != nil {
 					return errors.Wrap(err, "failed to erase previous application")
 				}
-				if err := os.Rename(mergeOutputFile, extractedApp.OriginalPath); err != nil {
+				if err := os.Rename(mergeOutputFile, extractedApp.Path); err != nil {
 					return errors.Wrap(err, "failed to rename new application")
 				}
 			}

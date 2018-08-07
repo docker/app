@@ -1,4 +1,4 @@
-package render
+package inspect
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/types"
 
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
@@ -14,16 +15,23 @@ import (
 	"gotest.tools/golden"
 )
 
+const (
+	composeYAML = `version: "3.1"
+
+services:
+  web:
+    image: nginx`
+)
+
 func TestInspectErrorsOnFiles(t *testing.T) {
 	dir := fs.NewDir(t, "inspect-errors",
-		fs.WithDir("empty-app"),
 		fs.WithDir("unparseable-metadata-app",
+			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `something is wrong`),
-		),
-		fs.WithDir("no-settings-app",
-			fs.WithFile(internal.MetadataFileName, `{}`),
+			fs.WithFile(internal.SettingsFileName, "foo"),
 		),
 		fs.WithDir("unparseable-settings-app",
+			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `{}`),
 			fs.WithFile(internal.SettingsFileName, "foo"),
 		),
@@ -31,13 +39,12 @@ func TestInspectErrorsOnFiles(t *testing.T) {
 	defer dir.Remove()
 
 	for appname, expectedError := range map[string]string{
-		"inexistent-app":           "failed to read application metadata",
-		"empty-app":                "failed to read application metadata",
 		"unparseable-metadata-app": "failed to parse application metadat",
-		"no-settings-app":          "failed to load application settings",
 		"unparseable-settings-app": "failed to load application settings",
 	} {
-		err := Inspect(ioutil.Discard, dir.Join(appname))
+		app, err := types.NewAppFromDefaultFiles(dir.Join(appname))
+		assert.NilError(t, err)
+		err = Inspect(ioutil.Discard, app)
 		assert.Check(t, is.ErrorContains(err, expectedError))
 	}
 }
@@ -45,12 +52,14 @@ func TestInspectErrorsOnFiles(t *testing.T) {
 func TestInspect(t *testing.T) {
 	dir := fs.NewDir(t, "inspect",
 		fs.WithDir("no-maintainers",
+			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
 name: foo`),
 			fs.WithFile(internal.SettingsFileName, ``),
 		),
 		fs.WithDir("no-description",
+			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
 name: foo
@@ -60,6 +69,7 @@ maintainers:
 			fs.WithFile(internal.SettingsFileName, ""),
 		),
 		fs.WithDir("no-settings",
+			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
 name: foo
@@ -70,6 +80,7 @@ description: "this is sparta !"`),
 			fs.WithFile(internal.SettingsFileName, ""),
 		),
 		fs.WithDir("full",
+			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
 name: foo
@@ -88,8 +99,10 @@ text: hello`),
 		"no-maintainers", "no-description", "no-settings", "full",
 	} {
 		outBuffer := new(bytes.Buffer)
-		err := Inspect(outBuffer, dir.Join(appname))
+		app, err := types.NewAppFromDefaultFiles(dir.Join(appname))
 		assert.NilError(t, err)
-		golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s.golden", appname))
+		err = Inspect(outBuffer, app)
+		assert.NilError(t, err)
+		golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s.golden", appname), appname)
 	}
 }

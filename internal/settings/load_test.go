@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"strings"
 	"testing"
 
 	"gotest.tools/assert"
@@ -10,15 +9,15 @@ import (
 )
 
 func TestLoadErrors(t *testing.T) {
-	_, err := Load(strings.NewReader("invalid yaml"))
+	_, err := Load([]byte("invalid yaml"))
 	assert.Check(t, is.ErrorContains(err, "failed to read settings"))
 
-	_, err = Load(strings.NewReader(`
+	_, err = Load([]byte(`
 foo: bar
 1: baz`))
 	assert.Check(t, is.ErrorContains(err, "Non-string key at top level: 1"))
 
-	_, err = Load(strings.NewReader(`
+	_, err = Load([]byte(`
 foo:
   bar: baz
   1: banana`))
@@ -26,7 +25,7 @@ foo:
 }
 
 func TestLoad(t *testing.T) {
-	settings, err := Load(strings.NewReader(`
+	settings, err := Load([]byte(`
 foo: bar
 bar:
   baz: banana
@@ -45,7 +44,7 @@ baz:
 }
 
 func TestLoadWithPrefix(t *testing.T) {
-	settings, err := Load(strings.NewReader(`
+	settings, err := Load([]byte(`
 foo: bar
 bar: baz
 `), WithPrefix("p"))
@@ -71,6 +70,28 @@ bar:
 	defer dir.Remove()
 
 	settings, err := LoadFiles([]string{dir.Join("s1"), dir.Join("s2")})
+	assert.NilError(t, err)
+	assert.Check(t, is.DeepEqual(settings.Flatten(), map[string]string{
+		"foo":      "baz",
+		"bar.baz":  "banana",
+		"bar.port": "10",
+	}))
+}
+
+func TestLoadMultiples(t *testing.T) {
+	datas := [][]byte{
+		[]byte(`
+foo: bar
+bar:
+  baz: banana
+  port: 80`),
+		[]byte(`
+foo: baz
+bar:
+  port: 10`),
+	}
+
+	settings, err := LoadMultiple(datas)
 	assert.NilError(t, err)
 	assert.Check(t, is.DeepEqual(settings.Flatten(), map[string]string{
 		"foo":      "baz",

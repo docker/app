@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/render"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/render"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack"
@@ -71,7 +71,7 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	}
 	stackName := opts.deployStackName
 	if stackName == "" {
-		stackName = internal.AppNameFromDir(app.Path)
+		stackName = internal.AppNameFromDir(app.Name)
 	}
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
 		Namespace:    stackName,

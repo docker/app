@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/docker/pkg/archive"
 )
 
 func tarAdd(tarout *tar.Writer, path, file string) error {
@@ -87,5 +88,11 @@ func Unpack(appname, targetDir string) error {
 	if err != nil {
 		return err
 	}
-	return extract(appname, out)
+	f, err := os.Open(appname)
+	if err != nil {
+		return err
+	}
+	return archive.Untar(f, out, &archive.TarOptions{
+		NoLchown: true,
+	})
 }

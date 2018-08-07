@@ -17,7 +17,7 @@ func imageLoadCmd() *cobra.Command {
 				return err
 			}
 			defer app.Cleanup()
-			return image.Load(app.Path, args[1:])
+			return image.Load(app.Name, args[1:])
 		},
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/helm"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"

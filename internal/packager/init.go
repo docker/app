@@ -12,11 +12,12 @@ import (
 	"text/template"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/render"
-	"github.com/docker/app/internal/types"
-	"github.com/docker/cli/cli/compose/loader"
+	"github.com/docker/app/internal/compose"
+	"github.com/docker/app/loader"
+	"github.com/docker/app/render"
+	"github.com/docker/app/types"
+	composeloader "github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/cli/compose/schema"
-	dtemplate "github.com/docker/cli/cli/compose/template"
 	"github.com/docker/cli/opts"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -89,7 +90,11 @@ func Init(name string, composeFile string, description string, maintainers []str
 		return err
 	}
 	defer target.(io.WriteCloser).Close()
-	return Merge(temp, target)
+	app, err := loader.LoadFromDirectory(temp)
+	if err != nil {
+		return err
+	}
+	return Merge(app, target)
 }
 
 func initFromScratch(name string) error {
@@ -124,7 +129,7 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read compose file")
 	}
-	cfgMap, err := loader.ParseYAML(composeRaw)
+	cfgMap, err := composeloader.ParseYAML(composeRaw)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}
@@ -141,7 +146,10 @@ func initFromComposeFile(name string, composeFile string) error {
 			}
 		}
 	}
-	vars := dtemplate.ExtractVariables(cfgMap, render.Pattern)
+	vars, err := compose.ExtractVariables(composeRaw, render.Pattern)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse compose file")
+	}
 	needsFilling := false
 	for k, v := range vars {
 		if _, ok := settings[k]; !ok {

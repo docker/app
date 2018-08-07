@@ -12,26 +12,16 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/types"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // Save saves an app to docker and returns the image name.
-func Save(appname, namespace, tag string) (string, error) {
-	app, err := Extract(appname)
-	if err != nil {
-		return "", err
-	}
-	defer app.Cleanup()
-	metaFile := filepath.Join(app.Path, internal.MetadataFileName)
-	metaContent, err := ioutil.ReadFile(metaFile)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read application metadata")
-	}
+func Save(app *types.App, namespace, tag string) (string, error) {
 	var meta types.AppMetadata
-	err = yaml.Unmarshal(metaContent, &meta)
+	err := yaml.Unmarshal(app.Metadata(), &meta)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse application metadata")
 	}
@@ -60,7 +50,7 @@ COPY / /
 		return "", errors.Wrapf(err, "cannot create file %s", di)
 	}
 	defer os.Remove(di)
-	imageName := namespace + internal.AppNameFromDir(app.Path) + internal.AppExtension + ":" + tag
+	imageName := namespace + internal.AppNameFromDir(app.Name) + internal.AppExtension + ":" + tag
 	args := []string{"build", "-t", imageName, "-f", df, app.Path}
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = ioutil.Discard
@@ -111,13 +101,8 @@ func Load(repotag string, outputDir string) error {
 }
 
 // Push pushes an app to a registry
-func Push(appname, namespace, tag string) error {
-	app, err := Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer app.Cleanup()
-	imageName, err := Save(app.Path, namespace, tag)
+func Push(app *types.App, namespace, tag string) error {
+	imageName, err := Save(app, namespace, tag)
 	if err != nil {
 		return err
 	}

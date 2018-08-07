@@ -1,21 +1,23 @@
 package settings
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"os"
+	"io/ioutil"
 
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )
 
-// Load loads the given reader in settings
-func Load(r io.Reader, ops ...func(*Options)) (Settings, error) {
+// Load loads the given data in settings
+func Load(data []byte, ops ...func(*Options)) (Settings, error) {
 	options := &Options{}
 	for _, op := range ops {
 		op(options)
 	}
 
+	r := bytes.NewReader(data)
 	s := make(map[interface{}]interface{})
 	decoder := yaml.NewDecoder(r)
 	if err := decoder.Decode(&s); err != nil {
@@ -37,13 +39,29 @@ func Load(r io.Reader, ops ...func(*Options)) (Settings, error) {
 	return settings, nil
 }
 
+// LoadMultiple loads multiple data in settings
+func LoadMultiple(datas [][]byte, ops ...func(*Options)) (Settings, error) {
+	m := Settings(map[string]interface{}{})
+	for _, data := range datas {
+		settings, err := Load(data, ops...)
+		if err != nil {
+			return nil, err
+		}
+		m, err = Merge(m, settings)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return m, nil
+}
+
 // LoadFile loads a file (path) in settings (i.e. flatten map)
 func LoadFile(path string, ops ...func(*Options)) (Settings, error) {
-	r, err := os.Open(path)
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	return Load(r, ops...)
+	return Load(data, ops...)
 }
 
 // LoadFiles loads multiple path in settings, merging them.
