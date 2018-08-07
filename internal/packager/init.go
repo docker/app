@@ -15,6 +15,7 @@ import (
 	"github.com/docker/app/internal/render"
 	"github.com/docker/app/internal/types"
 	"github.com/docker/cli/cli/compose/loader"
+	"github.com/docker/cli/cli/compose/schema"
 	dtemplate "github.com/docker/cli/cli/compose/template"
 	"github.com/docker/cli/opts"
 	"github.com/pkg/errors"
@@ -106,6 +107,14 @@ func initFromScratch(name string) error {
 	return ioutil.WriteFile(filepath.Join(dirName, internal.SettingsFileName), []byte{'\n'}, 0644)
 }
 
+func checkComposeFileVersion(compose map[string]interface{}) error {
+	version, ok := compose["version"]
+	if !ok {
+		return fmt.Errorf("unsupported Compose file version: version 1 is too low")
+	}
+	return schema.Validate(compose, fmt.Sprintf("%v", version))
+}
+
 func initFromComposeFile(name string, composeFile string) error {
 	log.Debug("init from compose")
 
@@ -118,6 +127,9 @@ func initFromComposeFile(name string, composeFile string) error {
 	cfgMap, err := loader.ParseYAML(composeRaw)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
+	}
+	if err := checkComposeFileVersion(cfgMap); err != nil {
+		return err
 	}
 	settings := make(map[string]string)
 	envs, err := opts.ParseEnvFile(filepath.Join(filepath.Dir(composeFile), ".env"))
