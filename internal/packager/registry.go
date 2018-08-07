@@ -73,6 +73,7 @@ func Load(repotag string, outputDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to open temporary image file")
 	}
+	defer f.Close()
 	tarReader := tar.NewReader(f)
 	for {
 		header, err := tarReader.Next()

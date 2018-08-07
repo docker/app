@@ -121,6 +121,7 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 		if err != nil {
 			return nil, err
 		}
+		defer f.Close()
 		return loader.LoadFromSingleFile(appname, f, ops...)
 	}
 	return app, nil

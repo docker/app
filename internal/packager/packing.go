@@ -55,6 +55,7 @@ func Pack(appname string, target io.Writer) error {
 		if err != nil {
 			return err
 		}
+		defer imageDir.Close()
 		images, err := imageDir.Readdirnames(0)
 		if err != nil {
 			return err
@@ -92,6 +93,7 @@ func Unpack(appname, targetDir string) error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 	return archive.Untar(f, out, &archive.TarOptions{
 		NoLchown: true,
 	})

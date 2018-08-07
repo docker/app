@@ -53,6 +53,7 @@ func LoadFromTar(tar string, ops ...func(*types.App) error) (*types.App, error) 
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot load app from tar")
 	}
+	defer f.Close()
 	appOps := append(ops, types.WithPath(tar))
 	return LoadFromTarReader(f, appOps...)
 }

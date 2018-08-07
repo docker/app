@@ -8,6 +8,7 @@ import (
 	"github.com/docker/app/internal"
 )
 
+// SingleFileSeparator is the separator used in single-file app
 const SingleFileSeparator = "\n---\n"
 
 // App represents an app
