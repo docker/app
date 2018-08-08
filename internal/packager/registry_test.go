@@ -33,6 +33,7 @@ func TestSplitImageName(t *testing.T) {
 		"__.dockerapp",
 		"colon:colon:colon.dockerapp:colon",
 		"nametag.dockerapp:",
+		"ends/with/slash/",
 	}
 
 	for _, item := range invalids {

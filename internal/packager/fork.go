@@ -83,7 +83,7 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
 	var yamlMeta []byte
 	meta, err := loadMetadata(raw)
 	if err != nil {
-		return yamlMeta, err
+		return nil, err
 	}
 	// insert retrieved data in fork history section
 	log.Debug("Generating fork metadata")
@@ -97,15 +97,14 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
 	// update metadata file
 	yamlMeta, err = yaml.Marshal(newMeta)
 	if err != nil {
-		return yamlMeta, errors.Wrap(err, "failed to render metadata structure")
+		return nil, errors.Wrap(err, "failed to render metadata structure")
 	}
 	return yamlMeta, nil
 }
 
 func loadMetadata(raw []byte) (types.AppMetadata, error) {
 	var meta types.AppMetadata
-	err := yaml.Unmarshal(raw, &meta)
-	if err != nil {
+	if err := yaml.Unmarshal(raw, &meta); err != nil {
 		return meta, errors.Wrap(err, "failed to parse application metadata")
 	}
 	return meta, nil

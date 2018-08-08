@@ -212,7 +212,7 @@ func parseMaintainersData(maintainers []string) []types.Maintainer {
 	var res []types.Maintainer
 	for _, m := range maintainers {
 		ne := strings.SplitN(m, ":", 2)
-		email := ""
+		var email string
 		if len(ne) > 1 {
 			email = ne[1]
 		}
