@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/types"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )
@@ -137,4 +138,27 @@ maintainers:
 		fs.WithFile(internal.MetadataFileName, data, fs.WithMode(0644)),
 	)
 	assert.Assert(t, fs.Equal(tmpdir.Path(), manifest))
+}
+
+func TestParseMaintainersData(t *testing.T) {
+	input := []string{
+		"sakuya:sakuya.izayoi@touhou.jp",
+		"marisa.kirisame",
+		"Reimu Hakurei",
+		"Hong Meiling:kurenai.misuzu@touhou.jp",
+		"    :    ",
+		"perfect:cherry:blossom",
+	}
+
+	expectedOutput := []types.Maintainer{
+		{Name: "sakuya", Email: "sakuya.izayoi@touhou.jp"},
+		{Name: "marisa.kirisame", Email: ""},
+		{Name: "Reimu Hakurei", Email: ""},
+		{Name: "Hong Meiling", Email: "kurenai.misuzu@touhou.jp"},
+		{Name: "    ", Email: "    "},
+		{Name: "perfect", Email: "cherry:blossom"},
+	}
+	output := parseMaintainersData(input)
+
+	assert.DeepEqual(t, output, expectedOutput)
 }

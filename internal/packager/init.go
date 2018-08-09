@@ -206,6 +206,21 @@ func writeMetadataFile(name, dirName string, description string, maintainers []s
 	return ioutil.WriteFile(filepath.Join(dirName, internal.MetadataFileName), resBuf.Bytes(), 0644)
 }
 
+// parseMaintainersData parses user-provided data through the maintainers flag and returns
+// a slice of Maintainer instances
+func parseMaintainersData(maintainers []string) []types.Maintainer {
+	var res []types.Maintainer
+	for _, m := range maintainers {
+		ne := strings.SplitN(m, ":", 2)
+		var email string
+		if len(ne) > 1 {
+			email = ne[1]
+		}
+		res = append(res, types.Maintainer{Name: ne[0], Email: email})
+	}
+	return res
+}
+
 func newMetadata(name string, description string, maintainers []string) types.AppMetadata {
 	res := types.AppMetadata{
 		Version:     "0.1.0",
@@ -220,14 +235,7 @@ func newMetadata(name string, description string, maintainers []string) types.Ap
 		}
 		res.Maintainers = []types.Maintainer{{Name: userName}}
 	} else {
-		for _, m := range maintainers {
-			ne := strings.Split(m, ":")
-			email := ""
-			if len(ne) > 1 {
-				email = ne[1]
-			}
-			res.Maintainers = append(res.Maintainers, types.Maintainer{Name: ne[0], Email: email})
-		}
+		res.Maintainers = parseMaintainersData(maintainers)
 	}
 	return res
 }

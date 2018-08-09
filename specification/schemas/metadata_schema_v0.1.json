@@ -22,23 +22,56 @@
         "maintainers": {
             "type": "array",
             "items": {
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
-                    "email": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "email"
-                    }
-                }
+                "$ref": "#/definitions/maintainer"
+            }
+        },
+        "parents": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/parent"
             }
         }
     },
     "required": [
         "name",
         "version"
-    ]
+    ],
+    "definitions": {
+        "maintainer": {
+            "id": "#/definitions/maintainer",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "email"
+                }
+            }
+        },
+        "parent": {
+            "id": "#/definitions/parent",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "format": "hostname"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "maintainers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/maintainer"
+                    }
+                }
+            }
+        }
 }
