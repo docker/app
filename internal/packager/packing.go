@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/docker/pkg/archive"
 )
 
 func tarAdd(tarout *tar.Writer, path, file string) error {
@@ -54,6 +55,7 @@ func Pack(appname string, target io.Writer) error {
 		if err != nil {
 			return err
 		}
+		defer imageDir.Close()
 		images, err := imageDir.Readdirnames(0)
 		if err != nil {
 			return err
@@ -87,5 +89,12 @@ func Unpack(appname, targetDir string) error {
 	if err != nil {
 		return err
 	}
-	return extract(appname, out)
+	f, err := os.Open(appname)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return archive.Untar(f, out, &archive.TarOptions{
+		NoLchown: true,
+	})
 }

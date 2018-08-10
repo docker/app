@@ -21,7 +21,12 @@ func saveCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Save the application as an image to the docker daemon(in preparation for push)",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			imageName, err := packager.Save(firstOrEmpty(args), opts.namespace, opts.tag)
+			app, err := packager.Extract(firstOrEmpty(args))
+			if err != nil {
+				return err
+			}
+			defer app.Cleanup()
+			imageName, err := packager.Save(app, opts.namespace, opts.tag)
 			if imageName != "" && err == nil {
 				fmt.Fprintf(dockerCli.Out(), "Saved application as image: %s\n", imageName)
 			}

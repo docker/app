@@ -8,22 +8,22 @@ import (
 	"regexp"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/helm/templateconversion"
 	"github.com/docker/app/internal/helm/templateloader"
 	"github.com/docker/app/internal/helm/templatev1beta2"
-	"github.com/docker/app/internal/render"
 	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/render"
+	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/compose/loader"
-	"github.com/docker/cli/cli/compose/template"
 	"github.com/docker/cli/kubernetes/compose/v1beta1"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
 	"github.com/pkg/errors"
+	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,51 +44,47 @@ with the appropriate content (value or template)
 */
 
 // Helm renders an app as an Helm Chart
-func Helm(app types.App, env map[string]string, shouldRender bool, stackVersion string) error {
-	targetDir := internal.AppNameFromDir(app.Path) + ".chart"
+func Helm(app *types.App, env map[string]string, shouldRender bool, stackVersion string) error {
+	targetDir := internal.AppNameFromDir(app.Name) + ".chart"
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}
-	err := makeChart(app.Path, targetDir)
+	err := makeChart(app.Metadata(), targetDir)
 	if err != nil {
 		return err
 	}
 	if shouldRender {
 		return helmRender(app, targetDir, env, stackVersion)
 	}
-	// FIXME(vdemeester) handle that
-	data, err := ioutil.ReadFile(filepath.Join(app.Path, internal.ComposeFileName))
-	if err != nil {
-		return errors.Wrap(err, "failed to read application Compose file")
+	// FIXME(vdemeester) support multiple file for helm
+	if len(app.Composes()) > 1 {
+		return errors.New("helm rendering doesn't support multiple composefiles")
 	}
-	cfgMap, err := loader.ParseYAML(data)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse compose file")
-	}
-	vars := template.ExtractVariables(cfgMap, render.Pattern)
+	data := app.Composes()[0]
 	// FIXME(vdemeester): remove the need to create this slice
 	variables := []string{}
+	vars, err := compose.ExtractVariables(data, render.Pattern)
+	if err != nil {
+		return err
+	}
 	for k := range vars {
 		variables = append(variables, k)
 	}
-	err = makeStack(app.Path, targetDir, data, stackVersion)
+	err = makeStack(app.Name, targetDir, data, stackVersion)
 	if err != nil {
 		return err
 	}
-	return makeValues(app.Path, targetDir, app.SettingsFiles, env, variables)
+	return makeValues(app, targetDir, env, variables)
 }
 
 // makeValues updates helm values.yaml with used variables from settings and env
-func makeValues(appname, targetDir string, settingsFile []string, env map[string]string, variables []string) error {
+func makeValues(app *types.App, targetDir string, env map[string]string, variables []string) error {
 	// merge our variables into Values.yaml
-	sf := []string{filepath.Join(appname, internal.SettingsFileName)}
-	sf = append(sf, settingsFile...)
-	s, err := settings.LoadFiles(sf)
+	s, err := settings.LoadMultiple(app.Settings())
 	if err != nil {
 		return err
 	}
-	metaFile := filepath.Join(appname, internal.MetadataFileName)
-	metaPrefixed, err := settings.LoadFile(metaFile, settings.WithPrefix("app"))
+	metaPrefixed, err := settings.Load(app.Metadata(), settings.WithPrefix("app"))
 	if err != nil {
 		return err
 	}
@@ -174,7 +170,7 @@ func makeStack(appname string, targetDir string, data []byte, stackVersion strin
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
-func helmRender(app types.App, targetDir string, env map[string]string, stackVersion string) error {
+func helmRender(app *types.App, targetDir string, env map[string]string, stackVersion string) error {
 	rendered, err := render.Render(app, env)
 	if err != nil {
 		return err
@@ -214,14 +210,9 @@ func helmRender(app types.App, targetDir string, env map[string]string, stackVer
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
-func makeChart(appname, targetDir string) error {
-	metaFile := filepath.Join(appname, internal.MetadataFileName)
-	metaContent, err := ioutil.ReadFile(metaFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to read application metadata")
-	}
-	var meta types.AppMetadata
-	err = yaml.Unmarshal(metaContent, &meta)
+func makeChart(data []byte, targetDir string) error {
+	var meta metadata.AppMetadata
+	err := yaml.Unmarshal(data, &meta)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse application metadata")
 	}
@@ -281,7 +272,7 @@ type helmMeta struct {
 	Maintainers []helmMaintainer
 }
 
-func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
+func toHelmMeta(meta *metadata.AppMetadata) (*helmMeta, error) {
 	res := &helmMeta{
 		Name:        meta.Name,
 		Version:     meta.Version,

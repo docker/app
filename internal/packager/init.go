@@ -12,11 +12,13 @@ import (
 	"text/template"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/render"
-	"github.com/docker/app/internal/types"
-	"github.com/docker/cli/cli/compose/loader"
+	"github.com/docker/app/internal/compose"
+	"github.com/docker/app/loader"
+	"github.com/docker/app/render"
+	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
+	composeloader "github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/cli/compose/schema"
-	dtemplate "github.com/docker/cli/cli/compose/template"
 	"github.com/docker/cli/opts"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -89,7 +91,11 @@ func Init(name string, composeFile string, description string, maintainers []str
 		return err
 	}
 	defer target.(io.WriteCloser).Close()
-	return Merge(temp, target)
+	app, err := loader.LoadFromDirectory(temp)
+	if err != nil {
+		return err
+	}
+	return Merge(app, target)
 }
 
 func initFromScratch(name string) error {
@@ -124,7 +130,7 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read compose file")
 	}
-	cfgMap, err := loader.ParseYAML(composeRaw)
+	cfgMap, err := composeloader.ParseYAML(composeRaw)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}
@@ -141,7 +147,10 @@ func initFromComposeFile(name string, composeFile string) error {
 			}
 		}
 	}
-	vars := dtemplate.ExtractVariables(cfgMap, render.Pattern)
+	vars, err := compose.ExtractVariables(composeRaw, render.Pattern)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse compose file")
+	}
 	needsFilling := false
 	for k, v := range vars {
 		if _, ok := settings[k]; !ok {
@@ -208,21 +217,21 @@ func writeMetadataFile(name, dirName string, description string, maintainers []s
 
 // parseMaintainersData parses user-provided data through the maintainers flag and returns
 // a slice of Maintainer instances
-func parseMaintainersData(maintainers []string) []types.Maintainer {
-	var res []types.Maintainer
+func parseMaintainersData(maintainers []string) []metadata.Maintainer {
+	var res []metadata.Maintainer
 	for _, m := range maintainers {
 		ne := strings.SplitN(m, ":", 2)
 		var email string
 		if len(ne) > 1 {
 			email = ne[1]
 		}
-		res = append(res, types.Maintainer{Name: ne[0], Email: email})
+		res = append(res, metadata.Maintainer{Name: ne[0], Email: email})
 	}
 	return res
 }
 
-func newMetadata(name string, description string, maintainers []string) types.AppMetadata {
-	res := types.AppMetadata{
+func newMetadata(name string, description string, maintainers []string) metadata.AppMetadata {
+	res := metadata.AppMetadata{
 		Version:     "0.1.0",
 		Name:        name,
 		Description: description,
@@ -233,7 +242,7 @@ func newMetadata(name string, description string, maintainers []string) types.Ap
 		if userData != nil {
 			userName = userData.Username
 		}
-		res.Maintainers = []types.Maintainer{{Name: userName}}
+		res.Maintainers = []metadata.Maintainer{{Name: userName}}
 	} else {
 		res.Maintainers = parseMaintainersData(maintainers)
 	}

@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/types"
 	"github.com/docker/app/internal/validator"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"

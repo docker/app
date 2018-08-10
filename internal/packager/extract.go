@@ -1,9 +1,7 @@
 package packager
 
 import (
-	"archive/tar"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -11,12 +9,9 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/loader"
+	"github.com/docker/app/types"
 	"github.com/pkg/errors"
-)
-
-var (
-	noop = func() {}
 )
 
 // findApp looks for an app in CWD or subdirs
@@ -48,7 +43,7 @@ func findApp() (string, error) {
 }
 
 // extractImage extracts a docker application in a docker image to a temporary directory
-func extractImage(appname string) (types.App, error) {
+func extractImage(appname string, ops ...func(*types.App) error) (*types.App, error) {
 	var imagename string
 	if strings.Contains(appname, ":") {
 		nametag := strings.Split(appname, ":")
@@ -66,161 +61,68 @@ func extractImage(appname string) (types.App, error) {
 	}
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
-		return types.App{}, errors.Wrap(err, "failed to create temporary directory")
+		return nil, errors.Wrap(err, "failed to create temporary directory")
 	}
 	defer os.RemoveAll(tempDir)
 	err = Load(imagename, tempDir)
 	if err != nil {
 		if !strings.Contains(imagename, "/") {
-			return types.App{}, fmt.Errorf("could not locate application in either filesystem or docker image")
+			return nil, fmt.Errorf("could not locate application in either filesystem or docker image")
 		}
 		// Try to pull it
 		cmd := exec.Command("docker", "pull", imagename)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
 		if err := cmd.Run(); err != nil {
-			return types.App{}, fmt.Errorf("could not locate application in filesystem, docker image or registry")
+			return nil, fmt.Errorf("could not locate application in filesystem, docker image or registry")
 		}
 		if err := Load(imagename, tempDir); err != nil {
-			return types.App{}, errors.Wrap(err, "failed to load pulled image")
+			return nil, errors.Wrap(err, "failed to load pulled image")
 		}
 	}
-	// this gave us a compressed app, run through extract again
-	app, err := Extract(filepath.Join(tempDir, appname))
-	return types.App{
-		Path:    app.Path,
-		Cleanup: app.Cleanup,
-	}, err
+	return loader.LoadFromTar(filepath.Join(tempDir, appname), ops...)
 }
 
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.
 // It returns source file, effective app name, and cleanup function
 // If appname is empty, it looks into cwd, and all subdirs for a single matching .dockerapp
 // If nothing is found, it looks for an image and loads it
-func Extract(appname string, ops ...func(*types.App)) (types.App, error) {
-	if appname == "" {
+func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
+	if name == "" {
 		var err error
-		if appname, err = findApp(); err != nil {
-			return types.App{}, err
+		if name, err = findApp(); err != nil {
+			return nil, err
 		}
 	}
-	if appname == "." {
+	if name == "." {
 		var err error
-		if appname, err = os.Getwd(); err != nil {
-			return types.App{}, errors.Wrap(err, "cannot resolve current working directory")
+		if name, err = os.Getwd(); err != nil {
+			return nil, errors.Wrap(err, "cannot resolve current working directory")
 		}
 	}
-	originalAppname := appname
-	appname = filepath.Clean(appname)
-	// try appending our extension
-	appname = internal.DirNameFromAppName(appname)
+	ops = append(ops, types.WithName(name))
+	appname := internal.DirNameFromAppName(name)
 	s, err := os.Stat(appname)
 	if err != nil {
-		// try verbatim
-		s, err = os.Stat(originalAppname)
-	}
-	if err != nil {
 		// look for a docker image
-		return extractImage(originalAppname)
+		return extractImage(name, ops...)
 	}
 	if s.IsDir() {
 		// directory: already decompressed
-		ops = append([]func(*types.App){
-			types.WithOriginalPath(appname),
-			types.WithCleanup(noop),
-		}, ops...)
-		return types.NewApp(appname, ops...), nil
+		appOpts := append(ops,
+			types.WithPath(appname),
+		)
+		return loader.LoadFromDirectory(appname, appOpts...)
 	}
 	// not a dir: single-file or a tarball package, extract that in a temp dir
-	tempDir, err := ioutil.TempDir("", "dockerapp")
+	app, err := loader.LoadFromTar(appname, ops...)
 	if err != nil {
-		return types.App{}, errors.Wrap(err, "failed to create temporary directory")
-	}
-	defer func() {
+		f, err := os.Open(appname)
 		if err != nil {
-			os.RemoveAll(tempDir)
+			return nil, err
 		}
-	}()
-	appDir := filepath.Join(tempDir, filepath.Base(appname))
-	if err = os.Mkdir(appDir, 0755); err != nil {
-		return types.App{}, errors.Wrap(err, "failed to create application in temporary directory")
+		defer f.Close()
+		return loader.LoadFromSingleFile(appname, f, ops...)
 	}
-	if err = extract(appname, appDir); err == nil {
-		ops = append([]func(*types.App){
-			types.WithOriginalPath(appname),
-			types.WithCleanup(func() { os.RemoveAll(tempDir) }),
-		}, ops...)
-		return types.NewApp(appDir, ops...), nil
-	}
-	if err = extractSingleFile(appname, appDir); err != nil {
-		return types.App{}, err
-	}
-	// not a tarball, single-file then
-	ops = append([]func(*types.App){
-		types.WithOriginalPath(appname),
-		types.WithCleanup(func() { os.RemoveAll(tempDir) }),
-	}, ops...)
-	return types.NewApp(appDir, ops...), nil
-}
-
-func extractSingleFile(appname, appDir string) error {
-	// not a tarball, single-file then
-	data, err := ioutil.ReadFile(appname)
-	if err != nil {
-		return errors.Wrap(err, "failed to read single-file application package")
-	}
-	parts := strings.Split(string(data), "\n---")
-	if len(parts) != 3 {
-		return fmt.Errorf("malformed single-file application: expected 3 documents")
-	}
-	for i, p := range parts {
-		data := ""
-		if i == 0 {
-			data = p
-		} else {
-			d := strings.SplitN(p, "\n", 2)
-			if len(d) > 1 {
-				data = d[1]
-			}
-		}
-		err = ioutil.WriteFile(filepath.Join(appDir, internal.FileNames[i]), []byte(data), 0644)
-		if err != nil {
-			return errors.Wrap(err, "failed to write application file")
-		}
-	}
-	return nil
-}
-
-func extract(appname, outputDir string) error {
-	f, err := os.Open(appname)
-	if err != nil {
-		return errors.Wrap(err, "failed to open application package")
-	}
-	defer f.Close()
-	tarReader := tar.NewReader(f)
-	outputDir = outputDir + "/"
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "error reading from tar header")
-		}
-		switch header.Typeflag {
-		case tar.TypeDir: // = directory
-			if err := os.Mkdir(outputDir+header.Name, 0755); err != nil {
-				return err
-			}
-		case tar.TypeReg: // = regular file
-			data := make([]byte, header.Size)
-			_, err := tarReader.Read(data)
-			if err != nil && err != io.EOF {
-				return errors.Wrap(err, "error reading from tar data")
-			}
-			err = ioutil.WriteFile(outputDir+header.Name, data, 0644)
-			if err != nil {
-				return errors.Wrap(err, "error writing output file")
-			}
-		}
-	}
-	return nil
+	return app, nil
 }

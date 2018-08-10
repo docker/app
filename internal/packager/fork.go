@@ -9,8 +9,7 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/types"
-
+	"github.com/docker/app/types/metadata"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
@@ -42,7 +41,9 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 	// create app dir in output-dir
 	namespace, name := splitPackageName(forkName)
 	appPath := filepath.Join(outputDir, internal.DirNameFromAppName(name))
-	os.MkdirAll(appPath, 0755)
+	if err := os.MkdirAll(appPath, 0755); err != nil {
+		return err
+	}
 
 	// iterate tar contents
 	tarfile, err := os.Open(filepath.Join(tmpdir, internal.DirNameFromAppName(imgRef.Name)))
@@ -87,11 +88,11 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
 	}
 	// insert retrieved data in fork history section
 	log.Debug("Generating fork metadata")
-	newMeta := types.MetadataFrom(
+	newMeta := metadata.From(
 		meta,
-		types.WithName(name),
-		types.WithNamespace(namespace),
-		types.WithMaintainers(parseMaintainersData(maintainers)),
+		metadata.WithName(name),
+		metadata.WithNamespace(namespace),
+		metadata.WithMaintainers(parseMaintainersData(maintainers)),
 	)
 
 	// update metadata file
@@ -102,8 +103,8 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
 	return yamlMeta, nil
 }
 
-func loadMetadata(raw []byte) (types.AppMetadata, error) {
-	var meta types.AppMetadata
+func loadMetadata(raw []byte) (metadata.AppMetadata, error) {
+	var meta metadata.AppMetadata
 	if err := yaml.Unmarshal(raw, &meta); err != nil {
 		return meta, errors.Wrap(err, "failed to parse application metadata")
 	}

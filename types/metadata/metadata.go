@@ -1,4 +1,4 @@
-package types
+package metadata
 
 import (
 	"strings"
@@ -52,12 +52,12 @@ type ParentMetadata struct {
 	Maintainers Maintainers
 }
 
-// MetadataModifier is a function signature that takes and returns an AppMetadata object
-type MetadataModifier func(AppMetadata) AppMetadata
+// Modifier is a function signature that takes and returns an AppMetadata object
+type Modifier func(AppMetadata) AppMetadata
 
-// MetadataFrom returns an AppMetadata instance based on the provided AppMetadata
+// From returns an AppMetadata instance based on the provided AppMetadata
 // and applicable modifier functions
-func MetadataFrom(orig AppMetadata, modifiers ...MetadataModifier) AppMetadata {
+func From(orig AppMetadata, modifiers ...Modifier) AppMetadata {
 	parent := ParentMetadata{
 		Name:        orig.Name,
 		Namespace:   orig.Namespace,
@@ -80,7 +80,7 @@ func MetadataFrom(orig AppMetadata, modifiers ...MetadataModifier) AppMetadata {
 }
 
 // WithMaintainers returns a modified AppMetadata with updated maintainers field
-func WithMaintainers(maintainers Maintainers) MetadataModifier {
+func WithMaintainers(maintainers Maintainers) Modifier {
 	return func(parent AppMetadata) AppMetadata {
 		parent.Maintainers = maintainers
 		return parent
@@ -88,7 +88,7 @@ func WithMaintainers(maintainers Maintainers) MetadataModifier {
 }
 
 // WithName returns a modified AppMetadata with updated name field
-func WithName(name string) MetadataModifier {
+func WithName(name string) Modifier {
 	return func(parent AppMetadata) AppMetadata {
 		parent.Name = name
 		return parent
@@ -96,7 +96,7 @@ func WithName(name string) MetadataModifier {
 }
 
 // WithNamespace returns a modified AppMetadata with updated namespace field
-func WithNamespace(namespace string) MetadataModifier {
+func WithNamespace(namespace string) Modifier {
 	return func(parent AppMetadata) AppMetadata {
 		parent.Namespace = namespace
 		return parent

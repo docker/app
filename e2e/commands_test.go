@@ -1,8 +1,6 @@
 package e2e
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -86,15 +84,6 @@ func TestRenderBinary(t *testing.T) {
 	}
 }
 
-func randomName(prefix string) string {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
-	return prefix + hex.EncodeToString(b)
-}
-
 func TestInitBinary(t *testing.T) {
 	getDockerAppBinary(t)
 	composeData := `version: "3.2"
@@ -119,11 +108,11 @@ maintainers:
     email: joe@joe.com
 `
 	envData := "# some comment\nNGINX_VERSION=latest"
-	inputDir := randomName("app_input_")
-	os.Mkdir(inputDir, 0755)
-	ioutil.WriteFile(filepath.Join(inputDir, internal.ComposeFileName), []byte(composeData), 0644)
-	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
-	defer os.RemoveAll(inputDir)
+	dir := fs.NewDir(t, "app_input",
+		fs.WithFile(internal.ComposeFileName, composeData),
+		fs.WithFile(".env", envData),
+	)
+	defer dir.Remove()
 
 	testAppName := "app-test"
 	dirName := internal.DirNameFromAppName(testAppName)
@@ -133,7 +122,7 @@ maintainers:
 		"init",
 		testAppName,
 		"-c",
-		filepath.Join(inputDir, internal.ComposeFileName),
+		dir.Join(internal.ComposeFileName),
 		"-d",
 		"my cool app",
 		"-m", "bob",
@@ -157,7 +146,7 @@ maintainers:
 		"init",
 		"tac",
 		"-c",
-		filepath.Join(inputDir, internal.ComposeFileName),
+		dir.Join(internal.ComposeFileName),
 		"-d",
 		"my cool app",
 		"-m", "bob",
@@ -166,7 +155,8 @@ maintainers:
 	}
 	assertCommand(t, dockerApp, args...)
 	defer os.Remove("tac.dockerapp")
-	appData, _ := ioutil.ReadFile("tac.dockerapp")
+	appData, err := ioutil.ReadFile("tac.dockerapp")
+	assert.NilError(t, err)
 	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
 	// Check various commands work on single-file app package
 	assertCommand(t, dockerApp, "inspect", "tac")
@@ -179,11 +169,11 @@ func TestDetectAppBinary(t *testing.T) {
 	assertCommand(t, dockerApp, "inspect")
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
+	assert.NilError(t, os.Chdir("helm.dockerapp"))
 	defer os.Chdir(cwd)
-	os.Chdir("helm.dockerapp")
 	assertCommand(t, dockerApp, "inspect")
 	assertCommand(t, dockerApp, "inspect", ".")
-	os.Chdir(filepath.Join(cwd, "render"))
+	assert.NilError(t, os.Chdir(filepath.Join(cwd, "render")))
 	assertCommandFailureOutput(t, "inspect-multiple-apps.golden", dockerApp, "inspect")
 }
 
@@ -206,17 +196,17 @@ func TestPackBinary(t *testing.T) {
 	assert.Assert(t, strings.Contains(result.Stdout(), "nginx"))
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
-	os.Chdir(tempDir)
+	assert.NilError(t, os.Chdir(tempDir))
+	defer os.Chdir(cwd)
 	result = icmd.RunCommand(dockerApp, "helm", "test")
 	result.Assert(t, icmd.Success)
 	_, err = os.Stat("test.chart/Chart.yaml")
 	assert.NilError(t, err)
-	os.Mkdir("output", 0755)
+	assert.NilError(t, os.Mkdir("output", 0755))
 	result = icmd.RunCommand(dockerApp, "unpack", "test", "-o", "output")
 	result.Assert(t, icmd.Success)
 	_, err = os.Stat("output/test.dockerapp/docker-compose.yml")
 	assert.NilError(t, err)
-	os.Chdir(cwd)
 }
 
 func runHelmCommand(t *testing.T, args ...string) *fs.Dir {

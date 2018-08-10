@@ -6,8 +6,8 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/render"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/render"
+	"github.com/docker/app/types"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
 )
@@ -41,7 +41,7 @@ subdirectory.`,
 			if err != nil {
 				return err
 			}
-			if err := image.Add(app.Path, args[1:], config); err != nil {
+			if err := image.Add(app.Name, args[1:], config); err != nil {
 				return err
 			}
 			// check if source was a tarball
@@ -60,7 +60,7 @@ subdirectory.`,
 					return err
 				}
 				// source was a tarball, rebuild it
-				return packager.Pack(app.Path, target)
+				return packager.Pack(app.Name, target)
 			}
 			return nil
 		},

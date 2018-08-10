@@ -24,16 +24,16 @@ func splitCmd() *cobra.Command {
 			defer extractedApp.Cleanup()
 			inPlace := splitOutputDir == ""
 			if inPlace {
-				splitOutputDir = extractedApp.OriginalPath + ".tmp"
+				splitOutputDir = extractedApp.Path + ".tmp"
 			}
-			if err := packager.Split(extractedApp.Path, splitOutputDir); err != nil {
+			if err := packager.Split(extractedApp, splitOutputDir); err != nil {
 				return err
 			}
 			if inPlace {
-				if err := os.RemoveAll(extractedApp.OriginalPath); err != nil {
+				if err := os.RemoveAll(extractedApp.Path); err != nil {
 					return errors.Wrap(err, "failed to erase previous application directory")
 				}
-				if err := os.Rename(splitOutputDir, extractedApp.OriginalPath); err != nil {
+				if err := os.Rename(splitOutputDir, extractedApp.Path); err != nil {
 					return errors.Wrap(err, "failed to rename new application directory")
 				}
 			}

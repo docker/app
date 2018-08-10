@@ -37,6 +37,7 @@ func Load(appname string, services []string) error {
 	if err != nil {
 		return fmt.Errorf("no images found in app")
 	}
+	defer imageDir.Close()
 	images, err := imageDir.Readdirnames(0)
 	if err != nil {
 		return err

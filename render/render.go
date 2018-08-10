@@ -2,15 +2,15 @@ package render
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -39,15 +39,15 @@ var (
 
 // Render renders the Compose file for this app, merging in settings files, other compose files, and env
 // appname string, composeFiles []string, settingsFiles []string
-func Render(app types.App, env map[string]string) (*composetypes.Config, error) {
+func Render(app *types.App, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
 	// load the settings into a struct
-	fileSettings, err := settings.LoadFiles(app.SettingsFiles)
+	fileSettings, err := settings.LoadMultiple(app.Settings())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load settings")
 	}
 	// inject our metadata
-	metaPrefixed, err := settings.LoadFile(app.MetadataFile, settings.WithPrefix("app"))
+	metaPrefixed, err := settings.Load(app.Metadata(), settings.WithPrefix("app"))
 	if err != nil {
 		return nil, err
 	}
@@ -70,21 +70,11 @@ func Render(app types.App, env map[string]string) (*composetypes.Config, error) 
 		}
 		renderers = rl
 	}
-	configFiles := []composetypes.ConfigFile{}
-	for _, c := range app.ComposeFiles {
-		data, err := ioutil.ReadFile(c)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to read Compose file %s", c)
-		}
-		s, err := renderer.Apply(string(data), allSettings, renderers...)
-		if err != nil {
-			return nil, err
-		}
-		parsed, err := loader.ParseYAML([]byte(s))
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse Compose file %s", c)
-		}
-		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
+	configFiles, err := compose.Load(app.Composes(), func(data string) (string, error) {
+		return renderer.Apply(data, allSettings, renderers...)
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load composefiles")
 	}
 	return render(configFiles, allSettings.Flatten())
 }
