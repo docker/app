@@ -16,13 +16,14 @@ import (
 )
 
 type deployOptions struct {
-	deployComposeFiles  []string
-	deploySettingsFiles []string
-	deployEnv           []string
-	deployOrchestrator  string
-	deployKubeConfig    string
-	deployNamespace     string
-	deployStackName     string
+	deployComposeFiles      []string
+	deploySettingsFiles     []string
+	deployEnv               []string
+	deployOrchestrator      string
+	deployKubeConfig        string
+	deployNamespace         string
+	deployStackName         string
+	deploySendRegistryAuth  bool
 }
 
 // deployCmd represents the deploy command
@@ -45,6 +46,7 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.deployKubeConfig, "kubeconfig", "k", "", "kubeconfig file to use")
 	cmd.Flags().StringVarP(&opts.deployNamespace, "namespace", "n", "default", "namespace to deploy into")
 	cmd.Flags().StringVarP(&opts.deployStackName, "name", "d", "", "stack name (default: app name)")
+	cmd.Flags().BoolVarP(&opts.deploySendRegistryAuth, "with-registry-auth", "", false, "sends registry auth")
 	if internal.Experimental == "on" {
 		cmd.Flags().StringArrayVarP(&opts.deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
 	}
@@ -76,5 +78,6 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
 		Namespace:    stackName,
 		ResolveImage: swarm.ResolveImageAlways,
+    SendRegistryAuth: opts.deploySendRegistryAuth,
 	})
 }
