@@ -3,8 +3,7 @@ package packager
 import (
 	"testing"
 
-	"github.com/docker/app/internal/types"
-
+	"github.com/docker/app/types/metadata"
 	"gotest.tools/assert"
 )
 
@@ -31,11 +30,11 @@ maintainers:
     email: billy@pumpkins.net
 `
 
-var decodedSampleMetadata = types.AppMetadata{
+var decodedSampleMetadata = metadata.AppMetadata{
 	Name:      "machine",
 	Namespace: "heavy.metal",
 	Version:   "2000",
-	Maintainers: []types.Maintainer{
+	Maintainers: []metadata.Maintainer{
 		{Name: "Billy Corgan", Email: "billy@pumpkins.net"},
 	},
 }
@@ -43,11 +42,11 @@ var decodedSampleMetadata = types.AppMetadata{
 func TestLoadMetadata(t *testing.T) {
 	appmeta, err := loadMetadata([]byte(sampleMetadata))
 	assert.NilError(t, err)
-	assert.DeepEqual(t, appmeta, types.AppMetadata{
+	assert.DeepEqual(t, appmeta, metadata.AppMetadata{
 		Name:      "machine",
 		Namespace: "heavy.metal",
 		Version:   "2000",
-		Maintainers: []types.Maintainer{
+		Maintainers: []metadata.Maintainer{
 			{Name: "Billy Corgan", Email: "billy@pumpkins.net"},
 		},
 	})
@@ -56,7 +55,7 @@ func TestLoadMetadata(t *testing.T) {
 func TestLoadEmptyMetadata(t *testing.T) {
 	appmeta, err := loadMetadata([]byte(""))
 	assert.NilError(t, err)
-	assert.DeepEqual(t, appmeta, types.AppMetadata{})
+	assert.DeepEqual(t, appmeta, metadata.AppMetadata{})
 }
 
 func TestLoadInvalidMetadata(t *testing.T) {
@@ -73,14 +72,14 @@ func TestUpdateMetadata(t *testing.T) {
 	assert.NilError(t, err)
 	decodedOutput, err := loadMetadata(output)
 	assert.NilError(t, err)
-	assert.DeepEqual(t, decodedOutput, types.AppMetadata{
+	assert.DeepEqual(t, decodedOutput, metadata.AppMetadata{
 		Name:      "machine",
 		Namespace: "frog",
 		Version:   decodedSampleMetadata.Version,
-		Maintainers: []types.Maintainer{
+		Maintainers: []metadata.Maintainer{
 			{Name: "infected mushroom", Email: "im@psy.net"},
 		},
-		Parents: types.Parents{
+		Parents: metadata.Parents{
 			{
 				Name:        decodedSampleMetadata.Name,
 				Namespace:   decodedSampleMetadata.Namespace,

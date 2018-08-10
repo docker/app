@@ -1,4 +1,4 @@
-package types
+package metadata
 
 import (
 	"testing"

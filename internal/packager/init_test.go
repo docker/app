@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/types/metadata"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )
@@ -150,7 +150,7 @@ func TestParseMaintainersData(t *testing.T) {
 		"perfect:cherry:blossom",
 	}
 
-	expectedOutput := []types.Maintainer{
+	expectedOutput := []metadata.Maintainer{
 		{Name: "sakuya", Email: "sakuya.izayoi@touhou.jp"},
 		{Name: "marisa.kirisame", Email: ""},
 		{Name: "Reimu Hakurei", Email: ""},

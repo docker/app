@@ -8,7 +8,6 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
-
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
 	"gotest.tools/fs"

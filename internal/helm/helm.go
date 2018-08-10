@@ -8,8 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/helm/templateconversion"
@@ -19,11 +17,13 @@ import (
 	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/kubernetes/compose/v1beta1"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
 	"github.com/pkg/errors"
+	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -210,9 +210,9 @@ func helmRender(app *types.App, targetDir string, env map[string]string, stackVe
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
-func makeChart(metadata []byte, targetDir string) error {
-	var meta types.AppMetadata
-	err := yaml.Unmarshal(metadata, &meta)
+func makeChart(data []byte, targetDir string) error {
+	var meta metadata.AppMetadata
+	err := yaml.Unmarshal(data, &meta)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse application metadata")
 	}
@@ -272,7 +272,7 @@ type helmMeta struct {
 	Maintainers []helmMaintainer
 }
 
-func toHelmMeta(meta *types.AppMetadata) (*helmMeta, error) {
+func toHelmMeta(meta *metadata.AppMetadata) (*helmMeta, error) {
 	res := &helmMeta{
 		Name:        meta.Name,
 		Version:     meta.Version,

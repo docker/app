@@ -13,6 +13,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
@@ -20,7 +21,7 @@ import (
 
 // Save saves an app to docker and returns the image name.
 func Save(app *types.App, namespace, tag string) (string, error) {
-	var meta types.AppMetadata
+	var meta metadata.AppMetadata
 	err := yaml.Unmarshal(app.Metadata(), &meta)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse application metadata")

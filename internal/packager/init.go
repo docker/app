@@ -16,6 +16,7 @@ import (
 	"github.com/docker/app/loader"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
 	composeloader "github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/opts"
@@ -216,21 +217,21 @@ func writeMetadataFile(name, dirName string, description string, maintainers []s
 
 // parseMaintainersData parses user-provided data through the maintainers flag and returns
 // a slice of Maintainer instances
-func parseMaintainersData(maintainers []string) []types.Maintainer {
-	var res []types.Maintainer
+func parseMaintainersData(maintainers []string) []metadata.Maintainer {
+	var res []metadata.Maintainer
 	for _, m := range maintainers {
 		ne := strings.SplitN(m, ":", 2)
 		var email string
 		if len(ne) > 1 {
 			email = ne[1]
 		}
-		res = append(res, types.Maintainer{Name: ne[0], Email: email})
+		res = append(res, metadata.Maintainer{Name: ne[0], Email: email})
 	}
 	return res
 }
 
-func newMetadata(name string, description string, maintainers []string) types.AppMetadata {
-	res := types.AppMetadata{
+func newMetadata(name string, description string, maintainers []string) metadata.AppMetadata {
+	res := metadata.AppMetadata{
 		Version:     "0.1.0",
 		Name:        name,
 		Description: description,
@@ -241,7 +242,7 @@ func newMetadata(name string, description string, maintainers []string) types.Ap
 		if userData != nil {
 			userName = userData.Username
 		}
-		res.Maintainers = []types.Maintainer{{Name: userName}}
+		res.Maintainers = []metadata.Maintainer{{Name: userName}}
 	} else {
 		res.Maintainers = parseMaintainersData(maintainers)
 	}

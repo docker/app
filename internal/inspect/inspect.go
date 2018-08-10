@@ -8,13 +8,14 @@ import (
 
 	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // Inspect dumps the metadata of an app
 func Inspect(out io.Writer, app *types.App) error {
-	var meta types.AppMetadata
+	var meta metadata.AppMetadata
 	err := yaml.Unmarshal(app.Metadata(), &meta)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse application metadata")
