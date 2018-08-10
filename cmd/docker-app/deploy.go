@@ -78,6 +78,6 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
 		Namespace:    stackName,
 		ResolveImage: swarm.ResolveImageAlways,
-    SendRegistryAuth: opts.deploySendRegistryAuth,
+		SendRegistryAuth: opts.deploySendRegistryAuth,
 	})
 }
