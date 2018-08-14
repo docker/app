@@ -13,6 +13,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
+	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/loader"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
@@ -22,7 +23,6 @@ import (
 	"github.com/docker/cli/opts"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 )
 
 func prependToFile(filename, text string) error {

@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal/renderer"
+	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/internal/yatee"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func init() {

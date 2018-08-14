@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/types/metadata"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // Fork pulls an application and creates a local fork for the user to modify

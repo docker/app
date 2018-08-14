@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/docker/app/internal/yaml"
 )
 
 const (
