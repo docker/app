@@ -12,11 +12,11 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // Save saves an app to docker and returns the image name.

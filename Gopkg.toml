@@ -73,6 +73,13 @@ required = ["github.com/wadey/gocovmerge"]
   name = "google.golang.org/grpc"
   revision = "v1.3.0"
 
+# This is using a fork waiting for go-yaml/yaml#375 to be merged
+# This PR allows to set a max decoded value, thus not being exposed to yaml bombs
+[[override]]
+  name = "gopkg.in/yaml.v2"
+  source = "https://github.com/simonferquel/yaml"
+  revision="c86e64ed9581b7588e736f0c3e6ecc02cc22996e"
+
 [[constraint]]
   name = "github.com/spf13/pflag"
   branch = "master"

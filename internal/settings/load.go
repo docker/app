@@ -6,8 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/docker/app/internal/yaml"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // Load loads the given data in settings

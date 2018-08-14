@@ -15,6 +15,7 @@ import (
 	"github.com/docker/app/internal/helm/templatev1beta2"
 	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
+	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
@@ -23,7 +24,6 @@ import (
 	"github.com/docker/cli/kubernetes/compose/v1beta1"
 	"github.com/docker/cli/kubernetes/compose/v1beta2"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

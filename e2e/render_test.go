@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"gopkg.in/yaml.v2"
+	"github.com/docker/app/internal/yaml"
 	"gotest.tools/assert"
 )
 

@@ -7,10 +7,10 @@ import (
 	"text/tabwriter"
 
 	"github.com/docker/app/internal/settings"
+	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // Inspect dumps the metadata of an app
