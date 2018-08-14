@@ -16,14 +16,14 @@ import (
 )
 
 type deployOptions struct {
-	deployComposeFiles      []string
-	deploySettingsFiles     []string
-	deployEnv               []string
-	deployOrchestrator      string
-	deployKubeConfig        string
-	deployNamespace         string
-	deployStackName         string
-	deploySendRegistryAuth  bool
+	deployComposeFiles     []string
+	deploySettingsFiles    []string
+	deployEnv              []string
+	deployOrchestrator     string
+	deployKubeConfig       string
+	deployNamespace        string
+	deployStackName        string
+	deploySendRegistryAuth bool
 }
 
 // deployCmd represents the deploy command
@@ -76,8 +76,8 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 		stackName = internal.AppNameFromDir(app.Name)
 	}
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
-		Namespace:    stackName,
-		ResolveImage: swarm.ResolveImageAlways,
+		Namespace:        stackName,
+		ResolveImage:     swarm.ResolveImageAlways,
 		SendRegistryAuth: opts.deploySendRegistryAuth,
 	})
 }
