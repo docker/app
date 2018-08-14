@@ -102,7 +102,7 @@ func errorIfMissing(substitution string, mapping composetemplate.Mapping) (strin
 	value, found := mapping(substitution)
 	if !found {
 		return "", true, &composetemplate.InvalidTemplateError{
-			Template: "required variable" + substitution + "is missing a value",
+			Template: "required variable " + substitution + " is missing a value",
 		}
 	}
 	return value, true, nil
