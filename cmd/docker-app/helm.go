@@ -6,6 +6,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/helm"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
@@ -26,7 +27,10 @@ func helmCmd() *cobra.Command {
 		Long:  `Generate a Helm chart for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			app, err := packager.Extract(firstOrEmpty(args))
+			app, err := packager.Extract(firstOrEmpty(args),
+				types.WithSettingsFiles(helmSettingsFile...),
+				types.WithComposeFiles(helmComposeFiles...),
+			)
 			if err != nil {
 				return err
 			}
@@ -35,7 +39,7 @@ func helmCmd() *cobra.Command {
 			if stackVersion != helm.V1Beta1 && stackVersion != helm.V1Beta2 {
 				return fmt.Errorf("invalid stack version %q (accepted values: %s, %s)", stackVersion, helm.V1Beta1, helm.V1Beta2)
 			}
-			return helm.Helm(app.AppName, helmComposeFiles, helmSettingsFile, d, helmRender, stackVersion)
+			return helm.Helm(app, d, helmRender, stackVersion)
 		},
 	}
 	if internal.Experimental == "on" {

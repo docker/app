@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/internal/yatee"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func main() {

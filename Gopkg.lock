@@ -108,7 +108,7 @@
     "service/logs",
     "templates"
   ]
-  revision = "da544e893879e2b506165f49684afd44311d0cdb"
+  revision = "ff1a34d9a9d3bb3a7079ad1bf27d80d9a007c1ca"
 
 [[projects]]
   name = "github.com/docker/distribution"
@@ -640,8 +640,8 @@
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
+  revision = "c86e64ed9581b7588e736f0c3e6ecc02cc22996e"
+  source = "https://github.com/simonferquel/yaml"
 
 [[projects]]
   name = "gotest.tools"
@@ -814,6 +814,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a24b6a0ea352f169dd0430ad65922041e8a8b450a1cad31e2f42977855a5cccd"
+  inputs-digest = "d9a1011f4ba0220435ba111f32ece000026dc4123ffa9fcfbcabac9bfd29f4f8"
   solver-name = "gps-cdcl"
   solver-version = 1

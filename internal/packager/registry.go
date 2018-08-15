@@ -12,25 +12,17 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/internal/yaml"
+	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
+	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // Save saves an app to docker and returns the image name.
-func Save(appname, namespace, tag string) (string, error) {
-	app, err := Extract(appname)
-	if err != nil {
-		return "", err
-	}
-	defer app.Cleanup()
-	metaFile := filepath.Join(app.AppName, internal.MetadataFileName)
-	metaContent, err := ioutil.ReadFile(metaFile)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read application metadata")
-	}
-	var meta types.AppMetadata
-	err = yaml.Unmarshal(metaContent, &meta)
+func Save(app *types.App, namespace, tag string) (string, error) {
+	var meta metadata.AppMetadata
+	err := yaml.Unmarshal(app.Metadata(), &meta)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse application metadata")
 	}
@@ -49,18 +41,18 @@ LABEL %s=%s
 LABEL maintainers="%v"
 COPY / /
 `, internal.ImageLabel, meta.Name, meta.Maintainers)
-	df := filepath.Join(app.AppName, "__Dockerfile-docker-app__")
+	df := filepath.Join(app.Path, "__Dockerfile-docker-app__")
 	if err := ioutil.WriteFile(df, []byte(dockerfile), 0644); err != nil {
 		return "", errors.Wrapf(err, "cannot create file %s", df)
 	}
 	defer os.Remove(df)
-	di := filepath.Join(app.AppName, ".dockerignore")
+	di := filepath.Join(app.Path, ".dockerignore")
 	if err := ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644); err != nil {
 		return "", errors.Wrapf(err, "cannot create file %s", di)
 	}
 	defer os.Remove(di)
-	imageName := namespace + internal.AppNameFromDir(app.AppName) + internal.AppExtension + ":" + tag
-	args := []string{"build", "-t", imageName, "-f", df, app.AppName}
+	imageName := namespace + internal.AppNameFromDir(app.Name) + internal.AppExtension + ":" + tag
+	args := []string{"build", "-t", imageName, "-f", df, app.Path}
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = ioutil.Discard
 	cmd.Stderr = os.Stderr
@@ -82,6 +74,7 @@ func Load(repotag string, outputDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to open temporary image file")
 	}
+	defer f.Close()
 	tarReader := tar.NewReader(f)
 	for {
 		header, err := tarReader.Next()
@@ -97,12 +90,12 @@ func Load(repotag string, outputDir string) error {
 			if err != nil && err != io.EOF {
 				return errors.Wrap(err, "error reading tar data")
 			}
-			repoComps := strings.Split(repotag, ":")
-			repo := repoComps[0]
-			if len(repoComps) == 3 || (len(repoComps) == 2 && strings.Contains(repoComps[1], "/")) {
-				repo = repoComps[1]
+			img, err := splitImageName(repotag)
+			if err != nil {
+				return err
 			}
-			err = ioutil.WriteFile(filepath.Join(outputDir, internal.DirNameFromAppName(filepath.Base(repo))), data, 0644)
+			appName := img.Name
+			err = ioutil.WriteFile(filepath.Join(outputDir, internal.DirNameFromAppName(appName)), data, 0644)
 			return errors.Wrap(err, "error writing output file")
 		}
 	}
@@ -110,13 +103,8 @@ func Load(repotag string, outputDir string) error {
 }
 
 // Push pushes an app to a registry
-func Push(appname, namespace, tag string) error {
-	app, err := Extract(appname)
-	if err != nil {
-		return err
-	}
-	defer app.Cleanup()
-	imageName, err := Save(app.AppName, namespace, tag)
+func Push(app *types.App, namespace, tag string) error {
+	imageName, err := Save(app, namespace, tag)
 	if err != nil {
 		return err
 	}
@@ -128,11 +116,39 @@ func Push(appname, namespace, tag string) error {
 
 // Pull pulls an app from a registry
 func Pull(repotag string) error {
+	if err := pullImage(repotag); err != nil {
+		return err
+	}
+	return Load(repotag, ".")
+}
+
+func pullImage(repotag string) error {
 	cmd := exec.Command("docker", "pull", repotag)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return errors.Wrapf(err, "error pulling image %s", repotag)
 	}
-	return Load(repotag, ".")
+	return nil
+}
+
+type imageComponents struct {
+	Name       string
+	Repository string
+	Tag        string
+}
+
+func splitImageName(repotag string) (*imageComponents, error) {
+	named, err := reference.ParseNormalizedNamed(repotag)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse image name")
+	}
+	res := &imageComponents{
+		Repository: named.Name(),
+	}
+	res.Name = res.Repository[strings.LastIndex(res.Repository, "/")+1:]
+	if tagged, ok := named.(reference.Tagged); ok {
+		res.Tag = tagged.Tag()
+	}
+	return res, nil
 }

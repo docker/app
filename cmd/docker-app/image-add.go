@@ -6,7 +6,8 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/render"
+	"github.com/docker/app/render"
+	"github.com/docker/app/types"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
 )
@@ -27,17 +28,20 @@ subdirectory.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			oappname := args[0]
-			app, err := packager.Extract(oappname)
+			app, err := packager.Extract(oappname,
+				types.WithSettingsFiles(imageAddSettingsFile...),
+				types.WithComposeFiles(imageAddComposeFiles...),
+			)
 			if err != nil {
 				return err
 			}
 			defer app.Cleanup()
 			d := cliopts.ConvertKVStringsToMap(imageAddEnv)
-			config, err := render.Render(app.AppName, imageAddComposeFiles, imageAddSettingsFile, d)
+			config, err := render.Render(app, d)
 			if err != nil {
 				return err
 			}
-			if err := image.Add(app.AppName, args[1:], config); err != nil {
+			if err := image.Add(app.Name, args[1:], config); err != nil {
 				return err
 			}
 			// check if source was a tarball
@@ -56,7 +60,7 @@ subdirectory.`,
 					return err
 				}
 				// source was a tarball, rebuild it
-				return packager.Pack(app.AppName, target)
+				return packager.Pack(app.Name, target)
 			}
 			return nil
 		},

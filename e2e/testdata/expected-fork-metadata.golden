@@ -1,0 +1,16 @@
+version: 1.1.0-beta1
+name: scarlet.devil
+description: new fancy webapp with microservices
+namespace: acmecorp
+maintainers:
+- name: Remilia Scarlet
+  email: remilia@acmecorp.cool
+parents:
+- name: simple
+  namespace: acmecorp
+  version: 1.1.0-beta1
+  maintainers:
+  - name: John Developer
+    email: john.dev@acmecorp.cool
+  - name: Jane Developer
+    email: jane.dev@acmecorp.cool

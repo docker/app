@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/docker/app/internal/inspect"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/render"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -20,7 +20,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 				return err
 			}
 			defer app.Cleanup()
-			return render.Inspect(dockerCli.Out(), app.AppName)
+			return inspect.Inspect(dockerCli.Out(), app)
 		},
 	}
 }

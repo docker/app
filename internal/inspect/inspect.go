@@ -1,35 +1,27 @@
-package render
+package inspect
 
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
-	"path/filepath"
 	"sort"
 	"text/tabwriter"
 
-	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/settings"
-	"github.com/docker/app/internal/types"
+	"github.com/docker/app/internal/yaml"
+	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // Inspect dumps the metadata of an app
-func Inspect(out io.Writer, appname string) error {
-	metaFile := filepath.Join(appname, internal.MetadataFileName)
-	metaContent, err := ioutil.ReadFile(metaFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to read application metadata")
-	}
-	var meta types.AppMetadata
-	err = yaml.Unmarshal(metaContent, &meta)
+func Inspect(out io.Writer, app *types.App) error {
+	var meta metadata.AppMetadata
+	err := yaml.Unmarshal(app.Metadata(), &meta)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse application metadata")
 	}
 	// extract settings
-	settingsFile := filepath.Join(appname, internal.SettingsFileName)
-	s, err := settings.LoadFile(settingsFile)
+	s, err := settings.LoadMultiple(app.Settings())
 	if err != nil {
 		return errors.Wrap(err, "failed to load application settings")
 	}

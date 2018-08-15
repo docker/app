@@ -1,8 +1,6 @@
 package e2e
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -86,15 +84,6 @@ func TestRenderBinary(t *testing.T) {
 	}
 }
 
-func randomName(prefix string) string {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
-	return prefix + hex.EncodeToString(b)
-}
-
 func TestInitBinary(t *testing.T) {
 	getDockerAppBinary(t)
 	composeData := `version: "3.2"
@@ -119,11 +108,11 @@ maintainers:
     email: joe@joe.com
 `
 	envData := "# some comment\nNGINX_VERSION=latest"
-	inputDir := randomName("app_input_")
-	os.Mkdir(inputDir, 0755)
-	ioutil.WriteFile(filepath.Join(inputDir, internal.ComposeFileName), []byte(composeData), 0644)
-	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
-	defer os.RemoveAll(inputDir)
+	dir := fs.NewDir(t, "app_input",
+		fs.WithFile(internal.ComposeFileName, composeData),
+		fs.WithFile(".env", envData),
+	)
+	defer dir.Remove()
 
 	testAppName := "app-test"
 	dirName := internal.DirNameFromAppName(testAppName)
@@ -133,7 +122,7 @@ maintainers:
 		"init",
 		testAppName,
 		"-c",
-		filepath.Join(inputDir, internal.ComposeFileName),
+		dir.Join(internal.ComposeFileName),
 		"-d",
 		"my cool app",
 		"-m", "bob",
@@ -157,7 +146,7 @@ maintainers:
 		"init",
 		"tac",
 		"-c",
-		filepath.Join(inputDir, internal.ComposeFileName),
+		dir.Join(internal.ComposeFileName),
 		"-d",
 		"my cool app",
 		"-m", "bob",
@@ -166,7 +155,8 @@ maintainers:
 	}
 	assertCommand(t, dockerApp, args...)
 	defer os.Remove("tac.dockerapp")
-	appData, _ := ioutil.ReadFile("tac.dockerapp")
+	appData, err := ioutil.ReadFile("tac.dockerapp")
+	assert.NilError(t, err)
 	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
 	// Check various commands work on single-file app package
 	assertCommand(t, dockerApp, "inspect", "tac")
@@ -179,11 +169,11 @@ func TestDetectAppBinary(t *testing.T) {
 	assertCommand(t, dockerApp, "inspect")
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
+	assert.NilError(t, os.Chdir("helm.dockerapp"))
 	defer os.Chdir(cwd)
-	os.Chdir("helm.dockerapp")
 	assertCommand(t, dockerApp, "inspect")
 	assertCommand(t, dockerApp, "inspect", ".")
-	os.Chdir(filepath.Join(cwd, "render"))
+	assert.NilError(t, os.Chdir(filepath.Join(cwd, "render")))
 	assertCommandFailureOutput(t, "inspect-multiple-apps.golden", dockerApp, "inspect")
 }
 
@@ -206,17 +196,17 @@ func TestPackBinary(t *testing.T) {
 	assert.Assert(t, strings.Contains(result.Stdout(), "nginx"))
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
-	os.Chdir(tempDir)
+	assert.NilError(t, os.Chdir(tempDir))
+	defer os.Chdir(cwd)
 	result = icmd.RunCommand(dockerApp, "helm", "test")
 	result.Assert(t, icmd.Success)
 	_, err = os.Stat("test.chart/Chart.yaml")
 	assert.NilError(t, err)
-	os.Mkdir("output", 0755)
+	assert.NilError(t, os.Mkdir("output", 0755))
 	result = icmd.RunCommand(dockerApp, "unpack", "test", "-o", "output")
 	result.Assert(t, icmd.Success)
 	_, err = os.Stat("output/test.dockerapp/docker-compose.yml")
 	assert.NilError(t, err)
-	os.Chdir(cwd)
 }
 
 func runHelmCommand(t *testing.T, args ...string) *fs.Dir {
@@ -240,9 +230,9 @@ func TestHelmBinary(t *testing.T) {
 	chart, _ := ioutil.ReadFile(dir.Join("helm.chart/Chart.yaml"))
 	values, _ := ioutil.ReadFile(dir.Join("helm.chart/values.yaml"))
 	stack, _ := ioutil.ReadFile(dir.Join("helm.chart/templates/stack.yaml"))
-	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml")
-	golden.Assert(t, string(values), "helm-expected.chart/values.yaml")
-	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack.yaml")
+	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml", "chart file is wrong")
+	golden.Assert(t, string(values), "helm-expected.chart/values.yaml", "values file is wrong")
+	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack.yaml", "stack file is wrong")
 }
 
 func TestHelmV1Beta1Binary(t *testing.T) {
@@ -252,9 +242,9 @@ func TestHelmV1Beta1Binary(t *testing.T) {
 	chart, _ := ioutil.ReadFile(dir.Join("helm.chart/Chart.yaml"))
 	values, _ := ioutil.ReadFile(dir.Join("helm.chart/values.yaml"))
 	stack, _ := ioutil.ReadFile(dir.Join("helm.chart/templates/stack.yaml"))
-	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml")
-	golden.Assert(t, string(values), "helm-expected.chart/values.yaml")
-	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack-v1beta1.yaml")
+	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml", "chart file is wrong")
+	golden.Assert(t, string(values), "helm-expected.chart/values.yaml", "values file is wrong")
+	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack-v1beta1.yaml", "stack file is wrong")
 }
 
 func TestHelmInvalidStackVersionBinary(t *testing.T) {
@@ -311,4 +301,29 @@ func TestImageBinary(t *testing.T) {
 	// various commands from an image
 	assertCommand(t, dockerApp, "inspect", "alice/envvariables:0.1.0")
 	assertCommand(t, dockerApp, "inspect", "alice/envvariables.dockerapp:0.1.0")
+}
+
+func TestForkBinary(t *testing.T) {
+	dockerApp, _ := getDockerAppBinary(t)
+	r := startRegistry(t)
+	defer r.stop(t)
+	registry := r.getAddress(t)
+	assertCommand(t, dockerApp, "save", "--namespace", registry+"/acmecorp", "fork/simple")
+	assertCommand(t, dockerApp, "push", "--namespace", registry+"/acmecorp", "fork/simple")
+
+	tempDir, err := ioutil.TempDir("", "dockerapptest")
+	assert.NilError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	assertCommand(t, dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil", "-p", tempDir, "-m", "Remilia Scarlet:remilia@acmecorp.cool")
+	metadata, err := ioutil.ReadFile(filepath.Join(tempDir, "scarlet.devil.dockerapp", "metadata.yml"))
+	assert.NilError(t, err)
+
+	golden.Assert(t, string(metadata), "expected-fork-metadata.golden")
+
+	assertCommand(t, dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "-p", tempDir, "-m", "Remilia Scarlet:remilia@acmecorp.cool")
+	metadata2, err := ioutil.ReadFile(filepath.Join(tempDir, "simple.dockerapp", "metadata.yml"))
+	assert.NilError(t, err)
+
+	golden.Assert(t, string(metadata2), "expected-fork-metadata-no-rename.golden")
 }

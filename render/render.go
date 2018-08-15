@@ -2,16 +2,15 @@ package render
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -34,29 +33,21 @@ var (
 		delimiter, delimiter, substitution, substitution,
 	)
 
-	pattern = regexp.MustCompile(patternString)
+	// Pattern is the variable regexp pattern used to interpolate or extract variables when rendering
+	Pattern = regexp.MustCompile(patternString)
 )
 
 // Render renders the Compose file for this app, merging in settings files, other compose files, and env
-func Render(appname string, composeFiles []string, settingsFiles []string, env map[string]string) (*composetypes.Config, error) {
+// appname string, composeFiles []string, settingsFiles []string
+func Render(app *types.App, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
-	sf := []string{filepath.Join(appname, internal.SettingsFileName)}
-	for _, path := range settingsFiles {
-		psf := filepath.Join(appname, path)
-		if _, err := os.Stat(psf); err == nil {
-			sf = append(sf, psf)
-		} else {
-			sf = append(sf, path)
-		}
-	}
 	// load the settings into a struct
-	fileSettings, err := settings.LoadFiles(sf)
+	fileSettings, err := settings.LoadMultiple(app.Settings())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load settings")
 	}
 	// inject our metadata
-	metaFile := filepath.Join(appname, internal.MetadataFileName)
-	metaPrefixed, err := settings.LoadFile(metaFile, settings.WithPrefix("app"))
+	metaPrefixed, err := settings.Load(app.Metadata(), settings.WithPrefix("app"))
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +60,6 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 		return nil, errors.Wrap(err, "failed to merge settings")
 	}
 	// prepend our app compose file to the list
-	composes := []string{filepath.Join(appname, internal.ComposeFileName)}
-	composes = append(composes, composeFiles...)
 	renderers := renderer.Drivers()
 	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
 		rl := strings.Split(r, ",")
@@ -81,21 +70,11 @@ func Render(appname string, composeFiles []string, settingsFiles []string, env m
 		}
 		renderers = rl
 	}
-	configFiles := []composetypes.ConfigFile{}
-	for _, c := range composes {
-		data, err := ioutil.ReadFile(c)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to read Compose file %s", c)
-		}
-		s, err := renderer.Apply(string(data), allSettings, renderers...)
-		if err != nil {
-			return nil, err
-		}
-		parsed, err := loader.ParseYAML([]byte(s))
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse Compose file %s", c)
-		}
-		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
+	configFiles, err := compose.Load(app.Composes(), func(data string) (string, error) {
+		return renderer.Apply(data, allSettings, renderers...)
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load composefiles")
 	}
 	return render(configFiles, allSettings.Flatten())
 }
@@ -116,14 +95,14 @@ func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (
 }
 
 func substitute(template string, mapping composetemplate.Mapping) (string, error) {
-	return composetemplate.SubstituteWith(template, mapping, pattern, errorIfMissing)
+	return composetemplate.SubstituteWith(template, mapping, Pattern, errorIfMissing)
 }
 
 func errorIfMissing(substitution string, mapping composetemplate.Mapping) (string, bool, error) {
 	value, found := mapping(substitution)
 	if !found {
 		return "", true, &composetemplate.InvalidTemplateError{
-			Template: "required variable" + substitution + "is missing a value",
+			Template: "required variable " + substitution + " is missing a value",
 		}
 	}
 	return value, true, nil

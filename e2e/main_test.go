@@ -15,5 +15,5 @@ func TestMain(m *testing.M) {
 	if err := os.Chdir(*e2ePath); err != nil {
 		panic(err)
 	}
-	m.Run()
+	os.Exit(m.Run())
 }
