@@ -2,8 +2,10 @@ package types
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -100,7 +102,16 @@ func WithCleanup(f func()) func(*App) error {
 // WithSettingsFiles adds the specified settings files to the app
 func WithSettingsFiles(files ...string) func(*App) error {
 	return func(app *App) error {
-		settingsContent, err := readFiles(files...)
+		parsedFiles := []string{}
+		for _, path := range files {
+			psf := filepath.Join(app.Name, path)
+			if _, err := os.Stat(psf); err == nil {
+				parsedFiles = append(parsedFiles, psf)
+			} else {
+				parsedFiles = append(parsedFiles, path)
+			}
+		}
+		settingsContent, err := readFiles(parsedFiles...)
 		if err != nil {
 			return err
 		}
