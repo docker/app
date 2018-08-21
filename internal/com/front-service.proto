@@ -12,6 +12,11 @@ message FileStat{
     bool IsDir  = 3;
 }
 
+message VersionMismatch{
+    string BackendVersion = 1;
+    string PackageVersion = 2;
+}
+
 service FrontService{
     rpc FileContent(google.protobuf.StringValue) returns (stream google.protobuf.BytesValue);
     rpc FileList(google.protobuf.StringValue) returns (stream FileStat);
@@ -21,4 +26,9 @@ service RemoteStdStreams{
     rpc Stdin(google.protobuf.Empty) returns (stream google.protobuf.BytesValue);
     rpc Stdout(stream google.protobuf.BytesValue) returns (google.protobuf.Empty);
     rpc Stderr(stream google.protobuf.BytesValue) returns (google.protobuf.Empty);
+}
+
+service Session{
+    rpc EndSession(google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc BackendVersionMismatch(VersionMismatch) returns (google.protobuf.Empty);
 }

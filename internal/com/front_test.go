@@ -67,7 +67,7 @@ func TestComOverPipe(t *testing.T) {
 	go func() {
 		RunFrontService(s, serverReader, serverWriter, stdInReader, stdOutWriter, stdErrWriter)
 	}()
-	c, remoteStreams, err := ConnectToFront(clientReader, clientWriter)
+	c, remoteStreams, session, err := ConnectToFront(clientReader, clientWriter)
 	assert.NilError(t, err)
 
 	var chunksReceived [][]byte
@@ -100,8 +100,8 @@ func TestComOverPipe(t *testing.T) {
 		stdInWriter.Close()
 	}()
 
-	outResult := make(chan []byte)
-	errResult := make(chan []byte)
+	outResult := make(chan []byte, 1)
+	errResult := make(chan []byte, 1)
 	defer close(outResult)
 	defer close(errResult)
 	go func() {
@@ -115,12 +115,12 @@ func TestComOverPipe(t *testing.T) {
 		errResult <- res
 	}()
 
+	remoteStreams.Out.Write([]byte("stdout"))
+	remoteStreams.Err.Write([]byte("stderr"))
+
+	go session.EndSession(context.Background(), &protobuf.Empty{})
 	readMessage, err := ioutil.ReadAll(remoteStreams.In)
 	assert.NilError(t, err)
-	remoteStreams.Out.Write([]byte("stdout"))
-	remoteStreams.Out.Close()
-	remoteStreams.Err.Write([]byte("stderr"))
-	remoteStreams.Err.Close()
 	assert.Equal(t, "stdin", string(readMessage))
 	assert.Equal(t, "stdout", string(<-outResult))
 	assert.Equal(t, "stderr", string(<-errResult))

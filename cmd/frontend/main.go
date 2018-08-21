@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/docker/app/internal"
+
 	"github.com/docker/app/internal/com"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -58,11 +59,11 @@ func (frontendServerImpl) FileList(path *protobuf.StringValue, statSink com.Fron
 	return nil
 }
 
-func main() {
+func runBackend(version string) error {
 	args := os.Args[1:]
 	dockerCli, err := dclient.NewClientWithOpts(dclient.FromEnv)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	dockerCli.NegotiateAPIVersion(context.Background())
 	cont, err := dockerCli.ContainerCreate(context.Background(), &container.Config{
@@ -71,14 +72,14 @@ func main() {
 		AttachStdout: true,
 		Tty:          false,
 		StdinOnce:    true,
+		OpenStdin:    true,
 		Cmd:          args,
-		Image:        "docker/app-backend:" + internal.Version,
-	}, &container.HostConfig{
-		AutoRemove: false,
-	}, nil, "docker-app")
+		Image:        "docker/app-backend:" + version,
+	}, &container.HostConfig{}, nil, "docker-app")
 	if err != nil {
-		panic(err)
+		return err
 	}
+	defer dockerCli.ContainerRemove(context.Background(), cont.ID, types.ContainerRemoveOptions{Force: true})
 
 	attach, err := dockerCli.ContainerAttach(context.Background(), cont.ID, types.ContainerAttachOptions{
 		Logs:   false,
@@ -88,30 +89,43 @@ func main() {
 		Stream: true,
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer attach.Close()
+	ended := make(chan error)
 	outReader, outWriter := io.Pipe()
+	go stdcopy.StdCopy(outWriter, os.Stderr, attach.Conn)
 	go func() {
-
-		written, err := stdcopy.StdCopy(outWriter, os.Stderr, attach.Reader)
-		fmt.Printf("written: %d, err: %s\n", written, err)
+		ended <- com.RunFrontService(frontendServerImpl{}, outReader, attach.Conn, os.Stdin, os.Stdout, os.Stderr)
 	}()
-
-	go func() {
-		com.RunFrontService(frontendServerImpl{}, outReader, attach.Conn, os.Stdin, os.Stdout, os.Stderr)
-	}()
-
 	err = dockerCli.ContainerStart(context.Background(), cont.ID, types.ContainerStartOptions{})
 	if err != nil {
-		panic(err)
+		return err
 	}
-	waitOk, waitErr := dockerCli.ContainerWait(context.Background(), cont.ID, container.WaitConditionNextExit)
+	err = <-ended
+	if err != nil {
+		return err
+	}
+	okChan, errChan := dockerCli.ContainerWait(context.Background(), cont.ID, container.WaitConditionNextExit)
 	select {
-	case <-waitOk:
-		return
-	case err = <-waitErr:
-		panic(err)
+	case <-okChan:
+		return nil
+	case err = <-errChan:
+		return err
 	}
+}
 
+func main() {
+	version := internal.Version
+	for {
+		err := runBackend(version)
+		if err == nil {
+			break
+		}
+		if vm, ok := err.(*com.VersionMismatch); ok {
+			version = vm.PackageVersion
+		} else {
+			panic(err)
+		}
+	}
 }

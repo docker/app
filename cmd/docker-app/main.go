@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/docker/app/internal/com"
@@ -10,7 +11,7 @@ import (
 )
 
 func main() {
-	_, streams, err := com.ConnectToFront(os.Stdin, os.Stdout)
+	_, streams, session, err := com.ConnectToFront(os.Stdin, os.Stdout)
 	if err != nil {
 		panic(err)
 	}
@@ -20,7 +21,10 @@ func main() {
 
 	dockerCli := command.NewDockerCli(streams.In, streams.Out, streams.Err, false)
 	cmd := newRootCmd(dockerCli)
-	if err := cmd.Execute(); err != nil {
+	cmd.SetOutput(streams.Err)
+	err = cmd.Execute()
+	com.Shutdown(context.Background(), session, streams)
+	if err != nil {
 		os.Exit(1)
 	}
 }
