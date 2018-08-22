@@ -39,6 +39,20 @@ func (a *App) Metadata() []byte {
 	return a.metadataContent
 }
 
+// Extract writes the app in the specified folder
+func (a *App) Extract(path string) error {
+	if err := ioutil.WriteFile(filepath.Join(path, internal.MetadataFileName), a.Metadata(), 0644); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(filepath.Join(path, internal.ComposeFileName), a.Composes()[0], 0644); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(filepath.Join(path, internal.SettingsFileName), a.Settings()[0], 0644); err != nil {
+		return err
+	}
+	return nil
+}
+
 func noop() {}
 
 // NewApp creates a new docker app with the specified path and struct modifiers
