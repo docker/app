@@ -24,11 +24,25 @@ RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DE
 COPY . .
 
 FROM dev AS cross
-RUN make cross
+ARG TAG
+ARG COMMIT
+ARG EXPERIMENTAL
+ARG RENDERERS
+ARG BUILDTIME
+RUN TAG="${TAG}" COMMIT="${COMMIT}" \
+    EXPERIMENTAL="${EXPERIMENTAL}" RENDERERS="${RENDERERS}" \
+    BUILDTIME="${BUILDTIME}" make cross
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross
-RUN make e2e-cross
+ARG TAG
+ARG COMMIT
+ARG EXPERIMENTAL
+ARG RENDERERS
+ARG BUILDTIME
+RUN TAG="${TAG}" COMMIT="${COMMIT}" \
+    EXPERIMENTAL="${EXPERIMENTAL}" RENDERERS="${RENDERERS}" \
+    BUILDTIME="${BUILDTIME}" make e2e-cross
 
 FROM alpine:${ALPINE_VERSION} AS backend
 COPY --from=cross /go/src/github.com/docker/app/bin/docker-app-linux /docker-app

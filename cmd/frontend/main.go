@@ -2,62 +2,18 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/docker/app/internal"
 
 	"github.com/docker/app/internal/com"
+	"github.com/docker/app/internal/fs"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	dclient "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	protobuf "github.com/gogo/protobuf/types"
 )
-
-type frontendServerImpl struct {
-}
-
-func (frontendServerImpl) FileContent(path *protobuf.StringValue, chunkSink com.FrontService_FileContentServer) error {
-	f, err := os.Open(path.Value)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	buffer := make([]byte, 4096)
-	for {
-		read, err := f.Read(buffer)
-		switch {
-		case err == io.EOF:
-			return nil
-		case err != nil:
-			return err
-		}
-		fmt.Printf("received %d bytes\n", read)
-		if err = chunkSink.Send(&protobuf.BytesValue{Value: buffer[:read]}); err != nil {
-			return err
-		}
-	}
-}
-func (frontendServerImpl) FileList(path *protobuf.StringValue, statSink com.FrontService_FileListServer) error {
-	fmt.Println("Received file list")
-	stats, err := ioutil.ReadDir(path.Value)
-	if err != nil {
-		return err
-	}
-	for _, stat := range stats {
-		if err = statSink.Send(&com.FileStat{
-			IsDir: stat.IsDir(),
-			Mode:  int32(stat.Mode()),
-			Name:  stat.Name(),
-		}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 func runBackend(version string) error {
 	args := os.Args[1:]
@@ -96,7 +52,7 @@ func runBackend(version string) error {
 	outReader, outWriter := io.Pipe()
 	go stdcopy.StdCopy(outWriter, os.Stderr, attach.Conn)
 	go func() {
-		ended <- com.RunFrontService(frontendServerImpl{}, outReader, attach.Conn, os.Stdin, os.Stdout, os.Stderr)
+		ended <- com.RunFrontService(fs.FrontFileServer{}, outReader, attach.Conn, os.Stdin, os.Stdout, os.Stderr)
 	}()
 	err = dockerCli.ContainerStart(context.Background(), cont.ID, types.ContainerStartOptions{})
 	if err != nil {
@@ -116,7 +72,10 @@ func runBackend(version string) error {
 }
 
 func main() {
-	version := internal.Version
+	version := os.Getenv("DOCKERAPP_VERSION")
+	if version == "" {
+		version = internal.Version
+	}
 	for {
 		err := runBackend(version)
 		if err == nil {

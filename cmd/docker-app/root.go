@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/com"
 	"github.com/docker/cli/cli/command"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -12,7 +13,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 // FIXME(vdemeester) use command.Cli interface
-func newRootCmd(dockerCli command.Cli) *cobra.Command {
+func newRootCmd(dockerCli command.Cli, fs com.FrontServiceClient) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "docker-app",
 		Short:        "Docker App Packages",
@@ -26,16 +27,16 @@ func newRootCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	cmd.PersistentFlags().BoolVar(&internal.Debug, "debug", false, "Enable debug mode")
-	addCommands(cmd, dockerCli)
+	addCommands(cmd, dockerCli, fs)
 	return cmd
 }
 
 // addCommands adds all the commands from cli/command to the root command
-func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
+func addCommands(cmd *cobra.Command, dockerCli command.Cli, fs com.FrontServiceClient) {
 	cmd.AddCommand(
 		deployCmd(dockerCli),
 		helmCmd(),
-		initCmd(),
+		initCmd(fs),
 		inspectCmd(dockerCli),
 		lsCmd(),
 		mergeCmd(dockerCli),

@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	_, streams, session, err := com.ConnectToFront(os.Stdin, os.Stdout)
+	fs, streams, session, err := com.ConnectToFront(os.Stdin, os.Stdout)
 	if err != nil {
 		panic(err)
 	}
@@ -20,7 +20,7 @@ func main() {
 	logrus.SetOutput(streams.Err)
 
 	dockerCli := command.NewDockerCli(streams.In, streams.Out, streams.Err, false)
-	cmd := newRootCmd(dockerCli)
+	cmd := newRootCmd(dockerCli, fs)
 	cmd.SetOutput(streams.Err)
 	err = cmd.Execute()
 	com.Shutdown(context.Background(), session, streams)

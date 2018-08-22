@@ -14,6 +14,13 @@ COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
 
 PKG_PATH := /go/src/$(PKG_NAME)
 
+BUILD_ARGS = \
+	--build-arg TAG=$(TAG) \
+	--build-arg COMMIT=$(COMMIT) \
+	--build-arg EXPERIMENTAL=$(EXPERIMENTAL) \
+	--build-arg RENDERERS=$(RENDERERS) \
+	--build-arg BUILDTIME=$(BUILDTIME)
+
 .DEFAULT: all
 all: cross test
 
@@ -27,7 +34,7 @@ shell: build_dev_image ## run a shell in the docker build image
 	docker run -ti --rm $(DEV_IMAGE_NAME) bash
 
 cross: create_bin ## cross-compile binaries (linux, darwin, windows)
-	docker build --target=cross -t $(CROSS_IMAGE_NAME)  .
+	docker build ${BUILD_ARGS} --target=cross -t $(CROSS_IMAGE_NAME)  .
 	docker create --name $(CROSS_CTNR_NAME) $(CROSS_IMAGE_NAME) noop
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
@@ -38,7 +45,7 @@ cross: create_bin ## cross-compile binaries (linux, darwin, windows)
 	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
 
 e2e-cross: create_bin
-	docker build --target=e2e-cross -t $(E2E_CROSS_IMAGE_NAME)  .
+	docker build ${BUILD_ARGS} --target=e2e-cross -t $(E2E_CROSS_IMAGE_NAME)  .
 	docker create --name $(E2E_CROSS_CTNR_NAME) $(E2E_CROSS_IMAGE_NAME) noop
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-linux
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin
@@ -78,7 +85,7 @@ gradle-test:
 
 lint: ## run linter(s)
 	$(info Linting...)
-	docker build -t $(LINT_IMAGE_NAME) -f Dockerfile.lint .
+	docker build ${BUILD_ARGS} -t $(LINT_IMAGE_NAME) -f Dockerfile.lint .
 	docker run --rm $(LINT_IMAGE_NAME) make lint
 
 vendor: build_dev_image
@@ -86,7 +93,7 @@ vendor: build_dev_image
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"
 
 backend: 
-	docker build -t docker/app-backend:$(TAG) --target backend  .
+	docker build ${BUILD_ARGS} -t docker/app-backend:$(TAG) --target backend  .
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort

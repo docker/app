@@ -17,9 +17,16 @@ message VersionMismatch{
     string PackageVersion = 2;
 }
 
+message UntarPacket{
+    bytes Data = 1;
+    string Dest = 2;
+}
+
 service FrontService{
     rpc FileContent(google.protobuf.StringValue) returns (stream google.protobuf.BytesValue);
     rpc FileList(google.protobuf.StringValue) returns (stream FileStat);
+    rpc TarDir(google.protobuf.StringValue) returns (stream google.protobuf.BytesValue);
+    rpc UntarDir(stream UntarPacket) returns (google.protobuf.Empty);
 }
 
 service RemoteStdStreams{

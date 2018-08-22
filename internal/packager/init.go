@@ -24,6 +24,18 @@ func prependToFile(filename, text string) {
 	ioutil.WriteFile(filename, content, 0644)
 }
 
+func writeToolchainVersion(dirName string) error {
+	versionFile, err := os.Create(filepath.Join(dirName, internal.ToolchainVersionFile))
+	if err != nil {
+		return err
+	}
+	defer versionFile.Close()
+
+	payload := []byte(internal.Version)
+	_, err = versionFile.Write(payload)
+	return err
+}
+
 // Init is the entrypoint initialization function.
 // It generates a new application package based on the provided parameters.
 func Init(name string, composeFile string, description string, maintainers []string, singleFile bool) error {
@@ -41,6 +53,10 @@ func Init(name string, composeFile string, description string, maintainers []str
 		}
 	}()
 	if err = writeMetadataFile(name, dirName, description, maintainers); err != nil {
+		return err
+	}
+
+	if err = writeToolchainVersion(dirName); err != nil {
 		return err
 	}
 
