@@ -1,11 +1,6 @@
 package packager
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/docker/app/internal"
@@ -13,15 +8,6 @@ import (
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )
-
-func randomName(prefix string) string {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
-	return prefix + hex.EncodeToString(b)
-}
 
 func TestInitFromComposeFile(t *testing.T) {
 	composeData := `
@@ -32,19 +18,20 @@ services:
     command: nginx $NGINX_ARGS
 `
 	envData := "# some comment\nNGINX_VERSION=latest"
-	inputDir := randomName("app_input_")
-	os.Mkdir(inputDir, 0755)
-	ioutil.WriteFile(filepath.Join(inputDir, internal.ComposeFileName), []byte(composeData), 0644)
-	ioutil.WriteFile(filepath.Join(inputDir, ".env"), []byte(envData), 0644)
-	defer os.RemoveAll(inputDir)
 
-	testAppName := randomName("app_")
-	dirName := internal.DirNameFromAppName(testAppName)
-	err := os.Mkdir(dirName, 0755)
-	assert.NilError(t, err)
-	defer os.RemoveAll(dirName)
+	inputDir := fs.NewDir(t, "app_input_",
+		fs.WithFile(internal.ComposeFileName, composeData),
+		fs.WithFile(".env", envData),
+	)
+	defer inputDir.Remove()
 
-	err = initFromComposeFile(testAppName, filepath.Join(inputDir, internal.ComposeFileName))
+	appName := "my.dockerapp"
+	dir := fs.NewDir(t, "app_",
+		fs.WithDir(appName),
+	)
+	defer dir.Remove()
+
+	err := initFromComposeFile(dir.Join(appName), inputDir.Join(internal.ComposeFileName))
 	assert.NilError(t, err)
 
 	manifest := fs.Expected(
@@ -54,17 +41,11 @@ services:
 		fs.WithFile(internal.SettingsFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
 	)
 
-	assert.Assert(t, fs.Equal(dirName, manifest))
+	assert.Assert(t, fs.Equal(dir.Join(appName), manifest))
 }
 
 func TestInitFromInvalidComposeFile(t *testing.T) {
-	testAppName := randomName("app_")
-	dirName := internal.DirNameFromAppName(testAppName)
-	err := os.Mkdir(dirName, 0755)
-	assert.NilError(t, err)
-	defer os.RemoveAll(dirName)
-
-	err = initFromComposeFile(testAppName, "doesnotexist")
+	err := initFromComposeFile("my.dockerapp", "doesnotexist")
 	assert.ErrorContains(t, err, "failed to read")
 }
 
@@ -76,18 +57,18 @@ services:
     image: nginx:${NGINX_VERSION}
     command: nginx $NGINX_ARGS
 `
-	inputDir := randomName("app_input_")
-	os.Mkdir(inputDir, 0755)
-	ioutil.WriteFile(filepath.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
-	defer os.RemoveAll(inputDir)
+	inputDir := fs.NewDir(t, "app_input_",
+		fs.WithFile(internal.ComposeFileName, composeData),
+	)
+	defer inputDir.Remove()
 
-	testAppName := randomName("app_")
-	dirName := internal.DirNameFromAppName(testAppName)
-	err := os.Mkdir(dirName, 0755)
-	assert.NilError(t, err)
-	defer os.RemoveAll(dirName)
+	appName := "my.dockerapp"
+	dir := fs.NewDir(t, "app_",
+		fs.WithDir(appName),
+	)
+	defer dir.Remove()
 
-	err = initFromComposeFile(testAppName, filepath.Join(inputDir, "docker-compose.yml"))
+	err := initFromComposeFile(dir.Join(appName), inputDir.Join(internal.ComposeFileName))
 	assert.ErrorContains(t, err, "unsupported Compose file version")
 }
 
@@ -96,18 +77,18 @@ func TestInitFromV1ComposeFile(t *testing.T) {
 nginx:
   image: nginx
 `
-	inputDir := randomName("app_input_")
-	os.Mkdir(inputDir, 0755)
-	ioutil.WriteFile(filepath.Join(inputDir, "docker-compose.yml"), []byte(composeData), 0644)
-	defer os.RemoveAll(inputDir)
+	inputDir := fs.NewDir(t, "app_input_",
+		fs.WithFile(internal.ComposeFileName, composeData),
+	)
+	defer inputDir.Remove()
 
-	testAppName := randomName("app_")
-	dirName := internal.DirNameFromAppName(testAppName)
-	err := os.Mkdir(dirName, 0755)
-	assert.NilError(t, err)
-	defer os.RemoveAll(dirName)
+	appName := "my.dockerapp"
+	dir := fs.NewDir(t, "app_",
+		fs.WithDir(appName),
+	)
+	defer dir.Remove()
 
-	err = initFromComposeFile(testAppName, filepath.Join(inputDir, "docker-compose.yml"))
+	err := initFromComposeFile(dir.Join(appName), inputDir.Join(internal.ComposeFileName))
 	assert.ErrorContains(t, err, "unsupported Compose file version")
 }
 
@@ -132,7 +113,6 @@ maintainers:
   - name: bearclaw
     email: bearclaw
 `
-	assert.NilError(t, err)
 
 	manifest := fs.Expected(t,
 		fs.WithFile(internal.MetadataFileName, data, fs.WithMode(0644)),
