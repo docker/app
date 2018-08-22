@@ -33,7 +33,7 @@ func saveCmd(dockerCli command.Cli) *cobra.Command {
 			return err
 		},
 	}
-	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "namespace to use (default: namespace in metadata)")
-	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "tag to use (default: version in metadata)")
+	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "Namespace to use (default: namespace in metadata)")
+	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Tag to use (default: version in metadata)")
 	return cmd
 }

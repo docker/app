@@ -21,8 +21,8 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:          "docker-app",
-		Short:        "Docker App Packages",
-		Long:         `Build and deploy Docker applications.`,
+		Short:        "Docker Application Packages",
+		Long:         `Build and deploy Docker Application Packages.`,
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.Common.SetDefaultOptions(flags)
@@ -33,6 +33,7 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 	}
 	cli.SetupRootCommand(cmd)
 	flags = cmd.Flags()
+	flags.BoolP("version", "v", false, "Print version information")
 	opts.Common.InstallFlags(flags)
 	cmd.SetVersionTemplate("docker-app version {{.Version}}\n")
 	addCommands(cmd, dockerCli)

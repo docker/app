@@ -235,12 +235,23 @@ We have lots of ideas for making Compose-based applications easier to share and 
 
 ```
 $ docker-app
-Build and deploy Docker applications.
 
-Usage:
-  docker-app [command]
+Usage:  docker-app [OPTIONS] COMMAND
 
-Available Commands:
+Docker Application Packages
+
+Options:
+  -D, --debug              Enable debug mode
+  -H, --host list          Daemon socket(s) to connect to
+  -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
+      --tls                Use TLS; implied by --tlsverify
+      --tlscacert string   Trust certs signed only by this CA (default "/Users/chris/.docker/ca.pem")
+      --tlscert string     Path to TLS certificate file (default "/Users/chris/.docker/cert.pem")
+      --tlskey string      Path to TLS key file (default "/Users/chris/.docker/key.pem")
+      --tlsverify          Use TLS and verify the remote
+  -v, --version            Print version information
+
+Commands:
   completion  Generates bash completion scripts
   deploy      Deploy or update an application
   fork        Create a fork of an existing application to be modified
@@ -256,9 +267,5 @@ Available Commands:
   validate    Checks the rendered application is syntactically correct
   version     Print version information
 
-Flags:
-      --debug   Enable debug mode
-  -h, --help    help for docker-app
-
-Use "docker-app [command] --help" for more information about a command.
+Run 'docker-app COMMAND --help' for more information on a command.
 ```

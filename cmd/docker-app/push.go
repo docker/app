@@ -26,7 +26,7 @@ func pushCmd() *cobra.Command {
 			return packager.Push(app, opts.namespace, opts.tag)
 		},
 	}
-	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "namespace to use (default: namespace in metadata)")
-	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "tag to use (default: version in metadata)")
+	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "Namespace to use (default: namespace in metadata)")
+	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Tag to use (default: version in metadata)")
 	return cmd
 }
