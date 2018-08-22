@@ -6,12 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	"gotest.tools/assert"
 	"gotest.tools/icmd"
 )
 
 func TestExamplesAreValid(t *testing.T) {
 	dockerapp, _ := getDockerAppBinary(t)
-	filepath.Walk("../examples", func(p string, info os.FileInfo, err error) error {
+	err := filepath.Walk("../examples", func(p string, info os.FileInfo, err error) error {
 		switch {
 		case strings.HasSuffix(p, "examples"):
 			return nil
@@ -25,4 +26,5 @@ func TestExamplesAreValid(t *testing.T) {
 			return filepath.SkipDir
 		}
 	})
+	assert.NilError(t, err)
 }

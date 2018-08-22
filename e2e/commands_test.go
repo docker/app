@@ -34,7 +34,10 @@ services:
 // just run a command discarding everything
 func runCommand(exe string, args ...string) {
 	cmd := exec.Command(exe, args...)
-	cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("warning:", err)
+	}
 }
 
 // Run command, assert it succeeds, return its output
@@ -184,7 +187,7 @@ func TestDetectAppBinary(t *testing.T) {
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
 	assert.NilError(t, os.Chdir("helm.dockerapp"))
-	defer os.Chdir(cwd)
+	defer func() { assert.NilError(t, os.Chdir(cwd)) }()
 	assertCommand(t, dockerApp, "inspect")
 	assertCommand(t, dockerApp, "inspect", ".")
 	assert.NilError(t, os.Chdir(filepath.Join(cwd, "render")))
@@ -211,7 +214,7 @@ func TestPackBinary(t *testing.T) {
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
 	assert.NilError(t, os.Chdir(tempDir))
-	defer os.Chdir(cwd)
+	defer func() { assert.NilError(t, os.Chdir(cwd)) }()
 	result = icmd.RunCommand(dockerApp, "helm", "test")
 	result.Assert(t, icmd.Success)
 	_, err = os.Stat("test.chart/Chart.yaml")
