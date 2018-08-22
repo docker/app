@@ -17,6 +17,20 @@ import (
 	"gotest.tools/icmd"
 )
 
+const (
+	singleFileApp = `version: 0.1.0
+name: helloworld
+description: "hello world app"
+namespace: "foo"
+---
+version: '3.5'
+services:
+  hello-world:
+    image: hello-world
+---
+# This section contains the default values for your application settings.`
+)
+
 // just run a command discarding everything
 func runCommand(exe string, args ...string) {
 	cmd := exec.Command(exe, args...)
@@ -301,6 +315,13 @@ func TestImageBinary(t *testing.T) {
 	// various commands from an image
 	assertCommand(t, dockerApp, "inspect", "alice/envvariables:0.1.0")
 	assertCommand(t, dockerApp, "inspect", "alice/envvariables.dockerapp:0.1.0")
+}
+
+func TestSaveBinary(t *testing.T) {
+	dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
+	defer dir.Remove()
+	dockerApp, _ := getDockerAppBinary(t)
+	assertCommand(t, dockerApp, "save", dir.Join("my.dockerapp"))
 }
 
 func TestForkBinary(t *testing.T) {

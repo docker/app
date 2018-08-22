@@ -35,29 +35,45 @@ func Save(app *types.App, namespace, tag string) (string, error) {
 	if namespace != "" && !strings.HasSuffix(namespace, "/") {
 		namespace += "/"
 	}
+	dir, err := prepareDockerBuildDirectory(app, meta)
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(dir)
+	imageName := namespace + internal.AppNameFromDir(app.Name) + internal.AppExtension + ":" + tag
+	args := []string{"build", "-t", imageName, dir}
+	cmd := exec.Command("docker", args...)
+	cmd.Stdout = ioutil.Discard
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	return imageName, err
+}
+
+func prepareDockerBuildDirectory(app *types.App, meta metadata.AppMetadata) (string, error) {
 	dockerfile := fmt.Sprintf(`
 FROM scratch
 LABEL %s=%s
 LABEL maintainers="%v"
 COPY / /
 `, internal.ImageLabel, meta.Name, meta.Maintainers)
-	df := filepath.Join(app.Path, "__Dockerfile-docker-app__")
+	dir, err := ioutil.TempDir("", "app-save")
+	if err != nil {
+		return "", errors.Wrap(err, "cannot create temporary directory")
+	}
+	// Write dockerfile
+	df := filepath.Join(dir, "Dockerfile")
 	if err := ioutil.WriteFile(df, []byte(dockerfile), 0644); err != nil {
-		return "", errors.Wrapf(err, "cannot create file %s", df)
+		return dir, errors.Wrapf(err, "cannot create file %s", df)
 	}
-	defer os.Remove(df)
-	di := filepath.Join(app.Path, ".dockerignore")
-	if err := ioutil.WriteFile(di, []byte("__Dockerfile-docker-app__\n.dockerignore"), 0644); err != nil {
-		return "", errors.Wrapf(err, "cannot create file %s", di)
+	di := filepath.Join(dir, ".dockerignore")
+	if err := ioutil.WriteFile(di, []byte("Dockerfile\n.dockerignore"), 0644); err != nil {
+		return dir, errors.Wrapf(err, "cannot create file %s", di)
 	}
-	defer os.Remove(di)
-	imageName := namespace + internal.AppNameFromDir(app.Name) + internal.AppExtension + ":" + tag
-	args := []string{"build", "-t", imageName, "-f", df, app.Path}
-	cmd := exec.Command("docker", args...)
-	cmd.Stdout = ioutil.Discard
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	return imageName, err
+	// Write app content
+	if err := app.Extract(dir); err != nil {
+		return dir, errors.Wrap(err, "cannot extract app")
+	}
+	return dir, nil
 }
 
 // Load loads an app from docker
