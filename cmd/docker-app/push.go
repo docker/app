@@ -11,6 +11,7 @@ import (
 type pushOptions struct {
 	namespace string
 	tag       string
+	repo      string
 }
 
 func pushCmd() *cobra.Command {
@@ -25,7 +26,7 @@ func pushCmd() *cobra.Command {
 				return err
 			}
 			defer app.Cleanup()
-			dgst, err := packager.Push(app, opts.namespace, opts.tag)
+			dgst, err := packager.Push(app, opts.namespace, opts.tag, opts.repo)
 			if err == nil {
 				fmt.Println(dgst)
 			}
@@ -34,5 +35,6 @@ func pushCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "Namespace to use (default: namespace in metadata)")
 	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Tag to use (default: version in metadata)")
+	cmd.Flags().StringVar(&opts.repo, "repo", "", "Name of the remote repository (default: <app-name>.dockerapp)")
 	return cmd
 }
