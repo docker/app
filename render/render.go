@@ -22,6 +22,11 @@ import (
 	_ "github.com/docker/app/internal/renderer/mustache"
 	// Register yatee renderer
 	_ "github.com/docker/app/internal/renderer/yatee"
+
+	// Register json formatter
+	_ "github.com/docker/app/internal/formatter/json"
+	// Register yaml formatter
+	_ "github.com/docker/app/internal/formatter/yaml"
 )
 
 var (

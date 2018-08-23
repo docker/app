@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/formatter"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	formatDriver       string
 	renderComposeFiles []string
 	renderSettingsFile []string
 	renderEnv          []string
@@ -42,7 +43,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			res, err := yaml.Marshal(rendered)
+			res, err := formatter.Format(rendered, formatDriver)
 			if err != nil {
 				return err
 			}
@@ -68,5 +69,6 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
 	cmd.Flags().StringVarP(&renderOutput, "output", "o", "-", "Output file")
+	cmd.Flags().StringVarP(&formatDriver, "presenter", "p", "yaml", "Configure the output format")
 	return cmd
 }
