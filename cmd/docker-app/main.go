@@ -23,6 +23,9 @@ func main() {
 	cmd := newRootCmd(dockerCli, fs)
 	cmd.SetOutput(streams.Err)
 	err = cmd.Execute()
+	if vm, ok := err.(*com.VersionMismatch); ok {
+		session.BackendVersionMismatch(context.Background(), vm)
+	}
 	com.Shutdown(context.Background(), session, streams)
 	if err != nil {
 		os.Exit(1)

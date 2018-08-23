@@ -25,7 +25,7 @@ func helmCmd() *cobra.Command {
 		Long:  `Generate a Helm chart for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			appname, cleanup, err := packager.Extract(firstOrEmpty(args), nil)
 			if err != nil {
 				return err
 			}

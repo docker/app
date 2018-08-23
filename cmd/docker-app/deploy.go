@@ -49,7 +49,7 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
-	appname, cleanup, err := packager.Extract(appname)
+	appname, cleanup, err := packager.Extract(appname, nil)
 	if err != nil {
 		return err
 	}

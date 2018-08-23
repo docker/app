@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 
@@ -82,6 +83,7 @@ func main() {
 			break
 		}
 		if vm, ok := err.(*com.VersionMismatch); ok {
+			fmt.Printf("Backend version mismatch. retrying with backend version %s\n", vm.PackageVersion)
 			version = vm.PackageVersion
 		} else {
 			panic(err)

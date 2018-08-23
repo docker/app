@@ -47,3 +47,4 @@ RUN TAG="${TAG}" COMMIT="${COMMIT}" \
 FROM alpine:${ALPINE_VERSION} AS backend
 COPY --from=cross /go/src/github.com/docker/app/bin/docker-app-linux /docker-app
 ENTRYPOINT [ "/docker-app" ]
+WORKDIR /docker-app-data

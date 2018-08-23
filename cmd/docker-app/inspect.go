@@ -15,7 +15,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Shows metadata and settings for a given application",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			appname, cleanup, err := packager.Extract(firstOrEmpty(args), nil)
 			if err != nil {
 				return err
 			}

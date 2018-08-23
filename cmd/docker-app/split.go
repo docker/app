@@ -17,7 +17,7 @@ func splitCmd() *cobra.Command {
 		Short: "Split a single-file application into multiple files",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			extractedApp, err := packager.ExtractWithOrigin(firstOrEmpty(args))
+			extractedApp, err := packager.ExtractWithOrigin(firstOrEmpty(args), nil)
 			if err != nil {
 				return err
 			}

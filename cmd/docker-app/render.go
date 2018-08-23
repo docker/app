@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+
+	"github.com/docker/app/internal/com"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
@@ -20,18 +24,31 @@ var (
 	renderOutput       string
 )
 
-func renderCmd(dockerCli command.Cli) *cobra.Command {
+func renderCmd(dockerCli command.Cli, fs com.FrontServiceClient) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "render <app-name> [-s key=value...] [-f settings-file...]",
 		Short: "Render the Compose file for the application",
 		Long:  `Render the Compose file for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appname, cleanup, err := packager.Extract(firstOrEmpty(args))
+			appname, cleanup, err := packager.Extract(firstOrEmpty(args), fs)
 			if err != nil {
 				return err
 			}
 			defer cleanup()
+			versionBytes, err := ioutil.ReadFile(filepath.Join(appname, internal.ToolchainVersionFile))
+			if os.IsNotExist(err) {
+				// as if version match
+				versionBytes = []byte(internal.Version)
+			} else if err != nil {
+				return err
+			}
+			if string(versionBytes) != internal.Version {
+				return &com.VersionMismatch{
+					BackendVersion: internal.Version,
+					PackageVersion: string(versionBytes),
+				}
+			}
 			d, err := parseSettings(renderEnv)
 			if err != nil {
 				return err

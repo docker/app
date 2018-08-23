@@ -23,7 +23,7 @@ func appName(appname string) string {
 
 // Save saves an app to docker and returns the image name.
 func Save(appname, namespace, tag string) (string, error) {
-	appname, cleanup, err := Extract(appname)
+	appname, cleanup, err := Extract(appname, nil)
 	if err != nil {
 		return "", err
 	}
@@ -148,7 +148,7 @@ func Load(repotag string, outputDir string) error {
 
 // Push pushes an app to a registry
 func Push(appname, namespace, tag string) error {
-	appname, cleanup, err := Extract(appname)
+	appname, cleanup, err := Extract(appname, nil)
 	if err != nil {
 		return err
 	}

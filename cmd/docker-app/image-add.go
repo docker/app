@@ -26,7 +26,7 @@ subdirectory.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			oappname := args[0]
-			appname, cleanup, err := packager.Extract(oappname)
+			appname, cleanup, err := packager.Extract(oappname, nil)
 			if err != nil {
 				return err
 			}

@@ -21,7 +21,7 @@ func packCmd(dockerCli command.Cli) *cobra.Command {
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appname := firstOrEmpty(args)
-			appname, cleanup, err := packager.Extract(appname)
+			appname, cleanup, err := packager.Extract(appname, nil)
 			if err != nil {
 				return err
 			}

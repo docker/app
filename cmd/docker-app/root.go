@@ -41,7 +41,7 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli, fs com.FrontServiceC
 		lsCmd(),
 		mergeCmd(dockerCli),
 		pushCmd(),
-		renderCmd(dockerCli),
+		renderCmd(dockerCli, fs),
 		saveCmd(dockerCli),
 		splitCmd(),
 		versionCmd(dockerCli),

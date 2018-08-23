@@ -2,6 +2,7 @@ package packager
 
 import (
 	"archive/tar"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +11,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/docker/docker/pkg/archive"
+
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/com"
+	protobuf "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 )
 
@@ -26,31 +31,36 @@ var (
 )
 
 // findApp looks for an app in CWD or subdirs
-func findApp() (string, error) {
-	cwd, err := os.Getwd()
+func findApp(fs com.FrontServiceClient) (string, error) {
+	flClient, err := fs.FileList(context.Background(), &protobuf.StringValue{Value: "."})
 	if err != nil {
-		return "", errors.Wrap(err, "cannot resolve current working directory")
-	}
-	if strings.HasSuffix(cwd, internal.AppExtension) {
-		return cwd, nil
-	}
-	content, err := ioutil.ReadDir(cwd)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read current working directory")
+		return "", err
 	}
 	hit := ""
-	for _, c := range content {
-		if strings.HasSuffix(c.Name(), internal.AppExtension) {
-			if hit != "" {
-				return "", fmt.Errorf("multiple applications found in current directory, specify the application name on the command line")
-			}
-			hit = c.Name()
+	multiHit := false
+	for {
+		s, err := flClient.Recv()
+		if err == io.EOF {
+			break
 		}
+		if err != nil {
+			return "", err
+		}
+		if strings.HasSuffix(s.Name, internal.AppExtension) {
+			if hit != "" {
+				multiHit = true
+			} else {
+				hit = s.Name
+			}
+		}
+	}
+	if multiHit {
+		return "", fmt.Errorf("multiple applications found in current directory, specify the application name on the command line")
 	}
 	if hit == "" {
 		return "", fmt.Errorf("no application found in current directory")
 	}
-	return filepath.Join(cwd, hit), nil
+	return hit, nil
 }
 
 // extractImage extracts a docker application in a docker image to a temporary directory
@@ -90,13 +100,13 @@ func extractImage(appname string) (ExtractedApp, error) {
 		}
 	}
 	// this gave us a compressed app, run through extract again
-	appname, cleanup, err := Extract(filepath.Join(tempDir, appname))
+	appname, cleanup, err := Extract(filepath.Join(tempDir, appname), nil)
 	return ExtractedApp{"", appname, cleanup}, err
 }
 
 // Extract extracts the app content if it's an archive or single-file
-func Extract(appname string) (string, func(), error) {
-	extracted, err := ExtractWithOrigin(appname)
+func Extract(appname string, fs com.FrontServiceClient) (string, func(), error) {
+	extracted, err := ExtractWithOrigin(appname, fs)
 	return extracted.AppName, extracted.Cleanup, err
 }
 
@@ -104,10 +114,10 @@ func Extract(appname string) (string, func(), error) {
 // It returns source file, effective app name, and cleanup function
 // If appname is empty, it looks into cwd, and all subdirs for a single matching .dockerapp
 // If nothing is found, it looks for an image and loads it
-func ExtractWithOrigin(appname string) (ExtractedApp, error) {
+func ExtractWithOrigin(appname string, fs com.FrontServiceClient) (ExtractedApp, error) {
 	if appname == "" {
 		var err error
-		if appname, err = findApp(); err != nil {
+		if appname, err = findApp(fs); err != nil {
 			return ExtractedApp{}, err
 		}
 	}
@@ -121,7 +131,44 @@ func ExtractWithOrigin(appname string) (ExtractedApp, error) {
 	appname = filepath.Clean(appname)
 	// try appending our extension
 	appname = internal.DirNameFromAppName(appname)
-	s, err := os.Stat(appname)
+
+	// tar/untar
+	tarDirClient, err := fs.TarDir(context.Background(), &protobuf.StringValue{Value: appname})
+	if err != nil {
+		return ExtractedApp{}, err
+	}
+	absAppPath, err := filepath.Abs(appname)
+	if err != nil {
+		return ExtractedApp{}, err
+	}
+	if err = os.MkdirAll(absAppPath, 0777); err != nil {
+		return ExtractedApp{}, err
+	}
+	done := make(chan error)
+	defer close(done)
+	archiveReader, archiveWriter := io.Pipe()
+
+	go func() {
+		done <- archive.UntarUncompressed(archiveReader, absAppPath, &archive.TarOptions{
+			NoLchown: true,
+		})
+	}()
+	for {
+		data, err := tarDirClient.Recv()
+		if err == io.EOF {
+			archiveWriter.Close()
+			break
+		}
+		if err != nil {
+			archiveWriter.CloseWithError(err)
+			break
+		}
+		archiveWriter.Write(data.Value)
+	}
+	if err = <-done; err != nil {
+		return ExtractedApp{}, err
+	}
+	s, err := os.Stat(absAppPath)
 	if err != nil {
 		// try verbatim
 		s, err = os.Stat(originalAppname)
@@ -132,7 +179,7 @@ func ExtractWithOrigin(appname string) (ExtractedApp, error) {
 	}
 	if s.IsDir() {
 		// directory: already decompressed
-		return ExtractedApp{appname, appname, noop}, nil
+		return ExtractedApp{appname, absAppPath, noop}, nil
 	}
 	// not a dir: single-file or a tarball package, extract that in a temp dir
 	tempDir, err := ioutil.TempDir("", "dockerapp")
@@ -148,10 +195,10 @@ func ExtractWithOrigin(appname string) (ExtractedApp, error) {
 	if err = os.Mkdir(appDir, 0755); err != nil {
 		return ExtractedApp{}, errors.Wrap(err, "failed to create application in temporary directory")
 	}
-	if err = extract(appname, appDir); err == nil {
+	if err = extract(absAppPath, appDir); err == nil {
 		return ExtractedApp{appname, appDir, func() { os.RemoveAll(tempDir) }}, nil
 	}
-	if err = extractSingleFile(appname, appDir); err != nil {
+	if err = extractSingleFile(absAppPath, appDir); err != nil {
 		return ExtractedApp{}, err
 	}
 	// not a tarball, single-file then

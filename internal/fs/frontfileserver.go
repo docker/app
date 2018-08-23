@@ -1,10 +1,10 @@
 package fs
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/docker/docker/pkg/archive"
 
@@ -32,7 +32,6 @@ func (FrontFileServer) FileContent(path *protobuf.StringValue, chunkSink com.Fro
 		case err != nil:
 			return err
 		}
-		fmt.Printf("received %d bytes\n", read)
 		if err = chunkSink.Send(&protobuf.BytesValue{Value: buffer[:read]}); err != nil {
 			return err
 		}
@@ -59,7 +58,11 @@ func (FrontFileServer) FileList(path *protobuf.StringValue, statSink com.FrontSe
 
 // TarDir tar the content of a directory
 func (FrontFileServer) TarDir(path *protobuf.StringValue, chunkSink com.FrontService_TarDirServer) error {
-	arch, err := archive.Tar(path.Value, archive.Uncompressed)
+	absPath, err := filepath.Abs(path.Value)
+	if err != nil {
+		return err
+	}
+	arch, err := archive.Tar(absPath, archive.Uncompressed)
 	if err != nil {
 		return err
 	}
@@ -90,7 +93,7 @@ func (FrontFileServer) UntarDir(chunkSource com.FrontService_UntarDirServer) err
 	done := make(chan error)
 	go func() {
 		defer close(done)
-		done <- archive.Untar(reader, firstChunk.Dest, nil)
+		done <- archive.UntarUncompressed(reader, firstChunk.Dest, nil)
 	}()
 	if _, err := writer.Write(firstChunk.Data); err != nil {
 		return err
