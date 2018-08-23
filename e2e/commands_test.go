@@ -284,11 +284,9 @@ func testImage(registry string) func(*testing.T) {
 		defer dir.Remove()
 		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
 
-		icmd.RunCommand(dockerApp, "push", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "render/envvariables").Assert(t, icmd.Success)
-		AssertCommand(t, "docker", "image", "rm", registry+"/rainbows/unicorns:marshmallows")
-		AssertCommandOutput(t, "image-inspect-labels.golden", "docker", "inspect", "-f", "{{.Config.Labels.maintainers}}", registry+"/rainbows/unicorns:marshmallows")
+		// push with custom repo name
+		icmd.RunCommand(dockerApp, "push", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
 		icmd.RunCommand(dockerApp, "inspect", registry+"/rainbows/unicorns:marshmallows").Assert(t, icmd.Success)
-		AssertCommand(t, dockerApp, "inspect", registry+"/rainbows/unicorns")
 	}
 }
 
