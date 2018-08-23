@@ -285,6 +285,12 @@ func TestSplitMergeBinary(t *testing.T) {
 	assertCommand(t, dockerApp, "split", "split")
 }
 
+func TestURLBinary(t *testing.T) {
+	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
+	dockerApp, _ := getDockerAppBinary(t)
+	assertCommandOutput(t, "helloworld-inspect.golden", dockerApp, "inspect", url)
+}
+
 func TestImageBinary(t *testing.T) {
 	dockerApp, _ := getDockerAppBinary(t)
 	r := startRegistry(t)
