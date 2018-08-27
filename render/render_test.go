@@ -53,3 +53,26 @@ func TestRender(t *testing.T) {
 	assert.Check(t, is.Equal(c.Services[0].Image, "busybox:latest"))
 	assert.Check(t, is.DeepEqual([]string(c.Services[0].Command), []string{"-text", "baz"}))
 }
+
+func TestRenderEnabledFalse(t *testing.T) {
+	for _, tc := range []interface{}{false, "false"} {
+		configs := []composetypes.ConfigFile{
+			{
+				Config: map[string]interface{}{
+					"version": "3.7",
+					"services": map[string]interface{}{
+						"foo": map[string]interface{}{
+							"image":     "busybox",
+							"command":   []interface{}{"-text", "foo"},
+							"x-enabled": tc,
+						},
+					},
+				},
+			},
+		}
+		c, err := render(configs, map[string]string{})
+		assert.NilError(t, err)
+		assert.Check(t, is.Len(c.Services, 0))
+	}
+
+}

@@ -90,7 +90,9 @@ func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load Compose file")
 	}
-	processEnabled(rendered)
+	if err := processEnabled(rendered); err != nil {
+		return nil, err
+	}
 	return rendered, nil
 }
 
@@ -108,27 +110,44 @@ func errorIfMissing(substitution string, mapping composetemplate.Mapping) (strin
 	return value, true, nil
 }
 
-func processEnabled(config *composetypes.Config) {
+func processEnabled(config *composetypes.Config) error {
 	services := []composetypes.ServiceConfig{}
 	for _, service := range config.Services {
 		if service.Extras != nil {
-			if xEnabled, ok := service.Extras["x-enabled"]; ok && !isEnabled(xEnabled.(string)) {
-				continue
+			if xEnabled, ok := service.Extras["x-enabled"]; ok {
+				enabled, err := isEnabled(xEnabled)
+				if err != nil {
+					return err
+				}
+				if !enabled {
+					continue
+				}
 			}
 		}
 		services = append(services, service)
 	}
 	config.Services = services
+	return nil
 }
 
-func isEnabled(e string) bool {
-	e = strings.ToLower(e)
-	switch {
-	case e == "", e == "0", e == "false":
-		return false
-	case strings.HasPrefix(e, "!"):
-		return !isEnabled(e[1:])
-	default:
-		return true
+func isEnabled(e interface{}) (bool, error) {
+	switch v := e.(type) {
+	case string:
+		v = strings.ToLower(v)
+		switch {
+		case v == "", v == "0", v == "false":
+			return false, nil
+		case strings.HasPrefix(v, "!"):
+			nv, err := isEnabled(v[1:])
+			if err != nil {
+				return false, err
+			}
+			return !nv, nil
+		default:
+			return false, errors.Errorf("%s is not a valid value for x-enabled", e)
+		}
+	case bool:
+		return v, nil
 	}
+	return false, errors.Errorf("invalid type (%T) for x-enabled", e)
 }
