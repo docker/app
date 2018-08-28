@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/types/metadata"
+	"github.com/docker/app/types/settings"
 )
 
 // SingleFileSeparator is the separator used in single-file app
@@ -21,7 +23,9 @@ type App struct {
 
 	composesContent [][]byte
 	settingsContent [][]byte
+	settings        settings.Settings
 	metadataContent []byte
+	metadata        metadata.AppMetadata
 }
 
 // Composes returns compose files content
@@ -29,25 +33,35 @@ func (a *App) Composes() [][]byte {
 	return a.composesContent
 }
 
-// Settings returns setting files content
-func (a *App) Settings() [][]byte {
+// SettingsRaw returns setting files content
+func (a *App) SettingsRaw() [][]byte {
 	return a.settingsContent
 }
 
-// Metadata returns metadata file content
-func (a *App) Metadata() []byte {
+// Settings returns map of settings
+func (a *App) Settings() settings.Settings {
+	return a.settings
+}
+
+// MetadataRaw returns metadata file content
+func (a *App) MetadataRaw() []byte {
 	return a.metadataContent
+}
+
+// Metadata returns the metadata struct
+func (a *App) Metadata() metadata.AppMetadata {
+	return a.metadata
 }
 
 // Extract writes the app in the specified folder
 func (a *App) Extract(path string) error {
-	if err := ioutil.WriteFile(filepath.Join(path, internal.MetadataFileName), a.Metadata(), 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(path, internal.MetadataFileName), a.MetadataRaw(), 0644); err != nil {
 		return err
 	}
 	if err := ioutil.WriteFile(filepath.Join(path, internal.ComposeFileName), a.Composes()[0], 0644); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(path, internal.SettingsFileName), a.Settings()[0], 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(path, internal.SettingsFileName), a.SettingsRaw()[0], 0644); err != nil {
 		return err
 	}
 	return nil
@@ -113,47 +127,52 @@ func WithCleanup(f func()) func(*App) error {
 
 // WithSettingsFiles adds the specified settings files to the app
 func WithSettingsFiles(files ...string) func(*App) error {
-	return func(app *App) error {
-		settingsContent, err := readFiles(files...)
-		if err != nil {
-			return err
-		}
-		app.settingsContent = append(app.settingsContent, settingsContent...)
-		return nil
-	}
+	return settingsLoader(func() ([][]byte, error) { return readFiles(files...) })
 }
 
 // WithSettings adds the specified settings readers to the app
 func WithSettings(readers ...io.Reader) func(*App) error {
+	return settingsLoader(func() ([][]byte, error) { return readReaders(readers...) })
+}
+
+func settingsLoader(f func() ([][]byte, error)) func(*App) error {
 	return func(app *App) error {
-		settingsContent, err := readReaders(readers...)
+		settingsContent, err := f()
 		if err != nil {
 			return err
 		}
-		app.settingsContent = append(app.settingsContent, settingsContent...)
+		settingsContents := append(app.settingsContent, settingsContent...)
+		loaded, err := settings.LoadMultiple(settingsContents)
+		if err != nil {
+			return err
+		}
+		app.settings = loaded
+		app.settingsContent = settingsContents
 		return nil
 	}
 }
 
 // MetadataFile adds the specified metadata file to the app
 func MetadataFile(file string) func(*App) error {
-	return func(app *App) error {
-		d, err := ioutil.ReadFile(file)
-		if err != nil {
-			return err
-		}
-		app.metadataContent = d
-		return nil
-	}
+	return metadataLoader(func() ([]byte, error) { return ioutil.ReadFile(file) })
 }
 
 // Metadata adds the specified metadata reader to the app
 func Metadata(r io.Reader) func(*App) error {
+	return metadataLoader(func() ([]byte, error) { return ioutil.ReadAll(r) })
+}
+
+func metadataLoader(f func() ([]byte, error)) func(app *App) error {
 	return func(app *App) error {
-		d, err := ioutil.ReadAll(r)
+		d, err := f()
 		if err != nil {
 			return err
 		}
+		loaded, err := metadata.Load(d)
+		if err != nil {
+			return err
+		}
+		app.metadata = loaded
 		app.metadataContent = d
 		return nil
 	}
@@ -161,20 +180,17 @@ func Metadata(r io.Reader) func(*App) error {
 
 // WithComposeFiles adds the specified compose files to the app
 func WithComposeFiles(files ...string) func(*App) error {
-	return func(app *App) error {
-		composesContent, err := readFiles(files...)
-		if err != nil {
-			return err
-		}
-		app.composesContent = append(app.composesContent, composesContent...)
-		return nil
-	}
+	return composeLoader(func() ([][]byte, error) { return readFiles(files...) })
 }
 
 // WithComposes adds the specified compose readers to the app
 func WithComposes(readers ...io.Reader) func(*App) error {
+	return composeLoader(func() ([][]byte, error) { return readReaders(readers...) })
+}
+
+func composeLoader(f func() ([][]byte, error)) func(app *App) error {
 	return func(app *App) error {
-		composesContent, err := readReaders(readers...)
+		composesContent, err := f()
 		if err != nil {
 			return err
 		}

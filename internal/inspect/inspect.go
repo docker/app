@@ -6,29 +6,17 @@ import (
 	"sort"
 	"text/tabwriter"
 
-	"github.com/docker/app/internal/settings"
-	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/types"
-	"github.com/docker/app/types/metadata"
-	"github.com/pkg/errors"
 )
 
 // Inspect dumps the metadata of an app
 func Inspect(out io.Writer, app *types.App) error {
-	var meta metadata.AppMetadata
-	err := yaml.Unmarshal(app.Metadata(), &meta)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse application metadata")
-	}
+	meta := app.Metadata()
 	// extract settings
-	s, err := settings.LoadMultiple(app.Settings())
-	if err != nil {
-		return errors.Wrap(err, "failed to load application settings")
-	}
-	fs := s.Flatten()
+	settings := app.Settings().Flatten()
 	// sort the keys to get consistent output
 	var settingsKeys []string
-	for k := range fs {
+	for k := range settings {
 		settingsKeys = append(settingsKeys, k)
 	}
 	sort.Slice(settingsKeys, func(i, j int) bool { return settingsKeys[i] < settingsKeys[j] })
@@ -47,7 +35,7 @@ func Inspect(out io.Writer, app *types.App) error {
 	fmt.Fprintln(w, "Setting\tDefault")
 	fmt.Fprintln(w, "-------\t-------")
 	for _, k := range settingsKeys {
-		fmt.Fprintf(w, "%s\t%s\n", k, fs[k])
+		fmt.Fprintf(w, "%s\t%s\n", k, settings[k])
 	}
 	w.Flush()
 	return nil

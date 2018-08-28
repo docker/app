@@ -17,13 +17,14 @@ import (
 )
 
 const (
-	metadata = "foo"
-	yaml     = `version: "3.1"
+	metadata = `name: my-app
+version: 1.0.0`
+	yaml = `version: "3.1"
 
 services:
   web:
     image: nginx`
-	settings = "foo=bar"
+	settings = `foo: bar`
 )
 
 func TestLoadFromSingleFile(t *testing.T) {
@@ -103,11 +104,11 @@ func assertContentIs(t *testing.T, actual []byte, expected string) {
 }
 
 func assertAppContent(t *testing.T, app *types.App) {
-	assert.Assert(t, is.Len(app.Settings(), 1))
-	assertContentIs(t, app.Settings()[0], settings)
+	assert.Assert(t, is.Len(app.SettingsRaw(), 1))
+	assertContentIs(t, app.SettingsRaw()[0], settings)
 	assert.Assert(t, is.Len(app.Composes(), 1))
 	assertContentIs(t, app.Composes()[0], yaml)
-	assertContentIs(t, app.Metadata(), metadata)
+	assertContentIs(t, app.MetadataRaw(), metadata)
 }
 
 type faultyReader struct{}

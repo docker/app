@@ -3,13 +3,11 @@ package inspect
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"testing"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
 	"gotest.tools/assert"
-	is "gotest.tools/assert/cmp"
 	"gotest.tools/fs"
 	"gotest.tools/golden"
 )
@@ -21,32 +19,6 @@ services:
   web:
     image: nginx`
 )
-
-func TestInspectErrorsOnFiles(t *testing.T) {
-	dir := fs.NewDir(t, "inspect-errors",
-		fs.WithDir("unparseable-metadata-app",
-			fs.WithFile(internal.ComposeFileName, composeYAML),
-			fs.WithFile(internal.MetadataFileName, `something is wrong`),
-			fs.WithFile(internal.SettingsFileName, "foo"),
-		),
-		fs.WithDir("unparseable-settings-app",
-			fs.WithFile(internal.ComposeFileName, composeYAML),
-			fs.WithFile(internal.MetadataFileName, `{}`),
-			fs.WithFile(internal.SettingsFileName, "foo"),
-		),
-	)
-	defer dir.Remove()
-
-	for appname, expectedError := range map[string]string{
-		"unparseable-metadata-app": "failed to parse application metadat",
-		"unparseable-settings-app": "failed to load application settings",
-	} {
-		app, err := types.NewAppFromDefaultFiles(dir.Join(appname))
-		assert.NilError(t, err)
-		err = Inspect(ioutil.Discard, app)
-		assert.Check(t, is.ErrorContains(err, expectedError))
-	}
-}
 
 func TestInspect(t *testing.T) {
 	dir := fs.NewDir(t, "inspect",

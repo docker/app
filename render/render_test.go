@@ -1,8 +1,10 @@
 package render
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/docker/app/types"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
@@ -76,5 +78,40 @@ func TestRenderEnabledFalse(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Check(t, is.Len(c.Services, 0))
 	}
+}
 
+func TestValidateBrokenComposeFile(t *testing.T) {
+	metadata := strings.NewReader(`version: "0.1"
+name: myname`)
+	brokenComposeFile := strings.NewReader(`version: "3.6"
+unknown-property: value`)
+	app := &types.App{Path: "my-app"}
+	err := types.Metadata(metadata)(app)
+	assert.NilError(t, err)
+	err = types.WithComposes(brokenComposeFile)(app)
+	assert.NilError(t, err)
+	c, err := Render(app, nil)
+	assert.Assert(t, is.Nil(c))
+	assert.Error(t, err, "failed to load Compose file: unknown-property Additional property unknown-property is not allowed")
+}
+
+func TestValidateRenderedApplication(t *testing.T) {
+	metadata := strings.NewReader(`version: "0.1"
+name: myname`)
+	composeFile := strings.NewReader(`
+version: "3.6"
+services:
+    hello:
+        image: ${image}`)
+	settings := strings.NewReader(`image: hashicorp/http-echo`)
+	app := &types.App{Path: "my-app"}
+	err := types.Metadata(metadata)(app)
+	assert.NilError(t, err)
+	err = types.WithComposes(composeFile)(app)
+	assert.NilError(t, err)
+	err = types.WithSettings(settings)(app)
+	assert.NilError(t, err)
+	c, err := Render(app, nil)
+	assert.Assert(t, c != nil)
+	assert.NilError(t, err)
 }
