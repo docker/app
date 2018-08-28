@@ -237,12 +237,10 @@ func newMetadata(name string, description string, maintainers []string) metadata
 		Description: description,
 	}
 	if len(maintainers) == 0 {
-		var userName string
 		userData, _ := user.Current()
-		if userData != nil {
-			userName = userData.Username
+		if userData != nil && userData.Username != "" {
+			res.Maintainers = []metadata.Maintainer{{Name: userData.Username}}
 		}
-		res.Maintainers = []metadata.Maintainer{{Name: userName}}
 	} else {
 		res.Maintainers = parseMaintainersData(maintainers)
 	}
