@@ -55,7 +55,7 @@ func TestRender(t *testing.T) {
 }
 
 func TestRenderEnabledFalse(t *testing.T) {
-	for _, tc := range []interface{}{false, "false"} {
+	for _, tc := range []interface{}{false, "false", "! ${myapp.debug}"} {
 		configs := []composetypes.ConfigFile{
 			{
 				Config: map[string]interface{}{
@@ -70,7 +70,9 @@ func TestRenderEnabledFalse(t *testing.T) {
 				},
 			},
 		}
-		c, err := render(configs, map[string]string{})
+		c, err := render(configs, map[string]string{
+			"myapp.debug": "true",
+		})
 		assert.NilError(t, err)
 		assert.Check(t, is.Len(c.Services, 0))
 	}

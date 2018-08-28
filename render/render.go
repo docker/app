@@ -133,8 +133,10 @@ func processEnabled(config *composetypes.Config) error {
 func isEnabled(e interface{}) (bool, error) {
 	switch v := e.(type) {
 	case string:
-		v = strings.ToLower(v)
+		v = strings.ToLower(strings.TrimSpace(v))
 		switch {
+		case v == "1", v == "true":
+			return true, nil
 		case v == "", v == "0", v == "false":
 			return false, nil
 		case strings.HasPrefix(v, "!"):
