@@ -11,6 +11,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/loader"
 	"github.com/docker/app/types"
+	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 )
 
@@ -42,20 +43,29 @@ func findApp() (string, error) {
 	return filepath.Join(cwd, hit), nil
 }
 
+func appNameFromRef(ref reference.Named) string {
+	parts := strings.Split(ref.Name(), "/")
+	return internal.DirNameFromAppName(parts[len(parts)-1])
+}
+
+func imageNameFromRef(ref reference.Named) string {
+	if tagged, ok := ref.(reference.Tagged); ok {
+		name := internal.DirNameFromAppName(ref.Name())
+		newRef, _ := reference.WithName(name)
+		newtaggedRef, _ := reference.WithTag(newRef, tagged.Tag())
+		return newtaggedRef.String()
+	}
+	return internal.DirNameFromAppName(ref.String())
+}
+
 // extractImage extracts a docker application in a docker image to a temporary directory
 func extractImage(appname string, ops ...func(*types.App) error) (*types.App, error) {
-	var imagename string
-	if strings.Contains(appname, ":") {
-		nametag := strings.Split(appname, ":")
-		if len(nametag) == 3 || strings.Contains(nametag[1], "/") {
-			nametag[1] = internal.DirNameFromAppName(nametag[1])
-		} else {
-			nametag[0] = internal.DirNameFromAppName(nametag[0])
-		}
-		imagename = strings.Join(nametag, ":")
-	} else {
-		imagename = internal.DirNameFromAppName(appname)
+	ref, err := reference.ParseNormalizedNamed(appname)
+	if err != nil {
+		return nil, err
 	}
+	imagename := imageNameFromRef(ref)
+	appname = appNameFromRef(ref)
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary directory")
@@ -65,8 +75,8 @@ func extractImage(appname string, ops ...func(*types.App) error) (*types.App, er
 		os.RemoveAll(tempDir)
 		return nil, err
 	}
-	ops = append(ops, types.WithCleanup(func() { os.RemoveAll(tempDir) }))
-	return Extract(path, ops...)
+	ops = append(ops, types.WithName(appname), types.WithCleanup(func() { os.RemoveAll(tempDir) }))
+	return loader.LoadFromDirectory(path, ops...)
 }
 
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.
