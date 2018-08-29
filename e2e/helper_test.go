@@ -78,12 +78,6 @@ func startRegistry(t *testing.T) *container {
 	return c
 }
 
-func startDind(t *testing.T) *container {
-	c := &container{image: "docker:dind", privatePort: 2375}
-	c.start(t)
-	return c
-}
-
 // Start starts a new docker container on a random port
 func (c *container) start(t *testing.T) {
 	cmd := exec.Command("docker", "run", "--rm", "--privileged", "-d", "-P", c.image)

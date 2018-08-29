@@ -44,9 +44,25 @@
   version = "v1.0.1"
 
 [[projects]]
+  name = "github.com/containerd/containerd"
+  packages = [
+    "errdefs",
+    "log",
+    "platforms"
+  ]
+  revision = "468a545b9edcd5932818eb9de8e72413e616e86e"
+  version = "v1.1.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/containerd/continuity"
-  packages = ["pathdriver"]
+  packages = [
+    "devices",
+    "driver",
+    "pathdriver",
+    "syscallx",
+    "sysx"
+  ]
   revision = "0377f7d767206f3a9e8881d0f02267b0d89c7a62"
 
 [[projects]]
@@ -117,6 +133,7 @@
     "digestset",
     "manifest",
     "manifest/manifestlist",
+    "manifest/schema1",
     "manifest/schema2",
     "metrics",
     "reference",
@@ -152,8 +169,19 @@
     "api/types/versions",
     "api/types/volume",
     "client",
+    "daemon/graphdriver",
+    "distribution",
+    "distribution/metadata",
+    "distribution/xfer",
+    "dockerversion",
     "errdefs",
+    "image",
+    "image/v1",
+    "layer",
+    "oci",
     "pkg/archive",
+    "pkg/chrootarchive",
+    "pkg/containerfs",
     "pkg/fileutils",
     "pkg/homedir",
     "pkg/idtools",
@@ -161,15 +189,24 @@
     "pkg/jsonmessage",
     "pkg/longpath",
     "pkg/mount",
+    "pkg/parsers/kernel",
+    "pkg/plugingetter",
+    "pkg/plugins",
+    "pkg/plugins/transport",
     "pkg/pools",
     "pkg/progress",
+    "pkg/reexec",
     "pkg/stdcopy",
     "pkg/streamformatter",
     "pkg/stringid",
+    "pkg/symlink",
     "pkg/system",
     "pkg/tarsum",
     "pkg/term",
     "pkg/term/windows",
+    "pkg/useragent",
+    "plugin/v2",
+    "reference",
     "registry",
     "registry/resumable"
   ]
@@ -216,6 +253,12 @@
   packages = ["."]
   revision = "47565b4f722fb6ceae66b95f853feed578a4a51c"
   version = "v0.3.3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/docker/libtrust"
+  packages = ["."]
+  revision = "aabc10ec26b754e797f9028f4589c5b7bd90dc20"
 
 [[projects]]
   name = "github.com/docker/swarmkit"
@@ -418,10 +461,19 @@
 [[projects]]
   name = "github.com/opencontainers/runc"
   packages = [
+    "libcontainer/configs",
+    "libcontainer/devices",
     "libcontainer/system",
     "libcontainer/user"
   ]
-  revision = "ad0f5255060d36872be04de22f8731f38ef2d7b1"
+  revision = "4fc53a81fb7c994640722ac585fa9ca548971871"
+  version = "v1.0.0-rc5"
+
+[[projects]]
+  name = "github.com/opencontainers/runtime-spec"
+  packages = ["specs-go"]
+  revision = "4e3b9264a330d094b0386c3703c5f379119711e8"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -514,6 +566,16 @@
   version = "v0.6.1"
 
 [[projects]]
+  name = "github.com/vbatts/tar-split"
+  packages = [
+    "archive/tar",
+    "tar/asm",
+    "tar/storage"
+  ]
+  revision = "38ec4ddb06dedbea0a895c4848b248eb38af221b"
+  version = "v0.10.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/wadey/gocovmerge"
   packages = ["."]
@@ -567,7 +629,8 @@
   name = "golang.org/x/sys"
   packages = [
     "unix",
-    "windows"
+    "windows",
+    "windows/registry"
   ]
   revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
 
@@ -814,6 +877,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d9a1011f4ba0220435ba111f32ece000026dc4123ffa9fcfbcabac9bfd29f4f8"
+  inputs-digest = "45dcd633f064737222d9aae2e6c53578dee07f8b270fd8a1b71fe99b5584a925"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -191,16 +191,14 @@ You can push any application to the Hub using `docker-app push`:
 $ docker-app push --namespace myHubUser --tag latest
 ```
 
-This command will create an image named `myHubUser/hello.dockerapp:latest` on your local Docker
-daemon, and push it to the Hub.
+This command will push to the Hub an image named `myHubUser/hello.dockerapp:latest`.
 
 By default, this command uses the application version defined in `metadata.yml` as the tag,
 and the value of the metadata field `namespace` as the image namespace.
 
-All `docker-app` commands accept a local image name as input, which means you can run on a different host:
+All `docker-app` commands accept an image name as input, which means you can run on a different host:
 
 ``` bash
-$ docker pull myHubUser/hello.dockerapp:latest
 $ docker-app inspect myHubUser/hello
 ```
 
@@ -258,11 +256,9 @@ Commands:
   helm        Generate a Helm chart
   init        Start building a Docker application
   inspect     Shows metadata and settings for a given application
-  ls          List applications.
   merge       Merge a multi-file application into a single file
   push        Push the application to a registry
   render      Render the Compose file for the application
-  save        Save the application as an image to the docker daemon(in preparation for push)
   split       Split a single-file application into multiple files
   validate    Checks the rendered application is syntactically correct
   version     Print version information

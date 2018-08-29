@@ -12,7 +12,8 @@ func pullCmd() *cobra.Command {
 		Short: "Pull an application from a registry",
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return packager.Pull(args[0])
+			_, err := packager.Pull(args[0], ".")
+			return err
 		},
 	}
 }

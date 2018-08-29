@@ -1,152 +1,21 @@
 package packager
 
 import (
-	"archive/tar"
-	"fmt"
-	"io"
+	"context"
 	"io/ioutil"
-	"math/rand"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/yaml"
+	"github.com/docker/app/pkg/resto"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
-
-// Save saves an app to docker and returns the image name.
-func Save(app *types.App, namespace, tag string) (string, error) {
-	var meta metadata.AppMetadata
-	err := yaml.Unmarshal(app.Metadata(), &meta)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to parse application metadata")
-	}
-	if tag == "" {
-		tag = meta.Version
-	}
-	if namespace == "" {
-		namespace = meta.Namespace
-	}
-	if namespace != "" && !strings.HasSuffix(namespace, "/") {
-		namespace += "/"
-	}
-	dir, err := prepareDockerBuildDirectory(app, meta)
-	if err != nil {
-		return "", err
-	}
-	defer os.RemoveAll(dir)
-	imageName := namespace + internal.AppNameFromDir(app.Name) + internal.AppExtension + ":" + tag
-	args := []string{"build", "-t", imageName, dir}
-	cmd := exec.Command("docker", args...)
-	cmd.Stdout = ioutil.Discard
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	return imageName, err
-}
-
-func prepareDockerBuildDirectory(app *types.App, meta metadata.AppMetadata) (string, error) {
-	dockerfile := fmt.Sprintf(`
-FROM scratch
-LABEL %s=%s
-LABEL maintainers="%v"
-COPY / /
-`, internal.ImageLabel, meta.Name, meta.Maintainers)
-	dir, err := ioutil.TempDir("", "app-save")
-	if err != nil {
-		return "", errors.Wrap(err, "cannot create temporary directory")
-	}
-	// Write dockerfile
-	df := filepath.Join(dir, "Dockerfile")
-	if err := ioutil.WriteFile(df, []byte(dockerfile), 0644); err != nil {
-		return dir, errors.Wrapf(err, "cannot create file %s", df)
-	}
-	di := filepath.Join(dir, ".dockerignore")
-	if err := ioutil.WriteFile(di, []byte("Dockerfile\n.dockerignore"), 0644); err != nil {
-		return dir, errors.Wrapf(err, "cannot create file %s", di)
-	}
-	// Write app content
-	if err := app.Extract(dir); err != nil {
-		return dir, errors.Wrap(err, "cannot extract app")
-	}
-	return dir, nil
-}
-
-// Load loads an app from docker
-func Load(repotag string, outputDir string) error {
-	file := filepath.Join(os.TempDir(), "docker-app-"+fmt.Sprintf("%v%v", rand.Int63(), rand.Int63()))
-	cmd := exec.Command("docker", "save", "-o", file, repotag)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return errors.Wrapf(err, "error loading image %s", repotag)
-	}
-	defer os.Remove(file)
-	f, err := os.Open(file)
-	if err != nil {
-		return errors.Wrap(err, "failed to open temporary image file")
-	}
-	defer f.Close()
-	tarReader := tar.NewReader(f)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "error reading next tar header")
-		}
-		if filepath.Base(header.Name) == "layer.tar" {
-			data := make([]byte, header.Size)
-			_, err := tarReader.Read(data)
-			if err != nil && err != io.EOF {
-				return errors.Wrap(err, "error reading tar data")
-			}
-			img, err := splitImageName(repotag)
-			if err != nil {
-				return err
-			}
-			appName := img.Name
-			err = ioutil.WriteFile(filepath.Join(outputDir, internal.DirNameFromAppName(appName)), data, 0644)
-			return errors.Wrap(err, "error writing output file")
-		}
-	}
-	return fmt.Errorf("failed to find our layer in tarball")
-}
-
-// Push pushes an app to a registry
-func Push(app *types.App, namespace, tag string) error {
-	imageName, err := Save(app, namespace, tag)
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command("docker", "push", imageName)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return errors.Wrapf(cmd.Run(), "error pushing image %s", imageName)
-}
-
-// Pull pulls an app from a registry
-func Pull(repotag string) error {
-	if err := pullImage(repotag); err != nil {
-		return err
-	}
-	return Load(repotag, ".")
-}
-
-func pullImage(repotag string) error {
-	cmd := exec.Command("docker", "pull", repotag)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return errors.Wrapf(err, "error pulling image %s", repotag)
-	}
-	return nil
-}
 
 type imageComponents struct {
 	Name       string
@@ -167,4 +36,58 @@ func splitImageName(repotag string) (*imageComponents, error) {
 		res.Tag = tagged.Tag()
 	}
 	return res, nil
+}
+
+// Pull loads an app from a registry and returns the extracted dir name
+func Pull(repotag string, outputDir string) (string, error) {
+	payload, err := resto.PullConfigMulti(context.Background(), repotag, resto.RegistryOptions{})
+	if err != nil {
+		return "", err
+	}
+	repoComps, err := splitImageName(repotag)
+	if err != nil {
+		return "", err
+	}
+	appDir := filepath.Join(outputDir, internal.DirNameFromAppName(repoComps.Name))
+	err = os.Mkdir(appDir, 0755)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create output application directory")
+	}
+	for k, v := range payload {
+		// do not write files in any other directory
+		if strings.Contains(k, "/") || strings.Contains(k, "\\") {
+			log.Warnf("dropping image entry '%s' with unexpected path separator", k)
+			continue
+		}
+		target := filepath.Join(appDir, k)
+		if err := ioutil.WriteFile(target, []byte(v), 0644); err != nil {
+			return "", errors.Wrap(err, "failed to write output file")
+		}
+	}
+	return appDir, nil
+}
+
+// Push pushes an app to a registry. Returns the image digest.
+func Push(app *types.App, namespace, tag string) (string, error) {
+	payload := make(map[string]string)
+	payload[internal.MetadataFileName] = string(app.Metadata())
+	payload[internal.ComposeFileName] = string(app.Composes()[0])
+	payload[internal.SettingsFileName] = string(app.Settings()[0])
+	if namespace == "" || tag == "" {
+		var metadata metadata.AppMetadata
+		if err := yaml.Unmarshal(app.Metadata(), &metadata); err != nil {
+			return "", errors.Wrap(err, "failed to parse application metadata")
+		}
+		if namespace == "" {
+			namespace = metadata.Namespace
+		}
+		if tag == "" {
+			tag = metadata.Version
+		}
+	}
+	if namespace != "" && namespace[len(namespace)-1] != '/' {
+		namespace += "/"
+	}
+	imageName := namespace + internal.AppNameFromDir(app.Name) + internal.AppExtension + ":" + tag
+	return resto.PushConfigMulti(context.Background(), payload, imageName, resto.RegistryOptions{}, nil)
 }

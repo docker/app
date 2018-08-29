@@ -1,8 +1,7 @@
 package packager
 
 import (
-	"archive/tar"
-	"io"
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/yaml"
+	"github.com/docker/app/pkg/resto"
 	"github.com/docker/app/types/metadata"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -25,16 +25,8 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 		forkName = internal.AppNameFromDir(imgRef.Name)
 	}
 	log.Debugf("Pulling latest version of package %s", originName)
-	if err := pullImage(originName); err != nil {
-		return err
-	}
-	tmpdir, err := ioutil.TempDir("", "dockerappfork_")
+	payload, err := resto.PullConfigMulti(context.Background(), originName, resto.RegistryOptions{})
 	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(tmpdir)
-	log.Debugf("Extracting original app data to %s", tmpdir)
-	if err := Load(originName, tmpdir); err != nil {
 		return err
 	}
 
@@ -45,33 +37,23 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 		return err
 	}
 
-	// iterate tar contents
-	tarfile, err := os.Open(filepath.Join(tmpdir, internal.DirNameFromAppName(imgRef.Name)))
-	if err != nil {
-		return errors.Wrap(err, "failed to open package archive")
-	}
-	tarReader := tar.NewReader(tarfile)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
+	// iterate on contents
+	for k, vs := range payload {
+		v := []byte(vs)
+		if strings.Contains(k, "/") || strings.Contains(k, "\\") {
+			log.Infof("dropping payload element with unexpected path separator: %s", k)
+			continue
 		}
-		data := make([]byte, header.Size)
-		if _, err := tarReader.Read(data); err != nil && err != io.EOF {
-			return errors.Wrap(err, "error reading tar data")
-		}
-
-		if header.Name == internal.MetadataFileName {
+		if k == internal.MetadataFileName {
 			log.Debug("Loading app metadata")
-			data, err = updateMetadata(data, namespace, name, maintainers)
+			v, err = updateMetadata(v, namespace, name, maintainers)
 			if err != nil {
 				return err
 			}
 		}
-
-		dest := filepath.Join(appPath, header.Name)
+		dest := filepath.Join(appPath, k)
 		log.Debugf("Writing file at %s", dest)
-		if err := ioutil.WriteFile(dest, data, 0644); err != nil {
+		if err := ioutil.WriteFile(dest, v, 0644); err != nil {
 			return errors.Wrap(err, "error writing output file")
 		}
 	}

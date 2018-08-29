@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/cli/cli"
 	"github.com/spf13/cobra"
@@ -23,7 +25,11 @@ func pushCmd() *cobra.Command {
 				return err
 			}
 			defer app.Cleanup()
-			return packager.Push(app, opts.namespace, opts.tag)
+			dgst, err := packager.Push(app, opts.namespace, opts.tag)
+			if err == nil {
+				fmt.Println(dgst)
+			}
+			return err
 		},
 	}
 	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "Namespace to use (default: namespace in metadata)")

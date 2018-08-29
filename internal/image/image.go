@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/slices"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
@@ -54,21 +53,4 @@ func Load(appname string, services []string) error {
 		}
 	}
 	return nil
-}
-
-// List images with the label specific to applications.
-func List(appname string, quiet bool) error {
-	args := []string{
-		"image", "ls", "--filter", fmt.Sprintf("label=%s", internal.ImageLabel),
-	}
-	if quiet {
-		args = append(args, "-q")
-	}
-	args = append(args, []string{"--", appname}...)
-
-	cmd := exec.Command("docker", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
 }
