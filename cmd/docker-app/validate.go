@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/validator"
+	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	cliopts "github.com/docker/cli/opts"
@@ -28,7 +28,8 @@ func validateCmd() *cobra.Command {
 			}
 			defer app.Cleanup()
 			argSettings := cliopts.ConvertKVStringsToMap(validateEnv)
-			return validator.Validate(app, argSettings)
+			_, err = render.Render(app, argSettings)
+			return err
 		},
 	}
 	cmd.Flags().StringArrayVarP(&validateSettingsFile, "settings-files", "f", []string{}, "Override settings files")

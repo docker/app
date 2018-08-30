@@ -8,9 +8,9 @@ import (
 
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/renderer"
-	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/types"
+	"github.com/docker/app/types/settings"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -42,12 +42,9 @@ var (
 func Render(app *types.App, env map[string]string) (*composetypes.Config, error) {
 	// prepend the app settings to the argument settings
 	// load the settings into a struct
-	fileSettings, err := settings.LoadMultiple(app.Settings())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load settings")
-	}
+	fileSettings := app.Settings()
 	// inject our metadata
-	metaPrefixed, err := settings.Load(app.Metadata(), settings.WithPrefix("app"))
+	metaPrefixed, err := settings.Load(app.MetadataRaw(), settings.WithPrefix("app"))
 	if err != nil {
 		return nil, err
 	}

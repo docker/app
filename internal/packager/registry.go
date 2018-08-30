@@ -8,10 +8,8 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/pkg/resto"
 	"github.com/docker/app/types"
-	"github.com/docker/app/types/metadata"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -70,14 +68,11 @@ func Pull(repotag string, outputDir string) (string, error) {
 // Push pushes an app to a registry. Returns the image digest.
 func Push(app *types.App, namespace, tag string) (string, error) {
 	payload := make(map[string]string)
-	payload[internal.MetadataFileName] = string(app.Metadata())
+	payload[internal.MetadataFileName] = string(app.MetadataRaw())
 	payload[internal.ComposeFileName] = string(app.Composes()[0])
-	payload[internal.SettingsFileName] = string(app.Settings()[0])
+	payload[internal.SettingsFileName] = string(app.SettingsRaw()[0])
 	if namespace == "" || tag == "" {
-		var metadata metadata.AppMetadata
-		if err := yaml.Unmarshal(app.Metadata(), &metadata); err != nil {
-			return "", errors.Wrap(err, "failed to parse application metadata")
-		}
+		metadata := app.Metadata()
 		if namespace == "" {
 			namespace = metadata.Namespace
 		}

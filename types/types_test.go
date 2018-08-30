@@ -13,10 +13,13 @@ import (
 )
 
 const (
-	yaml = `version: "3.0"
+	validMeta = `name: test-app
+version: 0.1.0`
+	validCompose = `version: "3.0"
 services:
   web:
     image: nginx`
+	validSettings = `foo: bar`
 )
 
 func TestNewApp(t *testing.T) {
@@ -27,18 +30,18 @@ func TestNewApp(t *testing.T) {
 
 func TestNewAppFromDefaultFiles(t *testing.T) {
 	dir := fs.NewDir(t, "my-app",
-		fs.WithFile(internal.MetadataFileName, "foo"),
-		fs.WithFile(internal.SettingsFileName, "foo=bar"),
-		fs.WithFile(internal.ComposeFileName, yaml),
+		fs.WithFile(internal.MetadataFileName, validMeta),
+		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ComposeFileName, validCompose),
 	)
 	defer dir.Remove()
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.Settings(), 1))
-	assertContentIs(t, app.Settings()[0], "foo=bar")
+	assert.Assert(t, is.Len(app.SettingsRaw(), 1))
+	assertContentIs(t, app.SettingsRaw()[0], `foo: bar`)
 	assert.Assert(t, is.Len(app.Composes(), 1))
-	assertContentIs(t, app.Composes()[0], yaml)
-	assertContentIs(t, app.Metadata(), "foo")
+	assertContentIs(t, app.Composes()[0], validCompose)
+	assertContentIs(t, app.MetadataRaw(), validMeta)
 }
 
 func TestNewAppWithOpError(t *testing.T) {
@@ -68,23 +71,23 @@ func TestWithSettingsFilesError(t *testing.T) {
 
 func TestWithSettingsFiles(t *testing.T) {
 	dir := fs.NewDir(t, "settings",
-		fs.WithFile("my-settings-file", "foo"),
+		fs.WithFile("my-settings-file", validSettings),
 	)
 	defer dir.Remove()
 	app := &App{Path: "my-app"}
 	err := WithSettingsFiles(dir.Join("my-settings-file"))(app)
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.Settings(), 1))
-	assertContentIs(t, app.Settings()[0], "foo")
+	assert.Assert(t, is.Len(app.SettingsRaw(), 1))
+	assertContentIs(t, app.SettingsRaw()[0], validSettings)
 }
 
 func TestWithSettings(t *testing.T) {
-	r := strings.NewReader("foo")
+	r := strings.NewReader(validSettings)
 	app := &App{Path: "my-app"}
 	err := WithSettings(r)(app)
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.Settings(), 1))
-	assertContentIs(t, app.Settings()[0], "foo")
+	assert.Assert(t, is.Len(app.SettingsRaw(), 1))
+	assertContentIs(t, app.SettingsRaw()[0], validSettings)
 }
 
 func TestWithComposeFilesError(t *testing.T) {
@@ -95,23 +98,23 @@ func TestWithComposeFilesError(t *testing.T) {
 
 func TestWithComposeFiles(t *testing.T) {
 	dir := fs.NewDir(t, "composes",
-		fs.WithFile("my-compose-file", yaml),
+		fs.WithFile("my-compose-file", validCompose),
 	)
 	defer dir.Remove()
 	app := &App{Path: "my-app"}
 	err := WithComposeFiles(dir.Join("my-compose-file"))(app)
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(app.Composes(), 1))
-	assertContentIs(t, app.Composes()[0], yaml)
+	assertContentIs(t, app.Composes()[0], validCompose)
 }
 
 func TestWithComposes(t *testing.T) {
-	r := strings.NewReader(yaml)
+	r := strings.NewReader(validCompose)
 	app := &App{Path: "my-app"}
 	err := WithComposes(r)(app)
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(app.Composes(), 1))
-	assertContentIs(t, app.Composes()[0], yaml)
+	assertContentIs(t, app.Composes()[0], validCompose)
 }
 
 func TestMetadataFileError(t *testing.T) {
@@ -122,25 +125,59 @@ func TestMetadataFileError(t *testing.T) {
 
 func TestMetadataFile(t *testing.T) {
 	dir := fs.NewDir(t, "metadata",
-		fs.WithFile("my-metadata-file", "foo"),
+		fs.WithFile("my-metadata-file", validMeta),
 	)
 	defer dir.Remove()
 	app := &App{Path: "my-app"}
 	err := MetadataFile(dir.Join("my-metadata-file"))(app)
 	assert.NilError(t, err)
-	assert.Assert(t, app.Metadata() != nil)
-	assertContentIs(t, app.Metadata(), "foo")
+	assert.Assert(t, app.MetadataRaw() != nil)
+	assertContentIs(t, app.MetadataRaw(), validMeta)
 }
 
 func TestMetadata(t *testing.T) {
-	r := strings.NewReader("foo")
+	r := strings.NewReader(validMeta)
 	app := &App{Path: "my-app"}
 	err := Metadata(r)(app)
 	assert.NilError(t, err)
-	assertContentIs(t, app.Metadata(), "foo")
+	assertContentIs(t, app.MetadataRaw(), validMeta)
 }
 
 func assertContentIs(t *testing.T, data []byte, expected string) {
 	t.Helper()
 	assert.Assert(t, is.Equal(string(data), expected))
+}
+
+func TestValidateBrokenMetadata(t *testing.T) {
+	r := strings.NewReader(`#version: 0.1.0-missing
+name: _INVALID-name
+namespace: myHubUsername
+maintainers:
+    - name: user
+      email: user@email.com
+    - name: user2
+    - name: bad-user
+      email: bad-email
+unknown: property`)
+	app := &App{Path: "my-app"}
+	err := Metadata(r)(app)
+	assert.Error(t, err, `failed to validate metadata:
+- maintainers.2.email: Does not match format 'email'
+- name: Does not match format 'hostname'
+- version: version is required`)
+}
+
+func TestValidateBrokenSettings(t *testing.T) {
+	metadata := strings.NewReader(`version: "0.1"
+name: myname`)
+	composeFile := strings.NewReader(`version: "3.6"`)
+	brokenSettings := strings.NewReader(`my-settings:
+    1: toto`)
+	app := &App{Path: "my-app"}
+	err := Metadata(metadata)(app)
+	assert.NilError(t, err)
+	err = WithComposes(composeFile)(app)
+	assert.NilError(t, err)
+	err = WithSettings(brokenSettings)(app)
+	assert.ErrorContains(t, err, `Non-string key in my-settings: 1`)
 }

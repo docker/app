@@ -6,8 +6,8 @@ import (
 
 // Maintainer represents one of the apps's maintainers
 type Maintainer struct {
-	Name  string
-	Email string
+	Name  string `json:"name"`
+	Email string `json:"email,omitempty"`
 }
 
 // Maintainers is a list of maintainers
@@ -33,12 +33,12 @@ func (m Maintainer) String() string {
 
 // AppMetadata is the format of the data found inside the metadata.yml file
 type AppMetadata struct {
-	Version     string
-	Name        string
-	Description string
-	Namespace   string
-	Maintainers Maintainers
-	Parents     Parents
+	Version     string      `json:"version"`
+	Name        string      `json:"name"`
+	Description string      `json:"description,omitempty"`
+	Namespace   string      `json:"namespace,omitempty"`
+	Maintainers Maintainers `json:"maintainers,omitempty"`
+	Parents     Parents     `yaml:",omitempty" json:"parents,omitempty"`
 }
 
 // Parents is a list of ParentMetadata items
@@ -46,10 +46,10 @@ type Parents []ParentMetadata
 
 // ParentMetadata contains historical data of forked packages
 type ParentMetadata struct {
-	Name        string
-	Namespace   string
-	Version     string
-	Maintainers Maintainers
+	Name        string      `json:"name"`
+	Namespace   string      `json:"namespace,omitempty"`
+	Version     string      `json:"version"`
+	Maintainers Maintainers `json:"maintainers,omitempty"`
 }
 
 // Modifier is a function signature that takes and returns an AppMetadata object

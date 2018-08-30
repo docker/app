@@ -13,12 +13,12 @@ import (
 	"github.com/docker/app/internal/helm/templateconversion"
 	"github.com/docker/app/internal/helm/templateloader"
 	"github.com/docker/app/internal/helm/templatev1beta2"
-	"github.com/docker/app/internal/settings"
 	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
+	"github.com/docker/app/types/settings"
 	"github.com/docker/cli/cli/command/stack/kubernetes"
 	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/kubernetes/compose/v1beta1"
@@ -49,8 +49,8 @@ func Helm(app *types.App, env map[string]string, shouldRender bool, stackVersion
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return errors.Wrap(err, "failed to create Chart directory")
 	}
-	err := makeChart(app.Metadata(), targetDir)
-	if err != nil {
+	meta := app.Metadata()
+	if err := makeChart(&meta, targetDir); err != nil {
 		return err
 	}
 	if shouldRender {
@@ -70,8 +70,7 @@ func Helm(app *types.App, env map[string]string, shouldRender bool, stackVersion
 	for k := range vars {
 		variables = append(variables, k)
 	}
-	err = makeStack(app.Name, targetDir, data, stackVersion)
-	if err != nil {
+	if err := makeStack(app.Name, targetDir, data, stackVersion); err != nil {
 		return err
 	}
 	return makeValues(app, targetDir, env, variables)
@@ -80,11 +79,8 @@ func Helm(app *types.App, env map[string]string, shouldRender bool, stackVersion
 // makeValues updates helm values.yaml with used variables from settings and env
 func makeValues(app *types.App, targetDir string, env map[string]string, variables []string) error {
 	// merge our variables into Values.yaml
-	s, err := settings.LoadMultiple(app.Settings())
-	if err != nil {
-		return err
-	}
-	metaPrefixed, err := settings.Load(app.Metadata(), settings.WithPrefix("app"))
+	s := app.Settings()
+	metaPrefixed, err := settings.Load(app.MetadataRaw(), settings.WithPrefix("app"))
 	if err != nil {
 		return err
 	}
@@ -210,13 +206,8 @@ func helmRender(app *types.App, targetDir string, env map[string]string, stackVe
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
-func makeChart(data []byte, targetDir string) error {
-	var meta metadata.AppMetadata
-	err := yaml.Unmarshal(data, &meta)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse application metadata")
-	}
-	hmeta, err := toHelmMeta(&meta)
+func makeChart(meta *metadata.AppMetadata, targetDir string) error {
+	hmeta, err := toHelmMeta(meta)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert application metadata")
 	}
