@@ -250,7 +250,7 @@ Options:
   -v, --version            Print version information
 
 Commands:
-  completion  Generates bash completion scripts
+  completion  Generates completion scripts for the specified shell (bash or zsh)
   deploy      Deploy or update an application
   fork        Create a fork of an existing application to be modified
   helm        Generate a Helm chart
@@ -264,4 +264,29 @@ Commands:
   version     Print version information
 
 Run 'docker-app COMMAND --help' for more information on a command.
+```
+
+## Shell completion
+
+### Bash
+
+Load the docker-app completion code for bash into the current shell:
+```sh
+$ source <(docker-app completion bash)
+```
+Set the docker-app completion code for bash to autoload on startup in your ~/.bashrc, ~/.profile or ~/.bash_profile:
+```sh
+source <(docker-app completion bash)
+```
+**Note**: `bash-completion` is needed.
+
+### Zsh
+
+Load the docker-app completion code for zsh into the current shell
+```sh
+$ source <(docker-app completion zsh)
+```
+Set the docker-app completion code for zsh to autoload on startup in your ~/.zshrc
+```sh
+source <(docker-app completion zsh)
 ```
