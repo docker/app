@@ -1,16 +1,12 @@
-## Ratio (not up to date)
+List of supported features, depending on the Docker Compose version.
 
-| Version | Docker   | %     | % of major |
-|---------|----------|-------|------------|
-| 3.6     | 18.02.0+ | -     | -          |
-| 3.5     | 17.12.0+ | -     | -          |
-| 3.4     | 17.09.0+ | 0.58  | 2.51       |
-| 3.3     | 17.06.0+ | 1.53  | 6.63       |
-| 3.2     | 17.04.0+ | 1.01  | 4.40       |
-| 3.1     | 1.13.1+  | 1.48  | 6.41       |
-| 3.0     | 1.13.0+  | 18.51 | 80.03      |
-| 2.1     | 1.12.0+  | 3.06  | 6.20       |
-| 2.0     | 1.10.0+  | 46.40 | 93.80      |
+Legend:
+```
+- [Y]: Supported
+- [ ]: Not supported
+- [P]: Partially supported
+- [?]: To be investigate
+```
 
 ## docker stack deploy
 
