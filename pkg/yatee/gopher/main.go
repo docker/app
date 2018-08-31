@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/docker/app/internal/yatee"
+	"github.com/docker/app/pkg/yatee"
 	"github.com/gopherjs/gopherjs/js"
 )
 

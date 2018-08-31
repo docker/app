@@ -7,7 +7,7 @@ import (
 
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/app/internal/yaml"
-	"github.com/docker/app/internal/yatee"
+	"github.com/docker/app/pkg/yatee"
 	"github.com/pkg/errors"
 )
 
