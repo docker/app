@@ -5,7 +5,7 @@ Legend:
 - [Y]: Supported
 - [ ]: Not supported
 - [P]: Partially supported
-- [?]: To be investigate
+- [?]: To be investigated
 ```
 
 ## docker stack deploy
@@ -135,7 +135,7 @@ Legend:
 |   -- name                    |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 | - working_dir                |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 
-## Kamoulox (and HELM)
+## Compose for Kubernetes.
 
 | Features                     | 3.6 | 3.5 | 3.4 | 3.3 | 3.2 | 3.1 | 3.0 |
 |------------------------------|-----|-----|-----|-----|-----|-----|-----|
