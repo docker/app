@@ -136,8 +136,7 @@ services:
 }
 
 func TestValidateBrokenComposeFile(t *testing.T) {
-	metadata := strings.NewReader(`version: "0.1"
-name: myname`)
+	metadata := strings.NewReader(validMeta)
 	brokenComposeFile := strings.NewReader(`version: "3.6"
 unknown-property: value`)
 	app := &types.App{Path: "my-app"}
@@ -151,8 +150,7 @@ unknown-property: value`)
 }
 
 func TestValidateRenderedApplication(t *testing.T) {
-	metadata := strings.NewReader(`version: "0.1"
-name: myname`)
+	metadata := strings.NewReader(validMeta)
 	composeFile := strings.NewReader(`
 version: "3.6"
 services:
