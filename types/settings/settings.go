@@ -100,9 +100,9 @@ func assignKey(m map[string]interface{}, keys []string, value interface{}) error
 		return nil
 	}
 	if v, present := m[key]; !present {
-		m[key] = Settings{}
-	} else if _, isMap := v.(Settings); !isMap {
+		m[key] = map[string]interface{}{}
+	} else if _, isMap := v.(map[string]interface{}); !isMap {
 		return errors.Errorf("key %s already present and not a map (%T)", key, v)
 	}
-	return assignKey(m[key].(Settings), ks, value)
+	return assignKey(m[key].(map[string]interface{}), ks, value)
 }
