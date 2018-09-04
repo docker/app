@@ -3,11 +3,17 @@ package e2e
 import (
 	"flag"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
 var (
-	e2ePath = flag.String("e2e-path", ".", "Set path to the e2e directory")
+	e2ePath         = flag.String("e2e-path", ".", "Set path to the e2e directory")
+	dockerApp       = os.Getenv("DOCKERAPP_BINARY")
+	hasExperimental = false
+	renderers       = ""
 )
 
 func TestMain(m *testing.M) {
@@ -15,5 +21,20 @@ func TestMain(m *testing.M) {
 	if err := os.Chdir(*e2ePath); err != nil {
 		panic(err)
 	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	if dockerApp == "" {
+		dockerApp = filepath.Join(cwd, "../bin/docker-app")
+	}
+	cmd := exec.Command(dockerApp, "version")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		panic(err)
+	}
+	hasExperimental = strings.Contains(string(output), "Experimental: on")
+	i := strings.Index(string(output), "Renderers")
+	renderers = string(output)[i+10:]
 	os.Exit(m.Run())
 }

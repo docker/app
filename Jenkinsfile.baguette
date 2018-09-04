@@ -93,6 +93,9 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+			    environment {
+				DOCKERAPP_BINARY = './bin/docker-app-linux'
+			    }
                             sh './docker-app-e2e-linux --e2e-path=e2e'
                         }
                     }
@@ -115,6 +118,9 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+			    environment {
+				DOCKERAPP_BINARY = './bin/docker-app-darwin'
+			    }
                             sh './docker-app-e2e-darwin --e2e-path=e2e'
                         }
                     }
@@ -137,6 +143,9 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+			    environment {
+				DOCKERAPP_BINARY = './bin/docker-app-windows.exe'
+			    }
                             bat 'docker-app-e2e-windows.exe --e2e-path=e2e'
                         }
                     }

@@ -120,6 +120,9 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+			    environment {
+				DOCKERAPP_BINARY = './bin/docker-app-linux'
+			    }
                             sh './docker-app-e2e-linux --e2e-path=e2e'
                         }
                     }

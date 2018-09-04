@@ -15,6 +15,7 @@ import (
 	"gotest.tools/fs"
 	"gotest.tools/golden"
 	"gotest.tools/icmd"
+	"gotest.tools/skip"
 )
 
 const (
@@ -32,7 +33,6 @@ services:
 )
 
 func TestRenderBinary(t *testing.T) {
-	getDockerAppBinary(t)
 	apps, err := ioutil.ReadDir("render")
 	assert.NilError(t, err, "unable to get apps")
 	for _, app := range apps {
@@ -70,7 +70,6 @@ func TestRenderBinary(t *testing.T) {
 }
 
 func TestInitBinary(t *testing.T) {
-	getDockerAppBinary(t)
 	composeData := `version: "3.2"
 services:
   nginx:
@@ -103,17 +102,12 @@ maintainers:
 	dirName := internal.DirNameFromAppName(testAppName)
 	defer os.RemoveAll(dirName)
 
-	args := []string{
-		"init",
-		testAppName,
-		"-c",
-		dir.Join(internal.ComposeFileName),
-		"-d",
-		"my cool app",
+	icmd.RunCommand(dockerApp, "init", testAppName,
+		"-c", dir.Join(internal.ComposeFileName),
+		"-d", "my cool app",
 		"-m", "bob",
 		"-m", "joe:joe@joe.com",
-	}
-	AssertCommand(t, dockerApp, args...)
+	).Assert(t, icmd.Success)
 	manifest := fs.Expected(
 		t,
 		fs.WithMode(0755),
@@ -124,88 +118,66 @@ maintainers:
 	assert.Assert(t, fs.Equal(dirName, manifest))
 
 	// validate metadata with JSON Schema
-	AssertCommand(t, dockerApp, "validate", testAppName)
+	icmd.RunCommand(dockerApp, "validate", testAppName).Assert(t, icmd.Success)
 
 	// test single-file init
-	args = []string{
-		"init",
-		"tac",
-		"-c",
-		dir.Join(internal.ComposeFileName),
-		"-d",
-		"my cool app",
+	icmd.RunCommand(dockerApp, "init", "tac",
+		"-c", dir.Join(internal.ComposeFileName),
+		"-d", "my cool app",
 		"-m", "bob",
 		"-m", "joe:joe@joe.com",
 		"-s",
-	}
-	AssertCommand(t, dockerApp, args...)
+	).Assert(t, icmd.Success)
 	defer os.Remove("tac.dockerapp")
 	appData, err := ioutil.ReadFile("tac.dockerapp")
 	assert.NilError(t, err)
 	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
 	// Check various commands work on single-file app package
-	AssertCommand(t, dockerApp, "inspect", "tac")
-	AssertCommand(t, dockerApp, "render", "tac")
+	icmd.RunCommand(dockerApp, "inspect", "tac").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "render", "tac").Assert(t, icmd.Success)
 }
 
 func TestDetectAppBinary(t *testing.T) {
-	dockerApp, _ := getDockerAppBinary(t)
 	// cwd = e2e
-	AssertCommand(t, dockerApp, "inspect")
+	icmd.RunCommand(dockerApp, "inspect").Assert(t, icmd.Success)
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
 	assert.NilError(t, os.Chdir("helm.dockerapp"))
 	defer func() { assert.NilError(t, os.Chdir(cwd)) }()
-	AssertCommand(t, dockerApp, "inspect")
-	AssertCommand(t, dockerApp, "inspect", ".")
+	icmd.RunCommand(dockerApp, "inspect").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", ".").Assert(t, icmd.Success)
 	assert.NilError(t, os.Chdir(filepath.Join(cwd, "render")))
-	AssertCommandFailureOutput(t, "inspect-multiple-apps.golden", dockerApp, "inspect")
+	result := icmd.RunCommand(dockerApp, "inspect")
+	result.Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Err:      "Error: multiple applications found in current directory, specify the application name on the command line",
+	})
 }
 
 func TestPackBinary(t *testing.T) {
-	dockerApp, hasExperimental := getDockerAppBinary(t)
-	if !hasExperimental {
-		t.Skip("experimental mode needed for this test")
-	}
+	skip.If(t, !hasExperimental, "experimental mode needed for this test")
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	assert.NilError(t, err)
 	defer os.RemoveAll(tempDir)
-	result := icmd.RunCommand(dockerApp, "pack", "helm", "-o", filepath.Join(tempDir, "test.dockerapp"))
-	result.Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "pack", "helm", "-o", filepath.Join(tempDir, "test.dockerapp")).Assert(t, icmd.Success)
 	// check that our commands run on the packed version
-	result = icmd.RunCommand(dockerApp, "inspect", filepath.Join(tempDir, "test"))
-	result.Assert(t, icmd.Success)
-	assert.Assert(t, strings.Contains(result.Stdout(), "myapp"), "got: %s", result.Stdout())
-	result = icmd.RunCommand(dockerApp, "render", filepath.Join(tempDir, "test"))
-	result.Assert(t, icmd.Success)
-	assert.Assert(t, strings.Contains(result.Stdout(), "nginx"))
+	icmd.RunCommand(dockerApp, "inspect", filepath.Join(tempDir, "test")).Assert(t, icmd.Expected{
+		Out: "myapp",
+	})
+	icmd.RunCommand(dockerApp, "render", filepath.Join(tempDir, "test")).Assert(t, icmd.Expected{
+		Out: "nginx",
+	})
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
 	assert.NilError(t, os.Chdir(tempDir))
 	defer func() { assert.NilError(t, os.Chdir(cwd)) }()
-	result = icmd.RunCommand(dockerApp, "helm", "test")
-	result.Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "helm", "test").Assert(t, icmd.Success)
 	_, err = os.Stat("test.chart/Chart.yaml")
 	assert.NilError(t, err)
 	assert.NilError(t, os.Mkdir("output", 0755))
-	result = icmd.RunCommand(dockerApp, "unpack", "test", "-o", "output")
-	result.Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "unpack", "test", "-o", "output").Assert(t, icmd.Success)
 	_, err = os.Stat("output/test.dockerapp/docker-compose.yml")
 	assert.NilError(t, err)
-}
-
-func runHelmCommand(t *testing.T, args ...string) *fs.Dir {
-	t.Helper()
-	dockerApp, _ := getDockerAppBinary(t)
-	abs, err := filepath.Abs(".")
-	assert.NilError(t, err)
-	dir := fs.NewDir(t, t.Name(), fs.FromDir(abs))
-	result := icmd.RunCmd(icmd.Cmd{
-		Command: append([]string{dockerApp}, args...),
-		Dir:     dir.Path(),
-	})
-	result.Assert(t, icmd.Success)
-	return dir
 }
 
 func TestHelmBinary(t *testing.T) {
@@ -233,70 +205,65 @@ func TestHelmV1Beta1Binary(t *testing.T) {
 }
 
 func TestHelmInvalidStackVersionBinary(t *testing.T) {
-	dockerApp, _ := getDockerAppBinary(t)
-	AssertCommandFailureOutput(t, "invalid-stack-version.golden", dockerApp, "helm", "helm", "--stack-version", "foobar")
+	icmd.RunCommand(dockerApp, "helm", "helm", "--stack-version", "foobar").Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Err:      `Error: invalid stack version "foobar" (accepted values: v1beta1, v1beta2)`,
+	})
 }
 
 func TestSplitMergeBinary(t *testing.T) {
-	dockerApp, _ := getDockerAppBinary(t)
-	app := "render/envvariables"
-	AssertCommand(t, dockerApp, "merge", app, "-o", "remerged.dockerapp")
+	icmd.RunCommand(dockerApp, "merge", "render/envvariables", "-o", "remerged.dockerapp").Assert(t, icmd.Success)
 	defer os.Remove("remerged.dockerapp")
 	// test that inspect works on single-file
-	AssertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "remerged")
+	result := icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
+	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 	// split it
-	AssertCommand(t, dockerApp, "split", "remerged", "-o", "split.dockerapp")
+	icmd.RunCommand(dockerApp, "split", "remerged", "-o", "split.dockerapp").Assert(t, icmd.Success)
 	defer os.RemoveAll("split.dockerapp")
-	AssertCommandOutput(t, "envvariables-inspect.golden", dockerApp, "inspect", "split")
+	result = icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
+	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 	// test inplace
-	AssertCommand(t, dockerApp, "merge", "split")
-	AssertCommand(t, dockerApp, "split", "split")
+	icmd.RunCommand(dockerApp, "merge", "split")
+	icmd.RunCommand(dockerApp, "split", "split")
 }
 
 func TestURLBinary(t *testing.T) {
 	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
-	dockerApp, _ := getDockerAppBinary(t)
-	AssertCommandOutput(t, "helloworld-inspect.golden", dockerApp, "inspect", url)
+	result := icmd.RunCommand(dockerApp, "inspect", url).Assert(t, icmd.Success)
+	golden.Assert(t, result.Combined(), "helloworld-inspect.golden")
 }
 
 func TestImageBinary(t *testing.T) {
-	dockerApp, _ := getDockerAppBinary(t)
 	r := startRegistry(t)
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
 	// push to a registry
-	AssertCommand(t, dockerApp, "push", "--namespace", registry+"/myuser", "render/envvariables")
-	AssertCommand(t, dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "render/envvariables")
-	AssertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp:0.1.0")
-	AssertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp")
-	AssertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables")
-	AssertCommand(t, dockerApp, "inspect", registry+"/myuser/envvariables:0.1.0")
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "render/envvariables").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "render/envvariables").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp:0.1.0").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables:0.1.0").Assert(t, icmd.Success)
 	// push a single-file app to a registry
 	dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
 	defer dir.Remove()
-	AssertCommand(t, dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp"))
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
 }
 
 func TestForkBinary(t *testing.T) {
-	dockerApp, _ := getDockerAppBinary(t)
 	r := startRegistry(t)
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
-	AssertCommand(t, dockerApp, "push", "--namespace", registry+"/acmecorp", "fork/simple")
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", "fork/simple").Assert(t, icmd.Success)
 
-	tempDir, err := ioutil.TempDir("", "dockerapptest")
-	assert.NilError(t, err)
-	defer os.RemoveAll(tempDir)
+	tempDir := fs.NewDir(t, "dockerapptest")
+	defer tempDir.Remove()
 
-	AssertCommand(t, dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil", "-p", tempDir, "-m", "Remilia Scarlet:remilia@acmecorp.cool")
-	metadata, err := ioutil.ReadFile(filepath.Join(tempDir, "scarlet.devil.dockerapp", "metadata.yml"))
-	assert.NilError(t, err)
-
+	icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil", "-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
+	metadata := golden.Get(t, tempDir.Join("scarlet.devil.dockerapp", "metadata.yml"))
 	golden.Assert(t, string(metadata), "expected-fork-metadata.golden")
 
-	AssertCommand(t, dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "-p", tempDir, "-m", "Remilia Scarlet:remilia@acmecorp.cool")
-	metadata2, err := ioutil.ReadFile(filepath.Join(tempDir, "simple.dockerapp", "metadata.yml"))
-	assert.NilError(t, err)
-
+	icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
+	metadata2 := golden.Get(t, tempDir.Join("simple.dockerapp", "metadata.yml"))
 	golden.Assert(t, string(metadata2), "expected-fork-metadata-no-rename.golden")
 }
