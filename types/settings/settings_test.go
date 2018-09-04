@@ -47,12 +47,12 @@ func TestFromFlatten(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Check(t, is.DeepEqual(s, Settings{
 		"foo": "bar",
-		"bar": Settings{
+		"bar": map[string]interface{}{
 			"baz":  "banana",
 			"port": 80,
 		},
-		"baz": Settings{
-			"biz": Settings{
+		"baz": map[string]interface{}{
+			"biz": map[string]interface{}{
 				"a": 1,
 				"b": 2,
 			},

@@ -106,12 +106,9 @@ back:
   image: wrong
 `)
 	app := &types.App{Path: "my-app"}
-	err := types.Metadata(metadata)(app)
-	assert.NilError(t, err)
-	err = types.WithComposes(composeFile)(app)
-	assert.NilError(t, err)
-	err = types.WithSettings(settings)(app)
-	assert.NilError(t, err)
+	assert.NilError(t, types.Metadata(metadata)(app))
+	assert.NilError(t, types.WithComposes(composeFile)(app))
+	assert.NilError(t, types.WithSettings(settings)(app))
 	userSettings := map[string]string{
 		"front.image": "nginx",
 		"front.port":  "4242",
@@ -132,6 +129,33 @@ services:
       target: 80
       published: 4242
       protocol: tcp
+`)
+}
+
+func TestRenderWithoutDefaultSettings(t *testing.T) {
+	metadata := strings.NewReader(validMeta)
+	composeFile := strings.NewReader(`
+version: "3.6"
+services:
+  front:
+    image: ${front.image}
+`)
+	settings := strings.NewReader("")
+	app := &types.App{Path: "my-app"}
+	assert.NilError(t, types.Metadata(metadata)(app))
+	assert.NilError(t, types.WithComposes(composeFile)(app))
+	assert.NilError(t, types.WithSettings(settings)(app))
+	userSettings := map[string]string{
+		"front.image": "nginx",
+	}
+	c, err := Render(app, userSettings)
+	assert.NilError(t, err)
+	s, err := yaml.Marshal(c)
+	assert.NilError(t, err)
+	assert.Equal(t, string(s), `version: "3.6"
+services:
+  front:
+    image: nginx
 `)
 }
 
