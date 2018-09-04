@@ -31,7 +31,7 @@ services:
 # This section contains the default values for your application settings.`
 )
 
-func TestRenderTemplatesBinary(t *testing.T) {
+func TestRenderTemplates(t *testing.T) {
 	skip.If(t, !hasExperimental, "experimental mode needed for this test")
 	appsPath := filepath.Join("testdata", "templates")
 	apps, err := ioutil.ReadDir(appsPath)
@@ -46,7 +46,7 @@ func TestRenderTemplatesBinary(t *testing.T) {
 	}
 }
 
-func TestRenderBinary(t *testing.T) {
+func TestRender(t *testing.T) {
 	appsPath := filepath.Join("testdata", "render")
 	apps, err := ioutil.ReadDir(appsPath)
 	assert.NilError(t, err, "unable to get apps")
@@ -76,7 +76,7 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	}
 }
 
-func TestInitBinary(t *testing.T) {
+func TestInit(t *testing.T) {
 	composeData := `version: "3.2"
 services:
   nginx:
@@ -144,7 +144,7 @@ maintainers:
 	icmd.RunCommand(dockerApp, "render", "tac").Assert(t, icmd.Success)
 }
 
-func TestDetectAppBinary(t *testing.T) {
+func TestDetectApp(t *testing.T) {
 	// cwd = e2e
 	dir := fs.NewDir(t, "detect-app-binary",
 		fs.WithDir("helm.dockerapp", fs.FromDir("testdata/helm.dockerapp")),
@@ -170,7 +170,7 @@ func TestDetectAppBinary(t *testing.T) {
 	})
 }
 
-func TestPackBinary(t *testing.T) {
+func TestPack(t *testing.T) {
 	skip.If(t, !hasExperimental, "experimental mode needed for this test")
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	assert.NilError(t, err)
@@ -196,13 +196,13 @@ func TestPackBinary(t *testing.T) {
 	assert.NilError(t, err)
 }
 
-func TestHelmBinary(t *testing.T) {
-	t.Run("default", testHelmBinary(""))
-	t.Run("v1beta1", testHelmBinary("v1beta1"))
-	t.Run("v1beta2", testHelmBinary("v1beta2"))
+func TestHelm(t *testing.T) {
+	t.Run("default", testHelm(""))
+	t.Run("v1beta1", testHelm("v1beta1"))
+	t.Run("v1beta2", testHelm("v1beta2"))
 }
 
-func testHelmBinary(version string) func(*testing.T) {
+func testHelm(version string) func(*testing.T) {
 	return func(t *testing.T) {
 		dir := fs.NewDir(t, "testHelmBinary", fs.FromDir("testdata"))
 		defer dir.Remove()
@@ -225,14 +225,14 @@ func testHelmBinary(version string) func(*testing.T) {
 	}
 }
 
-func TestHelmInvalidStackVersionBinary(t *testing.T) {
+func TestHelmInvalidStackVersion(t *testing.T) {
 	icmd.RunCommand(dockerApp, "helm", "testdata/helm", "--stack-version", "foobar").Assert(t, icmd.Expected{
 		ExitCode: 1,
 		Err:      `Error: invalid stack version "foobar" (accepted values: v1beta1, v1beta2)`,
 	})
 }
 
-func TestSplitMergeBinary(t *testing.T) {
+func TestSplitMerge(t *testing.T) {
 	icmd.RunCommand(dockerApp, "merge", "testdata/render/envvariables/my.dockerapp", "-o", "remerged.dockerapp").Assert(t, icmd.Success)
 	defer os.Remove("remerged.dockerapp")
 	// test that inspect works on single-file
@@ -248,7 +248,7 @@ func TestSplitMergeBinary(t *testing.T) {
 	icmd.RunCommand(dockerApp, "split", "split")
 }
 
-func TestURLBinary(t *testing.T) {
+func TestURL(t *testing.T) {
 	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
 	result := icmd.RunCommand(dockerApp, "inspect", url).Assert(t, icmd.Success)
 	golden.Assert(t, result.Combined(), "helloworld-inspect.golden")
@@ -258,11 +258,11 @@ func TestWithRegistry(t *testing.T) {
 	r := startRegistry(t)
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
-	t.Run("image", testImageBinary(registry))
-	t.Run("fork", testForkBinary(registry))
+	t.Run("image", testImage(registry))
+	t.Run("fork", testFork(registry))
 }
 
-func testImageBinary(registry string) func(*testing.T) {
+func testImage(registry string) func(*testing.T) {
 	return func(t *testing.T) {
 		// push to a registry
 		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
@@ -278,7 +278,7 @@ func testImageBinary(registry string) func(*testing.T) {
 	}
 }
 
-func testForkBinary(registry string) func(*testing.T) {
+func testFork(registry string) func(*testing.T) {
 	return func(t *testing.T) {
 		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", "testdata/fork/simple").Assert(t, icmd.Success)
 
