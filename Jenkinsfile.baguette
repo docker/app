@@ -85,7 +85,7 @@ pipeline {
                         label 'linux'
                     }
 		    environment {
-			DOCKERAPP_BINARY = './bin/docker-app-linux'
+			DOCKERAPP_BINARY = '../docker-app-linux'
 		    }
                     steps  {
                         dir('src/github.com/docker/app') {
@@ -110,7 +110,7 @@ pipeline {
                         label "mac"
                     }
 		    environment {
-			DOCKERAPP_BINARY = './bin/docker-app-darwin'
+			DOCKERAPP_BINARY = '../docker-app-darwin'
 		    }
                     steps {
                         dir('src/github.com/docker/app') {
@@ -135,7 +135,7 @@ pipeline {
                         label "windows"
                     }
 		    environment {
-			DOCKERAPP_BINARY = './bin/docker-app-windows.exe'
+			DOCKERAPP_BINARY = '../docker-app-windows.exe'
 		    }
                     steps {
                         dir('src/github.com/docker/app') {
