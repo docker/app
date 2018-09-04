@@ -111,6 +111,9 @@ pipeline {
                     agent {
                         label 'ubuntu-1604-aufs-edge'
                     }
+		    environment {
+			DOCKERAPP_BINARY = './bin/docker-app-linux'
+		    }
                     steps  {
                         dir('src/github.com/docker/app') {
                             unstash "binaries"
@@ -120,9 +123,6 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
-			    environment {
-				DOCKERAPP_BINARY = './bin/docker-app-linux'
-			    }
                             sh './docker-app-e2e-linux --e2e-path=e2e'
                         }
                     }
