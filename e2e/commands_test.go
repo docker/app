@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/docker/app/internal"
-
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 	"gotest.tools/golden"
