@@ -6,8 +6,14 @@ import (
 
 	"github.com/docker/app/types"
 	composetypes "github.com/docker/cli/cli/compose/types"
+	yaml "gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
+)
+
+const (
+	validMeta = `version: "0.1"
+name: my-app`
 )
 
 func TestRenderMissingValue(t *testing.T) {
@@ -78,6 +84,55 @@ func TestRenderEnabledFalse(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Check(t, is.Len(c.Services, 0))
 	}
+}
+
+func TestRenderUserSettings(t *testing.T) {
+	metadata := strings.NewReader(validMeta)
+	composeFile := strings.NewReader(`
+version: "3.6"
+services:
+  front:
+    image: ${front.image}
+    ports:
+     - "${front.port}:80"
+  back:
+    image: ${back.image}
+`)
+	settings := strings.NewReader(`
+front:
+  image: wrong
+  port: 8484
+back:
+  image: wrong
+`)
+	app := &types.App{Path: "my-app"}
+	err := types.Metadata(metadata)(app)
+	assert.NilError(t, err)
+	err = types.WithComposes(composeFile)(app)
+	assert.NilError(t, err)
+	err = types.WithSettings(settings)(app)
+	assert.NilError(t, err)
+	userSettings := map[string]string{
+		"front.image": "nginx",
+		"front.port":  "4242",
+		"back.image":  "myapp",
+	}
+	c, err := Render(app, userSettings)
+	assert.NilError(t, err)
+	s, err := yaml.Marshal(c)
+	assert.NilError(t, err)
+	assert.Equal(t, string(s), `version: "3.6"
+services:
+  back:
+    image: myapp
+  front:
+    image: nginx
+    ports:
+    - mode: ingress
+      target: 80
+      published: 4242
+      protocol: tcp
+`)
 }
 
 func TestValidateBrokenComposeFile(t *testing.T) {
