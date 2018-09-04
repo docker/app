@@ -184,27 +184,32 @@ func TestPackBinary(t *testing.T) {
 }
 
 func TestHelmBinary(t *testing.T) {
-	dir := runHelmCommand(t, "helm", "testdata/helm", "-s", "myapp.nginx_version=2")
-	defer dir.Remove()
-
-	chart, _ := ioutil.ReadFile(dir.Join("helm.chart/Chart.yaml"))
-	values, _ := ioutil.ReadFile(dir.Join("helm.chart/values.yaml"))
-	stack, _ := ioutil.ReadFile(dir.Join("helm.chart/templates/stack.yaml"))
-	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml", "chart file is wrong")
-	golden.Assert(t, string(values), "helm-expected.chart/values.yaml", "values file is wrong")
-	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack.yaml", "stack file is wrong")
+	t.Run("default", testHelmBinary(""))
+	t.Run("v1beta1", testHelmBinary("v1beta1"))
+	t.Run("v1beta2", testHelmBinary("v1beta2"))
 }
 
-func TestHelmV1Beta1Binary(t *testing.T) {
-	dir := runHelmCommand(t, "helm", "testdata/helm", "-s", "myapp.nginx_version=2", "--stack-version", "v1beta1")
-	defer dir.Remove()
+func testHelmBinary(version string) func(*testing.T) {
+	return func(t *testing.T) {
+		dir := fs.NewDir(t, "testHelmBinary", fs.FromDir("testdata"))
+		defer dir.Remove()
+		cmd := []string{dockerApp, "helm", "helm", "-s", "myapp.nginx_version=2"}
+		if version != "" {
+			cmd = append(cmd, "--stack-version", version)
+		}
+		icmd.RunCmd(icmd.Cmd{
+			Command: cmd,
+			Dir:     dir.Path(),
+		}).Assert(t, icmd.Success)
 
-	chart, _ := ioutil.ReadFile(dir.Join("helm.chart/Chart.yaml"))
-	values, _ := ioutil.ReadFile(dir.Join("helm.chart/values.yaml"))
-	stack, _ := ioutil.ReadFile(dir.Join("helm.chart/templates/stack.yaml"))
-	golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml", "chart file is wrong")
-	golden.Assert(t, string(values), "helm-expected.chart/values.yaml", "values file is wrong")
-	golden.Assert(t, string(stack), "helm-expected.chart/templates/stack-v1beta1.yaml", "stack file is wrong")
+		chart := golden.Get(t, dir.Join("helm.chart/Chart.yaml"))
+		values := golden.Get(t, dir.Join("helm.chart/values.yaml"))
+		stack := golden.Get(t, dir.Join("helm.chart/templates/stack.yaml"))
+		golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml", "chart file is wrong")
+		golden.Assert(t, string(values), "helm-expected.chart/values.yaml", "values file is wrong")
+		golden.Assert(t, string(stack), "helm-expected.chart/templates/stack"+version+".yaml", "stack file is wrong")
+
+	}
 }
 
 func TestHelmInvalidStackVersionBinary(t *testing.T) {
