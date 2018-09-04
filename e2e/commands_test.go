@@ -193,14 +193,14 @@ func TestPack(t *testing.T) {
 		Command: []string{dockerApp, "helm", "test"},
 		Dir:     tempDir,
 	}).Assert(t, icmd.Success)
-	_, err = os.Stat("test.chart/Chart.yaml")
+	_, err = os.Stat(filepath.Join(tempDir, "test.chart", "Chart.yaml"))
 	assert.NilError(t, err)
-	assert.NilError(t, os.Mkdir("output", 0755))
+	assert.NilError(t, os.Mkdir(filepath.Join(tempDir, "output"), 0755))
 	icmd.RunCmd(icmd.Cmd{
 		Command: []string{dockerApp, "unpack", "test", "-o", "output"},
 		Dir:     tempDir,
 	}).Assert(t, icmd.Success)
-	_, err = os.Stat("output/test.dockerapp/docker-compose.yml")
+	_, err = os.Stat(filepath.Join(tempDir, "output", "test.dockerapp", "docker-compose.yml"))
 	assert.NilError(t, err)
 }
 
