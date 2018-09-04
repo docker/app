@@ -241,37 +241,43 @@ func TestURLBinary(t *testing.T) {
 	golden.Assert(t, result.Combined(), "helloworld-inspect.golden")
 }
 
-func TestImageBinary(t *testing.T) {
+func TestWithRegistry(t *testing.T) {
 	r := startRegistry(t)
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
-	// push to a registry
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp:0.1.0").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables:0.1.0").Assert(t, icmd.Success)
-	// push a single-file app to a registry
-	dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
-	defer dir.Remove()
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
+	t.Run("fork", testImageBinary(registry))
+	t.Run("image", testForkBinary(registry))
 }
 
-func TestForkBinary(t *testing.T) {
-	r := startRegistry(t)
-	defer r.Stop(t)
-	registry := r.GetAddress(t)
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", "testdata/fork/simple").Assert(t, icmd.Success)
+func testImageBinary(registry string) func(*testing.T) {
+	return func(t *testing.T) {
+		// push to a registry
+		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables").Assert(t, icmd.Success)
+		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables").Assert(t, icmd.Success)
+		icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp:0.1.0").Assert(t, icmd.Success)
+		icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables.dockerapp").Assert(t, icmd.Success)
+		icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables").Assert(t, icmd.Success)
+		icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/envvariables:0.1.0").Assert(t, icmd.Success)
+		// push a single-file app to a registry
+		dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
+		defer dir.Remove()
+		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
+	}
+}
 
-	tempDir := fs.NewDir(t, "dockerapptest")
-	defer tempDir.Remove()
+func testForkBinary(registry string) func(*testing.T) {
+	return func(t *testing.T) {
+		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", "testdata/fork/simple").Assert(t, icmd.Success)
 
-	icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil", "-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
-	metadata := golden.Get(t, tempDir.Join("scarlet.devil.dockerapp", "metadata.yml"))
-	golden.Assert(t, string(metadata), "expected-fork-metadata.golden")
+		tempDir := fs.NewDir(t, "dockerapptest")
+		defer tempDir.Remove()
 
-	icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
-	metadata2 := golden.Get(t, tempDir.Join("simple.dockerapp", "metadata.yml"))
-	golden.Assert(t, string(metadata2), "expected-fork-metadata-no-rename.golden")
+		icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil", "-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
+		metadata := golden.Get(t, tempDir.Join("scarlet.devil.dockerapp", "metadata.yml"))
+		golden.Assert(t, string(metadata), "expected-fork-metadata.golden")
+
+		icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
+		metadata2 := golden.Get(t, tempDir.Join("simple.dockerapp", "metadata.yml"))
+		golden.Assert(t, string(metadata2), "expected-fork-metadata-no-rename.golden")
+	}
 }
