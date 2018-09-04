@@ -1,8 +1,14 @@
 myapp 0.1.0
+
 Maintained by: bearclaw <bearclaw@bearclaw.bearclaw>
 
-Setting              Default
--------              -------
+Service Replicas Ports Image
+------- -------- ----- -----
+test    1              alpine:latest
+
+Setting              Value
+-------              -----
 myapp.alpine_version latest
 myapp.command1       cat
 myapp.command2       foo
+myapp.command3       bar

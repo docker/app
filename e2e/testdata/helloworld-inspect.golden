@@ -1,9 +1,14 @@
 hello-world 0.1.0
+
 Maintained by: user <user@email.com>
 
 Hello, World!
 
-Setting Default
-------- -------
+Service Replicas Ports Image
+------- -------- ----- -----
+hello   1        8080  hashicorp/http-echo
+
+Setting Value
+------- -----
 port    8080
 text    Hello, World!

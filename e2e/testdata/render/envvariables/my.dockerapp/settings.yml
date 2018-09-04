@@ -2,3 +2,4 @@ myapp:
   alpine_version: latest
   command1: cat
   command2: foo
+  command3: bar

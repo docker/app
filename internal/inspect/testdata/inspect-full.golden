@@ -1,9 +1,26 @@
 foo 0.1.0
+
 Maintained by: foo <foo@bar.com>
 
 this is sparta !
 
-Setting Default
-------- -------
+Service Replicas Ports Image
+------- -------- ----- -----
+web     2        8080  nginx:latest
+
+Network
+-------
+my-network
+
+Volume
+------
+my-volume
+
+Secret
+------
+my-secret
+
+Setting Value
+------- -----
 port    8080
 text    hello
