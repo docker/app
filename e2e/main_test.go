@@ -28,6 +28,10 @@ func TestMain(m *testing.M) {
 	if dockerApp == "" {
 		dockerApp = filepath.Join(cwd, "../bin/docker-app")
 	}
+	dockerApp, err = filepath.Abs(dockerApp)
+	if err != nil {
+		panic(err)
+	}
 	cmd := exec.Command(dockerApp, "version")
 	output, err := cmd.CombinedOutput()
 	if err != nil {

@@ -154,16 +154,22 @@ func TestDetectApp(t *testing.T) {
 		),
 	)
 	defer dir.Remove()
-	cwd, err := os.Getwd()
-	assert.NilError(t, err)
-	assert.NilError(t, os.Chdir(dir.Path()))
-	defer func() { assert.NilError(t, os.Chdir(cwd)) }()
-	icmd.RunCommand(dockerApp, "inspect").Assert(t, icmd.Success)
-	assert.NilError(t, os.Chdir(dir.Join("helm.dockerapp")))
-	icmd.RunCommand(dockerApp, "inspect").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", ".").Assert(t, icmd.Success)
-	assert.NilError(t, os.Chdir(dir.Join("render")))
-	result := icmd.RunCommand(dockerApp, "inspect")
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerApp, "inspect"},
+		Dir:     dir.Path(),
+	}).Assert(t, icmd.Success)
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerApp, "inspect"},
+		Dir:     dir.Join("helm.dockerapp"),
+	}).Assert(t, icmd.Success)
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerApp, "inspect", "."},
+		Dir:     dir.Join("helm.dockerapp"),
+	}).Assert(t, icmd.Success)
+	result := icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerApp, "inspect"},
+		Dir:     dir.Join("render"),
+	})
 	result.Assert(t, icmd.Expected{
 		ExitCode: 1,
 		Err:      "Error: multiple applications found in current directory, specify the application name on the command line",
@@ -183,15 +189,17 @@ func TestPack(t *testing.T) {
 	icmd.RunCommand(dockerApp, "render", filepath.Join(tempDir, "test")).Assert(t, icmd.Expected{
 		Out: "nginx",
 	})
-	cwd, err := os.Getwd()
-	assert.NilError(t, err)
-	assert.NilError(t, os.Chdir(tempDir))
-	defer func() { assert.NilError(t, os.Chdir(cwd)) }()
-	icmd.RunCommand(dockerApp, "helm", "test").Assert(t, icmd.Success)
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerApp, "helm", "test"},
+		Dir:     tempDir,
+	}).Assert(t, icmd.Success)
 	_, err = os.Stat("test.chart/Chart.yaml")
 	assert.NilError(t, err)
 	assert.NilError(t, os.Mkdir("output", 0755))
-	icmd.RunCommand(dockerApp, "unpack", "test", "-o", "output").Assert(t, icmd.Success)
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerApp, "unpack", "test", "-o", "output"},
+		Dir:     tempDir,
+	}).Assert(t, icmd.Success)
 	_, err = os.Stat("output/test.dockerapp/docker-compose.yml")
 	assert.NilError(t, err)
 }
