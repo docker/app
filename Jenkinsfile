@@ -111,6 +111,9 @@ pipeline {
                     agent {
                         label 'ubuntu-1604-aufs-edge'
                     }
+		    environment {
+			DOCKERAPP_BINARY = '../docker-app-linux'
+		    }
                     steps  {
                         dir('src/github.com/docker/app') {
                             unstash "binaries"

@@ -84,6 +84,9 @@ pipeline {
                     agent {
                         label 'linux'
                     }
+		    environment {
+			DOCKERAPP_BINARY = '../docker-app-linux'
+		    }
                     steps  {
                         dir('src/github.com/docker/app') {
                             unstash "binaries"
@@ -106,6 +109,9 @@ pipeline {
                     agent {
                         label "mac"
                     }
+		    environment {
+			DOCKERAPP_BINARY = '../docker-app-darwin'
+		    }
                     steps {
                         dir('src/github.com/docker/app') {
                             unstash "binaries"
@@ -128,6 +134,9 @@ pipeline {
                     agent {
                         label "windows"
                     }
+		    environment {
+			DOCKERAPP_BINARY = '../docker-app-windows.exe'
+		    }
                     steps {
                         dir('src/github.com/docker/app') {
                             unstash "binaries"

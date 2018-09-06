@@ -717,6 +717,7 @@
     "internal/difflib",
     "internal/format",
     "internal/source",
+    "skip",
     "x/subtest"
   ]
   revision = "b6e20af1ed078cd01a6413b734051a292450b4cb"
@@ -877,6 +878,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "45dcd633f064737222d9aae2e6c53578dee07f8b270fd8a1b71fe99b5584a925"
+  inputs-digest = "13b4cd35c549671eb2a79bc4b6207f42c0e18dca5c8be0d20f8e6d81063408f3"
   solver-name = "gps-cdcl"
   solver-version = 1
