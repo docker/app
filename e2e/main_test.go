@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"bytes"
 	"flag"
 	"os"
 	"os/exec"
@@ -37,7 +38,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	hasExperimental = strings.Contains(string(output), "Experimental: on")
+	hasExperimental = bytes.Contains(output, []byte("Experimental: on"))
 	i := strings.Index(string(output), "Renderers")
 	renderers = string(output)[i+10:]
 	os.Exit(m.Run())

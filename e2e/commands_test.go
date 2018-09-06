@@ -58,18 +58,18 @@ func TestRender(t *testing.T) {
 
 func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	return func(t *testing.T) {
-		envs := map[string]string{}
+		envSettings := map[string]string{}
 		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
 		assert.NilError(t, err)
-		assert.NilError(t, yaml.Unmarshal(data, &envs))
-		args := []string{"render", filepath.Join(appPath, "my.dockerapp"),
+		assert.NilError(t, yaml.Unmarshal(data, &envSettings))
+		args := []string{dockerApp, "render", filepath.Join(appPath, "my.dockerapp"),
 			"-f", filepath.Join(appPath, "settings-0.yml"),
 		}
-		for k, v := range envs {
+		for k, v := range envSettings {
 			args = append(args, "-s", fmt.Sprintf("%s=%s", k, v))
 		}
 		result := icmd.RunCmd(icmd.Cmd{
-			Command: append([]string{dockerApp}, args...),
+			Command: args,
 			Env:     env,
 		}).Assert(t, icmd.Success)
 		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering missmatch")
