@@ -6,8 +6,8 @@ Service (1) Replicas Ports Image
 ----------- -------- ----- -----
 test        1              alpine:latest
 
-Setting (4)          Value
------------          -----
+Settings (4)         Value
+------------         -----
 myapp.alpine_version latest
 myapp.command1       cat
 myapp.command2       foo

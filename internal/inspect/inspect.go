@@ -87,7 +87,11 @@ func printSection(out io.Writer, len int, printer func(io.Writer), headers ...st
 	}
 	fmt.Fprintln(out)
 	w := tabwriter.NewWriter(out, 0, 0, 1, ' ', 0)
-	headers[0] = fmt.Sprintf("%s (%d)", headers[0], len)
+	var plural string
+	if len > 1 {
+		plural = "s"
+	}
+	headers[0] = fmt.Sprintf("%s%s (%d)", headers[0], plural, len)
 	printHeaders(w, headers...)
 	printer(w)
 	w.Flush()

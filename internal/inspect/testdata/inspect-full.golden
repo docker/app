@@ -20,7 +20,7 @@ Secret (1)
 ----------
 my-secret
 
-Setting (2) Value
------------ -----
-port        8080
-text        hello
+Settings (2) Value
+------------ -----
+port         8080
+text         hello

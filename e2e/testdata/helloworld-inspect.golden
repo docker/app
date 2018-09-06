@@ -8,7 +8,7 @@ Service (1) Replicas Ports Image
 ----------- -------- ----- -----
 hello       1        8080  hashicorp/http-echo
 
-Setting (2) Value
------------ -----
-port        8080
-text        Hello, World!
+Settings (2) Value
+------------ -----
+port         8080
+text         Hello, World!
