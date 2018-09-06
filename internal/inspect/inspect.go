@@ -95,6 +95,7 @@ func addSection(sections *[]*bytes.Buffer, len int, printer func(io.Writer), hea
 	}
 	buf := &bytes.Buffer{}
 	w := tabwriter.NewWriter(buf, 0, 0, 1, ' ', 0)
+	headers[0] = fmt.Sprintf("%s (%d)", headers[0], len)
 	printHeaders(w, headers...)
 	printer(w)
 	w.Flush()

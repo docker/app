@@ -4,23 +4,23 @@ Maintained by: foo <foo@bar.com>
 
 this is sparta !
 
-Service Replicas Ports     Image
-------- -------- -----     -----
-web     2        8080-8100 nginx:latest
+Service (1) Replicas Ports     Image
+----------- -------- -----     -----
+web         2        8080-8100 nginx:latest
 
-Network
--------
+Network (1)
+-----------
 my-network
 
-Volume
-------
+Volume (1)
+----------
 my-volume
 
-Secret
-------
+Secret (1)
+----------
 my-secret
 
-Setting Value
-------- -----
-port    8080
-text    hello
+Setting (2) Value
+----------- -----
+port        8080
+text        hello

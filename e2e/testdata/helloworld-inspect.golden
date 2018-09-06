@@ -4,11 +4,11 @@ Maintained by: user <user@email.com>
 
 Hello, World!
 
-Service Replicas Ports Image
-------- -------- ----- -----
-hello   1        8080  hashicorp/http-echo
+Service (1) Replicas Ports Image
+----------- -------- ----- -----
+hello       1        8080  hashicorp/http-echo
 
-Setting Value
-------- -----
-port    8080
-text    Hello, World!
+Setting (2) Value
+----------- -----
+port        8080
+text        Hello, World!

@@ -1,9 +1,9 @@
 foo 0.1.0
 
-Service Replicas Ports Image
-------- -------- ----- -----
-web     1        80    nginx
+Service (1) Replicas Ports Image
+----------- -------- ----- -----
+web         1        80    nginx
 
-Setting  Value
--------  -----
-web.port 80
+Setting (1) Value
+----------- -----
+web.port    80
