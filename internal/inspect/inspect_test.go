@@ -111,7 +111,7 @@ text: hello`),
 			assert.NilError(t, err)
 			err = Inspect(outBuffer, app, testcase.args)
 			assert.NilError(t, err)
-			golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s.golden", testcase.name), testcase.name)
+			assert.Assert(t, golden.String(outBuffer.String(), fmt.Sprintf("inspect-%s.golden", testcase.name)))
 		})
 	}
 }
