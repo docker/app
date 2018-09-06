@@ -19,7 +19,7 @@ var (
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "inspect [<app-name>] [-s key=value...] [-f settings-file...]",
-		Short: "Shows metadata, settings and summary of compose file for a given application",
+		Short: "Shows metadata, settings and a summary of the compose file for a given application",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app, err := packager.Extract(firstOrEmpty(args),
