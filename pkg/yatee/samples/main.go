@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/docker/app/internal/yaml"
-	"github.com/docker/app/internal/yatee"
+	"github.com/docker/app/pkg/yatee"
 )
 
 func main() {
