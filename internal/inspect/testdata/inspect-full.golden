@@ -4,9 +4,9 @@ Maintained by: foo <foo@bar.com>
 
 this is sparta !
 
-Service Replicas Ports Image
-------- -------- ----- -----
-web     2        8080  nginx:latest
+Service Replicas Ports     Image
+------- -------- -----     -----
+web     2        8080-8100 nginx:latest
 
 Network
 -------

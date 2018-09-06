@@ -70,7 +70,7 @@ services:
   web:
     image: nginx:latest
     ports:
-      - 8080:80
+      - 8080-8100:12300-12320
     deploy:
       replicas: 2
 networks:

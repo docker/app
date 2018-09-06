@@ -36,7 +36,7 @@ func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error
 	// Add Service section
 	addSection(&sections, len(config.Services), func(w io.Writer) {
 		for _, service := range config.Services {
-			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, getReplicas(service), getPorts(service), service.Image)
+			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, getReplicas(service), getPorts(service.Ports), service.Image)
 		}
 	}, "Service", "Replicas", "Ports", "Image")
 
@@ -124,16 +124,6 @@ func getReplicas(service composetypes.ServiceConfig) int {
 		return int(*service.Deploy.Replicas)
 	}
 	return 1
-}
-
-func getPorts(service composetypes.ServiceConfig) string {
-	var ports []string
-	for _, port := range service.Ports {
-		if port.Published > 0 {
-			ports = append(ports, fmt.Sprintf("%d", port.Published))
-		}
-	}
-	return strings.Join(ports, ",")
 }
 
 func extractSettings(app *types.App, argSettings map[string]string) ([]string, map[string]string, error) {
