@@ -138,7 +138,7 @@ maintainers:
 	defer os.Remove("tac.dockerapp")
 	appData, err := ioutil.ReadFile("tac.dockerapp")
 	assert.NilError(t, err)
-	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
+	assert.Assert(t, golden.Bytes(appData, "init-singlefile.dockerapp"))
 	// Check various commands work on single-file app package
 	icmd.RunCommand(dockerApp, "inspect", "tac").Assert(t, icmd.Success)
 	icmd.RunCommand(dockerApp, "render", "tac").Assert(t, icmd.Success)
@@ -226,10 +226,9 @@ func testHelm(version string) func(*testing.T) {
 		chart := golden.Get(t, dir.Join("helm.chart/Chart.yaml"))
 		values := golden.Get(t, dir.Join("helm.chart/values.yaml"))
 		stack := golden.Get(t, dir.Join("helm.chart/templates/stack.yaml"))
-		golden.Assert(t, string(chart), "helm-expected.chart/Chart.yaml", "chart file is wrong")
-		golden.Assert(t, string(values), "helm-expected.chart/values.yaml", "values file is wrong")
-		golden.Assert(t, string(stack), "helm-expected.chart/templates/stack"+version+".yaml", "stack file is wrong")
-
+		assert.Check(t, golden.String(string(chart), "helm-expected.chart/Chart.yaml"))
+		assert.Check(t, golden.String(string(values), "helm-expected.chart/values.yaml"))
+		assert.Check(t, golden.String(string(stack), "helm-expected.chart/templates/stack"+version+".yaml"))
 	}
 }
 
@@ -245,12 +244,12 @@ func TestSplitMerge(t *testing.T) {
 	defer os.Remove("remerged.dockerapp")
 	// test that inspect works on single-file
 	result := icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
-	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
+	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
 	// split it
 	icmd.RunCommand(dockerApp, "split", "remerged", "-o", "split.dockerapp").Assert(t, icmd.Success)
 	defer os.RemoveAll("split.dockerapp")
 	result = icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
-	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
+	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
 	// test inplace
 	icmd.RunCommand(dockerApp, "merge", "split")
 	icmd.RunCommand(dockerApp, "split", "split")
@@ -259,7 +258,7 @@ func TestSplitMerge(t *testing.T) {
 func TestURL(t *testing.T) {
 	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
 	result := icmd.RunCommand(dockerApp, "inspect", url).Assert(t, icmd.Success)
-	golden.Assert(t, result.Combined(), "helloworld-inspect.golden")
+	assert.Assert(t, golden.String(result.Combined(), "helloworld-inspect.golden"))
 }
 
 func TestWithRegistry(t *testing.T) {
@@ -296,11 +295,11 @@ func testFork(registry string) func(*testing.T) {
 		icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil",
 			"-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
 		metadata := golden.Get(t, tempDir.Join("scarlet.devil.dockerapp", "metadata.yml"))
-		golden.Assert(t, string(metadata), "expected-fork-metadata.golden")
+		assert.Assert(t, golden.Bytes(metadata, "expected-fork-metadata.golden"))
 
 		icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1",
 			"-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
 		metadata2 := golden.Get(t, tempDir.Join("simple.dockerapp", "metadata.yml"))
-		golden.Assert(t, string(metadata2), "expected-fork-metadata-no-rename.golden")
+		assert.Assert(t, golden.Bytes(metadata2, "expected-fork-metadata-no-rename.golden"))
 	}
 }
