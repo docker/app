@@ -76,6 +76,15 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	}
 }
 
+func TestRenderFormatters(t *testing.T) {
+	appPath := filepath.Join("testdata", "fork", "simple.dockerapp")
+	result := icmd.RunCommand(dockerApp, "render", "-p", "json", appPath).Assert(t, icmd.Success)
+	assert.Assert(t, golden.String(result.Stdout(), "expected-json-render.golden"))
+
+	result = icmd.RunCommand(dockerApp, "render", "-p", "yaml", appPath).Assert(t, icmd.Success)
+	assert.Assert(t, golden.String(result.Stdout(), "expected-yaml-render.golden"))
+}
+
 func TestInit(t *testing.T) {
 	composeData := `version: "3.2"
 services:

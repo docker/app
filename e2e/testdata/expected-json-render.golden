@@ -1,0 +1,78 @@
+{
+  "networks": {
+    "back": {
+      "ipam": {},
+      "external": false
+    },
+    "front": {
+      "ipam": {},
+      "external": false
+    }
+  },
+  "services": {
+    "api": {
+      "build": {},
+      "credential_spec": {},
+      "deploy": {
+        "resources": {},
+        "placement": {}
+      },
+      "image": "python:3.6",
+      "networks": {
+        "back": null,
+        "front": {
+          "aliases": [
+            "corp.app.api.com",
+            "coolapp.com"
+          ]
+        }
+      }
+    },
+    "db": {
+      "build": {},
+      "credential_spec": {},
+      "deploy": {
+        "resources": {},
+        "placement": {}
+      },
+      "image": "postgres:9.3",
+      "networks": {
+        "back": null
+      }
+    },
+    "web": {
+      "build": {},
+      "credential_spec": {},
+      "deploy": {
+        "resources": {},
+        "placement": {}
+      },
+      "image": "nginx:latest",
+      "networks": {
+        "front": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 80,
+          "published": 8082,
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "static",
+          "target": "/opt/data/static"
+        }
+      ]
+    }
+  },
+  "version": "3.6",
+  "volumes": {
+    "static": {
+      "name": "corp/web-static-data",
+      "external": true
+    }
+  }
+}
