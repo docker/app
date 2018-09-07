@@ -64,16 +64,26 @@ func extractImage(appname string, ops ...func(*types.App) error) (*types.App, er
 	if err != nil {
 		return nil, err
 	}
+	literalImageName := appname
 	imagename := imageNameFromRef(ref)
 	appname = appNameFromRef(ref)
 	tempDir, err := ioutil.TempDir("", "dockerapp")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary directory")
 	}
+	// Attempt loading image based on default name permutation
 	path, err := Pull(imagename, tempDir)
 	if err != nil {
-		os.RemoveAll(tempDir)
-		return nil, err
+		if literalImageName == imagename {
+			os.RemoveAll(tempDir)
+			return nil, err
+		}
+		// Attempt loading image based on the literal name
+		path, err = Pull(literalImageName, tempDir)
+		if err != nil {
+			os.RemoveAll(tempDir)
+			return nil, err
+		}
 	}
 	ops = append(ops, types.WithName(appname), types.WithCleanup(func() { os.RemoveAll(tempDir) }))
 	return loader.LoadFromDirectory(path, ops...)

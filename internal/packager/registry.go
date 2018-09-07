@@ -66,7 +66,7 @@ func Pull(repotag string, outputDir string) (string, error) {
 }
 
 // Push pushes an app to a registry. Returns the image digest.
-func Push(app *types.App, namespace, tag string) (string, error) {
+func Push(app *types.App, namespace, tag, repo string) (string, error) {
 	payload := make(map[string]string)
 	payload[internal.MetadataFileName] = string(app.MetadataRaw())
 	payload[internal.ComposeFileName] = string(app.Composes()[0])
@@ -80,9 +80,12 @@ func Push(app *types.App, namespace, tag string) (string, error) {
 			tag = metadata.Version
 		}
 	}
+	if repo == "" {
+		repo = internal.AppNameFromDir(app.Name) + internal.AppExtension
+	}
 	if namespace != "" && namespace[len(namespace)-1] != '/' {
 		namespace += "/"
 	}
-	imageName := namespace + internal.AppNameFromDir(app.Name) + internal.AppExtension + ":" + tag
+	imageName := namespace + repo + ":" + tag
 	return resto.PushConfigMulti(context.Background(), payload, imageName, resto.RegistryOptions{}, nil)
 }
