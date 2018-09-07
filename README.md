@@ -255,7 +255,7 @@ Commands:
   fork        Create a fork of an existing application to be modified
   helm        Generate a Helm chart
   init        Start building a Docker application
-  inspect     Shows metadata and settings for a given application
+  inspect     Shows metadata, settings and a summary of the compose file for a given application
   merge       Merge a multi-file application into a single file
   push        Push the application to a registry
   render      Render the Compose file for the application

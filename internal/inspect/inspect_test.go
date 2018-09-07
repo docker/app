@@ -13,11 +13,7 @@ import (
 )
 
 const (
-	composeYAML = `version: "3.1"
-
-services:
-  web:
-    image: nginx`
+	composeYAML = `version: "3.1"`
 )
 
 func TestInspect(t *testing.T) {
@@ -50,8 +46,41 @@ maintainers:
 description: "this is sparta !"`),
 			fs.WithFile(internal.SettingsFileName, ""),
 		),
+		fs.WithDir("overridden",
+			fs.WithFile(internal.ComposeFileName, `
+version: "3.1"
+
+services:
+  web:
+    image: nginx
+    ports:
+      - ${web.port}:80
+`),
+			fs.WithFile(internal.MetadataFileName, `
+version: 0.1.0
+name: foo
+`),
+			fs.WithFile(internal.SettingsFileName, ""),
+		),
 		fs.WithDir("full",
-			fs.WithFile(internal.ComposeFileName, composeYAML),
+			fs.WithFile(internal.ComposeFileName, `
+version: "3.1"
+
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - 8080-8100:12300-12320
+    deploy:
+      replicas: 2
+networks:
+  my-network:
+volumes:
+  my-volume:
+secrets:
+  my-secret:
+    file: ./my_secret.txt
+`),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
 name: foo
@@ -66,14 +95,23 @@ text: hello`),
 	)
 	defer dir.Remove()
 
-	for _, appname := range []string{
-		"no-maintainers", "no-description", "no-settings", "full",
+	for _, testcase := range []struct {
+		name string
+		args map[string]string
+	}{
+		{name: "no-maintainers"},
+		{name: "no-description"},
+		{name: "no-settings"},
+		{name: "overridden", args: map[string]string{"web.port": "80"}},
+		{name: "full"},
 	} {
-		outBuffer := new(bytes.Buffer)
-		app, err := types.NewAppFromDefaultFiles(dir.Join(appname))
-		assert.NilError(t, err)
-		err = Inspect(outBuffer, app)
-		assert.NilError(t, err)
-		golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s.golden", appname), appname)
+		t.Run(testcase.name, func(t *testing.T) {
+			outBuffer := new(bytes.Buffer)
+			app, err := types.NewAppFromDefaultFiles(dir.Join(testcase.name))
+			assert.NilError(t, err)
+			err = Inspect(outBuffer, app, testcase.args)
+			assert.NilError(t, err)
+			golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s.golden", testcase.name), testcase.name)
+		})
 	}
 }
