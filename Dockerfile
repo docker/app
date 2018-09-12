@@ -19,7 +19,7 @@ WORKDIR /go/src/github.com/docker/app/
 
 FROM build AS dev
 ENV PATH=${PATH}:/go/src/github.com/docker/app/bin/
-ARG DEP_VERSION=v0.4.1
+ARG DEP_VERSION=v0.5.0
 RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
     chmod +x /usr/bin/dep
 RUN go get -d gopkg.in/mjibson/esc.v0 && \
