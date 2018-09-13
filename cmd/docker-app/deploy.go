@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
@@ -24,6 +25,8 @@ type deployOptions struct {
 	deployNamespace        string
 	deployStackName        string
 	deploySendRegistryAuth bool
+	deployOverrideRegistry string
+	deployPushImages       bool
 }
 
 // deployCmd represents the deploy command
@@ -46,7 +49,9 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.deployKubeConfig, "kubeconfig", "k", "", "Kubernetes config file to use")
 	cmd.Flags().StringVarP(&opts.deployNamespace, "namespace", "n", "default", "Kubernetes namespace to deploy into")
 	cmd.Flags().StringVarP(&opts.deployStackName, "name", "d", "", "Stack name (default: app name)")
+	cmd.Flags().StringVarP(&opts.deployOverrideRegistry, "registry", "r", "", "Override registry for all images")
 	cmd.Flags().BoolVarP(&opts.deploySendRegistryAuth, "with-registry-auth", "", false, "Sends registry auth")
+	cmd.Flags().BoolVarP(&opts.deployPushImages, "push", "", false, "Push images to given registry first")
 	if internal.Experimental == "on" {
 		cmd.Flags().StringArrayVarP(&opts.deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
 	}
@@ -70,6 +75,16 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	rendered, err := render.Render(app, d)
 	if err != nil {
 		return err
+	}
+	if opts.deployPushImages {
+		if err := image.Push(app.Path, opts.deployOverrideRegistry, nil, rendered); err != nil {
+			return err
+		}
+	}
+	if opts.deployOverrideRegistry != "" {
+		if err = image.ChangeAllImages(rendered, opts.deployOverrideRegistry); err != nil {
+			return err
+		}
 	}
 	stackName := opts.deployStackName
 	if stackName == "" {

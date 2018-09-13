@@ -15,8 +15,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// findApp looks for an app in CWD or subdirs
-func findApp() (string, error) {
+// FindApp looks for an app in CWD or subdirs
+func FindApp() (string, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", errors.Wrap(err, "cannot resolve current working directory")
@@ -96,7 +96,7 @@ func extractImage(appname string, ops ...func(*types.App) error) (*types.App, er
 func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 	if name == "" {
 		var err error
-		if name, err = findApp(); err != nil {
+		if name, err = FindApp(); err != nil {
 			return nil, err
 		}
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/formatter"
+	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
@@ -21,6 +22,7 @@ var (
 	renderSettingsFile []string
 	renderEnv          []string
 	renderOutput       string
+	renderRegistry     string
 )
 
 func renderCmd(dockerCli command.Cli) *cobra.Command {
@@ -42,6 +44,11 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 			rendered, err := render.Render(app, d)
 			if err != nil {
 				return err
+			}
+			if renderRegistry != "" {
+				if err = image.ChangeAllImages(rendered, renderRegistry); err != nil {
+					return err
+				}
 			}
 			res, err := formatter.Format(rendered, formatDriver)
 			if err != nil {
@@ -70,5 +77,6 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
 	cmd.Flags().StringVarP(&renderOutput, "output", "o", "-", "Output file")
 	cmd.Flags().StringVar(&formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
+	cmd.Flags().StringVarP(&renderRegistry, "registry", "r", "", "Override registry for all images")
 	return cmd
 }

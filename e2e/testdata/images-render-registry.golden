@@ -1,0 +1,10 @@
+version: "3.2"
+services:
+  etcd:
+    image: localhost:5000/coreos/etcd:v2.3.8
+  mysql:
+    image: localhost:5000/library/mysql:5.6
+  onhub:
+    image: localhost:5000/username/reponame:latest
+  vars:
+    image: localhost:5000/user/image:5.2

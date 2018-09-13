@@ -352,3 +352,27 @@ func TestAttachmentsWithRegistry(t *testing.T) {
 	nestedAttachment := golden.Get(t, tempDir.Join("attachments.dockerapp", "nesteddir", "config2.cfg"))
 	assert.Assert(t, golden.Bytes(nestedAttachment, filepath.Join("attachments.dockerapp", "nesteddir", "config2.cfg")))
 }
+
+func TestRenderWithRegistry(t *testing.T) {
+	result := icmd.RunCommand(dockerApp, "render", "testdata/images", "--registry", "localhost:5000",
+		"--set", "imageversion=5.2").Assert(t, icmd.Success)
+	assert.Assert(t, golden.String(result.Combined(), "images-render-registry.golden"))
+}
+
+func TestImagePush(t *testing.T) {
+	r := startRegistry(t)
+	defer r.Stop(t)
+	registry := r.GetAddress(t)
+	icmd.RunCommand("docker", "pull", "alpine:latest").Assert(t, icmd.Success)
+	dir := fs.NewDir(t, "alpine_input",
+		fs.WithDir("app.dockerapp",
+			fs.WithFile(internal.MetadataFileName, "name: alpine\nversion: 0.1.0"),
+			fs.WithFile(internal.ComposeFileName, "version: '3.2'\nservices:\n  alpine:\n    image: alpine:latest"),
+			fs.WithFile(internal.SettingsFileName, "{}"),
+		),
+	)
+	defer dir.Remove()
+	icmd.RunCommand(dockerApp, "image", "add", dir.Join("app")).Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "image", "push", dir.Join("app"), registry).Assert(t, icmd.Success)
+	icmd.RunCommand("docker", "pull", registry+"/library/alpine:latest").Assert(t, icmd.Success)
+}

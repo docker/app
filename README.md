@@ -224,6 +224,30 @@ For example, the following will create the `/opt/myapps/hello2.dockerapp` folder
 $ docker-app fork remote/hello.dockerapp:1.0.0 mine/hello2 --path /opt/myapps
 ```
 
+## Storing images in the application package
+
+Using the `docker-app image add` command, one can store all images used by the
+application into the `images` subfolder.
+
+Those images can then be pushed to another registry using `docker-app image push`. Finally the
+`render` and `deploy` commands support overriding the image names with any registry using the `--registry` argument.
+
+What follows is a complete deployment scenario of an application from the Hub into a cluster without access
+to the Internet:
+
+``` sh
+# Download myapp from the Hub locally
+opensystem$ docker-app split myuser/myapp.dockerapp
+# Store used images into the application folder.
+# The images must be available on your local docker daemon
+opensystem$ docker-app image add myapp
+# Now transport the myapp.dockerapp folder to the air-gapped cluster and login:
+# Push the application's images to a local registry
+closed$ docker-app image push myapp myregistry:5000
+# Deploy overriding image names with the local registry
+closed$ docker-app deploy --registry myregistry:5000 myapp
+```
+
 ## Next steps
 
 We have lots of ideas for making Compose-based applications easier to share and reuse, and making applications a first-class part of the Docker toolchain. Please let us know what you think about this initial release and about any of the ideas below:
@@ -231,7 +255,6 @@ We have lots of ideas for making Compose-based applications easier to share and 
 * Introducing environments to the settings file
 * Docker images which launch the application when run
 * Built-in commands for running applications
-* Saving required images into the application artifact to support offline installation
 * Signing applications with notary
 
 

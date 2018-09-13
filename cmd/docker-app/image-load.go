@@ -8,7 +8,7 @@ import (
 
 func imageLoadCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "image-load <app-name> [services...]",
+		Use:   "load <app-name> [services...]",
 		Short: "Load stored images for given services (default: all) to the local docker daemon",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -17,7 +17,7 @@ func imageLoadCmd() *cobra.Command {
 				return err
 			}
 			defer app.Cleanup()
-			return image.Load(app.Name, args[1:])
+			return image.Load(app.Path, args[1:])
 		},
 	}
 }
