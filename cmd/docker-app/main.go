@@ -13,7 +13,7 @@ func main() {
 	stdin, stdout, stderr := term.StdStreams()
 	logrus.SetOutput(stderr)
 
-	dockerCli := command.NewDockerCli(stdin, stdout, stderr, false)
+	dockerCli := command.NewDockerCli(stdin, stdout, stderr, false, nil)
 	cmd := newRootCmd(dockerCli)
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)

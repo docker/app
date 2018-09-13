@@ -36,6 +36,14 @@ required = ["github.com/wadey/gocovmerge"]
   version = "v1.0.5"
 
 [[override]]
+  name = "github.com/dgrijalva/jwt-go"
+  revision = "v2.6.0"
+
+[[override]]
+  name = "github.com/docker/licensing"
+  revision = "369e5301dc601b478021c0f588f5c3d04626d804"
+
+[[override]]
   name = "github.com/xeipuuv/gojsonschema"
   revision = "93e72a773fade158921402d6a24c819b48aba29d"
 
@@ -45,7 +53,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/docker"
-  revision = "b711437bbd8596312c962d4189e9ad4d2108c2dc"
+  revision = "53e55db9d3f0f0910ea95515222c8a35e106f10e"
 
 [[override]]
   name = "github.com/docker/distribution"
