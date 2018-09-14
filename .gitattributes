@@ -1,5 +1,9 @@
 * text=auto
 *.sh text eol=lf
 *.go text eol=lf
+*.golden text eol=lf
+*.dockerapp text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
 *.exe binary
 vendor/** -text
