@@ -1,0 +1,34 @@
+version: "3.6"
+services:
+  api:
+    image: python:3.6
+    networks:
+      back: null
+      front:
+        aliases:
+        - corp.app.api.com
+        - coolapp.com
+  db:
+    image: postgres:9.3
+    networks:
+      back: null
+  web:
+    image: nginx:latest
+    networks:
+      front: null
+    ports:
+    - mode: ingress
+      target: 80
+      published: 8082
+      protocol: tcp
+    volumes:
+    - type: volume
+      source: static
+      target: /opt/data/static
+networks:
+  back: {}
+  front: {}
+volumes:
+  static:
+    name: corp/web-static-data
+    external: true
