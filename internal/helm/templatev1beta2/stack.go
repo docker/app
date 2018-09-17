@@ -4,6 +4,7 @@ import (
 	"github.com/docker/app/internal/helm/templatetypes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // StackList is a list of stacks
@@ -14,10 +15,31 @@ type StackList struct {
 	Items []Stack `yaml:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
+// TypeMeta is a rewrite of metav1.TypeMeta which doesn't have yaml annotations
+type TypeMeta struct {
+	Kind       string `json:"kind,omitempty" yaml:"kind,omitempty"`
+	APIVersion string `json:"apiVersion,omitempty" yaml:"apiVersion,omitempty"`
+}
+
+// GetObjectKind implements the ObjectKind interface
+func (obj *TypeMeta) GetObjectKind() schema.ObjectKind {
+	return obj
+}
+
+// GroupVersionKind implements the ObjectKind interface
+func (obj *TypeMeta) GroupVersionKind() schema.GroupVersionKind {
+	return schema.FromAPIVersionAndKind(obj.APIVersion, obj.Kind)
+}
+
+// SetGroupVersionKind implements the ObjectKind interface
+func (obj *TypeMeta) SetGroupVersionKind(gvk schema.GroupVersionKind) {
+	obj.APIVersion, obj.Kind = gvk.ToAPIVersionAndKind()
+}
+
 // Stack is v1beta2's representation of a Stack
 type Stack struct {
-	metav1.TypeMeta   `yaml:",inline" yaml:",inline"`
-	metav1.ObjectMeta `yaml:"metadata,omitempty" yaml:"metadata,omitempty"`
+	TypeMeta          `yaml:",inline" json:",inline"`
+	metav1.ObjectMeta `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 
 	Spec   *StackSpec   `yaml:"spec,omitempty"`
 	Status *StackStatus `yaml:"status,omitempty"`
