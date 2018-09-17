@@ -1,23 +1,10 @@
-objectmeta:
-  annotations: {}
-  clustername: ""
-  creationtimestamp: "0001-01-01T00:00:00Z"
-  deletiongraceperiodseconds: null
-  deletiontimestamp: null
-  finalizers: []
-  generatename: ""
-  generation: 0
-  initializers: null
-  labels: {}
+apiVersion: compose.docker.com/v1beta1
+kind: Stack
+metadata:
+  creationTimestamp: null
   name: helm
-  namespace: ""
-  ownerreferences: []
-  resourceversion: ""
-  selflink: ""
-  uid: ""
 spec:
-  composefile: |
-    version: "3.7"
+  composeFile: |
     services:
       app-watcher:
         image: {{.Values.watcher.image}}
@@ -25,51 +12,36 @@ spec:
         deploy:
           resources:
             limits:
-              memory:
-                valuetemplate: {{.Values.memory}}
+              memory: {{.Values.memory}}
         healthcheck:
+          interval: 2m0s
           test:
           - /ping
           - debug
-          timeout:
-            valuetemplate: {{.Values.timeout}}
-          interval:
-            value: 2m0s
+          timeout: {{.Values.timeout}}
         image: busybox:latest
         ports:
         - mode: ingress
-          target:
-            valuetemplate: {{.Values.aport}}
           protocol: tcp
+          target: {{.Values.aport}}
         - mode: ingress
-          target:
-            valuetemplate: {{.Values.sport}}
-          published:
-            valuetemplate: {{.Values.dport}}
           protocol: tcp
-        template_privileged:
-          valuetemplate: {{.Values.privileged}}
-        read_only:
-          valuetemplate: {{.Values.read_only}}
-        stdin_open:
-          valuetemplate: {{.Values.stdin_open}}
-        tty:
-          valuetemplate: {{.Values.tty}}
+          published: {{.Values.dport}}
+          target: {{.Values.sport}}
+        privileged: {{.Values.privileged}}
+        read_only: {{.Values.read_only}}
+        stdin_open: {{.Values.stdin_open}}
+        tty: {{.Values.tty}}
       front:
         deploy:
-          replicas:
-            valuetemplate: {{.Values.myapp.nginx_replicas}}
+          replicas: {{.Values.myapp.nginx_replicas}}
         image: nginx:{{.Values.myapp.nginx_version}}
       monitor:
         command:
         - monitor
         - --source
-        - {{.Values.app.name}}-{{.Values.app.version}}
+        - '{{.Values.app.name}}-{{.Values.app.version}}'
         - $dollar
         image: busybox:latest
-status:
-  message: ""
-  phase: ""
-typemeta:
-  apiversion: v1beta1
-  kind: stacks.compose.docker.com
+    version: "3.7"
+status: {}

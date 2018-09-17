@@ -1,6 +1,7 @@
 package helm
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -109,6 +110,28 @@ func makeValues(app *types.App, targetDir string, env map[string]string, variabl
 	return ioutil.WriteFile(filepath.Join(targetDir, "values.yaml"), valuesRaw, 0644)
 }
 
+// convertTemplatesAny resolves templated fields in input, and returns marshaled YAML
+func convertTemplatesAny(input interface{}) ([]byte, error) {
+	stackData, err := yaml.Marshal(input)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal stack data")
+	}
+	preStack := make(map[interface{}]interface{})
+	err = yaml.Unmarshal(stackData, preStack)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal stack data")
+	}
+	err = convertTemplates(preStack)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert stack templates")
+	}
+	stackData, err = yaml.Marshal(preStack)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal final stack")
+	}
+	return stackData, nil
+}
+
 // makeStack converts data into a helm template for a stack
 func makeStack(appname string, targetDir string, data []byte, stackVersion string) error {
 	parsed, err := loader.ParseYAML(data)
@@ -122,47 +145,53 @@ func makeStack(appname string, targetDir string, data []byte, stackVersion strin
 	if err := os.MkdirAll(filepath.Join(targetDir, "templates"), 0755); err != nil {
 		return err
 	}
-	var stack interface{}
+	var stackData []byte
 	switch stackVersion {
 	case V1Beta2:
 		stackSpec := templateconversion.FromComposeConfig(rendered)
-		stack = templatev1beta2.Stack{
-			TypeMeta:   typeMeta(stackVersion),
+		stack := templatev1beta2.Stack{
+			TypeMeta: templatev1beta2.TypeMeta{
+				Kind:       "Stack",
+				APIVersion: "compose.docker.com/" + stackVersion,
+			},
 			ObjectMeta: objectMeta(appname),
 			Spec:       stackSpec,
 		}
-	case V1Beta1:
-		composeFile, err := yaml.Marshal(rendered)
+		stackData, err = convertTemplatesAny(stack)
 		if err != nil {
 			return err
 		}
-		stack = v1beta1.Stack{
+	case V1Beta1:
+		composeFile, err := convertTemplatesAny(rendered)
+		if err != nil {
+			return err
+		}
+		stack := v1beta1.Stack{
 			TypeMeta:   typeMeta(stackVersion),
 			ObjectMeta: objectMeta(appname),
 			Spec: v1beta1.StackSpec{
 				ComposeFile: string(composeFile),
 			},
 		}
+		// Kube doesn't have the right annotations for YAML, so serialize into json
+		// and convert
+		j, err := json.Marshal(stack)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal stack to json")
+		}
+		intermediate := make(map[string]interface{})
+		err = json.Unmarshal(j, &intermediate)
+		if err != nil {
+			return errors.Wrap(err, "failed to unmarshal stack from json")
+		}
+		stackData, err = yaml.Marshal(intermediate)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal final stack")
+		}
 	default:
 		return fmt.Errorf("invalid stack version %q", stackVersion)
 	}
-	stackData, err := yaml.Marshal(stack)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal stack data")
-	}
-	preStack := make(map[interface{}]interface{})
-	err = yaml.Unmarshal(stackData, preStack)
-	if err != nil {
-		return errors.Wrap(err, "failed to unmarshal stack data")
-	}
-	err = convertTemplates(preStack)
-	if err != nil {
-		return errors.Wrap(err, "failed to convert stack templates")
-	}
-	stackData, err = yaml.Marshal(preStack)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal final stack")
-	}
+	stackData = []byte(unquote(string(stackData)))
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
@@ -233,8 +262,8 @@ func makeChart(meta *metadata.AppMetadata, targetDir string) error {
 
 func typeMeta(stackVersion string) metav1.TypeMeta {
 	return metav1.TypeMeta{
-		Kind:       "stacks.compose.docker.com",
-		APIVersion: stackVersion,
+		Kind:       "Stack",
+		APIVersion: "compose.docker.com/" + stackVersion,
 	}
 }
 
@@ -308,6 +337,12 @@ func filterVariables(s map[string]interface{}, variables []string, prefix string
 			}
 		}
 	}
+}
+
+// unquote unquotes gotemplates in template
+func unquote(template string) string {
+	re := regexp.MustCompile(`'(\{\{[^'}]*\}\})'`)
+	return re.ReplaceAllString(template, "$1")
 }
 
 // toGoTemplate converts $foo and ${foo} into {{.foo}}
