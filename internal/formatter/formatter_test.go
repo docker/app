@@ -64,7 +64,7 @@ func TestRegisteredDrivers(t *testing.T) {
 func TestFormatNonExistentDriver(t *testing.T) {
 	_, err := Format(&composetypes.Config{}, "toto")
 	assert.Check(t, err != nil)
-	assert.Check(t, is.ErrorContains(err, `unknown presenter "toto"`))
+	assert.Check(t, is.ErrorContains(err, `unknown formatter "toto"`))
 }
 
 func TestFormatErrorDriver(t *testing.T) {
@@ -80,7 +80,7 @@ func TestFormatNone(t *testing.T) {
 	defer resetDrivers()
 	_, err := Format(&composetypes.Config{}, "none")
 	assert.Check(t, err != nil)
-	assert.Check(t, is.ErrorContains(err, `unknown presenter "none"`))
+	assert.Check(t, is.ErrorContains(err, `unknown formatter "none"`))
 }
 
 func TestFormat(t *testing.T) {
