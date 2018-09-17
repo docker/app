@@ -80,7 +80,7 @@ type ServiceConfig struct {
 	Hostname        string                                 `yaml:",omitempty"`
 	HealthCheck     *HealthCheckConfig                     `yaml:",omitempty"`
 	Image           string                                 `yaml:",omitempty"`
-	Init            *BoolOrTemplate                        `yaml:",omitempty"`
+	Init            *BoolOrTemplate                        `yaml:"template_init,omitempty"`
 	Ipc             string                                 `yaml:",omitempty"`
 	Isolation       string                                 `mapstructure:"isolation" yaml:"isolation,omitempty"`
 	Labels          types.Labels                           `yaml:",omitempty"`
@@ -92,16 +92,16 @@ type ServiceConfig struct {
 	Pid             string                                 `yaml:",omitempty"`
 	Ports           []ServicePortConfig                    `yaml:",omitempty"`
 	Privileged      BoolOrTemplate                         `yaml:"template_privileged,omitempty"`
-	ReadOnly        BoolOrTemplate                         `mapstructure:"read_only" yaml:"read_only,omitempty"`
+	ReadOnly        BoolOrTemplate                         `mapstructure:"read_only" yaml:"template_read_only,omitempty"`
 	Restart         string                                 `yaml:",omitempty"`
 	Secrets         []ServiceSecretConfig                  `yaml:",omitempty"`
 	SecurityOpt     []string                               `mapstructure:"security_opt" yaml:"security_opt,omitempty"`
-	StdinOpen       BoolOrTemplate                         `mapstructure:"stdin_open" yaml:"stdin_open,omitempty"`
-	StopGracePeriod DurationOrTemplate                     `mapstructure:"stop_grace_period" yaml:"stop_grace_period,omitempty"`
+	StdinOpen       BoolOrTemplate                         `mapstructure:"stdin_open" yaml:"template_stdin_open,omitempty"`
+	StopGracePeriod DurationOrTemplate                     `mapstructure:"stop_grace_period" yaml:"template_stop_grace_period,omitempty"`
 	StopSignal      string                                 `mapstructure:"stop_signal" yaml:"stop_signal,omitempty"`
 	Sysctls         types.StringList                       `yaml:",omitempty"`
 	Tmpfs           types.StringList                       `yaml:",omitempty"`
-	Tty             BoolOrTemplate                         `mapstructure:"tty" yaml:"tty,omitempty"`
+	Tty             BoolOrTemplate                         `mapstructure:"tty" yaml:"template_tty,omitempty"`
 	Ulimits         map[string]*types.UlimitsConfig        `yaml:",omitempty"`
 	User            string                                 `yaml:",omitempty"`
 	UserNSMode      string                                 `mapstructure:"userns_mode" yaml:"userns_mode,omitempty"`
@@ -114,7 +114,7 @@ type ServiceConfig struct {
 // DeployConfig the deployment configuration for a service
 type DeployConfig struct {
 	Mode           string               `yaml:",omitempty"`
-	Replicas       UInt64OrTemplate     `yaml:",omitempty"`
+	Replicas       UInt64OrTemplate     `yaml:"template_replicas,omitempty"`
 	Labels         types.Labels         `yaml:",omitempty"`
 	UpdateConfig   *UpdateConfig        `mapstructure:"update_config" yaml:"update_config,omitempty"`
 	RollbackConfig *UpdateConfig        `mapstructure:"rollback_config" yaml:"rollback_config,omitempty"`
@@ -127,16 +127,16 @@ type DeployConfig struct {
 // HealthCheckConfig the healthcheck configuration for a service
 type HealthCheckConfig struct {
 	Test        types.HealthCheckTest `yaml:",omitempty"`
-	Timeout     DurationOrTemplate    `yaml:",omitempty"`
-	Interval    DurationOrTemplate    `yaml:",omitempty"`
-	Retries     UInt64OrTemplate      `yaml:",omitempty"`
+	Timeout     DurationOrTemplate    `yaml:"template_timeout,omitempty"`
+	Interval    DurationOrTemplate    `yaml:"template_interval,omitempty"`
+	Retries     UInt64OrTemplate      `yaml:"template_retries,omitempty"`
 	StartPeriod *time.Duration        `mapstructure:"start_period" yaml:"start_period,omitempty"`
 	Disable     bool                  `yaml:",omitempty"`
 }
 
 // UpdateConfig the service update configuration
 type UpdateConfig struct {
-	Parallelism     UInt64OrTemplate `yaml:",omitempty"`
+	Parallelism     UInt64OrTemplate `yaml:"template_parallelism,omitempty"`
 	Delay           time.Duration    `yaml:",omitempty"`
 	FailureAction   string           `mapstructure:"failure_action" yaml:"failure_action,omitempty"`
 	Monitor         time.Duration    `yaml:",omitempty"`
@@ -154,15 +154,15 @@ type Resources struct {
 type Resource struct {
 	// TODO: types to convert from units and ratios
 	NanoCPUs         string                  `mapstructure:"cpus" yaml:"cpus,omitempty"`
-	MemoryBytes      UnitBytesOrTemplate     `mapstructure:"memory" yaml:"memory,omitempty"`
+	MemoryBytes      UnitBytesOrTemplate     `mapstructure:"memory" yaml:"template_memory,omitempty"`
 	GenericResources []types.GenericResource `mapstructure:"generic_resources" yaml:"generic_resources,omitempty"`
 }
 
 // ServicePortConfig is the port configuration for a service
 type ServicePortConfig struct {
 	Mode      string           `yaml:",omitempty"`
-	Target    UInt64OrTemplate `yaml:",omitempty"`
-	Published UInt64OrTemplate `yaml:",omitempty"`
+	Target    UInt64OrTemplate `yaml:"template_target,omitempty"`
+	Published UInt64OrTemplate `yaml:"template_published,omitempty"`
 	Protocol  string           `yaml:",omitempty"`
 }
 
@@ -171,7 +171,7 @@ type ServiceVolumeConfig struct {
 	Type        string                     `yaml:",omitempty"`
 	Source      string                     `yaml:",omitempty"`
 	Target      string                     `yaml:",omitempty"`
-	ReadOnly    BoolOrTemplate             `mapstructure:"read_only" yaml:"read_only,omitempty"`
+	ReadOnly    BoolOrTemplate             `mapstructure:"read_only" yaml:"template_read_only,omitempty"`
 	Consistency string                     `yaml:",omitempty"`
 	Bind        *types.ServiceVolumeBind   `yaml:",omitempty"`
 	Volume      *types.ServiceVolumeVolume `yaml:",omitempty"`
@@ -184,7 +184,7 @@ type FileReferenceConfig struct {
 	Target string           `yaml:",omitempty"`
 	UID    string           `yaml:",omitempty"`
 	GID    string           `yaml:",omitempty"`
-	Mode   UInt64OrTemplate `yaml:",omitempty"`
+	Mode   UInt64OrTemplate `yaml:"template_mode,omitempty"`
 }
 
 // ServiceConfigObjConfig is the config obj configuration for a service
