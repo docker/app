@@ -69,6 +69,6 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
 	cmd.Flags().StringVarP(&renderOutput, "output", "o", "-", "Output file")
-	cmd.Flags().StringVarP(&formatDriver, "presenter", "p", "yaml", "Configure the output format (yaml|json)")
+	cmd.Flags().StringVar(&formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
 	return cmd
 }

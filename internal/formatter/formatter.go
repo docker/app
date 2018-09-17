@@ -33,10 +33,10 @@ func Register(name string, driver driver.Driver) {
 // If the formatter is not registered, this errors out.
 func Format(config *composetypes.Config, formatter string) (string, error) {
 	driversMu.RLock()
-	d, present := drivers[formatter]
+	d, ok := drivers[formatter]
 	driversMu.RUnlock()
-	if !present {
-		return "", errors.Errorf("unknown presenter %q", formatter)
+	if !ok {
+		return "", errors.Errorf("unknown formatter %q", formatter)
 	}
 	s, err := d.Format(config)
 	if err != nil {
