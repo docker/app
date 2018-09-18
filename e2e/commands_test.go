@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/docker/app/internal"
@@ -316,3 +317,64 @@ func testFork(registry string) func(*testing.T) {
 		assert.Assert(t, golden.Bytes(metadata2, "expected-fork-metadata-no-rename.golden"))
 	}
 }
+
+func TestWithRegistry2(t *testing.T) {
+	r := startRegistry(t)
+	defer r.Stop(t)
+	registry := r.GetAddress(t)
+	t.Run("externalFiles", testExternalFiles(registry))
+}
+func testExternalFiles(registry string) func(*testing.T) {
+	return func(t *testing.T) {
+
+		// Basic test for app image with a single external file
+		// On pushing the image, it builds on the fly
+		// Check if we inspect the image, the config file is inside
+
+		// externalfiles.dockerapp/
+		// -- docker-compose.yml
+		// -- metadata.yml
+		// -- settings.yml
+		// -- config.cfg
+
+		// Should we use an existing (checked in) set of files, or create the files manually through code?
+		// Easier with files checked in, presumably?
+
+		dir := fs.NewDir(t, "testexternalfiles",
+			fs.WithDir("externalfiles.dockerapp", fs.FromDir("testdata/externalfiles.dockerapp")),
+		)
+		defer dir.Remove()
+
+		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/externalfilestest", dir.Join("externalfiles.dockerapp")).Assert(t, icmd.Success)
+		result := icmd.RunCommand(dockerApp, "inspect", registry+"/externalfilestest/externalfiles:0.1.0")
+		result.Assert(t, icmd.Success)
+		assert.Assert(t, strings.Contains(result.Combined(), "config.cfg"))
+		// push to a registry
+		// icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+		// icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+		// icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp:0.1.0").Assert(t, icmd.Success)
+		// icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp").Assert(t, icmd.Success)
+		// icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my").Assert(t, icmd.Success)
+		// icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my:0.1.0").Assert(t, icmd.Success)
+		// // push a single-file app to a registry
+		// dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
+		// defer dir.Remove()
+		// icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
+
+		// // push with custom repo name
+		// icmd.RunCommand(dockerApp, "push", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+		// icmd.RunCommand(dockerApp, "inspect", registry+"/rainbows/unicorns:marshmallows").Assert(t, icmd.Success)
+	}
+}
+
+// Possible next test - include binary files, additional settings files
+// mike.dockerapp/
+// -- docker-compose.yml
+// -- metadata.yml
+// -- settings.yml
+// -- settings-dev.yml
+// -- settings-prod.yml
+// -- example.bin
+// -- config/
+// ---- something.cfg
+//
