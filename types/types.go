@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -21,11 +22,12 @@ type App struct {
 	Path    string
 	Cleanup func()
 
-	composesContent [][]byte
-	settingsContent [][]byte
-	settings        settings.Settings
-	metadataContent []byte
-	metadata        metadata.AppMetadata
+	composesContent   [][]byte
+	settingsContent   [][]byte
+	settings          settings.Settings
+	metadataContent   []byte
+	metadata          metadata.AppMetadata
+	externalFilePaths []string
 }
 
 // Composes returns compose files content
@@ -51,6 +53,11 @@ func (a *App) MetadataRaw() []byte {
 // Metadata returns the metadata struct
 func (a *App) Metadata() metadata.AppMetadata {
 	return a.metadata
+}
+
+// ExternalFilePaths returns the external filepaths list
+func (a *App) ExternalFilePaths() []string {
+	return a.externalFilePaths
 }
 
 // Extract writes the app in the specified folder
@@ -97,6 +104,7 @@ func NewAppFromDefaultFiles(path string, ops ...func(*App) error) (*App, error) 
 		MetadataFile(filepath.Join(path, internal.MetadataFileName)),
 		WithComposeFiles(filepath.Join(path, internal.ComposeFileName)),
 		WithSettingsFiles(filepath.Join(path, internal.SettingsFileName)),
+		WithExternalFiles(path),
 	}, ops...)
 	return NewApp(path, appOps...)
 }
@@ -128,6 +136,34 @@ func WithCleanup(f func()) func(*App) error {
 // WithSettingsFiles adds the specified settings files to the app
 func WithSettingsFiles(files ...string) func(*App) error {
 	return settingsLoader(func() ([][]byte, error) { return readFiles(files...) })
+}
+
+// WithExternalFiles adds all local files (exc. main files) to the app
+func WithExternalFiles(rootAppDir string) func(*App) error {
+	return func(app *App) error {
+		return filepath.Walk(rootAppDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+			localFilePath, err := filepath.Rel(rootAppDir, path)
+			if err != nil {
+				println(err)
+				return err
+			}
+			switch localFilePath {
+			case internal.ComposeFileName:
+			case internal.MetadataFileName:
+			case internal.SettingsFileName:
+			default:
+				app.externalFilePaths = append(app.externalFilePaths, localFilePath)
+			}
+			return nil
+		})
+	}
 }
 
 // WithSettings adds the specified settings readers to the app

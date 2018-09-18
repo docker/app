@@ -148,6 +148,50 @@ func assertContentIs(t *testing.T, data []byte, expected string) {
 	assert.Assert(t, is.Equal(string(data), expected))
 }
 
+func TestWithExternalFilesAndNestedDirectories(t *testing.T) {
+	dir := fs.NewDir(t, "externalfile",
+		fs.WithFile(internal.MetadataFileName, validMeta),
+		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ComposeFileName, validCompose),
+		fs.WithFile("config.cfg", "something"),
+		fs.WithDir("nesteddirectory",
+			fs.WithFile("nestedconfig.cfg", "something"),
+		),
+	)
+	defer dir.Remove()
+	app, err := NewAppFromDefaultFiles(dir.Path())
+	assert.NilError(t, err)
+	assert.Assert(t, is.Len(app.ExternalFilePaths(), 2))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], "config.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], "nesteddirectory\\nestedconfig.cfg"))
+}
+
+func TestExternalFilesAreSorted(t *testing.T) {
+	dir := fs.NewDir(t, "externalfile",
+		fs.WithFile(internal.MetadataFileName, validMeta),
+		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ComposeFileName, validCompose),
+		fs.WithFile("c.cfg", "something"),
+		fs.WithFile("a.cfg", "something"),
+		fs.WithFile("b.cfg", "something"),
+		fs.WithDir("nesteddirectory",
+			fs.WithFile("a.cfg", "something"),
+			fs.WithFile("c.cfg", "something"),
+			fs.WithFile("b.cfg", "something"),
+		),
+	)
+	defer dir.Remove()
+	app, err := NewAppFromDefaultFiles(dir.Path())
+	assert.NilError(t, err)
+	assert.Assert(t, is.Len(app.ExternalFilePaths(), 6))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], "a.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], "b.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[2], "c.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[3], "nesteddirectory\\a.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[4], "nesteddirectory\\b.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[5], "nesteddirectory\\c.cfg"))
+}
+
 func TestValidateBrokenMetadata(t *testing.T) {
 	r := strings.NewReader(`#version: 0.1.0-missing
 name: _INVALID-name
