@@ -59,6 +59,7 @@ func LoadFromDirectory(path string, ops ...func(*types.App) error) (*types.App, 
 		types.MetadataFile(filepath.Join(path, internal.MetadataFileName)),
 		types.WithComposeFiles(filepath.Join(path, internal.ComposeFileName)),
 		types.WithSettingsFiles(filepath.Join(path, internal.SettingsFileName)),
+		types.WithExternalFiles(path),
 	}, ops...)
 	return types.NewApp(path, appOps...)
 }

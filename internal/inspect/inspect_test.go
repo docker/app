@@ -91,6 +91,7 @@ description: "this is sparta !"`),
 			fs.WithFile(internal.SettingsFileName, `
 port: 8080
 text: hello`),
+			fs.WithFile("config.cfg", "something"),
 		),
 	)
 	defer dir.Remove()

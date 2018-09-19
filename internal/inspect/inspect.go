@@ -15,6 +15,7 @@ import (
 
 // Inspect dumps the metadata of an app
 func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error {
+
 	// Render the compose file
 	config, err := render.Render(app, argSettings)
 	if err != nil {
@@ -64,6 +65,14 @@ func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error
 			fmt.Fprintf(w, "%s\t%s\n", k, allSettings[k])
 		}
 	}, "Setting", "Value")
+
+	// Add External Files section
+	externalFiles := app.ExternalFilePaths()
+	printSection(out, len(externalFiles), func(w io.Writer) {
+		for _, name := range externalFiles {
+			fmt.Fprintln(w, name) // and info.Size() ?
+		}
+	}, "External File")
 
 	return nil
 }
