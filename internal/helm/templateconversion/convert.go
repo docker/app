@@ -37,8 +37,8 @@ func fromComposeSecrets(s map[string]types.SecretConfig) map[string]v1beta2.Secr
 	m := map[string]v1beta2.SecretConfig{}
 	for key, value := range s {
 		m[key] = v1beta2.SecretConfig{
-			Name: value.Name,
-			File: value.File,
+			Name: templatetypes.StringTemplate{Value: value.Name},
+			File: templatetypes.StringTemplate{Value: value.File},
 			External: v1beta2.External{
 				Name:     value.External.Name,
 				External: value.External.External,
@@ -56,8 +56,8 @@ func fromComposeConfigs(s map[string]types.ConfigObjConfig) map[string]v1beta2.C
 	m := map[string]v1beta2.ConfigObjConfig{}
 	for key, value := range s {
 		m[key] = v1beta2.ConfigObjConfig{
-			Name: value.Name,
-			File: value.File,
+			Name: templatetypes.StringTemplate{Value: value.Name},
+			File: templatetypes.StringTemplate{Value: value.File},
 			External: v1beta2.External{
 				Name:     value.External.Name,
 				External: value.External.External,
@@ -70,8 +70,8 @@ func fromComposeConfigs(s map[string]types.ConfigObjConfig) map[string]v1beta2.C
 
 func fromComposeServiceConfig(s templatetypes.ServiceConfig) v1beta2.ServiceConfig {
 	var userID *int64
-	if s.User != "" {
-		numerical, err := strconv.Atoi(s.User)
+	if s.User.Value != "" {
+		numerical, err := strconv.Atoi(s.User.Value)
 		if err == nil {
 			unixUserID := int64(numerical)
 			userID = &unixUserID

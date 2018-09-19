@@ -1,10 +1,25 @@
-apiVersion: compose.docker.com/v1beta1
 kind: Stack
+apiVersion: compose.docker.com/v1beta1
 metadata:
-  creationTimestamp: null
   name: helm
+  generatename: ""
+  namespace: ""
+  selflink: ""
+  uid: ""
+  resourceversion: ""
+  generation: 0
+  creationtimestamp: "0001-01-01T00:00:00Z"
+  deletiontimestamp: null
+  deletiongraceperiodseconds: null
+  labels: {}
+  annotations: {}
+  ownerreferences: []
+  initializers: null
+  finalizers: []
+  clustername: ""
 spec:
   composeFile: |
+    version: "3.7"
     services:
       app-watcher:
         image: {{.Values.watcher.image}}
@@ -13,21 +28,25 @@ spec:
           resources:
             limits:
               memory: {{.Values.memory}}
+        environment:
+          foo: {{.Values.bar}}
         healthcheck:
-          interval: 2m0s
           test:
           - /ping
           - debug
           timeout: {{.Values.timeout}}
+          interval: 2m0s
         image: busybox:latest
+        labels:
+          foo: {{.Values.bar}}
         ports:
         - mode: ingress
-          protocol: tcp
           target: {{.Values.aport}}
-        - mode: ingress
           protocol: tcp
-          published: {{.Values.dport}}
+        - mode: ingress
           target: {{.Values.sport}}
+          published: {{.Values.dport}}
+          protocol: tcp
         privileged: {{.Values.privileged}}
         read_only: {{.Values.read_only}}
         stdin_open: {{.Values.stdin_open}}
@@ -35,7 +54,11 @@ spec:
       front:
         deploy:
           replicas: {{.Values.myapp.nginx_replicas}}
+        environment:
+          {{.Values.foo}}: {{.Values.bar}}
         image: nginx:{{.Values.myapp.nginx_version}}
+        labels:
+          {{.Values.foo}}: {{.Values.bar}}
       monitor:
         command:
         - monitor
@@ -43,5 +66,3 @@ spec:
         - '{{.Values.app.name}}-{{.Values.app.version}}'
         - $dollar
         image: busybox:latest
-    version: "3.7"
-status: {}

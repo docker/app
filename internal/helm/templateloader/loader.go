@@ -18,12 +18,19 @@ import (
 	"github.com/docker/cli/opts"
 	"github.com/docker/go-connections/nat"
 	units "github.com/docker/go-units"
+	shellwords "github.com/mattn/go-shellwords"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 var (
 	transformers = []loader.Transformer{
+		{TypeOf: reflect.TypeOf(templatetypes.MappingWithEqualsTemplate{}), Func: transformMappingOrListFunc("=", true)},
+		{TypeOf: reflect.TypeOf(templatetypes.LabelsTemplate{}), Func: transformMappingOrListFunc("=", false)},
+		{TypeOf: reflect.TypeOf(templatetypes.HostsListTemplate{}), Func: transformHostsListTemplate},
+		{TypeOf: reflect.TypeOf(templatetypes.ShellCommandTemplate{}), Func: transformShellCommandTemplate},
+		{TypeOf: reflect.TypeOf(templatetypes.StringTemplateList{}), Func: transformStringTemplateList},
+		{TypeOf: reflect.TypeOf(templatetypes.StringTemplate{}), Func: transformStringTemplate},
 		{TypeOf: reflect.TypeOf(templatetypes.UnitBytesOrTemplate{}), Func: transformSize},
 		{TypeOf: reflect.TypeOf([]templatetypes.ServicePortConfig{}), Func: transformServicePort},
 		{TypeOf: reflect.TypeOf(templatetypes.ServiceSecretConfig{}), Func: transformStringSourceMap},
@@ -231,37 +238,51 @@ func LoadService(name string, serviceDict map[string]interface{}, workingDir str
 	return serviceConfig, nil
 }
 
-func updateEnvironment(environment map[string]*string, vars map[string]*string, lookupEnv template.Mapping) {
+func updateEnvironmentMap(environment templatetypes.MappingWithEqualsTemplate, vars map[string]*string, lookupEnv template.Mapping) {
 	for k, v := range vars {
 		interpolatedV, ok := lookupEnv(k)
 		if (v == nil || *v == "") && ok {
 			// lookupEnv is prioritized over vars
-			environment[k] = &interpolatedV
+			environment[templatetypes.StringTemplate{Value:k}] = &templatetypes.StringTemplate{Value: interpolatedV}
+		} else if v == nil {
+			environment[templatetypes.StringTemplate{Value:k}] = nil
+		} else {
+			environment[templatetypes.StringTemplate{Value:k}] = &templatetypes.StringTemplate{Value: *v}
+		}
+	}
+}
+func updateEnvironmentMapTemplate(environment, vars templatetypes.MappingWithEqualsTemplate, lookupEnv template.Mapping) {
+	for k, v := range vars {
+		interpolatedV, ok := lookupEnv(k.Value)
+		if (v == nil || v.Value == "") && ok {
+			// lookupEnv is prioritized over vars
+			environment[k] = &templatetypes.StringTemplate{Value: interpolatedV}
 		} else {
 			environment[k] = v
 		}
 	}
 }
 
+
 func resolveEnvironment(serviceConfig *templatetypes.ServiceConfig, workingDir string, lookupEnv template.Mapping) error {
-	environment := make(map[string]*string)
+	environment := templatetypes.MappingWithEqualsTemplate{}
 
 	if len(serviceConfig.EnvFile) > 0 {
 		var envVars []string
 
 		for _, file := range serviceConfig.EnvFile {
-			filePath := absPath(workingDir, file)
+			filePath := absPath(workingDir, file.Value)
 			fileVars, err := opts.ParseEnvFile(filePath)
 			if err != nil {
 				return err
 			}
 			envVars = append(envVars, fileVars...)
 		}
-		updateEnvironment(environment,
+		updateEnvironmentMap(environment,
 			opts.ConvertKVStringsToMapWithNil(envVars), lookupEnv)
 	}
 
-	updateEnvironment(environment, serviceConfig.Environment, lookupEnv)
+	updateEnvironmentMapTemplate(environment, serviceConfig.Environment, lookupEnv)
 	serviceConfig.Environment = environment
 	return nil
 }
@@ -272,11 +293,11 @@ func resolveVolumePaths(volumes []templatetypes.ServiceVolumeConfig, workingDir 
 			continue
 		}
 
-		if volume.Source == "" {
+		if volume.Source.Value == "" {
 			return errors.New(`invalid mount config for type "bind": field Source must not be empty`)
 		}
 
-		filePath := expandUser(volume.Source, lookupEnv)
+		filePath := expandUser(volume.Source.Value, lookupEnv)
 		// Check for a Unix absolute path first, to handle a Windows client
 		// with a Unix daemon. This handles a Windows client connecting to a
 		// Unix daemon. Note that this is not required for Docker for Windows
@@ -285,7 +306,7 @@ func resolveVolumePaths(volumes []templatetypes.ServiceVolumeConfig, workingDir 
 		if !path.IsAbs(filePath) {
 			filePath = absPath(workingDir, filePath)
 		}
-		volume.Source = filePath
+		volume.Source.Value = filePath
 		volumes[i] = volume
 	}
 	return nil
@@ -429,6 +450,106 @@ func transformSize(value interface{}) (interface{}, error) {
 	return nil, errors.Errorf("invalid type for size %T", value)
 }
 
+func transformStringTemplate(value interface{}) (interface{}, error) {
+	return templatetypes.StringTemplate{Value: fmt.Sprintf("%v", value)}, nil
+}
+
+func transformStringTemplateList(data interface{}) (interface{}, error) {
+	switch value := data.(type) {
+	case string:
+		return templatetypes.StringTemplateList{templatetypes.StringTemplate{Value: value}}, nil
+	case []interface{}:
+		res := templatetypes.StringTemplateList{}
+		for _, v := range value {
+			res = append(res, templatetypes.StringTemplate{ Value: fmt.Sprintf("%v", v)})
+		}
+		return res, nil
+	default:
+		return data, errors.Errorf("invalid type %T for string list", value)
+	}
+}
+
+func transformShellCommandTemplate(value interface{}) (interface{}, error) {
+	if str, ok := value.(string); ok {
+		return shellwords.Parse(str)
+	}
+	return value, nil
+}
+
+func transformHostsListTemplate(data interface{}) (interface{}, error) {
+	return transformListOrMapping(data, ":", false), nil
+}
+
+func toStringList(value map[string]interface{}, separator string, allowNil bool) []string {
+	output := []string{}
+	for key, value := range value {
+		if value == nil && !allowNil {
+			continue
+		}
+		output = append(output, fmt.Sprintf("%s%s%s", key, separator, value))
+	}
+	sort.Strings(output)
+	return output
+}
+
+func toString(value interface{}, allowNil bool) interface{} {
+	switch {
+	case value != nil:
+		return fmt.Sprint(value)
+	case allowNil:
+		return nil
+	default:
+		return ""
+	}
+}
+
+func toMapStringString(value map[string]interface{}, allowNil bool) map[string]interface{} {
+	output := make(map[string]interface{})
+	for key, value := range value {
+		output[key] = toString(value, allowNil)
+	}
+	return output
+}
+
+func transformListOrMapping(listOrMapping interface{}, sep string, allowNil bool) interface{} {
+	switch value := listOrMapping.(type) {
+	case map[string]interface{}:
+		return toStringList(value, sep, allowNil)
+	case []interface{}:
+		return listOrMapping
+	}
+	panic(errors.Errorf("expected a map or a list, got %T: %#v", listOrMapping, listOrMapping))
+}
+
+func transformMappingOrList(mappingOrList interface{}, sep string, allowNil bool) interface{} {
+	switch value := mappingOrList.(type) {
+	case map[string]interface{}:
+		return toMapStringString(value, allowNil)
+	case ([]interface{}):
+		result := make(map[string]interface{})
+		for _, value := range value {
+			parts := strings.SplitN(value.(string), sep, 2)
+			key := parts[0]
+			switch {
+			case len(parts) == 1 && allowNil:
+				result[key] = nil
+			case len(parts) == 1 && !allowNil:
+				result[key] = ""
+			default:
+				result[key] = parts[1]
+			}
+		}
+		return result
+	}
+	panic(errors.Errorf("expected a map or a list, got %T: %#v", mappingOrList, mappingOrList))
+}
+
+func transformMappingOrListFunc(sep string, allowNil bool) func(interface{}) (interface{}, error) {
+	return func(data interface{}) (interface{}, error) {
+		return transformMappingOrList(data, sep, allowNil), nil
+	}
+}
+
 func toServicePortConfigs(value string) ([]interface{}, error) {
 	var portConfigs []interface{}
 	if strings.Contains(value, "$") {
@@ -449,10 +570,10 @@ func toServicePortConfigs(value string) ([]interface{}, error) {
 			pub = ipub.(templatetypes.UInt64OrTemplate)
 		}
 		portConfigs = append(portConfigs, templatetypes.ServicePortConfig{
-			Protocol:  protocol,
+			Protocol:  templatetypes.StringTemplate{Value: protocol},
 			Target:    tgt.(templatetypes.UInt64OrTemplate),
 			Published: pub,
-			Mode:      "ingress",
+			Mode:      templatetypes.StringTemplate{Value: "ingress"},
 		})
 		return portConfigs, nil
 	}
@@ -478,10 +599,10 @@ func toServicePortConfigs(value string) ([]interface{}, error) {
 			tp := uint64(p.TargetPort)
 			pp := uint64(p.PublishedPort)
 			portConfigs = append(portConfigs, templatetypes.ServicePortConfig{
-				Protocol:  string(p.Protocol),
+				Protocol:  templatetypes.StringTemplate{Value: string(p.Protocol)},
 				Target:    templatetypes.UInt64OrTemplate{Value: &tp},
 				Published: templatetypes.UInt64OrTemplate{Value: &pp},
-				Mode:      string(p.PublishMode),
+				Mode:      templatetypes.StringTemplate{Value: string(p.PublishMode)},
 			})
 		}
 	}

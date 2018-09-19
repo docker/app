@@ -1,58 +1,66 @@
-apiVersion: compose.docker.com/v1beta2
 kind: Stack
+apiVersion: compose.docker.com/v1beta2
 metadata:
-  annotations: {}
-  clustername: ""
-  creationtimestamp: "0001-01-01T00:00:00Z"
-  deletiongraceperiodseconds: null
-  deletiontimestamp: null
-  finalizers: []
-  generatename: ""
-  generation: 0
-  initializers: null
-  labels: {}
   name: helm
+  generatename: ""
   namespace: ""
-  ownerreferences: []
-  resourceversion: ""
   selflink: ""
   uid: ""
+  resourceversion: ""
+  generation: 0
+  creationtimestamp: "0001-01-01T00:00:00Z"
+  deletiontimestamp: null
+  deletiongraceperiodseconds: null
+  labels: {}
+  annotations: {}
+  ownerreferences: []
+  initializers: null
+  finalizers: []
+  clustername: ""
 spec:
   services:
-  - image: {{.Values.watcher.image}}
-    name: app-watcher
-  - deploy:
+  - name: app-watcher
+    image: {{.Values.watcher.image}}
+  - name: debug
+    deploy:
       resources:
         limits:
           memory: {{.Values.memory}}
+    environment:
+      foo: {{.Values.bar}}
     health_check:
-      interval: 2m0s
       test:
       - /ping
       - debug
       timeout: {{.Values.timeout}}
+      interval: 2m0s
     image: busybox:latest
-    name: debug
+    labels:
+      foo: {{.Values.bar}}
     ports:
     - mode: ingress
-      protocol: tcp
       target: {{.Values.aport}}
-    - mode: ingress
       protocol: tcp
-      published: {{.Values.dport}}
+    - mode: ingress
       target: {{.Values.sport}}
+      published: {{.Values.dport}}
+      protocol: tcp
     privileged: {{.Values.privileged}}
     read_only: {{.Values.read_only}}
     stdin_open: {{.Values.stdin_open}}
     tty: {{.Values.tty}}
-  - deploy:
+  - name: front
+    deploy:
       replicas: {{.Values.myapp.nginx_replicas}}
+    environment:
+      {{.Values.foo}}: {{.Values.bar}}
     image: nginx:{{.Values.myapp.nginx_version}}
-    name: front
-  - command:
+    labels:
+      {{.Values.foo}}: {{.Values.bar}}
+  - name: monitor
+    command:
     - monitor
     - --source
     - '{{.Values.app.name}}-{{.Values.app.version}}'
     - $dollar
     image: busybox:latest
-    name: monitor

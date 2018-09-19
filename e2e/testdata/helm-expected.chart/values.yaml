@@ -2,7 +2,9 @@ aport: 10000
 app:
   name: myapp
   version: 0.1.0
+bar: barvalue
 dport: 12000
+foo: foovalue
 memory: "100000000"
 myapp:
   debug: false

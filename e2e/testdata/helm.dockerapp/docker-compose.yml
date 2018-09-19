@@ -4,11 +4,19 @@ services:
     image: nginx:${myapp.nginx_version}
     deploy:
       replicas: ${myapp.nginx_replicas}
+    labels:
+      - $foo=$bar
+    environment:
+      - $foo=$bar
   debug:
     image: busybox:latest
     ports:
     - $aport
     - $sport:$dport
+    labels:
+      foo: $bar
+    environment:
+      foo: $bar
     privileged: ${privileged}
     read_only: $read_only
     tty: $tty
