@@ -337,15 +337,3 @@ func testExternalFiles(registry string) func(*testing.T) {
 		assert.Assert(t, strings.Contains(result.Combined(), "config.cfg"))
 	}
 }
-
-// Possible next test - include binary files, additional settings files
-// mike.dockerapp/
-// -- docker-compose.yml
-// -- metadata.yml
-// -- settings.yml
-// -- settings-dev.yml
-// -- settings-prod.yml
-// -- example.bin
-// -- config/
-// ---- something.cfg
-//

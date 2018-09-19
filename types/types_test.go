@@ -193,6 +193,26 @@ func TestExternalFilesAreSorted(t *testing.T) {
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[5], "nesteddirectory\\c.cfg"))
 }
 
+func TestWithExternalFilesIncludingNestedCoreFiles(t *testing.T) {
+	dir := fs.NewDir(t, "externalfiles",
+		fs.WithFile(internal.MetadataFileName, validMeta),
+		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ComposeFileName, validCompose),
+		fs.WithDir("nesteddirectory",
+			fs.WithFile(internal.MetadataFileName, validMeta),
+			fs.WithFile(internal.SettingsFileName, `foo: bar`),
+			fs.WithFile(internal.ComposeFileName, validCompose),
+		),
+	)
+	defer dir.Remove()
+	app, err := NewAppFromDefaultFiles(dir.Path())
+	assert.NilError(t, err)
+	assert.Assert(t, is.Len(app.ExternalFilePaths(), 3))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], filepath.Join("nesteddirectory", internal.ComposeFileName)))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], filepath.Join("nesteddirectory", internal.MetadataFileName)))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[2], filepath.Join("nesteddirectory", internal.SettingsFileName)))
+}
+
 func TestValidateBrokenMetadata(t *testing.T) {
 	r := strings.NewReader(`#version: 0.1.0-missing
 name: _INVALID-name
