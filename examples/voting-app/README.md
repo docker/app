@@ -175,4 +175,4 @@ result:
 
 ### Wrap everything in a Makefile
 
-Add a Makefile to simplify rendering, deploying and killing your app, see [voting-app.dockerapp/Makefile](voting-app.dockerapp/Makefile).
+Add a Makefile to simplify rendering, deploying and killing your app, see [Makefile](Makefile).
