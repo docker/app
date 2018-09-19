@@ -5,10 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/pkg/errors"
@@ -55,13 +53,7 @@ func LoadFromSingleFile(path string, r io.Reader, ops ...func(*types.App) error)
 
 // LoadFromDirectory loads a docker app from a directory
 func LoadFromDirectory(path string, ops ...func(*types.App) error) (*types.App, error) {
-	appOps := append([]func(*types.App) error{
-		types.MetadataFile(filepath.Join(path, internal.MetadataFileName)),
-		types.WithComposeFiles(filepath.Join(path, internal.ComposeFileName)),
-		types.WithSettingsFiles(filepath.Join(path, internal.SettingsFileName)),
-		types.WithExternalFiles(path),
-	}, ops...)
-	return types.NewApp(path, appOps...)
+	return types.NewAppFromDefaultFiles(path, ops...)
 }
 
 // LoadFromTar loads a docker app from a tarball
