@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -163,7 +164,7 @@ func TestWithExternalFilesAndNestedDirectories(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(app.ExternalFilePaths(), 2))
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], "config.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], "nesteddirectory\\nestedconfig.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], filepath.Join("nesteddirectory", "nestedconfig.cfg")))
 }
 
 func TestExternalFilesAreSorted(t *testing.T) {
