@@ -27,7 +27,6 @@
 			"mnottale",
 			"shin-",
 			"silvin-lubecki",
-			"vdemeester",
 		]
 
 	[Org."Docs maintainers"]
@@ -92,9 +91,4 @@
 	Name = "Sebastiaan van Stijn"
 	Email = "github@gone.nl"
 	GitHub = "thaJeztah"
-
-	[people.vdemeester]
-	Name = "Vincent Demeester"
-	Email = "vincent@sbr.pm"
-	GitHub = "vdemeester"
 
