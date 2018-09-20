@@ -148,7 +148,7 @@ More examples are available in the [examples](examples) directory.
 Pre-built binaries are available on [GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and macOS.
 
 ```bash
-wget https://github.com/docker/app/releases/download/v0.4.1/docker-app-linux.tar.gz
+wget https://github.com/docker/app/releases/download/v0.5.0/docker-app-linux.tar.gz
 tar xf docker-app-linux.tar.gz
 cp docker-app-linux /usr/local/bin/docker-app
 ```
