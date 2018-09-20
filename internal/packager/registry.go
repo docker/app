@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -67,10 +68,15 @@ func Pull(repotag string, outputDir string) (string, error) {
 
 // Push pushes an app to a registry. Returns the image digest.
 func Push(app *types.App, namespace, tag, repo string) (string, error) {
-	payload := make(map[string]string)
-	payload[internal.MetadataFileName] = string(app.MetadataRaw())
-	payload[internal.ComposeFileName] = string(app.Composes()[0])
-	payload[internal.SettingsFileName] = string(app.SettingsRaw()[0])
+	payload, err := createPayload(app)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read external file whilst creating payload for push")
+	}
+	imageName := createImageName(app, namespace, tag, repo)
+	return resto.PushConfigMulti(context.Background(), payload, imageName, resto.RegistryOptions{}, nil)
+}
+
+func createImageName(app *types.App, namespace, tag, repo string) string {
 	if namespace == "" || tag == "" {
 		metadata := app.Metadata()
 		if namespace == "" {
@@ -87,5 +93,37 @@ func Push(app *types.App, namespace, tag, repo string) (string, error) {
 		namespace += "/"
 	}
 	imageName := namespace + repo + ":" + tag
-	return resto.PushConfigMulti(context.Background(), payload, imageName, resto.RegistryOptions{}, nil)
+	return imageName
+}
+
+func createPayload(app *types.App) (map[string]string, error) {
+	payload := map[string]string{
+		internal.MetadataFileName: string(app.MetadataRaw()),
+		internal.ComposeFileName:  string(app.Composes()[0]),
+		internal.SettingsFileName: string(app.SettingsRaw()[0]),
+	}
+	err := readExternalFiles(payload, app.Path, app.ExternalFilePaths())
+
+	return payload, err
+}
+
+func readExternalFiles(payload map[string]string, parentDirPath string, files []string) error {
+	var errs []string
+	for _, localfilepath := range files {
+		fullFilePath := path.Join(parentDirPath, localfilepath)
+		filedata, err := ioutil.ReadFile(fullFilePath)
+		if err != nil {
+			errs = append(errs, err.Error())
+			continue
+		}
+		payload[localfilepath] = string(filedata)
+	}
+	return newErrGroup(errs)
+}
+
+func newErrGroup(errs []string) error {
+	if len(errs) == 0 {
+		return nil
+	}
+	return errors.New(strings.Join(errs, "\n"))
 }
