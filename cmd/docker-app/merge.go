@@ -9,6 +9,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/pkg/errors"
@@ -50,7 +51,15 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 				return err
 			}
 			defer extractedApp.Cleanup()
-			inPlace := mergeOutputFile == ""
+			inPlace := false
+			if mergeOutputFile == "" {
+				if extractedApp.Source == types.AppSourceURL || extractedApp.Source == types.AppSourceImage {
+					mergeOutputFile = internal.DirNameFromAppName(extractedApp.Name)
+				} else {
+					inPlace = true
+					mergeOutputFile = extractedApp.Path + ".tmp"
+				}
+			}
 			if inPlace {
 				extra, err := extraFiles(extractedApp.Path)
 				if err != nil {
@@ -59,7 +68,6 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 				if len(extra) != 0 {
 					return fmt.Errorf("refusing to overwrite %s: extra files would be deleted: %s", extractedApp.Path, strings.Join(extra, ","))
 				}
-				mergeOutputFile = extractedApp.Path + ".tmp"
 			}
 			var target io.Writer
 			if mergeOutputFile == "-" {

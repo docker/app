@@ -113,15 +113,18 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 		// URL or docker image
 		u, err := url.Parse(name)
 		if err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+			ops = append(ops, types.WithSource(types.AppSourceURL))
 			return loader.LoadFromURL(name, ops...)
 		}
 		// look for a docker image
+		ops = append(ops, types.WithSource(types.AppSourceImage))
 		return extractImage(name, ops...)
 	}
 	if s.IsDir() {
 		// directory: already decompressed
 		appOpts := append(ops,
 			types.WithPath(appname),
+			types.WithSource(types.AppSourceSplit),
 		)
 		return loader.LoadFromDirectory(appname, appOpts...)
 	}
@@ -133,7 +136,9 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 			return nil, err
 		}
 		defer f.Close()
+		ops = append(ops, types.WithSource(types.AppSourceMerged))
 		return loader.LoadFromSingleFile(appname, f, ops...)
 	}
+	app.Source = types.AppSourceArchive
 	return app, nil
 }

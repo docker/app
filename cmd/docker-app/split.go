@@ -3,7 +3,9 @@ package main
 import (
 	"os"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -22,9 +24,14 @@ func splitCmd() *cobra.Command {
 				return err
 			}
 			defer extractedApp.Cleanup()
-			inPlace := splitOutputDir == ""
-			if inPlace {
-				splitOutputDir = extractedApp.Path + ".tmp"
+			inPlace := false
+			if splitOutputDir == "" {
+				if extractedApp.Source == types.AppSourceURL || extractedApp.Source == types.AppSourceImage {
+					splitOutputDir = internal.DirNameFromAppName(extractedApp.Name)
+				} else {
+					inPlace = true
+					splitOutputDir = extractedApp.Path + ".tmp"
+				}
 			}
 			if err := packager.Split(extractedApp, splitOutputDir); err != nil {
 				return err
