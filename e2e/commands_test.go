@@ -322,35 +322,32 @@ func TestExternalFilesWithRegistry(t *testing.T) {
 	r := startRegistry(t)
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
-	t.Run("externalFiles", testExternalFiles(registry))
-}
-func testExternalFiles(registry string) func(*testing.T) {
-	return func(t *testing.T) {
-		dir := fs.NewDir(t, "testexternalfiles",
-			fs.WithDir("externalfiles.dockerapp", fs.FromDir("testdata/externalfiles.dockerapp")),
-		)
-		defer dir.Remove()
 
-		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", dir.Join("externalfiles.dockerapp")).Assert(t, icmd.Success)
-		// inspect will run the core pull code too
-		result := icmd.RunCommand(dockerApp, "inspect", registry+"/acmecorp/externalfiles.dockerapp:0.1.0")
-		result.Assert(t, icmd.Success)
-		assert.Assert(t, strings.Contains(result.Combined(), "config.cfg"))
-		nestedpath := filepath.Join("nesteddir", "config2.cfg")
-		assert.Assert(t, strings.Contains(result.Combined(), nestedpath))
-		deepnestedpath := filepath.Join("nesteddir", "nested2", "nested3", "config3.cfg")
-		assert.Assert(t, strings.Contains(result.Combined(), deepnestedpath))
+	dir := fs.NewDir(t, "testexternalfiles",
+		fs.WithDir("externalfiles.dockerapp", fs.FromDir("testdata/externalfiles.dockerapp")),
+	)
+	defer dir.Remove()
 
-		// Test forking with external files
-		tempDir := fs.NewDir(t, "dockerapptest")
-		defer tempDir.Remove()
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", dir.Join("externalfiles.dockerapp")).Assert(t, icmd.Success)
+	// inspect will run the core pull code too
+	result := icmd.RunCommand(dockerApp, "inspect", registry+"/acmecorp/externalfiles.dockerapp:0.1.0")
+	result.Assert(t, icmd.Success)
+	resultOutput := result.Combined()
+	assert.Assert(t, strings.Contains(resultOutput, "config.cfg"))
+	nestedpath := filepath.Join("nesteddir", "config2.cfg")
+	assert.Assert(t, strings.Contains(resultOutput, nestedpath))
+	deepnestedpath := filepath.Join("nesteddir", "nested2", "nested3", "config3.cfg")
+	assert.Assert(t, strings.Contains(resultOutput, deepnestedpath))
 
-		icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/externalfiles.dockerapp:0.1.0",
-			"-p", tempDir.Path()).Assert(t, icmd.Success)
-		externalFile := golden.Get(t, tempDir.Join("externalfiles.dockerapp", "config.cfg"))
-		assert.Assert(t, golden.Bytes(externalFile, filepath.Join("externalfiles.dockerapp", "config.cfg")))
+	// Test forking with external files
+	tempDir := fs.NewDir(t, "dockerapptest")
+	defer tempDir.Remove()
 
-		nestedExternalFile := golden.Get(t, tempDir.Join("externalfiles.dockerapp", "nesteddir", "config2.cfg"))
-		assert.Assert(t, golden.Bytes(nestedExternalFile, filepath.Join("externalfiles.dockerapp", "nesteddir", "config2.cfg")))
-	}
+	icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/externalfiles.dockerapp:0.1.0",
+		"-p", tempDir.Path()).Assert(t, icmd.Success)
+	externalFile := golden.Get(t, tempDir.Join("externalfiles.dockerapp", "config.cfg"))
+	assert.Assert(t, golden.Bytes(externalFile, filepath.Join("externalfiles.dockerapp", "config.cfg")))
+
+	nestedExternalFile := golden.Get(t, tempDir.Join("externalfiles.dockerapp", "nesteddir", "config2.cfg"))
+	assert.Assert(t, golden.Bytes(nestedExternalFile, filepath.Join("externalfiles.dockerapp", "nesteddir", "config2.cfg")))
 }
