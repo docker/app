@@ -1,7 +1,7 @@
 package packager
 
 import (
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/docker/app/internal"
@@ -57,7 +57,7 @@ func TestSplitImageName(t *testing.T) {
 	}
 }
 
-func TestPushPayload(t *testing.T) {
+func TestCreatePayload(t *testing.T) {
 	dir := fs.NewDir(t, "externalfile",
 		fs.WithFile(internal.MetadataFileName, validMeta),
 		fs.WithFile(internal.SettingsFileName, `foo: bar`),
@@ -75,5 +75,6 @@ func TestPushPayload(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(payload, 5))
 	assert.Assert(t, is.Equal(payload["config.cfg"], "something"))
-	assert.Assert(t, is.Equal(payload[path.Join("nesteddirectory", "nestedconfig.cfg")], "something"))
+	nestedFilepath := filepath.Join("nesteddirectory", "nestedconfig.cfg")
+	assert.Assert(t, is.Equal(payload[nestedFilepath], "something"))
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -52,15 +51,22 @@ func Pull(repotag string, outputDir string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create output application directory")
 	}
-	for k, v := range payload {
-		// do not write files in any other directory
-		if strings.Contains(k, "/") || strings.Contains(k, "\\") {
-			log.Warnf("dropping image entry '%s' with unexpected path separator", k)
+	for localFilepath, filedata := range payload {
+		// Deal with windows/linux slashes
+		convertedFilepath := filepath.FromSlash(localFilepath)
+
+		// Check we aren't doing ./../../../ etc in the path
+		target := filepath.Join(appDir, convertedFilepath)
+		_, err := filepath.Rel(appDir, target)
+		if err != nil {
+			log.Warnf("dropping image entry '%s' with unexpected path outside of app dir", localFilepath)
 			continue
 		}
-		target := filepath.Join(appDir, k)
-		if err := ioutil.WriteFile(target, []byte(v), 0644); err != nil {
-			return "", errors.Wrap(err, "failed to write output file")
+		// Create the directories for any nested files
+		basepath := filepath.Dir(target)
+		os.MkdirAll(basepath, os.ModePerm)
+		if err := ioutil.WriteFile(target, []byte(filedata), 0644); err != nil {
+			return "", errors.Wrap(err, "failed to write output file:"+target)
 		}
 	}
 	return appDir, nil
@@ -110,7 +116,7 @@ func createPayload(app *types.App) (map[string]string, error) {
 func readExternalFiles(payload map[string]string, parentDirPath string, files []string) error {
 	var errs []string
 	for _, localfilepath := range files {
-		fullFilePath := path.Join(parentDirPath, localfilepath)
+		fullFilePath := filepath.Join(parentDirPath, localfilepath)
 		filedata, err := ioutil.ReadFile(fullFilePath)
 		if err != nil {
 			errs = append(errs, err.Error())

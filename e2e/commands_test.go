@@ -331,9 +331,14 @@ func testExternalFiles(registry string) func(*testing.T) {
 		)
 		defer dir.Remove()
 
-		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/externalfilestest", dir.Join("externalfiles.dockerapp")).Assert(t, icmd.Success)
-		result := icmd.RunCommand(dockerApp, "inspect", registry+"/externalfilestest/externalfiles:0.1.0")
+		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", dir.Join("externalfiles.dockerapp")).Assert(t, icmd.Success)
+		// inspect will run the core pull code too
+		result := icmd.RunCommand(dockerApp, "inspect", registry+"/acmecorp/externalfiles.dockerapp:0.1.0")
 		result.Assert(t, icmd.Success)
 		assert.Assert(t, strings.Contains(result.Combined(), "config.cfg"))
+		nestedpath := filepath.Join("nesteddir", "config2.cfg")
+		assert.Assert(t, strings.Contains(result.Combined(), nestedpath))
+		deepnestedpath := filepath.Join("nesteddir", "nested2", "nested3", "config3.cfg")
+		assert.Assert(t, strings.Contains(result.Combined(), deepnestedpath))
 	}
 }
