@@ -32,16 +32,22 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 
 	// create app dir in output-dir
 	namespace, name := splitPackageName(forkName)
-	appPath := filepath.Join(outputDir, internal.DirNameFromAppName(name))
-	if err := os.MkdirAll(appPath, 0755); err != nil {
+	appDir := filepath.Join(outputDir, internal.DirNameFromAppName(name))
+	if err := os.MkdirAll(appDir, 0755); err != nil {
 		return err
 	}
 
 	// iterate on contents
 	for k, vs := range payload {
 		v := []byte(vs)
-		if strings.Contains(k, "/") || strings.Contains(k, "\\") {
-			log.Infof("dropping payload element with unexpected path separator: %s", k)
+		// Deal with windows/linux slashes
+		convertedFilepath := filepath.FromSlash(k)
+
+		// Check we aren't doing ./../../../ etc in the path
+		fullFilepath := filepath.Join(appDir, convertedFilepath)
+		_, err := filepath.Rel(appDir, fullFilepath)
+		if err != nil {
+			log.Warnf("dropping image entry '%s' with unexpected path outside of app dir", k)
 			continue
 		}
 		if k == internal.MetadataFileName {
@@ -51,10 +57,12 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 				return err
 			}
 		}
-		dest := filepath.Join(appPath, k)
-		log.Debugf("Writing file at %s", dest)
-		if err := ioutil.WriteFile(dest, v, 0644); err != nil {
-			return errors.Wrap(err, "error writing output file")
+
+		// Create the directories for any nested files
+		basepath := filepath.Dir(fullFilepath)
+		os.MkdirAll(basepath, os.ModePerm)
+		if err := ioutil.WriteFile(fullFilepath, v, 0644); err != nil {
+			return errors.Wrap(err, "failed to write output file:"+fullFilepath)
 		}
 	}
 

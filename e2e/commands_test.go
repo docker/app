@@ -340,5 +340,17 @@ func testExternalFiles(registry string) func(*testing.T) {
 		assert.Assert(t, strings.Contains(result.Combined(), nestedpath))
 		deepnestedpath := filepath.Join("nesteddir", "nested2", "nested3", "config3.cfg")
 		assert.Assert(t, strings.Contains(result.Combined(), deepnestedpath))
+
+		// Test forking with external files
+		tempDir := fs.NewDir(t, "dockerapptest")
+		defer tempDir.Remove()
+
+		icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/externalfiles.dockerapp:0.1.0",
+			"-p", tempDir.Path()).Assert(t, icmd.Success)
+		externalFile := golden.Get(t, tempDir.Join("externalfiles.dockerapp", "config.cfg"))
+		assert.Assert(t, golden.Bytes(externalFile, filepath.Join("externalfiles.dockerapp", "config.cfg")))
+
+		nestedExternalFile := golden.Get(t, tempDir.Join("externalfiles.dockerapp", "nesteddir", "config2.cfg"))
+		assert.Assert(t, golden.Bytes(nestedExternalFile, filepath.Join("externalfiles.dockerapp", "nesteddir", "config2.cfg")))
 	}
 }

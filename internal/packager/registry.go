@@ -56,17 +56,17 @@ func Pull(repotag string, outputDir string) (string, error) {
 		convertedFilepath := filepath.FromSlash(localFilepath)
 
 		// Check we aren't doing ./../../../ etc in the path
-		target := filepath.Join(appDir, convertedFilepath)
-		_, err := filepath.Rel(appDir, target)
+		fullFilepath := filepath.Join(appDir, convertedFilepath)
+		_, err := filepath.Rel(appDir, fullFilepath)
 		if err != nil {
 			log.Warnf("dropping image entry '%s' with unexpected path outside of app dir", localFilepath)
 			continue
 		}
 		// Create the directories for any nested files
-		basepath := filepath.Dir(target)
+		basepath := filepath.Dir(fullFilepath)
 		os.MkdirAll(basepath, os.ModePerm)
-		if err := ioutil.WriteFile(target, []byte(filedata), 0644); err != nil {
-			return "", errors.Wrap(err, "failed to write output file:"+target)
+		if err := ioutil.WriteFile(fullFilepath, []byte(filedata), 0644); err != nil {
+			return "", errors.Wrap(err, "failed to write output file:"+fullFilepath)
 		}
 	}
 	return appDir, nil

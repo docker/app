@@ -188,9 +188,9 @@ func TestExternalFilesAreSorted(t *testing.T) {
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], "a.cfg"))
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], "b.cfg"))
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[2], "c.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[3], "nesteddirectory\\a.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[4], "nesteddirectory\\b.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[5], "nesteddirectory\\c.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[3], filepath.Join("nesteddirectory", "a.cfg")))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[4], filepath.Join("nesteddirectory", "b.cfg")))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[5], filepath.Join("nesteddirectory", "c.cfg")))
 }
 
 func TestWithExternalFilesIncludingNestedCoreFiles(t *testing.T) {

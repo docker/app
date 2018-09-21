@@ -60,7 +60,7 @@ func TestSplitImageName(t *testing.T) {
 func TestCreatePayload(t *testing.T) {
 	dir := fs.NewDir(t, "externalfile",
 		fs.WithFile(internal.MetadataFileName, validMeta),
-		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.SettingsFileName, validSettings),
 		fs.WithFile(internal.ComposeFileName, validCompose),
 		fs.WithFile("config.cfg", "something"),
 		fs.WithDir("nesteddirectory",
@@ -69,6 +69,7 @@ func TestCreatePayload(t *testing.T) {
 	)
 	defer dir.Remove()
 	app, err := types.NewAppFromDefaultFiles(dir.Path())
+	assert.NilError(t, err)
 
 	payload, err := createPayload(app)
 

@@ -15,7 +15,6 @@ import (
 
 // Inspect dumps the metadata of an app
 func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error {
-
 	// Render the compose file
 	config, err := render.Render(app, argSettings)
 	if err != nil {
