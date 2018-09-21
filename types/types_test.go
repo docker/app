@@ -2,7 +2,7 @@ package types
 
 import (
 	"errors"
-	"path/filepath"
+	"path"
 	"strings"
 	"testing"
 
@@ -164,7 +164,7 @@ func TestWithExternalFilesAndNestedDirectories(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(app.ExternalFilePaths(), 2))
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], "config.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], filepath.Join("nesteddirectory", "nestedconfig.cfg")))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], "nesteddirectory/nestedconfig.cfg"))
 }
 
 func TestExternalFilesAreSorted(t *testing.T) {
@@ -188,9 +188,9 @@ func TestExternalFilesAreSorted(t *testing.T) {
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], "a.cfg"))
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], "b.cfg"))
 	assert.Assert(t, is.Equal(app.ExternalFilePaths()[2], "c.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[3], filepath.Join("nesteddirectory", "a.cfg")))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[4], filepath.Join("nesteddirectory", "b.cfg")))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[5], filepath.Join("nesteddirectory", "c.cfg")))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[3], "nesteddirectory/a.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[4], "nesteddirectory/b.cfg"))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[5], "nesteddirectory/c.cfg"))
 }
 
 func TestWithExternalFilesIncludingNestedCoreFiles(t *testing.T) {
@@ -208,9 +208,9 @@ func TestWithExternalFilesIncludingNestedCoreFiles(t *testing.T) {
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(app.ExternalFilePaths(), 3))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], filepath.Join("nesteddirectory", internal.ComposeFileName)))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], filepath.Join("nesteddirectory", internal.MetadataFileName)))
-	assert.Assert(t, is.Equal(app.ExternalFilePaths()[2], filepath.Join("nesteddirectory", internal.SettingsFileName)))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[0], path.Join("nesteddirectory", internal.ComposeFileName)))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[1], path.Join("nesteddirectory", internal.MetadataFileName)))
+	assert.Assert(t, is.Equal(app.ExternalFilePaths()[2], path.Join("nesteddirectory", internal.SettingsFileName)))
 }
 
 func TestValidateBrokenMetadata(t *testing.T) {

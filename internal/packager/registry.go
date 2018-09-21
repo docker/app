@@ -66,7 +66,7 @@ func Pull(repotag string, outputDir string) (string, error) {
 		basepath := filepath.Dir(fullFilepath)
 		os.MkdirAll(basepath, os.ModePerm)
 		if err := ioutil.WriteFile(fullFilepath, []byte(filedata), 0644); err != nil {
-			return "", errors.Wrap(err, "failed to write output file:"+fullFilepath)
+			return "", errors.Wrapf(err, "failed to write output file: %s", fullFilepath)
 		}
 	}
 	return appDir, nil
@@ -98,8 +98,7 @@ func createImageName(app *types.App, namespace, tag, repo string) string {
 	if namespace != "" && namespace[len(namespace)-1] != '/' {
 		namespace += "/"
 	}
-	imageName := namespace + repo + ":" + tag
-	return imageName
+	return namespace + repo + ":" + tag
 }
 
 func createPayload(app *types.App) (map[string]string, error) {
@@ -116,7 +115,8 @@ func createPayload(app *types.App) (map[string]string, error) {
 func readExternalFiles(payload map[string]string, parentDirPath string, files []string) error {
 	var errs []string
 	for _, localfilepath := range files {
-		fullFilePath := filepath.Join(parentDirPath, localfilepath)
+		// Convert to local OS filepath slash syntax
+		fullFilePath := filepath.Join(parentDirPath, filepath.FromSlash(localfilepath))
 		filedata, err := ioutil.ReadFile(fullFilePath)
 		if err != nil {
 			errs = append(errs, err.Error())

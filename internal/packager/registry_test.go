@@ -1,7 +1,6 @@
 package packager
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/docker/app/internal"
@@ -76,6 +75,5 @@ func TestCreatePayload(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(payload, 5))
 	assert.Assert(t, is.Equal(payload["config.cfg"], "something"))
-	nestedFilepath := filepath.Join("nesteddirectory", "nestedconfig.cfg")
-	assert.Assert(t, is.Equal(payload[nestedFilepath], "something"))
+	assert.Assert(t, is.Equal(payload["nesteddirectory/nestedconfig.cfg"], "something"))
 }

@@ -151,7 +151,6 @@ func WithExternalFiles(rootAppDir string) func(*App) error {
 			}
 			localFilePath, err := filepath.Rel(rootAppDir, path)
 			if err != nil {
-				println(err)
 				return err
 			}
 			switch localFilePath {
@@ -159,7 +158,8 @@ func WithExternalFiles(rootAppDir string) func(*App) error {
 			case internal.MetadataFileName:
 			case internal.SettingsFileName:
 			default:
-				app.externalFilePaths = append(app.externalFilePaths, localFilePath)
+				// Standardise on forward slashes for windows boxes
+				app.externalFilePaths = append(app.externalFilePaths, filepath.ToSlash(localFilePath))
 			}
 			return nil
 		})

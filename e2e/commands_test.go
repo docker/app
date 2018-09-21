@@ -329,15 +329,17 @@ func TestExternalFilesWithRegistry(t *testing.T) {
 	defer dir.Remove()
 
 	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", dir.Join("externalfiles.dockerapp")).Assert(t, icmd.Success)
+
 	// inspect will run the core pull code too
 	result := icmd.RunCommand(dockerApp, "inspect", registry+"/acmecorp/externalfiles.dockerapp:0.1.0")
+
 	result.Assert(t, icmd.Success)
 	resultOutput := result.Combined()
+
+	println(resultOutput)
 	assert.Assert(t, strings.Contains(resultOutput, "config.cfg"))
-	nestedpath := filepath.Join("nesteddir", "config2.cfg")
-	assert.Assert(t, strings.Contains(resultOutput, nestedpath))
-	deepnestedpath := filepath.Join("nesteddir", "nested2", "nested3", "config3.cfg")
-	assert.Assert(t, strings.Contains(resultOutput, deepnestedpath))
+	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/config2.cfg"))
+	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
 
 	// Test forking with external files
 	tempDir := fs.NewDir(t, "dockerapptest")

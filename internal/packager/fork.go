@@ -62,7 +62,7 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 		basepath := filepath.Dir(fullFilepath)
 		os.MkdirAll(basepath, os.ModePerm)
 		if err := ioutil.WriteFile(fullFilepath, v, 0644); err != nil {
-			return errors.Wrap(err, "failed to write output file:"+fullFilepath)
+			return errors.Wrapf(err, "failed to write output file: %s", fullFilepath)
 		}
 	}
 
