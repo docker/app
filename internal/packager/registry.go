@@ -107,22 +107,22 @@ func createPayload(app *types.App) (map[string]string, error) {
 		internal.ComposeFileName:  string(app.Composes()[0]),
 		internal.SettingsFileName: string(app.SettingsRaw()[0]),
 	}
-	err := readExternalFiles(payload, app.Path, app.ExternalFilePaths())
+	err := readExternalFiles(payload, app.Path, app.ExternalFiles())
 
 	return payload, err
 }
 
-func readExternalFiles(payload map[string]string, parentDirPath string, files []string) error {
+func readExternalFiles(payload map[string]string, parentDirPath string, files []types.ExternalFile) error {
 	var errs []string
-	for _, localfilepath := range files {
+	for _, file := range files {
 		// Convert to local OS filepath slash syntax
-		fullFilePath := filepath.Join(parentDirPath, filepath.FromSlash(localfilepath))
+		fullFilePath := filepath.Join(parentDirPath, filepath.FromSlash(file.FilePath()))
 		filedata, err := ioutil.ReadFile(fullFilePath)
 		if err != nil {
 			errs = append(errs, err.Error())
 			continue
 		}
-		payload[localfilepath] = string(filedata)
+		payload[file.FilePath()] = string(filedata)
 	}
 	return newErrGroup(errs)
 }

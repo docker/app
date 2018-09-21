@@ -22,12 +22,28 @@ type App struct {
 	Path    string
 	Cleanup func()
 
-	composesContent   [][]byte
-	settingsContent   [][]byte
-	settings          settings.Settings
-	metadataContent   []byte
-	metadata          metadata.AppMetadata
-	externalFilePaths []string
+	composesContent [][]byte
+	settingsContent [][]byte
+	settings        settings.Settings
+	metadataContent []byte
+	metadata        metadata.AppMetadata
+	externalFiles   []ExternalFile
+}
+
+// ExternalFile is a summary of an external file stored in the app definition
+type ExternalFile struct {
+	filePath string
+	fileSize int64
+}
+
+// FilePath returns the file path
+func (f *ExternalFile) FilePath() string {
+	return f.filePath
+}
+
+// FileSize returns the file size
+func (f *ExternalFile) FileSize() int64 {
+	return f.fileSize
 }
 
 // Composes returns compose files content
@@ -55,9 +71,9 @@ func (a *App) Metadata() metadata.AppMetadata {
 	return a.metadata
 }
 
-// ExternalFilePaths returns the external filepaths list
-func (a *App) ExternalFilePaths() []string {
-	return a.externalFilePaths
+// ExternalFiles returns the external files list
+func (a *App) ExternalFiles() []ExternalFile {
+	return a.externalFiles
 }
 
 // Extract writes the app in the specified folder
@@ -158,8 +174,12 @@ func WithExternalFiles(rootAppDir string) func(*App) error {
 			case internal.MetadataFileName:
 			case internal.SettingsFileName:
 			default:
-				// Standardise on forward slashes for windows boxes
-				app.externalFilePaths = append(app.externalFilePaths, filepath.ToSlash(localFilePath))
+				externalFile := ExternalFile{
+					// Standardise on forward slashes for windows boxes
+					filePath: filepath.ToSlash(localFilePath),
+					fileSize: info.Size(),
+				}
+				app.externalFiles = append(app.externalFiles, externalFile)
 			}
 			return nil
 		})
