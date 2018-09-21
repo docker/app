@@ -65,13 +65,13 @@ func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error
 		}
 	}, "Setting", "Value")
 
-	// Add External Files section
-	externalFiles := app.ExternalFiles()
-	printSection(out, len(externalFiles), func(w io.Writer) {
-		for _, file := range externalFiles {
+	// Add Attachments section
+	attachments := app.Attachments()
+	printSection(out, len(attachments), func(w io.Writer) {
+		for _, file := range attachments {
 			fmt.Fprintf(w, "%s\t%d\n", file.FilePath(), file.FileSize())
 		}
-	}, "External File", "Size")
+	}, "Attachment", "Size")
 
 	return nil
 }

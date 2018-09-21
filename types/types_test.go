@@ -149,7 +149,7 @@ func assertContentIs(t *testing.T, data []byte, expected string) {
 	assert.Assert(t, is.Equal(string(data), expected))
 }
 
-func TestWithExternalFilesAndNestedDirectories(t *testing.T) {
+func TestWithAttachmentsAndNestedDirectories(t *testing.T) {
 	dir := fs.NewDir(t, "externalfile",
 		fs.WithFile(internal.MetadataFileName, validMeta),
 		fs.WithFile(internal.SettingsFileName, `foo: bar`),
@@ -162,12 +162,12 @@ func TestWithExternalFilesAndNestedDirectories(t *testing.T) {
 	defer dir.Remove()
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.ExternalFiles(), 2))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[0].FilePath(), "config.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[1].FilePath(), "nesteddirectory/nestedconfig.cfg"))
+	assert.Assert(t, is.Len(app.Attachments(), 2))
+	assert.Assert(t, is.Equal(app.Attachments()[0].FilePath(), "config.cfg"))
+	assert.Assert(t, is.Equal(app.Attachments()[1].FilePath(), "nesteddirectory/nestedconfig.cfg"))
 }
 
-func TestExternalFilesAreSorted(t *testing.T) {
+func TestAttachmentsAreSorted(t *testing.T) {
 	dir := fs.NewDir(t, "externalfile",
 		fs.WithFile(internal.MetadataFileName, validMeta),
 		fs.WithFile(internal.SettingsFileName, `foo: bar`),
@@ -184,17 +184,17 @@ func TestExternalFilesAreSorted(t *testing.T) {
 	defer dir.Remove()
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.ExternalFiles(), 6))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[0].FilePath(), "a.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[1].FilePath(), "b.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[2].FilePath(), "c.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[3].FilePath(), "nesteddirectory/a.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[4].FilePath(), "nesteddirectory/b.cfg"))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[5].FilePath(), "nesteddirectory/c.cfg"))
+	assert.Assert(t, is.Len(app.Attachments(), 6))
+	assert.Assert(t, is.Equal(app.Attachments()[0].FilePath(), "a.cfg"))
+	assert.Assert(t, is.Equal(app.Attachments()[1].FilePath(), "b.cfg"))
+	assert.Assert(t, is.Equal(app.Attachments()[2].FilePath(), "c.cfg"))
+	assert.Assert(t, is.Equal(app.Attachments()[3].FilePath(), "nesteddirectory/a.cfg"))
+	assert.Assert(t, is.Equal(app.Attachments()[4].FilePath(), "nesteddirectory/b.cfg"))
+	assert.Assert(t, is.Equal(app.Attachments()[5].FilePath(), "nesteddirectory/c.cfg"))
 }
 
-func TestWithExternalFilesIncludingNestedCoreFiles(t *testing.T) {
-	dir := fs.NewDir(t, "externalfiles",
+func TestWithAttachmentsIncludingNestedCoreFiles(t *testing.T) {
+	dir := fs.NewDir(t, "attachments",
 		fs.WithFile(internal.MetadataFileName, validMeta),
 		fs.WithFile(internal.SettingsFileName, `foo: bar`),
 		fs.WithFile(internal.ComposeFileName, validCompose),
@@ -207,10 +207,10 @@ func TestWithExternalFilesIncludingNestedCoreFiles(t *testing.T) {
 	defer dir.Remove()
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.ExternalFiles(), 3))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[0].FilePath(), path.Join("nesteddirectory", internal.ComposeFileName)))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[1].FilePath(), path.Join("nesteddirectory", internal.MetadataFileName)))
-	assert.Assert(t, is.Equal(app.ExternalFiles()[2].FilePath(), path.Join("nesteddirectory", internal.SettingsFileName)))
+	assert.Assert(t, is.Len(app.Attachments(), 3))
+	assert.Assert(t, is.Equal(app.Attachments()[0].FilePath(), path.Join("nesteddirectory", internal.ComposeFileName)))
+	assert.Assert(t, is.Equal(app.Attachments()[1].FilePath(), path.Join("nesteddirectory", internal.MetadataFileName)))
+	assert.Assert(t, is.Equal(app.Attachments()[2].FilePath(), path.Join("nesteddirectory", internal.SettingsFileName)))
 }
 
 func TestValidateBrokenMetadata(t *testing.T) {

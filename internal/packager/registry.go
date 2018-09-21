@@ -107,12 +107,12 @@ func createPayload(app *types.App) (map[string]string, error) {
 		internal.ComposeFileName:  string(app.Composes()[0]),
 		internal.SettingsFileName: string(app.SettingsRaw()[0]),
 	}
-	err := readExternalFiles(payload, app.Path, app.ExternalFiles())
+	err := readAttachments(payload, app.Path, app.Attachments())
 
 	return payload, err
 }
 
-func readExternalFiles(payload map[string]string, parentDirPath string, files []types.ExternalFile) error {
+func readAttachments(payload map[string]string, parentDirPath string, files []types.Attachment) error {
 	var errs []string
 	for _, file := range files {
 		// Convert to local OS filepath slash syntax

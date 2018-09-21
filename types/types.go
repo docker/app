@@ -27,22 +27,22 @@ type App struct {
 	settings        settings.Settings
 	metadataContent []byte
 	metadata        metadata.AppMetadata
-	externalFiles   []ExternalFile
+	attachments     []Attachment
 }
 
-// ExternalFile is a summary of an external file stored in the app definition
-type ExternalFile struct {
+// Attachment is a summary of an attachment (attached file) stored in the app definition
+type Attachment struct {
 	filePath string
 	fileSize int64
 }
 
 // FilePath returns the file path
-func (f *ExternalFile) FilePath() string {
+func (f *Attachment) FilePath() string {
 	return f.filePath
 }
 
 // FileSize returns the file size
-func (f *ExternalFile) FileSize() int64 {
+func (f *Attachment) FileSize() int64 {
 	return f.fileSize
 }
 
@@ -71,9 +71,9 @@ func (a *App) Metadata() metadata.AppMetadata {
 	return a.metadata
 }
 
-// ExternalFiles returns the external files list
-func (a *App) ExternalFiles() []ExternalFile {
-	return a.externalFiles
+// Attachments returns the external files list
+func (a *App) Attachments() []Attachment {
+	return a.attachments
 }
 
 // Extract writes the app in the specified folder
@@ -120,7 +120,7 @@ func NewAppFromDefaultFiles(path string, ops ...func(*App) error) (*App, error) 
 		MetadataFile(filepath.Join(path, internal.MetadataFileName)),
 		WithComposeFiles(filepath.Join(path, internal.ComposeFileName)),
 		WithSettingsFiles(filepath.Join(path, internal.SettingsFileName)),
-		WithExternalFiles(path),
+		WithAttachments(path),
 	}, ops...)
 	return NewApp(path, appOps...)
 }
@@ -154,8 +154,8 @@ func WithSettingsFiles(files ...string) func(*App) error {
 	return settingsLoader(func() ([][]byte, error) { return readFiles(files...) })
 }
 
-// WithExternalFiles adds all local files (exc. main files) to the app
-func WithExternalFiles(rootAppDir string) func(*App) error {
+// WithAttachments adds all local files (exc. main files) to the app
+func WithAttachments(rootAppDir string) func(*App) error {
 	return func(app *App) error {
 		return filepath.Walk(rootAppDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -174,12 +174,12 @@ func WithExternalFiles(rootAppDir string) func(*App) error {
 			case internal.MetadataFileName:
 			case internal.SettingsFileName:
 			default:
-				externalFile := ExternalFile{
+				externalFile := Attachment{
 					// Standardise on forward slashes for windows boxes
 					filePath: filepath.ToSlash(localFilePath),
 					fileSize: info.Size(),
 				}
-				app.externalFiles = append(app.externalFiles, externalFile)
+				app.attachments = append(app.attachments, externalFile)
 			}
 			return nil
 		})
