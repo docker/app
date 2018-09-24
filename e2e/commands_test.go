@@ -360,6 +360,7 @@ func TestRenderWithRegistry(t *testing.T) {
 }
 
 func TestImagePush(t *testing.T) {
+	skip.If(t, !hasExperimental, "experimental mode needed for this test")
 	r := startRegistry(t)
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
