@@ -8,7 +8,7 @@ RUN apk add --no-cache \
     make \
     coreutils
 
-ENV GOMETALITER_VERSION=2.0.5
+ENV GOMETALITER_VERSION=2.0.11
 ENV NAKEDRECT_SHA=c0e305a4f690fed163d47628bcc06a6d5655bf92
 
 WORKDIR /go/src/github.com/alecthomas/gometalinter
