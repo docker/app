@@ -38,20 +38,29 @@ func splitImageName(repotag string) (*imageComponents, error) {
 
 // Pull loads an app from a registry and returns the extracted dir name
 func Pull(repotag string, outputDir string) (string, error) {
+	imgRef, err := splitImageName(repotag)
+	if err != nil {
+		return "", errors.Wrapf(err, "origin %q is not a valid image name", repotag)
+	}
 	payload, err := resto.PullConfigMulti(context.Background(), repotag, resto.RegistryOptions{})
 	if err != nil {
 		return "", err
 	}
-	repoComps, err := splitImageName(repotag)
-	if err != nil {
-		return "", err
-	}
-	appDir := filepath.Join(outputDir, internal.DirNameFromAppName(repoComps.Name))
-	err = os.Mkdir(appDir, 0755)
-	if err != nil {
+	appDir := filepath.Join(outputDir, internal.DirNameFromAppName(imgRef.Name))
+	if err := os.MkdirAll(appDir, 0755); err != nil {
 		return "", errors.Wrap(err, "failed to create output application directory")
 	}
+	if err := ExtractImagePayloadToDiskFiles(appDir, payload); err != nil {
+		return "", err
+	}
+	return appDir, nil
+}
+
+// ExtractImagePayloadToDiskFiles extracts all the files out of the image payload and onto disk
+// creating all necessary folders in between.
+func ExtractImagePayloadToDiskFiles(appDir string, payload map[string]string) error {
 	for localFilepath, filedata := range payload {
+		fileBytes := []byte(filedata)
 		// Deal with windows/linux slashes
 		convertedFilepath := filepath.FromSlash(localFilepath)
 
@@ -62,16 +71,18 @@ func Pull(repotag string, outputDir string) (string, error) {
 			log.Warnf("dropping image entry '%s' with unexpected path outside of app dir", localFilepath)
 			continue
 		}
+
 		// Create the directories for any nested files
 		basepath := filepath.Dir(fullFilepath)
 		if err := os.MkdirAll(basepath, os.ModePerm); err != nil {
-			return "", errors.Wrapf(err, "failed to create directories for file: %s", fullFilepath)
+			return errors.Wrapf(err, "failed to create directories for file: %s", fullFilepath)
 		}
-		if err := ioutil.WriteFile(fullFilepath, []byte(filedata), 0644); err != nil {
-			return "", errors.Wrapf(err, "failed to write output file: %s", fullFilepath)
+		if err := ioutil.WriteFile(fullFilepath, fileBytes, 0644); err != nil {
+			return errors.Wrapf(err, "failed to write output file: %s", fullFilepath)
 		}
 	}
-	return appDir, nil
+
+	return nil
 }
 
 // Push pushes an app to a registry. Returns the image digest.
@@ -109,9 +120,10 @@ func createPayload(app *types.App) (map[string]string, error) {
 		internal.ComposeFileName:  string(app.Composes()[0]),
 		internal.SettingsFileName: string(app.SettingsRaw()[0]),
 	}
-	err := readAttachments(payload, app.Path, app.Attachments())
-
-	return payload, err
+	if err := readAttachments(payload, app.Path, app.Attachments()); err != nil {
+		return nil, err
+	}
+	return payload, nil
 }
 
 func readAttachments(payload map[string]string, parentDirPath string, files []types.Attachment) error {
