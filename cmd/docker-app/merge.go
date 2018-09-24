@@ -40,6 +40,25 @@ func extraFiles(appname string) ([]string, error) {
 	return res, nil
 }
 
+//handleInPlace returns the operation target path and if it's in-place
+func handleInPlace(app *types.App) (string, bool) {
+	if app.Source == types.AppSourceURL || app.Source == types.AppSourceImage {
+		return internal.DirNameFromAppName(app.Name), false
+	}
+	return app.Path + ".tmp", true
+}
+
+// removeAndRename removes target and rename source into target
+func removeAndRename(source, target string) error {
+	if err := os.RemoveAll(target); err != nil {
+		return errors.Wrap(err, "failed to erase previous application")
+	}
+	if err := os.Rename(source, target); err != nil {
+		return errors.Wrap(err, "failed to rename new application")
+	}
+	return nil
+}
+
 func mergeCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "merge [<app-name>] [-o output_file]",
@@ -53,12 +72,7 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 			defer extractedApp.Cleanup()
 			inPlace := false
 			if mergeOutputFile == "" {
-				if extractedApp.Source == types.AppSourceURL || extractedApp.Source == types.AppSourceImage {
-					mergeOutputFile = internal.DirNameFromAppName(extractedApp.Name)
-				} else {
-					inPlace = true
-					mergeOutputFile = extractedApp.Path + ".tmp"
-				}
+				mergeOutputFile, inPlace = handleInPlace(extractedApp)
 			}
 			if inPlace {
 				extra, err := extraFiles(extractedApp.Path)
@@ -86,12 +100,7 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 				target.(io.WriteCloser).Close()
 			}
 			if inPlace {
-				if err := os.RemoveAll(extractedApp.Path); err != nil {
-					return errors.Wrap(err, "failed to erase previous application")
-				}
-				if err := os.Rename(mergeOutputFile, extractedApp.Path); err != nil {
-					return errors.Wrap(err, "failed to rename new application")
-				}
+				return removeAndRename(mergeOutputFile, extractedApp.Path)
 			}
 			return nil
 		},

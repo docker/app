@@ -1,13 +1,8 @@
 package main
 
 import (
-	"os"
-
-	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -26,23 +21,13 @@ func splitCmd() *cobra.Command {
 			defer extractedApp.Cleanup()
 			inPlace := false
 			if splitOutputDir == "" {
-				if extractedApp.Source == types.AppSourceURL || extractedApp.Source == types.AppSourceImage {
-					splitOutputDir = internal.DirNameFromAppName(extractedApp.Name)
-				} else {
-					inPlace = true
-					splitOutputDir = extractedApp.Path + ".tmp"
-				}
+				splitOutputDir, inPlace = handleInPlace(extractedApp)
 			}
 			if err := packager.Split(extractedApp, splitOutputDir); err != nil {
 				return err
 			}
 			if inPlace {
-				if err := os.RemoveAll(extractedApp.Path); err != nil {
-					return errors.Wrap(err, "failed to erase previous application directory")
-				}
-				if err := os.Rename(splitOutputDir, extractedApp.Path); err != nil {
-					return errors.Wrap(err, "failed to rename new application directory")
-				}
+				return removeAndRename(splitOutputDir, extractedApp.Path)
 			}
 			return nil
 		},
