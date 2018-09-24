@@ -64,7 +64,9 @@ func Pull(repotag string, outputDir string) (string, error) {
 		}
 		// Create the directories for any nested files
 		basepath := filepath.Dir(fullFilepath)
-		os.MkdirAll(basepath, os.ModePerm)
+		if err := os.MkdirAll(basepath, os.ModePerm); err != nil {
+			return "", errors.Wrapf(err, "failed to create directories for file: %s", fullFilepath)
+		}
 		if err := ioutil.WriteFile(fullFilepath, []byte(filedata), 0644); err != nil {
 			return "", errors.Wrapf(err, "failed to write output file: %s", fullFilepath)
 		}
@@ -76,7 +78,7 @@ func Pull(repotag string, outputDir string) (string, error) {
 func Push(app *types.App, namespace, tag, repo string) (string, error) {
 	payload, err := createPayload(app)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read external file whilst creating payload for push")
+		return "", errors.Wrap(err, "failed to read external file while creating payload for push")
 	}
 	imageName := createImageName(app, namespace, tag, repo)
 	return resto.PushConfigMulti(context.Background(), payload, imageName, resto.RegistryOptions{}, nil)
