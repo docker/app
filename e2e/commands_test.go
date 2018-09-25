@@ -261,8 +261,8 @@ func TestSplitMerge(t *testing.T) {
 	result = icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
 	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
 	// test inplace
-	icmd.RunCommand(dockerApp, "merge", "split")
-	icmd.RunCommand(dockerApp, "split", "split")
+	icmd.RunCommand(dockerApp, "merge", "split").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "split", "split").Assert(t, icmd.Success)
 }
 
 func TestURL(t *testing.T) {
