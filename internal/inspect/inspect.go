@@ -70,8 +70,8 @@ func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error
 	attachments := app.Attachments()
 	printSection(out, len(attachments), func(w io.Writer) {
 		for _, file := range attachments {
-			sizeString := units.HumanSize(float64(file.FileSize()))
-			fmt.Fprintf(w, "%s\t%s\n", file.FilePath(), sizeString)
+			sizeString := units.HumanSize(float64(file.Size()))
+			fmt.Fprintf(w, "%s\t%s\n", file.Path(), sizeString)
 		}
 	}, "Attachment", "Size")
 

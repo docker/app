@@ -47,7 +47,7 @@ func Pull(repotag string, outputDir string) (string, error) {
 		return "", err
 	}
 	appDir := filepath.Join(outputDir, internal.DirNameFromAppName(imgRef.Name))
-	if err := os.MkdirAll(appDir, 0755); err != nil {
+	if err := os.Mkdir(appDir, 0755); err != nil {
 		return "", errors.Wrap(err, "failed to create output application directory")
 	}
 	if err := ExtractImagePayloadToDiskFiles(appDir, payload); err != nil {
@@ -66,9 +66,8 @@ func ExtractImagePayloadToDiskFiles(appDir string, payload map[string]string) er
 
 		// Check we aren't doing ./../../../ etc in the path
 		fullFilepath := filepath.Join(appDir, convertedFilepath)
-		_, err := filepath.Rel(appDir, fullFilepath)
-		if err != nil {
-			log.Warnf("dropping image entry '%s' with unexpected path outside of app dir", localFilepath)
+		if _, err := filepath.Rel(appDir, fullFilepath); err != nil {
+			log.Warnf("dropping image entry %q with unexpected path outside of app dir", localFilepath)
 			continue
 		}
 
@@ -130,13 +129,13 @@ func readAttachments(payload map[string]string, parentDirPath string, files []ty
 	var errs []string
 	for _, file := range files {
 		// Convert to local OS filepath slash syntax
-		fullFilePath := filepath.Join(parentDirPath, filepath.FromSlash(file.FilePath()))
+		fullFilePath := filepath.Join(parentDirPath, filepath.FromSlash(file.Path()))
 		filedata, err := ioutil.ReadFile(fullFilePath)
 		if err != nil {
 			errs = append(errs, err.Error())
 			continue
 		}
-		payload[file.FilePath()] = string(filedata)
+		payload[file.Path()] = string(filedata)
 	}
 	return newErrGroup(errs)
 }

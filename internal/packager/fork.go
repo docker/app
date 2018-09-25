@@ -76,8 +76,7 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
 	)
 
 	// update metadata file
-	var yamlMeta []byte
-	yamlMeta, err = yaml.Marshal(newMeta)
+	yamlMeta, err := yaml.Marshal(newMeta)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render metadata structure")
 	}

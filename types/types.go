@@ -32,18 +32,18 @@ type App struct {
 
 // Attachment is a summary of an attachment (attached file) stored in the app definition
 type Attachment struct {
-	filePath string
-	fileSize int64
+	path string
+	size int64
 }
 
-// FilePath returns the file path
-func (f *Attachment) FilePath() string {
-	return f.filePath
+// Path returns the local file path
+func (f *Attachment) Path() string {
+	return f.path
 }
 
-// FileSize returns the file size
-func (f *Attachment) FileSize() int64 {
-	return f.fileSize
+// Size returns the file size in bytes
+func (f *Attachment) Size() int64 {
+	return f.size
 }
 
 // Composes returns compose files content
@@ -176,8 +176,8 @@ func WithAttachments(rootAppDir string) func(*App) error {
 			default:
 				externalFile := Attachment{
 					// Standardise on forward slashes for windows boxes
-					filePath: filepath.ToSlash(localFilePath),
-					fileSize: info.Size(),
+					path: filepath.ToSlash(localFilePath),
+					size: info.Size(),
 				}
 				app.attachments = append(app.attachments, externalFile)
 			}
