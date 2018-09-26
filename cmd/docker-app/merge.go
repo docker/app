@@ -9,6 +9,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/pkg/errors"
@@ -39,6 +40,25 @@ func extraFiles(appname string) ([]string, error) {
 	return res, nil
 }
 
+//handleInPlace returns the operation target path and if it's in-place
+func handleInPlace(app *types.App) (string, bool) {
+	if app.Source == types.AppSourceURL || app.Source == types.AppSourceImage {
+		return internal.DirNameFromAppName(app.Name), false
+	}
+	return app.Path + ".tmp", true
+}
+
+// removeAndRename removes target and rename source into target
+func removeAndRename(source, target string) error {
+	if err := os.RemoveAll(target); err != nil {
+		return errors.Wrap(err, "failed to erase previous application")
+	}
+	if err := os.Rename(source, target); err != nil {
+		return errors.Wrap(err, "failed to rename new application")
+	}
+	return nil
+}
+
 func mergeCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "merge [<app-name>] [-o output_file]",
@@ -50,7 +70,10 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 				return err
 			}
 			defer extractedApp.Cleanup()
-			inPlace := mergeOutputFile == ""
+			inPlace := false
+			if mergeOutputFile == "" {
+				mergeOutputFile, inPlace = handleInPlace(extractedApp)
+			}
 			if inPlace {
 				extra, err := extraFiles(extractedApp.Path)
 				if err != nil {
@@ -59,7 +82,6 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 				if len(extra) != 0 {
 					return fmt.Errorf("refusing to overwrite %s: extra files would be deleted: %s", extractedApp.Path, strings.Join(extra, ","))
 				}
-				mergeOutputFile = extractedApp.Path + ".tmp"
 			}
 			var target io.Writer
 			if mergeOutputFile == "-" {
@@ -78,12 +100,7 @@ func mergeCmd(dockerCli command.Cli) *cobra.Command {
 				target.(io.WriteCloser).Close()
 			}
 			if inPlace {
-				if err := os.RemoveAll(extractedApp.Path); err != nil {
-					return errors.Wrap(err, "failed to erase previous application")
-				}
-				if err := os.Rename(mergeOutputFile, extractedApp.Path); err != nil {
-					return errors.Wrap(err, "failed to rename new application")
-				}
+				return removeAndRename(mergeOutputFile, extractedApp.Path)
 			}
 			return nil
 		},

@@ -16,11 +16,28 @@ import (
 // SingleFileSeparator is the separator used in single-file app
 const SingleFileSeparator = "\n---\n"
 
+// AppSourceKind represents what format the app was in when read
+type AppSourceKind int
+
+const (
+	// AppSourceSplit represents an Application in multiple file format
+	AppSourceSplit AppSourceKind = iota
+	// AppSourceMerged represents an Application in single file format
+	AppSourceMerged
+	// AppSourceImage represents an Application pulled from an image
+	AppSourceImage
+	// AppSourceURL represents an Application fetched from an URL
+	AppSourceURL
+	// AppSourceArchive represents an Application in an archive format
+	AppSourceArchive
+)
+
 // App represents an app
 type App struct {
 	Name    string
 	Path    string
 	Cleanup func()
+	Source  AppSourceKind
 
 	composesContent [][]byte
 	settingsContent [][]byte
@@ -145,6 +162,14 @@ func WithPath(path string) func(*App) error {
 func WithCleanup(f func()) func(*App) error {
 	return func(app *App) error {
 		app.Cleanup = f
+		return nil
+	}
+}
+
+// WithSource sets the source of the app
+func WithSource(source AppSourceKind) func(*App) error {
+	return func(app *App) error {
+		app.Source = source
 		return nil
 	}
 }
