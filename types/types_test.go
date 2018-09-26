@@ -163,9 +163,9 @@ func TestWithAttachmentsAndNestedDirectories(t *testing.T) {
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(app.Attachments(), 2))
-	assert.Assert(t, is.Equal(app.Attachments()[0].Path(), "config.cfg"))
-	assert.Assert(t, is.Equal(app.Attachments()[0].Size(), int64(9)))
-	assert.Assert(t, is.Equal(app.Attachments()[1].Path(), "nesteddirectory/nestedconfig.cfg"))
+	assert.Equal(t, app.Attachments()[0].Path(), "config.cfg")
+	assert.Equal(t, app.Attachments()[0].Size(), int64(9))
+	assert.Equal(t, app.Attachments()[1].Path(), "nesteddirectory/nestedconfig.cfg")
 }
 
 func TestAttachmentsAreSorted(t *testing.T) {
@@ -186,12 +186,12 @@ func TestAttachmentsAreSorted(t *testing.T) {
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(app.Attachments(), 6))
-	assert.Assert(t, is.Equal(app.Attachments()[0].Path(), "a.cfg"))
-	assert.Assert(t, is.Equal(app.Attachments()[1].Path(), "b.cfg"))
-	assert.Assert(t, is.Equal(app.Attachments()[2].Path(), "c.cfg"))
-	assert.Assert(t, is.Equal(app.Attachments()[3].Path(), "nesteddirectory/a.cfg"))
-	assert.Assert(t, is.Equal(app.Attachments()[4].Path(), "nesteddirectory/b.cfg"))
-	assert.Assert(t, is.Equal(app.Attachments()[5].Path(), "nesteddirectory/c.cfg"))
+	assert.Equal(t, app.Attachments()[0].Path(), "a.cfg")
+	assert.Equal(t, app.Attachments()[1].Path(), "b.cfg")
+	assert.Equal(t, app.Attachments()[2].Path(), "c.cfg")
+	assert.Equal(t, app.Attachments()[3].Path(), "nesteddirectory/a.cfg")
+	assert.Equal(t, app.Attachments()[4].Path(), "nesteddirectory/b.cfg")
+	assert.Equal(t, app.Attachments()[5].Path(), "nesteddirectory/c.cfg")
 }
 
 func TestWithAttachmentsIncludingNestedCoreFiles(t *testing.T) {
@@ -209,9 +209,9 @@ func TestWithAttachmentsIncludingNestedCoreFiles(t *testing.T) {
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
 	assert.Assert(t, is.Len(app.Attachments(), 3))
-	assert.Assert(t, is.Equal(app.Attachments()[0].Path(), path.Join("nesteddirectory", internal.ComposeFileName)))
-	assert.Assert(t, is.Equal(app.Attachments()[1].Path(), path.Join("nesteddirectory", internal.MetadataFileName)))
-	assert.Assert(t, is.Equal(app.Attachments()[2].Path(), path.Join("nesteddirectory", internal.SettingsFileName)))
+	assert.Equal(t, app.Attachments()[0].Path(), path.Join("nesteddirectory", internal.ComposeFileName))
+	assert.Equal(t, app.Attachments()[1].Path(), path.Join("nesteddirectory", internal.MetadataFileName))
+	assert.Equal(t, app.Attachments()[2].Path(), path.Join("nesteddirectory", internal.SettingsFileName))
 }
 
 func TestValidateBrokenMetadata(t *testing.T) {

@@ -48,7 +48,6 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to read metadata file from: %s", fullFilepath)
 	}
-	log.Debug("Loading app metadata")
 	bytes, err = updateMetadata(bytes, namespace, name, maintainers)
 	if err != nil {
 		return err
