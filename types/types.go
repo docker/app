@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -26,6 +27,23 @@ type App struct {
 	settings        settings.Settings
 	metadataContent []byte
 	metadata        metadata.AppMetadata
+	attachments     []Attachment
+}
+
+// Attachment is a summary of an attachment (attached file) stored in the app definition
+type Attachment struct {
+	path string
+	size int64
+}
+
+// Path returns the local file path
+func (f *Attachment) Path() string {
+	return f.path
+}
+
+// Size returns the file size in bytes
+func (f *Attachment) Size() int64 {
+	return f.size
 }
 
 // Composes returns compose files content
@@ -51,6 +69,11 @@ func (a *App) MetadataRaw() []byte {
 // Metadata returns the metadata struct
 func (a *App) Metadata() metadata.AppMetadata {
 	return a.metadata
+}
+
+// Attachments returns the external files list
+func (a *App) Attachments() []Attachment {
+	return a.attachments
 }
 
 // Extract writes the app in the specified folder
@@ -97,6 +120,7 @@ func NewAppFromDefaultFiles(path string, ops ...func(*App) error) (*App, error) 
 		MetadataFile(filepath.Join(path, internal.MetadataFileName)),
 		WithComposeFiles(filepath.Join(path, internal.ComposeFileName)),
 		WithSettingsFiles(filepath.Join(path, internal.SettingsFileName)),
+		WithAttachments(path),
 	}, ops...)
 	return NewApp(path, appOps...)
 }
@@ -128,6 +152,38 @@ func WithCleanup(f func()) func(*App) error {
 // WithSettingsFiles adds the specified settings files to the app
 func WithSettingsFiles(files ...string) func(*App) error {
 	return settingsLoader(func() ([][]byte, error) { return readFiles(files...) })
+}
+
+// WithAttachments adds all local files (exc. main files) to the app
+func WithAttachments(rootAppDir string) func(*App) error {
+	return func(app *App) error {
+		return filepath.Walk(rootAppDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+			localFilePath, err := filepath.Rel(rootAppDir, path)
+			if err != nil {
+				return err
+			}
+			switch localFilePath {
+			case internal.ComposeFileName:
+			case internal.MetadataFileName:
+			case internal.SettingsFileName:
+			default:
+				externalFile := Attachment{
+					// Standardise on forward slashes for windows boxes
+					path: filepath.ToSlash(localFilePath),
+					size: info.Size(),
+				}
+				app.attachments = append(app.attachments, externalFile)
+			}
+			return nil
+		})
+	}
 }
 
 // WithSettings adds the specified settings readers to the app

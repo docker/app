@@ -11,6 +11,7 @@ import (
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/settings"
 	composetypes "github.com/docker/cli/cli/compose/types"
+	units "github.com/docker/go-units"
 )
 
 // Inspect dumps the metadata of an app
@@ -64,6 +65,15 @@ func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error
 			fmt.Fprintf(w, "%s\t%s\n", k, allSettings[k])
 		}
 	}, "Setting", "Value")
+
+	// Add Attachments section
+	attachments := app.Attachments()
+	printSection(out, len(attachments), func(w io.Writer) {
+		for _, file := range attachments {
+			sizeString := units.HumanSize(float64(file.Size()))
+			fmt.Fprintf(w, "%s\t%s\n", file.Path(), sizeString)
+		}
+	}, "Attachment", "Size")
 
 	return nil
 }

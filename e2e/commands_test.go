@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/docker/app/internal"
@@ -260,8 +261,8 @@ func TestSplitMerge(t *testing.T) {
 	result = icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
 	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
 	// test inplace
-	icmd.RunCommand(dockerApp, "merge", "split")
-	icmd.RunCommand(dockerApp, "split", "split")
+	icmd.RunCommand(dockerApp, "merge", "split").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "split", "split").Assert(t, icmd.Success)
 }
 
 func TestURL(t *testing.T) {
@@ -315,4 +316,39 @@ func testFork(registry string) func(*testing.T) {
 		metadata2 := golden.Get(t, tempDir.Join("simple.dockerapp", "metadata.yml"))
 		assert.Assert(t, golden.Bytes(metadata2, "expected-fork-metadata-no-rename.golden"))
 	}
+}
+
+func TestAttachmentsWithRegistry(t *testing.T) {
+	r := startRegistry(t)
+	defer r.Stop(t)
+	registry := r.GetAddress(t)
+
+	dir := fs.NewDir(t, "testattachments",
+		fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")),
+	)
+	defer dir.Remove()
+
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", dir.Join("attachments.dockerapp")).Assert(t, icmd.Success)
+
+	// inspect will run the core pull code too
+	result := icmd.RunCommand(dockerApp, "inspect", registry+"/acmecorp/attachments.dockerapp:0.1.0")
+
+	result.Assert(t, icmd.Success)
+	resultOutput := result.Combined()
+
+	assert.Assert(t, strings.Contains(resultOutput, "config.cfg"))
+	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/config2.cfg"))
+	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
+
+	// Test forking with external files
+	tempDir := fs.NewDir(t, "dockerapptest")
+	defer tempDir.Remove()
+
+	icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/attachments.dockerapp:0.1.0",
+		"-p", tempDir.Path()).Assert(t, icmd.Success)
+	externalFile := golden.Get(t, tempDir.Join("attachments.dockerapp", "config.cfg"))
+	assert.Assert(t, golden.Bytes(externalFile, filepath.Join("attachments.dockerapp", "config.cfg")))
+
+	nestedAttachment := golden.Get(t, tempDir.Join("attachments.dockerapp", "nesteddir", "config2.cfg"))
+	assert.Assert(t, golden.Bytes(nestedAttachment, filepath.Join("attachments.dockerapp", "nesteddir", "config2.cfg")))
 }

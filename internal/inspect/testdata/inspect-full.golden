@@ -24,3 +24,7 @@ Settings (2) Value
 ------------ -----
 port         8080
 text         hello
+
+Attachment (1) Size
+-------------- ----
+config.cfg     9B

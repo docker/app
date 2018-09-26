@@ -1,0 +1,8 @@
+version: 0.1.0
+name: myapp
+description: ""
+maintainers:
+  - name: bearclaw
+    email: bearclaw@bearclaw.com
+  - name: bob
+    email: bob@bob.com

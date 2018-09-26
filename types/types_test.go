@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"path"
 	"strings"
 	"testing"
 
@@ -146,6 +147,71 @@ func TestMetadata(t *testing.T) {
 func assertContentIs(t *testing.T, data []byte, expected string) {
 	t.Helper()
 	assert.Assert(t, is.Equal(string(data), expected))
+}
+
+func TestWithAttachmentsAndNestedDirectories(t *testing.T) {
+	dir := fs.NewDir(t, "externalfile",
+		fs.WithFile(internal.MetadataFileName, validMeta),
+		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ComposeFileName, validCompose),
+		fs.WithFile("config.cfg", "something"),
+		fs.WithDir("nesteddirectory",
+			fs.WithFile("nestedconfig.cfg", "something"),
+		),
+	)
+	defer dir.Remove()
+	app, err := NewAppFromDefaultFiles(dir.Path())
+	assert.NilError(t, err)
+	assert.Assert(t, is.Len(app.Attachments(), 2))
+	assert.Equal(t, app.Attachments()[0].Path(), "config.cfg")
+	assert.Equal(t, app.Attachments()[0].Size(), int64(9))
+	assert.Equal(t, app.Attachments()[1].Path(), "nesteddirectory/nestedconfig.cfg")
+}
+
+func TestAttachmentsAreSorted(t *testing.T) {
+	dir := fs.NewDir(t, "externalfile",
+		fs.WithFile(internal.MetadataFileName, validMeta),
+		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ComposeFileName, validCompose),
+		fs.WithFile("c.cfg", "something"),
+		fs.WithFile("a.cfg", "something"),
+		fs.WithFile("b.cfg", "something"),
+		fs.WithDir("nesteddirectory",
+			fs.WithFile("a.cfg", "something"),
+			fs.WithFile("c.cfg", "something"),
+			fs.WithFile("b.cfg", "something"),
+		),
+	)
+	defer dir.Remove()
+	app, err := NewAppFromDefaultFiles(dir.Path())
+	assert.NilError(t, err)
+	assert.Assert(t, is.Len(app.Attachments(), 6))
+	assert.Equal(t, app.Attachments()[0].Path(), "a.cfg")
+	assert.Equal(t, app.Attachments()[1].Path(), "b.cfg")
+	assert.Equal(t, app.Attachments()[2].Path(), "c.cfg")
+	assert.Equal(t, app.Attachments()[3].Path(), "nesteddirectory/a.cfg")
+	assert.Equal(t, app.Attachments()[4].Path(), "nesteddirectory/b.cfg")
+	assert.Equal(t, app.Attachments()[5].Path(), "nesteddirectory/c.cfg")
+}
+
+func TestWithAttachmentsIncludingNestedCoreFiles(t *testing.T) {
+	dir := fs.NewDir(t, "attachments",
+		fs.WithFile(internal.MetadataFileName, validMeta),
+		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ComposeFileName, validCompose),
+		fs.WithDir("nesteddirectory",
+			fs.WithFile(internal.MetadataFileName, validMeta),
+			fs.WithFile(internal.SettingsFileName, `foo: bar`),
+			fs.WithFile(internal.ComposeFileName, validCompose),
+		),
+	)
+	defer dir.Remove()
+	app, err := NewAppFromDefaultFiles(dir.Path())
+	assert.NilError(t, err)
+	assert.Assert(t, is.Len(app.Attachments(), 3))
+	assert.Equal(t, app.Attachments()[0].Path(), path.Join("nesteddirectory", internal.ComposeFileName))
+	assert.Equal(t, app.Attachments()[1].Path(), path.Join("nesteddirectory", internal.MetadataFileName))
+	assert.Equal(t, app.Attachments()[2].Path(), path.Join("nesteddirectory", internal.SettingsFileName))
 }
 
 func TestValidateBrokenMetadata(t *testing.T) {

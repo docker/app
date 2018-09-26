@@ -32,30 +32,28 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 
 	// create app dir in output-dir
 	namespace, name := splitPackageName(forkName)
-	appPath := filepath.Join(outputDir, internal.DirNameFromAppName(name))
-	if err := os.MkdirAll(appPath, 0755); err != nil {
+	appDir := filepath.Join(outputDir, internal.DirNameFromAppName(name))
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		return errors.Wrap(err, "failed to create output application directory")
+	}
+
+	// Create all the files on disk
+	if err := ExtractImagePayloadToDiskFiles(appDir, payload); err != nil {
 		return err
 	}
 
-	// iterate on contents
-	for k, vs := range payload {
-		v := []byte(vs)
-		if strings.Contains(k, "/") || strings.Contains(k, "\\") {
-			log.Infof("dropping payload element with unexpected path separator: %s", k)
-			continue
-		}
-		if k == internal.MetadataFileName {
-			log.Debug("Loading app metadata")
-			v, err = updateMetadata(v, namespace, name, maintainers)
-			if err != nil {
-				return err
-			}
-		}
-		dest := filepath.Join(appPath, k)
-		log.Debugf("Writing file at %s", dest)
-		if err := ioutil.WriteFile(dest, v, 0644); err != nil {
-			return errors.Wrap(err, "error writing output file")
-		}
+	// Update the metadata file
+	fullFilepath := filepath.Join(appDir, internal.MetadataFileName)
+	bytes, err := ioutil.ReadFile(fullFilepath)
+	if err != nil {
+		return errors.Wrapf(err, "failed to read metadata file from: %s", fullFilepath)
+	}
+	bytes, err = updateMetadata(bytes, namespace, name, maintainers)
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(fullFilepath, bytes, 0644); err != nil {
+		return errors.Wrapf(err, "failed to write metadata file: %s", fullFilepath)
 	}
 
 	return nil
@@ -63,7 +61,6 @@ func Fork(originName, forkName, outputDir string, maintainers []string) error {
 
 func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([]byte, error) {
 	// retrieve original metadata (maintainer/app name/app tag)
-	var yamlMeta []byte
 	meta, err := loadMetadata(raw)
 	if err != nil {
 		return nil, err
@@ -78,7 +75,7 @@ func updateMetadata(raw []byte, namespace, name string, maintainers []string) ([
 	)
 
 	// update metadata file
-	yamlMeta, err = yaml.Marshal(newMeta)
+	yamlMeta, err := yaml.Marshal(newMeta)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render metadata structure")
 	}
