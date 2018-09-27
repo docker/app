@@ -73,7 +73,7 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 			Command: args,
 			Env:     env,
 		}).Assert(t, icmd.Success)
-		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering missmatch")
+		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
 	}
 }
 
