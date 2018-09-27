@@ -177,29 +177,35 @@ $ docker-app helm --stack-version=v1beta1
 
 ## Single file or directory representation
 
-If you prefer having the three documents in separate YAML files, omit the `-s` option to
-the `docker-app init` command. This will create a directory instead of a singe file, containing
+If you prefer having the three core documents in separate YAML files, omit the `-s` / `--single-file` option to
+the `docker-app init` command. This will create a directory instead of a single file, containing
 `metadata.yml`, `docker-compose.yml` and `settings.yml`.
 
 Converting between the two formats can be achieved by using the `docker-app split` and `docker-app merge` commands.
+
+Note that you cannot store attachments in the single file format. If you want to use attachments you should use the directory format.
+
+## Attachments (Storing additional files)
+
+If you want to store additional files in the application package, such as `prod.yml`, `test.yml` or other config files, use the directory format and simply place these files inside the *.dockerapp/ directory. These will be bundled into the package when using `docker-app push`
 
 ## Sharing your application on the Hub
 
 You can push any application to the Hub using `docker-app push`:
 
 ``` bash
-$ docker-app push --namespace myHubUser --tag latest
+$ docker-app push --namespace myhubuser --tag latest
 ```
 
-This command will push to the Hub an image named `myHubUser/hello.dockerapp:latest`.
+This command will push to the Hub an image named `myhubuser/hello.dockerapp:latest`.
 
-By default, this command uses the application version defined in `metadata.yml` as the tag,
-and the value of the metadata field `namespace` as the image namespace.
+If you omit the `--tag latest` argument, this command uses the application `version` defined in `metadata.yml` as the tag.
+If you omit the `--namespace myhubuser` argument, this command uses the application `namespace` defined in `metadata.yml` as the image namespace.
 
 All `docker-app` commands accept an image name as input, which means you can run on a different host:
 
 ``` bash
-$ docker-app inspect myHubUser/hello
+$ docker-app inspect myhubuser/hello
 ```
 
 ## Forking an existing image
