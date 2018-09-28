@@ -118,7 +118,8 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 		}
 		// look for a docker image
 		ops = append(ops, types.WithSource(types.AppSourceImage))
-		return extractImage(name, ops...)
+		app, err := extractImage(name, ops...)
+		return app, errors.Wrapf(err, "cannot locate application %q in filesystem or registry", name)
 	}
 	if s.IsDir() {
 		// directory: already decompressed
