@@ -186,7 +186,9 @@ func WithAttachments(rootAppDir string) func(*App) error {
 			if err != nil {
 				return err
 			}
-
+			if path == filepath.Join(rootAppDir, "images") {
+				return filepath.SkipDir
+			}
 			if info.IsDir() {
 				return nil
 			}
