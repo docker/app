@@ -376,4 +376,7 @@ func TestImagePush(t *testing.T) {
 	icmd.RunCommand(dockerApp, "image", "add", dir.Join("app")).Assert(t, icmd.Success)
 	icmd.RunCommand(dockerApp, "image", "push", dir.Join("app"), registry).Assert(t, icmd.Success)
 	icmd.RunCommand("docker", "pull", registry+"/library/alpine:latest").Assert(t, icmd.Success)
+	// check that attachment skips image files
+	result := icmd.RunCommand(dockerApp, "inspect", dir.Join("app")).Assert(t, icmd.Success)
+	assert.Assert(t, golden.String(result.Combined(), "images-alpine-no-attachments.golden"))
 }

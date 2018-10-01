@@ -1,0 +1,5 @@
+alpine 0.1.0
+
+Service (1) Replicas Ports Image
+----------- -------- ----- -----
+alpine      1              alpine:latest
