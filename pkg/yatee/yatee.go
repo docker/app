@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal/yaml"
+	yml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -295,7 +296,7 @@ func recurseList(input []interface{}, settings map[string]interface{}, flattened
 	var res []interface{}
 	for _, v := range input {
 		switch vv := v.(type) {
-		case map[interface{}]interface{}:
+		case yml.MapSlice:
 			newv, err := recurse(vv, settings, flattened, o)
 			if err != nil {
 				return nil, err
@@ -337,15 +338,17 @@ func recurseList(input []interface{}, settings map[string]interface{}, flattened
 
 // FIXME complexity on this is 47… get it lower than 16
 // nolint: gocyclo
-func recurse(input map[interface{}]interface{}, settings map[string]interface{}, flattened map[string]interface{}, o options) (map[interface{}]interface{}, error) {
-	res := make(map[interface{}]interface{})
-	for k, v := range input {
+func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[string]interface{}, o options) (yml.MapSlice, error) {
+	res := yml.MapSlice{}
+	for _, kvp := range input {
+		k := kvp.Key
+		v := kvp.Value
 		rk := k
 		kstr, isks := k.(string)
 		if isks {
 			trimed := strings.TrimLeft(kstr, " ")
 			if strings.HasPrefix(trimed, "@switch ") {
-				mii, ok := v.(map[interface{}]interface{})
+				mii, ok := v.(yml.MapSlice)
 				if !ok {
 					return nil, fmt.Errorf("@switch value must be a mapping")
 				}
@@ -355,7 +358,9 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 				}
 				var defaultValue interface{}
 				hit := false
-				for sk, sv := range mii {
+				for _, sval := range mii {
+					sk := sval.Key
+					sv := sval.Value
 					ssk, ok := sk.(string)
 					if !ok {
 						return nil, fmt.Errorf("@switch entry key must be a string")
@@ -365,28 +370,28 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 					}
 					if ssk == key {
 						hit = true
-						svv, ok := sv.(map[interface{}]interface{})
+						svv, ok := sv.(yml.MapSlice)
 						if !ok {
 							return nil, fmt.Errorf("@switch entry must be a mapping")
 						}
-						for valk, valv := range svv {
-							res[valk] = valv
+						for _, vval := range svv {
+							res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
 						}
 					}
 				}
 				if !hit && defaultValue != nil {
-					svv, ok := defaultValue.(map[interface{}]interface{})
+					svv, ok := defaultValue.(yml.MapSlice)
 					if !ok {
 						return nil, fmt.Errorf("@switch entry must be a mapping")
 					}
-					for valk, valv := range svv {
-						res[valk] = valv
+					for _, vval := range svv {
+						res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
 					}
 				}
 				continue
 			}
 			if strings.HasPrefix(trimed, "@for ") {
-				mii, ok := v.(map[interface{}]interface{})
+				mii, ok := v.(yml.MapSlice)
 				if !ok {
 					return nil, fmt.Errorf("@for value must be a mapping")
 				}
@@ -416,8 +421,8 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 						if err != nil {
 							return nil, err
 						}
-						for valk, valv := range val {
-							res[valk] = valv
+						for _, vval := range val {
+							res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
 						}
 					}
 				} else {
@@ -429,8 +434,8 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 						if err != nil {
 							return nil, err
 						}
-						for valk, valv := range val {
-							res[valk] = valv
+						for _, vval := range val {
+							res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
 						}
 					}
 				}
@@ -441,7 +446,7 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 				if err != nil {
 					return nil, err
 				}
-				mii, ok := v.(map[interface{}]interface{})
+				mii, ok := v.(yml.MapSlice)
 				if !ok {
 					return nil, fmt.Errorf("@if value must be a mapping")
 				}
@@ -450,20 +455,26 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 					if err != nil {
 						return nil, err
 					}
-					for valk, valv := range val {
-						if valk != "@else" {
-							res[valk] = valv
+					for _, vval := range val {
+						if vval.Key != "@else" {
+							res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
 						}
 					}
 				} else {
-					elseClause, ok := mii["@else"]
-					if ok {
-						elseDict, ok := elseClause.(map[interface{}]interface{})
+					var elseClause interface{}
+					for _, miiv := range mii {
+						if miiv.Key == "@else" {
+							elseClause = miiv.Value
+							break
+						}
+					}
+					if elseClause != nil {
+						elseDict, ok := elseClause.(yml.MapSlice)
 						if !ok {
 							return nil, fmt.Errorf("@else value must be a mapping")
 						}
-						for valk, valv := range elseDict {
-							res[valk] = valv
+						for _, vval := range elseDict {
+							res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
 						}
 					}
 				}
@@ -476,26 +487,26 @@ func recurse(input map[interface{}]interface{}, settings map[string]interface{},
 			rk = rstr
 		}
 		switch vv := v.(type) {
-		case map[interface{}]interface{}:
+		case yml.MapSlice:
 			newv, err := recurse(vv, settings, flattened, o)
 			if err != nil {
 				return nil, err
 			}
-			res[rk] = newv
+			res = append(res, yml.MapItem{Key: rk, Value: newv})
 		case []interface{}:
 			newv, err := recurseList(vv, settings, flattened, o)
 			if err != nil {
 				return nil, err
 			}
-			res[rk] = newv
+			res = append(res, yml.MapItem{Key: rk, Value: newv})
 		case string:
 			vvv, err := eval(vv, flattened, o)
 			if err != nil {
 				return nil, err
 			}
-			res[rk] = vvv
+			res = append(res, yml.MapItem{Key: rk, Value: vvv})
 		default:
-			res[rk] = v
+			res = append(res, yml.MapItem{Key: rk, Value: v})
 		}
 	}
 	return res, nil
@@ -521,23 +532,55 @@ func ProcessStrings(input, settings string) (string, error) {
 	return string(sres), nil
 }
 
-// Process resolves input templated yaml using values given in settings
-func Process(inputString string, settings map[string]interface{}, opts ...string) (map[interface{}]interface{}, error) {
+// ProcessWithOrder resolves input templated yaml using values given in settings, returning a MapSlice with order preserved
+func ProcessWithOrder(inputString string, settings map[string]interface{}, opts ...string) (yml.MapSlice, error) {
 	var o options
 	for _, v := range opts {
 		switch v {
 		case OptionErrOnMissingKey:
 			o.errOnMissingKey = true
 		default:
-			return nil, fmt.Errorf("unknown option '%s'", v)
+			return nil, fmt.Errorf("unknown option %q", v)
 		}
 	}
-	input := make(map[interface{}]interface{})
-	err := yaml.Unmarshal([]byte(inputString), input)
+	var input yml.MapSlice
+	err := yaml.Unmarshal([]byte(inputString), &input)
 	if err != nil {
 		return nil, err
 	}
 	flattened := make(map[string]interface{})
 	flatten(settings, flattened, "")
 	return recurse(input, settings, flattened, o)
+}
+
+// Process resolves input templated yaml using values given in settings, returning a map
+func Process(inputString string, settings map[string]interface{}, opts ...string) (map[interface{}]interface{}, error) {
+	mapSlice, err := ProcessWithOrder(inputString, settings, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := convert(mapSlice)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func convert(mapSlice yml.MapSlice) (map[interface{}]interface{}, error) {
+	res := make(map[interface{}]interface{})
+	for _, kv := range mapSlice {
+		v := kv.Value
+		castValue, ok := v.(yml.MapSlice)
+		if !ok {
+			res[kv.Key] = kv.Value
+		} else {
+			recursed, err := convert(castValue)
+			if err != nil {
+				return nil, err
+			}
+			res[kv.Key] = recursed
+		}
+	}
+	return res, nil
 }

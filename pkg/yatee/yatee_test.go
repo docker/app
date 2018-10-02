@@ -43,7 +43,6 @@ func testProcess(t *testing.T, input, output, settings, error string) {
 	} else {
 		assert.Equal(t, err.Error(), error)
 	}
-
 }
 
 func TestProcess(t *testing.T) {
@@ -143,4 +142,39 @@ ab:
 		"",
 		settings,
 		"eval loop detected")
+}
+
+func testProcessWithOrder(t *testing.T, input, output, error string) {
+	settings := make(map[string]interface{})
+
+	res, err := ProcessWithOrder(input, settings)
+
+	assert.NilError(t, err, "Error processing input: "+input)
+	sres, err := yaml.Marshal(res)
+	assert.NilError(t, err)
+	assert.Equal(t, output, string(sres), "Input was:"+string(sres)+"\nOutput was:"+output)
+}
+
+func TestProcessWithOrder(t *testing.T) {
+	// Test ordering is preserved inside nested structures
+	testProcessWithOrder(t,
+		`parent:
+  bb: true
+  aa: false
+`, `parent:
+  bb: true
+  aa: false
+`, "")
+
+	// Test ordering is preserved at the top level
+	testProcessWithOrder(t,
+		`bbb:
+  nested: true
+aaa:
+  nested: false
+`, `bbb:
+  nested: true
+aaa:
+  nested: false
+`, "")
 }
