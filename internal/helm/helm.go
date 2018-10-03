@@ -12,6 +12,7 @@ import (
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/helm/templateconversion"
 	"github.com/docker/app/internal/helm/templateloader"
+	"github.com/docker/app/internal/helm/templatetypes"
 	"github.com/docker/app/internal/helm/templatev1beta2"
 	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/internal/yaml"
@@ -42,6 +43,29 @@ This package then invokes LoadTemplate, then templatev1beta2.convert, and
 post-process the serialized yaml to replace all 'template_'-prefixed keys
 with the appropriate content (value or template)
 */
+
+// v1beta1StackSpec is a copy of v1beta1.StackSpec with the proper YAML annotations
+type v1beta1StackSpec struct {
+	ComposeFile string `json:"composeFile,omitempty" yaml:"composeFile,omitempty"`
+}
+
+// v1beta1Stack is a copy of v1beta1.Stack with the proper YAML annotations
+type v1beta1Stack struct {
+	templatev1beta2.TypeMeta `yaml:",inline" json:",inline"`
+	metav1.ObjectMeta        `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+
+	Spec   v1beta1StackSpec    `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status v1beta1.StackStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// v1beta2Stack is a copy of v1beta2.Stack with the proper YAML annotations
+type v1beta2Stack struct {
+	templatev1beta2.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta        `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+
+	Spec   *v1beta2.StackSpec   `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status *v1beta2.StackStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
 
 // Helm renders an app as an Helm Chart
 func Helm(app *types.App, env map[string]string, shouldRender bool, stackVersion string) error {
@@ -122,47 +146,41 @@ func makeStack(appname string, targetDir string, data []byte, stackVersion strin
 	if err := os.MkdirAll(filepath.Join(targetDir, "templates"), 0755); err != nil {
 		return err
 	}
-	var stack interface{}
+	var stackData []byte
 	switch stackVersion {
 	case V1Beta2:
 		stackSpec := templateconversion.FromComposeConfig(rendered)
-		stack = templatev1beta2.Stack{
+		stack := templatev1beta2.Stack{
 			TypeMeta:   typeMeta(stackVersion),
 			ObjectMeta: objectMeta(appname),
 			Spec:       stackSpec,
 		}
+		templatetypes.ProcessTemplate = toGoTemplate
+		stackData, err = yaml.Marshal(stack)
+		if err != nil {
+			return err
+		}
 	case V1Beta1:
+		templatetypes.ProcessTemplate = toGoTemplate
 		composeFile, err := yaml.Marshal(rendered)
 		if err != nil {
 			return err
 		}
-		stack = v1beta1.Stack{
+		stack := v1beta1Stack{
 			TypeMeta:   typeMeta(stackVersion),
 			ObjectMeta: objectMeta(appname),
-			Spec: v1beta1.StackSpec{
+			Spec: v1beta1StackSpec{
 				ComposeFile: string(composeFile),
 			},
+		}
+		stackData, err = yaml.Marshal(stack)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal final stack")
 		}
 	default:
 		return fmt.Errorf("invalid stack version %q", stackVersion)
 	}
-	stackData, err := yaml.Marshal(stack)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal stack data")
-	}
-	preStack := make(map[interface{}]interface{})
-	err = yaml.Unmarshal(stackData, preStack)
-	if err != nil {
-		return errors.Wrap(err, "failed to unmarshal stack data")
-	}
-	err = convertTemplates(preStack)
-	if err != nil {
-		return errors.Wrap(err, "failed to convert stack templates")
-	}
-	stackData, err = yaml.Marshal(preStack)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal final stack")
-	}
+	stackData = unquote(stackData)
 	return ioutil.WriteFile(filepath.Join(targetDir, "templates", "stack.yaml"), stackData, 0644)
 }
 
@@ -183,16 +201,16 @@ func helmRender(app *types.App, targetDir string, env map[string]string, stackVe
 	var stack interface{}
 	switch stackVersion {
 	case V1Beta2:
-		stack = v1beta2.Stack{
+		stack = v1beta2Stack{
 			TypeMeta:   typeMeta(stackVersion),
 			ObjectMeta: objectMeta(app.Path),
 			Spec:       s.Spec,
 		}
 	case V1Beta1:
-		stack = v1beta1.Stack{
+		stack = v1beta1Stack{
 			TypeMeta:   typeMeta(stackVersion),
 			ObjectMeta: objectMeta(app.Path),
-			Spec: v1beta1.StackSpec{
+			Spec: v1beta1StackSpec{
 				ComposeFile: s.ComposeFile,
 			},
 		}
@@ -231,10 +249,10 @@ func makeChart(meta *metadata.AppMetadata, targetDir string) error {
 	return ioutil.WriteFile(filepath.Join(targetDir, "Chart.yaml"), hmetadata, 0644)
 }
 
-func typeMeta(stackVersion string) metav1.TypeMeta {
-	return metav1.TypeMeta{
-		Kind:       "stacks.compose.docker.com",
-		APIVersion: stackVersion,
+func typeMeta(stackVersion string) templatev1beta2.TypeMeta {
+	return templatev1beta2.TypeMeta{
+		Kind:       "Stack",
+		APIVersion: "compose.docker.com/" + stackVersion,
 	}
 }
 
@@ -310,79 +328,16 @@ func filterVariables(s map[string]interface{}, variables []string, prefix string
 	}
 }
 
+// unquote unquotes gotemplates in template
+func unquote(template []byte) []byte {
+	re := regexp.MustCompile(`'(\{\{[^'}]*\}\})'`)
+	return re.ReplaceAll(template, []byte("$1"))
+}
+
 // toGoTemplate converts $foo and ${foo} into {{.foo}}
 func toGoTemplate(template string) (string, error) {
 	re := regexp.MustCompile(`(^|[^$])\${?([a-zA-Z0-9_.]+)}?`)
 	template = re.ReplaceAllString(template, "$1{{.Values.$2}}")
 	template = strings.Replace(template, "$$", "$", -1)
 	return template, nil
-}
-
-func convertTemplatesList(list []interface{}) error {
-	for i, v := range list {
-		switch vv := v.(type) {
-		case string:
-			vv, err := toGoTemplate(vv)
-			if err != nil {
-				return err
-			}
-			list[i] = vv
-		case map[interface{}]interface{}:
-			err := convertTemplates(vv)
-			if err != nil {
-				return err
-			}
-		case []interface{}:
-			if err := convertTemplatesList(vv); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// convertTemplates replaces $foo with {{ .foo }}, and resolves template_ keys
-func convertTemplates(dict map[interface{}]interface{}) error {
-	for k, v := range dict {
-		kk := k.(string)
-		if strings.HasPrefix(kk, "template_") {
-			dk := strings.TrimPrefix(kk, "template_")
-			vd, ok := v.(map[interface{}]interface{})
-			if !ok {
-				return fmt.Errorf("Expected a map, got %T", v)
-			}
-			template, ok := vd["valuetemplate"]
-			if ok {
-				var err error
-				template, err = toGoTemplate(template.(string))
-				if err != nil {
-					return err
-				}
-			} else {
-				template = vd["value"]
-			}
-			delete(dict, k)
-			dict[dk] = template
-		} else {
-			switch vv := v.(type) {
-			case string:
-				vv, err := toGoTemplate(vv)
-				if err != nil {
-					return err
-				}
-				dict[k] = vv
-			case map[interface{}]interface{}:
-				err := convertTemplates(vv)
-				if err != nil {
-					return err
-				}
-			case []interface{}:
-				err := convertTemplatesList(vv)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
 }

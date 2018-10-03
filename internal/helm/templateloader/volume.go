@@ -21,7 +21,7 @@ func ParseVolume(spec string) (templatetypes.ServiceVolumeConfig, error) {
 	case 0:
 		return volume, errors.New("invalid empty volume spec")
 	case 1, 2:
-		volume.Target = spec
+		volume.Target = templatetypes.StringTemplate{Value: spec}
 		volume.Type = string(mount.TypeVolume)
 		return volume, nil
 	}
@@ -56,14 +56,14 @@ func populateFieldFromBuffer(char rune, buffer []rune, volume *templatetypes.Ser
 	case len(buffer) == 0:
 		return errors.New("empty section between colons")
 	// Anonymous volume
-	case volume.Source == "" && char == endOfSpec:
-		volume.Target = strBuffer
+	case volume.Source.Value == "" && char == endOfSpec:
+		volume.Target.Value = strBuffer
 		return nil
-	case volume.Source == "":
-		volume.Source = strBuffer
+	case volume.Source.Value == "":
+		volume.Source.Value = strBuffer
 		return nil
-	case volume.Target == "":
-		volume.Target = strBuffer
+	case volume.Target.Value == "":
+		volume.Target.Value = strBuffer
 		return nil
 	case char == ':':
 		return errors.New("too many colons")
@@ -98,9 +98,9 @@ func isBindOption(option string) bool {
 func populateType(volume *templatetypes.ServiceVolumeConfig) {
 	switch {
 	// Anonymous volume
-	case volume.Source == "":
+	case volume.Source.Value == "":
 		volume.Type = string(mount.TypeVolume)
-	case isFilePath(volume.Source):
+	case isFilePath(volume.Source.Value):
 		volume.Type = string(mount.TypeBind)
 	default:
 		volume.Type = string(mount.TypeVolume)
