@@ -1,13 +1,14 @@
 package image
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/docker/app/internal/slices"
+	"github.com/docker/app/pkg/resto"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
@@ -25,19 +26,24 @@ func Add(appname string, services []string, config *composetypes.Config, pull bo
 		if !quiet {
 			fmt.Printf("Adding image %s for service %s...\n", s.Image, s.Name)
 		}
+		imageFileName := filepath.Join(appname, "images", s.Name)
 		if pull {
-			cmd := exec.Command("docker", "pull", s.Image)
-			output, err := cmd.CombinedOutput()
+			f, err := os.Open(imageFileName)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "error pulling %s: %s\n", s.Image, string(output))
 				return err
 			}
-		}
-		cmd := exec.Command("docker", "save", "-o", filepath.Join(appname, "images", s.Name), s.Image)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error from docker when saving %s: %s\n", s.Image, string(output))
-			return err
+			err = resto.PullImage(context.Background(), s.Image, resto.RegistryOptions{}, f)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error pulling %s: %s\n", s.Image, err)
+				return err
+			}
+		} else {
+			cmd := exec.Command("docker", "save", "-o", imageFileName, s.Image)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error from docker when saving %s: %s\n", s.Image, string(output))
+				return err
+			}
 		}
 	}
 	return nil
@@ -103,31 +109,6 @@ func ChangeImageRepository(image, registry string) (string, error) {
 	return path, nil
 }
 
-func loadImage(image string) (string, error) {
-	cmd := exec.Command("docker", "load", "-q", "-i", image)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-		return "", err
-	}
-	// output is one of:
-	// Loaded image ID: sha256:cf4d5c8667efcb194163da2da2f3da583602bbd9aa5894e785f51c7f5e91bffb
-	// Loaded image: REF
-	soutput := string(output)
-	var ref string
-	if strings.Contains(soutput, "Loaded image:") {
-		ref = strings.SplitN(soutput, ":", 2)[1]
-	} else {
-		outputComponents := strings.Split(string(output), ":")
-		if len(outputComponents) != 3 {
-			return "", fmt.Errorf("failed to parse 'docker load' output: %s", string(output))
-		}
-		ref = outputComponents[2]
-	}
-	ref = strings.Trim(ref, "\n ")
-	return ref, nil
-}
-
 // Push loads and pushes images found in app to given registry
 func Push(appPath string, registry string, services []string, config *composetypes.Config) error {
 	imageDir, err := os.Open(filepath.Join(appPath, "images"))
@@ -143,10 +124,6 @@ func Push(appPath string, registry string, services []string, config *composetyp
 		if len(services) != 0 && !slices.ContainsString(services, i) {
 			continue
 		}
-		ref, err := loadImage(filepath.Join(appPath, "images", i))
-		if err != nil {
-			return err
-		}
 		service := serviceByName(config, i)
 		if service == nil {
 			return fmt.Errorf("failed to find service '%s' in config", i)
@@ -155,18 +132,8 @@ func Push(appPath string, registry string, services []string, config *composetyp
 		if err != nil {
 			return err
 		}
-		// retag
-		cmd := exec.Command("docker", "tag", ref, path)
-		output, err := cmd.CombinedOutput()
+		err = resto.PushImage(context.Background(), path, resto.RegistryOptions{}, filepath.Join(appPath, "images", i))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to retag '%s' to '%s': %s", ref, path, string(output))
-			return err
-		}
-		// push
-		cmd = exec.Command("docker", "push", path)
-		output, err = cmd.CombinedOutput()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to push '%s': %s", path, string(output))
 			return err
 		}
 	}
