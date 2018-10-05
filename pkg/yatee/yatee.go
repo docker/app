@@ -23,19 +23,10 @@ type options struct {
 // flatten flattens a structure: foo.bar.baz -> 'foo.bar.baz'
 func flatten(in map[string]interface{}, out map[string]interface{}, prefix string) {
 	for k, v := range in {
+		out[prefix+k] = v
 		switch vv := v.(type) {
-		case string:
-			out[prefix+k] = vv
 		case map[string]interface{}:
 			flatten(vv, out, prefix+k+".")
-		case []interface{}:
-			values := []string{}
-			for _, i := range vv {
-				values = append(values, fmt.Sprintf("%v", i))
-			}
-			out[prefix+k] = strings.Join(values, " ")
-		default:
-			out[prefix+k] = v
 		}
 	}
 }
@@ -57,6 +48,19 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 				}
 			}
 			merge(res[kk].(map[string]interface{}), vv)
+		case []interface{}:
+			var lres []interface{}
+			for _, lv := range vv {
+				switch lvv := lv.(type) {
+				case map[interface{}]interface{}:
+					r := make(map[string]interface{})
+					merge(r, lvv)
+					lres = append(lres, r)
+				default:
+					lres = append(lres, lv)
+				}
+			}
+			res[kk] = lres
 		default:
 			res[kk] = vv
 		}
@@ -265,7 +269,7 @@ func eval(expr string, flattened map[string]interface{}, o options) (interface{}
 				if o.errOnMissingKey {
 					return "", fmt.Errorf("variable '%s' not set", comp)
 				}
-				fmt.Fprintf(os.Stderr, "variable '%s' not set, expanding to empty string", comp)
+				fmt.Fprintf(os.Stderr, "variable '%s' not set, expanding to empty string\n", comp)
 			}
 		}
 		valstr := fmt.Sprintf("%v", val)
@@ -401,22 +405,48 @@ func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[
 				if err != nil {
 					return nil, err
 				}
-				varrange, ok := varrangeraw.(string)
-				if !ok {
-					return nil, fmt.Errorf("@for argument must be a string")
-				}
-				mayberange := strings.Split(varrange, "..")
-				if len(mayberange) == 2 {
-					rangestart, err := strconv.ParseInt(mayberange[0], 0, 64)
-					if err != nil {
-						return nil, err
+				switch varrange := varrangeraw.(type) {
+				case string:
+					mayberange := strings.Split(varrange, "..")
+					if len(mayberange) == 2 {
+						rangestart, err := strconv.ParseInt(mayberange[0], 0, 64)
+						if err != nil {
+							return nil, err
+						}
+						rangeend, err := strconv.ParseInt(mayberange[1], 0, 64)
+						if err != nil {
+							return nil, err
+						}
+						for i := rangestart; i < rangeend; i++ {
+							flattened[varname] = fmt.Sprintf("%v", i)
+							val, err := recurse(mii, settings, flattened, o)
+							if err != nil {
+								return nil, err
+							}
+							for _, vval := range val {
+								res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
+							}
+						}
+					} else {
+						// treat range as a list
+						rangevalues := strings.Split(varrange, " ")
+						for _, i := range rangevalues {
+							flattened[varname] = i
+							val, err := recurse(mii, settings, flattened, o)
+							if err != nil {
+								return nil, err
+							}
+							for _, vval := range val {
+								res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
+							}
+						}
 					}
-					rangeend, err := strconv.ParseInt(mayberange[1], 0, 64)
-					if err != nil {
-						return nil, err
-					}
-					for i := rangestart; i < rangeend; i++ {
-						flattened[varname] = fmt.Sprintf("%v", i)
+				case []interface{}:
+					for _, i := range varrange {
+						flattened[varname] = i
+						if imap, ok := i.(map[string]interface{}); ok {
+							flatten(imap, flattened, varname+".")
+						}
 						val, err := recurse(mii, settings, flattened, o)
 						if err != nil {
 							return nil, err
@@ -425,11 +455,13 @@ func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[
 							res = append(res, yml.MapItem{Key: vval.Key, Value: vval.Value})
 						}
 					}
-				} else {
-					// treat range as a list
-					rangevalues := strings.Split(varrange, " ")
-					for _, i := range rangevalues {
-						flattened[varname] = i
+				case map[string]interface{}:
+					for k, v := range varrange {
+						flattened[varname+".key"] = k
+						flattened[varname+".value"] = v
+						if vmap, ok := v.(map[string]interface{}); ok {
+							flatten(vmap, flattened, varname+".value.")
+						}
 						val, err := recurse(mii, settings, flattened, o)
 						if err != nil {
 							return nil, err
@@ -440,7 +472,7 @@ func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[
 					}
 				}
 				continue
-			}
+			} // @for
 			if strings.HasPrefix(trimed, "@if ") {
 				cond, err := eval(strings.TrimPrefix(trimed, "@if "), flattened, o)
 				if err != nil {

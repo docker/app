@@ -29,6 +29,7 @@ func TestEval(t *testing.T) {
 }
 
 func testProcess(t *testing.T, input, output, settings, error string) {
+	t.Helper()
 	ps := make(map[interface{}]interface{})
 	err := yaml.Unmarshal([]byte(settings), ps)
 	assert.NilError(t, err)
@@ -56,6 +57,19 @@ app:
 ab:
   - a
   - b
+ldict:
+  - key: bar
+    value: vbar
+  - key: foo
+    value: vfoo
+dstring:
+  foo: vfoo
+  bar: vbar
+ddict:
+  foo:
+    value: vfoo
+  bar:
+    value: vbar
 `
 	testProcess(t,
 		`services:
@@ -142,6 +156,69 @@ ab:
 		"",
 		settings,
 		"eval loop detected")
+
+	testProcess(t,
+		`services:
+  "@for i in ${ab}":
+    $i: go`,
+		`services:
+  a: go
+  b: go
+`, settings, "")
+
+	testProcess(t, `
+va: ${dstring.foo}
+vb: ${dstring.bar}
+vd: ${dstring}
+ve: ${ddict.foo.value}
+vf: ${ddict.bar.value}
+vg: ${ddict.foo}
+vh: ${ddict}
+`, `va: vfoo
+vb: vbar
+vd:
+  bar: vbar
+  foo: vfoo
+ve: vfoo
+vf: vbar
+vg:
+  value: vfoo
+vh:
+  bar:
+    value: vbar
+  foo:
+    value: vfoo
+`, settings, "")
+
+	testProcess(t, `
+"@for i in ${dstring}":
+  "$i.key": ${i.value}
+`, `bar: vbar
+foo: vfoo
+`, settings, "")
+
+	testProcess(t, `
+"@for i in ${ddict}":
+  "$i.key": ${i.value.value}
+`, `bar: vbar
+foo: vfoo
+`, settings, "")
+
+	testProcess(t, `
+"@for i in ${ddict}":
+  "$i.key": ${i.value}
+`, `bar:
+  value: vbar
+foo:
+  value: vfoo
+`, settings, "")
+
+	testProcess(t, `
+"@for i in ${ldict}":
+  "$i.key": ${i.value}
+`, `bar: vbar
+foo: vfoo
+`, settings, "")
 }
 
 func testProcessWithOrder(t *testing.T, input, output, error string) {
