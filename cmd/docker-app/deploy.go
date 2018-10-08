@@ -77,8 +77,10 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	if stackName == "" {
 		stackName = internal.AppNameFromDir(app.Name)
 	}
-	if err := os.Chdir(app.Path); err != nil {
-		return err
+	if app.Source.ShouldRunInsideDirectory() {
+		if err := os.Chdir(app.Path); err != nil {
+			return err
+		}
 	}
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
 		Namespace:        stackName,
