@@ -18,15 +18,14 @@ import (
 )
 
 type deployOptions struct {
-	deployComposeFiles         []string
-	deploySettingsFiles        []string
-	deployEnv                  []string
-	deployOrchestrator         string
-	deployKubeConfig           string
-	deployNamespace            string
-	deployStackName            string
-	deploySendRegistryAuth     bool
-	deployKeepWorkingDirectory bool
+	deployComposeFiles     []string
+	deploySettingsFiles    []string
+	deployEnv              []string
+	deployOrchestrator     string
+	deployKubeConfig       string
+	deployNamespace        string
+	deployStackName        string
+	deploySendRegistryAuth bool
 }
 
 // deployCmd represents the deploy command
@@ -50,7 +49,6 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.deployNamespace, "namespace", "n", "default", "Kubernetes namespace to deploy into")
 	cmd.Flags().StringVarP(&opts.deployStackName, "name", "d", "", "Stack name (default: app name)")
 	cmd.Flags().BoolVarP(&opts.deploySendRegistryAuth, "with-registry-auth", "", false, "Sends registry auth")
-	cmd.Flags().BoolVarP(&opts.deployKeepWorkingDirectory, "keep-workdir", "", false, "Keeps the working directory from where you ran the deploy command (rather than inside the dockerapp directory)")
 	if internal.Experimental == "on" {
 		cmd.Flags().StringArrayVarP(&opts.deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
 	}
@@ -79,8 +77,8 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	if stackName == "" {
 		stackName = internal.AppNameFromDir(app.Name)
 	}
-	if !opts.deployKeepWorkingDirectory {
-		os.Chdir(app.Path)
+	if err := os.Chdir(app.Path); err != nil {
+		return err
 	}
 	return stack.RunDeploy(dockerCli, flags, rendered, deployOrchestrator, options.Deploy{
 		Namespace:        stackName,
