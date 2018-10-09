@@ -47,6 +47,15 @@ func TestRenderTemplates(t *testing.T) {
 	}
 }
 
+func TestRenderAttachment(t *testing.T) {
+	skip.If(t, !hasExperimental, "experimental mode needed for this test")
+	result := icmd.RunCommand(dockerApp, "render-attachment",
+		"testdata/helm.dockerapp",
+		"attachment.yml",
+		"-s", "setting=bam").Assert(t, icmd.Success)
+	assert.Assert(t, golden.String(result.Stdout(), "attachment-rendered.yml"))
+}
+
 func TestRender(t *testing.T) {
 	appsPath := filepath.Join("testdata", "render")
 	apps, err := ioutil.ReadDir(appsPath)

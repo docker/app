@@ -1,7 +1,10 @@
 package main
 
 import (
+	"io"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
@@ -13,19 +16,21 @@ import (
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/command/stack/swarm"
 	cliopts "github.com/docker/cli/opts"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 type deployOptions struct {
-	deployComposeFiles     []string
-	deploySettingsFiles    []string
-	deployEnv              []string
-	deployOrchestrator     string
-	deployKubeConfig       string
-	deployNamespace        string
-	deployStackName        string
-	deploySendRegistryAuth bool
+	deployComposeFiles       []string
+	deploySettingsFiles      []string
+	deployEnv                []string
+	deployOrchestrator       string
+	deployKubeConfig         string
+	deployNamespace          string
+	deployNoRenderAttachment []string
+	deployStackName          string
+	deploySendRegistryAuth   bool
 }
 
 // deployCmd represents the deploy command
@@ -51,8 +56,79 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().BoolVarP(&opts.deploySendRegistryAuth, "with-registry-auth", "", false, "Sends registry auth")
 	if internal.Experimental == "on" {
 		cmd.Flags().StringArrayVarP(&opts.deployComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
+		cmd.Flags().StringArrayVarP(&opts.deployNoRenderAttachment, "no-render", "", []string{}, "Specify a glob pattern of attachments for which to skip rendering")
 	}
 	return cmd
+}
+
+func skipAttachment(path string, skipPatterns []string) (bool, error) {
+	for _, s := range skipPatterns {
+		match, err := filepath.Match(s, path)
+		if err != nil {
+			return false, err
+		}
+		if match {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func linkOrCopy(source, target string) error {
+	if err := os.Symlink(source, target); err != nil {
+		if err := os.Link(source, target); err != nil {
+			// fallback to copy
+			src, err := os.Open(source)
+			if err != nil {
+				return err
+			}
+			dst, err := os.Create(target)
+			if err != nil {
+				src.Close()
+				return err
+			}
+			if _, err = io.Copy(dst, src); err != nil {
+				src.Close()
+				dst.Close()
+				return errors.Wrapf(err, "failed to copy attachment %s", source)
+			}
+			src.Close()
+			dst.Close()
+		}
+	}
+	return nil
+}
+
+func renderAttachments(app *types.App, tempDir string, d map[string]string, skipPatterns []string) error {
+	for _, a := range app.Attachments() {
+		source := filepath.Join(app.Path, a.Path())
+		target := filepath.Join(tempDir, a.Path())
+		skip, err := skipAttachment(a.Path(), skipPatterns)
+		if err != nil {
+			return err
+		}
+		if skip {
+			if err := linkOrCopy(source, target); err != nil {
+				return err
+			}
+			continue
+		}
+		content, err := ioutil.ReadFile(source)
+		if err != nil {
+			return err
+		}
+		rendered, err := render.RenderConfig(app, d, string(content))
+		if err != nil {
+			return errors.Wrapf(err, "failed to render %s", a.Path())
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
+			return errors.Wrap(err, "failed to create temporary directory")
+		}
+		if err := ioutil.WriteFile(target, []byte(rendered), 0600); err != nil {
+			return errors.Wrap(err, "failed to write temporary configuration file")
+		}
+	}
+	return nil
 }
 
 func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
@@ -77,7 +153,19 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 	if stackName == "" {
 		stackName = internal.AppNameFromDir(app.Name)
 	}
-	if app.Source.ShouldRunInsideDirectory() {
+	if len(app.Attachments()) > 0 && internal.Experimental == "on" {
+		tempDir, err := ioutil.TempDir("", "app-deploy")
+		if err != nil {
+			return errors.Wrap(err, "failed to create temporary directory")
+		}
+		defer os.RemoveAll(tempDir)
+		if err := renderAttachments(app, tempDir, d, opts.deployNoRenderAttachment); err != nil {
+			return err
+		}
+		if err := os.Chdir(tempDir); err != nil {
+			return err
+		}
+	} else if app.Source.ShouldRunInsideDirectory() {
 		if err := os.Chdir(app.Path); err != nil {
 			return err
 		}

@@ -42,11 +42,8 @@ var (
 	Pattern = regexp.MustCompile(patternString)
 )
 
-// Render renders the Compose file for this app, merging in settings files, other compose files, and env
-// appname string, composeFiles []string, settingsFiles []string
-func Render(app *types.App, env map[string]string) (*composetypes.Config, error) {
-	// prepend the app settings to the argument settings
-	// load the settings into a struct
+// makeSettings build the final settings struct from app meta, settings files and env
+func makeSettings(app *types.App, env map[string]string) (settings.Settings, error) {
 	fileSettings := app.Settings()
 	// inject our metadata
 	metaPrefixed, err := settings.Load(app.MetadataRaw(), settings.WithPrefix("app"))
@@ -61,7 +58,11 @@ func Render(app *types.App, env map[string]string) (*composetypes.Config, error)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to merge settings")
 	}
-	// prepend our app compose file to the list
+	return allSettings, nil
+}
+
+// getRenderers returns the list of renderers to use
+func getRenderers() ([]string, error) {
 	renderers := renderer.Drivers()
 	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
 		rl := strings.Split(r, ",")
@@ -71,6 +72,33 @@ func Render(app *types.App, env map[string]string) (*composetypes.Config, error)
 			}
 		}
 		renderers = rl
+	}
+	return renderers, nil
+}
+
+// RenderConfig renders an arbitrary string
+func RenderConfig(app *types.App, env map[string]string, config string) (string, error) { //nolint:golint
+	allSettings, err := makeSettings(app, env)
+	if err != nil {
+		return "", err
+	}
+	renderers, err := getRenderers()
+	if err != nil {
+		return "", err
+	}
+	return renderer.Apply(config, allSettings, renderers...)
+}
+
+// Render renders the Compose file for this app, merging in settings files, other compose files, and env
+// appname string, composeFiles []string, settingsFiles []string
+func Render(app *types.App, env map[string]string) (*composetypes.Config, error) {
+	allSettings, err := makeSettings(app, env)
+	if err != nil {
+		return nil, err
+	}
+	renderers, err := getRenderers()
+	if err != nil {
+		return nil, err
 	}
 	configFiles, err := compose.Load(app.Composes(), func(data string) (string, error) {
 		return renderer.Apply(data, allSettings, renderers...)
