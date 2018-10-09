@@ -32,6 +32,11 @@ const (
 	AppSourceArchive
 )
 
+// ShouldRunInsideDirectory returns whether the package is run from a directory on disk
+func (a AppSourceKind) ShouldRunInsideDirectory() bool {
+	return a == AppSourceSplit || a == AppSourceImage || a == AppSourceArchive
+}
+
 // App represents an app
 type App struct {
 	Name    string
