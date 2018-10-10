@@ -106,3 +106,39 @@ func assignKey(m map[string]interface{}, keys []string, value interface{}) error
 	}
 	return assignKey(m[key].(map[string]interface{}), ks, value)
 }
+
+func nilKeysList(l []interface{}, prefix string, res *[]string) {
+	for i, v := range l {
+		key := fmt.Sprintf("%s[%v]", prefix, i)
+		if v == nil {
+			*res = append(*res, key)
+		}
+		switch vv := v.(type) {
+		case map[string]interface{}:
+			nilKeys(vv, key+".", res)
+		case []interface{}:
+			nilKeysList(vv, key+".", res)
+		}
+	}
+}
+
+func nilKeys(s map[string]interface{}, prefix string, res *[]string) {
+	for k, v := range s {
+		if v == nil {
+			*res = append(*res, prefix+k)
+		}
+		switch vv := v.(type) {
+		case map[string]interface{}:
+			nilKeys(vv, prefix+k+".", res)
+		case []interface{}:
+			nilKeysList(vv, prefix+k+".", res)
+		}
+	}
+}
+
+// NilKeys return the list of keys with a nil value
+func NilKeys(settings Settings) []string {
+	var res []string
+	nilKeys(settings, "", &res)
+	return res
+}

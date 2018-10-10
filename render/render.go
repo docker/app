@@ -58,6 +58,17 @@ func makeSettings(app *types.App, env map[string]string) (settings.Settings, err
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to merge settings")
 	}
+	// check for remaining nil values and err if present
+	// metadata can contain nil values (email) so skip it
+	fileEnvSettings, err := settings.Merge(fileSettings, envSettings)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to merge settings")
+	}
+	nilKeys := settings.NilKeys(fileEnvSettings)
+	if len(nilKeys) != 0 {
+		return nil, fmt.Errorf("the following settings must be set: %s", strings.Join(nilKeys, ","))
+	}
+
 	return allSettings, nil
 }
 

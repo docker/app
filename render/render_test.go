@@ -192,3 +192,25 @@ services:
 	assert.Assert(t, c != nil)
 	assert.NilError(t, err)
 }
+
+func TestRenderWithNullSettings(t *testing.T) {
+	metadata := strings.NewReader(validMeta)
+	composeFile := strings.NewReader(`
+version: "3.6"
+services:
+    hello:
+        image: ${image}`)
+	settings := strings.NewReader(`image: null`)
+	app := &types.App{Path: "my-app"}
+	err := types.Metadata(metadata)(app)
+	assert.NilError(t, err)
+	err = types.WithComposes(composeFile)(app)
+	assert.NilError(t, err)
+	err = types.WithSettings(settings)(app)
+	assert.NilError(t, err)
+	_, err = Render(app, nil)
+	assert.ErrorContains(t, err, "the following settings must be set: image")
+	c, err := Render(app, map[string]string{"image": "myimage"})
+	assert.NilError(t, err)
+	assert.Assert(t, c != nil)
+}

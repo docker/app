@@ -95,6 +95,11 @@ func TestRenderFormatters(t *testing.T) {
 	assert.Assert(t, golden.String(result.Stdout(), "expected-yaml-render.golden"))
 }
 
+func TestMandatorySettings(t *testing.T) {
+	icmd.RunCommand(dockerApp, "render", "testdata/mandatory-settings").Assert(t, icmd.Expected{ExitCode: 1})
+	icmd.RunCommand(dockerApp, "render", "testdata/mandatory-settings", "-s", "mandatory=12", "-s", "mandat.ory=13").Assert(t, icmd.Success)
+}
+
 func TestInit(t *testing.T) {
 	composeData := `version: "3.2"
 services:

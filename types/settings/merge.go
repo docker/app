@@ -12,6 +12,14 @@ func Merge(settings ...Settings) (Settings, error) {
 		if err := mergo.Merge(&s, setting, mergo.WithOverride, mergo.WithAppendSlice); err != nil {
 			return s, errors.Wrap(err, "cannot merge settings")
 		}
+		// Workaround: mergo drops top-level nil values
+		for k, v := range setting {
+			if v == nil {
+				if _, ok := s[k]; !ok {
+					s[k] = nil
+				}
+			}
+		}
 	}
 	return s, nil
 }
