@@ -2,7 +2,7 @@ properties([buildDiscarder(logRotator(numToKeepStr: '20'))])
 
 pipeline {
     agent {
-        label 'pipeline'
+        label 'team-local && pipeline'
     }
 
     options {
@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('Build') {
             agent {
-                label 'linux'
+                label 'team-local && linux'
             }
             steps  {
                 dir('src/github.com/docker/app') {
@@ -54,7 +54,7 @@ pipeline {
                         CODECOV_TOKEN = credentials('jenkins-codecov-token')
                     }
                     agent {
-                        label 'linux'
+                        label 'team-local && linux'
                     }
                     steps {
                         dir('src/github.com/docker/app') {
@@ -68,7 +68,7 @@ pipeline {
                 }
                 stage("Gradle test") {
                     agent {
-                        label 'linux'
+                        label 'team-local && linux'
                     }
                     steps {
                         dir('src/github.com/docker/app') {
@@ -82,7 +82,7 @@ pipeline {
                 }
                 stage("Test Linux") {
                     agent {
-                        label 'linux'
+                        label 'team-local && linux'
                     }
 		    environment {
 			DOCKERAPP_BINARY = '../docker-app-linux'
@@ -107,7 +107,7 @@ pipeline {
                 }
                 stage("Test Mac") {
                     agent {
-                        label "mac"
+                        label 'team-local && mac'
                     }
 		    environment {
 			DOCKERAPP_BINARY = '../docker-app-darwin'
@@ -132,7 +132,7 @@ pipeline {
                 }
                 stage("Test Win") {
                     agent {
-                        label "windows"
+                        label 'team-local && windows && linux-containers'
                     }
 		    environment {
 			DOCKERAPP_BINARY = '../docker-app-windows.exe'
@@ -159,7 +159,7 @@ pipeline {
         }
         stage('Release') {
             agent {
-                label "linux"
+                label 'team-local && linux'
             }
             when {
                 buildingTag()
