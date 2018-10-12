@@ -31,7 +31,7 @@ all: bin/$(BIN_NAME) test
 
 check_go_env:
 	@test $$(go list) = "$(PKG_NAME)" || \
-		(echo "Invalid Go environment" && false)
+		(echo "Invalid Go environment - The local directory structure must match:  $(PKG_NAME)" && false)
 
 cross: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe ## cross-compile binaries (linux, darwin, windows)
 
