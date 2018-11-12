@@ -2,7 +2,6 @@
 
 An *experimental* utility to help make Compose files more reusable and sharable.
 
-
 ## The problem application packages solve
 
 Compose files do a great job of describing a set of related services. Not only are Compose files easy to write, they are generally easy to read as well. However, a couple of problems often emerge:
