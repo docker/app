@@ -233,6 +233,7 @@ We have lots of ideas for making Compose-based applications easier to share and 
 * Saving required images into the application artifact to support offline installation
 * Signing applications with notary
 
+If you're interested in contributing to the project, jump to [BUILDING.md](BUILDING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Usage
 
@@ -300,11 +301,4 @@ source <(docker-app completion zsh)
 
 Some commands are flagged as experimental and will remain in this state until they mature. These commands are only accessible using an experimental binary. Feel free to test these commands and give us some feedback!
 
-### How to build your own experimental binary
-
-```console
-$ make EXPERIMEMTAL=on bin/docker-app
-$ ./bin/docker-app version
-...
-Experimental: on
-```
+See [BUILDING.md/Experimental](BUILDING.md#experimental).

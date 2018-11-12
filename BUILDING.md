@@ -59,6 +59,16 @@ make test-e2e                   # run the end-to-end tests
 Vendoring of external imports uses the [`dep`](https://github.com/golang/dep) tool.
 Please refer to its documentation if you need to update a dependency.
 
+### Experimental
+
+Just add the `EXPERIMENTAL=on` flag before invoking a build target:
+```console
+$ make EXPERIMEMTAL=on bin/docker-app
+$ ./bin/docker-app version
+...
+Experimental: on
+```
+
 ## Build using Docker
 
 If you don't have Go installed but Docker is present, you can also use
