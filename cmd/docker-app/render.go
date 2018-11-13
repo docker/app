@@ -20,24 +20,28 @@ var (
 	renderComposeFiles []string
 	renderSettingsFile []string
 	renderEnv          []string
+	renderDisable      []string
 	renderOutput       string
 )
 
 func renderCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "render <app-name> [-s key=value...] [-f settings-file...]",
+		Use:   "render <app-name> [-s key=value...] [-f settings-file...] [-d service...]",
 		Short: "Render the Compose file for the application",
 		Long:  `Render the Compose file for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			disabledServices := arrayToSet(renderDisable)
 			app, err := packager.Extract(firstOrEmpty(args),
 				types.WithSettingsFiles(renderSettingsFile...),
 				types.WithComposeFiles(renderComposeFiles...),
+				types.WithDisabledServices(disabledServices),
 			)
 			if err != nil {
 				return err
 			}
 			defer app.Cleanup()
+
 			d := cliopts.ConvertKVStringsToMap(renderEnv)
 			rendered, err := render.Render(app, d)
 			if err != nil {
@@ -68,7 +72,16 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	cmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
+	cmd.Flags().StringArrayVarP(&renderDisable, "disable", "d", []string{}, "Disable services")
 	cmd.Flags().StringVarP(&renderOutput, "output", "o", "-", "Output file")
 	cmd.Flags().StringVar(&formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
 	return cmd
+}
+
+func arrayToSet(elements []string) map[string]bool {
+	elementsSet := make(map[string]bool)
+	for i := 0; i < len(elements); i++ {
+		elementsSet[elements[i]] = true
+	}
+	return elementsSet
 }

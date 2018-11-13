@@ -39,10 +39,11 @@ func (a AppSourceKind) ShouldRunInsideDirectory() bool {
 
 // App represents an app
 type App struct {
-	Name    string
-	Path    string
-	Cleanup func()
-	Source  AppSourceKind
+	Name             string
+	Path             string
+	Cleanup          func()
+	Source           AppSourceKind
+	DisabledServices map[string]bool
 
 	composesContent [][]byte
 	settingsContent [][]byte
@@ -151,6 +152,14 @@ func NewAppFromDefaultFiles(path string, ops ...func(*App) error) (*App, error) 
 func WithName(name string) func(*App) error {
 	return func(app *App) error {
 		app.Name = name
+		return nil
+	}
+}
+
+// WithDisabledServices sets the disabled/ignored services
+func WithDisabledServices(disabledServices map[string]bool) func(*App) error {
+	return func(app *App) error {
+		app.DisabledServices = disabledServices
 		return nil
 	}
 }

@@ -78,10 +78,10 @@ func Render(app *types.App, env map[string]string) (*composetypes.Config, error)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load composefiles")
 	}
-	return render(configFiles, allSettings.Flatten())
+	return render(configFiles, allSettings.Flatten(), app.DisabledServices)
 }
 
-func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (*composetypes.Config, error) {
+func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string, disabled map[string]bool) (*composetypes.Config, error) {
 	rendered, err := loader.Load(composetypes.ConfigDetails{
 		WorkingDir:  ".",
 		ConfigFiles: configFiles,
@@ -92,7 +92,7 @@ func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load Compose file")
 	}
-	if err := processEnabled(rendered); err != nil {
+	if err := processEnabled(rendered, disabled); err != nil {
 		return nil, err
 	}
 	return rendered, nil
@@ -112,9 +112,13 @@ func errorIfMissing(substitution string, mapping composetemplate.Mapping) (strin
 	return value, true, nil
 }
 
-func processEnabled(config *composetypes.Config) error {
+func processEnabled(config *composetypes.Config, disabled map[string]bool) error {
 	services := []composetypes.ServiceConfig{}
 	for _, service := range config.Services {
+		if disabled != nil && disabled[service.Name] {
+			continue
+		}
+
 		if service.Extras != nil {
 			if xEnabled, ok := service.Extras["x-enabled"]; ok {
 				enabled, err := isEnabled(xEnabled)

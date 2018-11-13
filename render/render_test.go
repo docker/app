@@ -32,7 +32,7 @@ func TestRenderMissingValue(t *testing.T) {
 	finalEnv := map[string]string{
 		"imageName": "foo",
 	}
-	_, err := render(configFiles, finalEnv)
+	_, err := render(configFiles, finalEnv, nil)
 	assert.Check(t, err != nil)
 	assert.Check(t, is.ErrorContains(err, "required variable"))
 }
@@ -55,7 +55,7 @@ func TestRender(t *testing.T) {
 		"version": "latest",
 		"foo.bar": "baz",
 	}
-	c, err := render(configFiles, finalEnv)
+	c, err := render(configFiles, finalEnv, nil)
 	assert.NilError(t, err)
 	assert.Check(t, is.Len(c.Services, 1))
 	assert.Check(t, is.Equal(c.Services[0].Image, "busybox:latest"))
@@ -80,10 +80,36 @@ func TestRenderEnabledFalse(t *testing.T) {
 		}
 		c, err := render(configs, map[string]string{
 			"myapp.debug": "true",
-		})
+		}, nil)
 		assert.NilError(t, err)
 		assert.Check(t, is.Len(c.Services, 0))
 	}
+}
+
+func TestRenderDisabledService(t *testing.T) {
+	const disabledService = "disabledService"
+	configs := []composetypes.ConfigFile{
+		{
+			Config: map[string]interface{}{
+				"version": "3.7",
+				"services": map[string]interface{}{
+					disabledService: map[string]interface{}{
+						"image":   "busybox",
+						"command": []interface{}{"-text", "foo"},
+					},
+					"enabledService": map[string]interface{}{
+						"image":   "busybox",
+						"command": []interface{}{"-text", "foo"},
+					},
+				},
+			},
+		},
+	}
+
+	disabledServices := map[string]bool{disabledService: true}
+	c, err := render(configs, nil, disabledServices)
+	assert.NilError(t, err)
+	assert.Check(t, is.Len(c.Services, 1))
 }
 
 func TestRenderUserSettings(t *testing.T) {
