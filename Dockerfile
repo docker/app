@@ -37,3 +37,11 @@ RUN make EXPERIMENTAL=${EXPERIMENTAL} cross
 FROM cross AS e2e-cross
 ARG EXPERIMENTAL="off"
 RUN make EXPERIMENTAL=${EXPERIMENTAL} e2e-cross
+
+# Image to be pushed to DockerHub
+# To be run as:
+# docker run -v ${PWD}:/mnt -w /mnt docker/app --help
+FROM alpine AS export-image
+COPY --from=cross /go/src/github.com/docker/app/bin/docker-app-linux /usr/bin/docker-app
+ENTRYPOINT ["/usr/bin/docker-app"]
+CMD []

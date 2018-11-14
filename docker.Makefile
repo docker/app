@@ -6,6 +6,7 @@ BIN_IMAGE_NAME := $(BIN_NAME)-bin:$(TAG)
 CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(TAG)
 E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(TAG)
 GRADLE_IMAGE_NAME := $(BIN_NAME)-gradle:$(TAG)
+DOCKERHUB_IMAGE_NAME := docker/app
 
 BIN_CTNR_NAME := $(BIN_NAME)-bin-$(TAG)
 CROSS_CTNR_NAME := $(BIN_NAME)-cross-$(TAG)
@@ -50,6 +51,14 @@ e2e-cross: create_bin
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-darwin)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-windows.exe)
+
+dockerhub-build:
+	if [ -z "$(TAG_NAME)" ] ; then echo "No TAG_NAME specified"; exit 1; fi
+	docker build $(BUILD_ARGS) --target export-image -t $(DOCKERHUB_IMAGE_NAME):$(TAG_NAME) -t $(DOCKERHUB_IMAGE_NAME):latest .
+
+dockerhub-publish: dockerhub-build
+	docker push $(DOCKERHUB_IMAGE_NAME):$(TAG_NAME)
+	docker push $(DOCKERHUB_IMAGE_NAME):latest
 
 tars:
 	tar czf bin/$(BIN_NAME)-linux.tar.gz -C bin $(BIN_NAME)-linux
@@ -98,4 +107,4 @@ schemas: specification/bindata.go ## generate specification/bindata.go from json
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help
+.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help dockerhub-publish dockerhub-build

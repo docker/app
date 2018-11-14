@@ -14,6 +14,9 @@ pipeline {
             agent {
                 label 'team-local && linux'
             }
+            environment {
+                DOCKERHUB_CREDS=credentials('dockerhub-dockerdsgcibot')
+            }
             steps  {
                 dir('src/github.com/docker/app') {
                     script {
@@ -21,6 +24,12 @@ pipeline {
                             checkout scm
                             sh 'make -f docker.Makefile lint'
                             sh 'make -f docker.Makefile cross e2e-cross tars'
+
+                            // This block is just for simulating a possible push to dockerhub, but without the push
+                            sh 'docker login --username "${DOCKERHUB_CREDS_USR}" --password "${DOCKERHUB_CREDS_PSW}"'
+                            sh 'make TAG_NAME=buildtesttag -f docker.Makefile dockerhub-build'
+                            sh 'docker logout'
+
                             dir('bin') {
                                 stash name: 'binaries'
                             }
@@ -59,6 +68,7 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
+                            sh 'echo $(git describe --abbrev=0 --tags)'
                             sh 'make -f docker.Makefile coverage'
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
@@ -170,6 +180,32 @@ pipeline {
                     echo "Releasing $TAG_NAME"
                     dir('bin') {
                         release('docker/app')
+                    }
+                }
+            }
+            post {
+                always {
+                    deleteDir()
+                }
+            }
+        }
+        stage('Publish image to DockerHub') {
+            agent {
+                label 'team-local && linux'
+            }
+            when{
+                buildingTag()
+            }
+            environment {
+                DOCKERHUB_CREDS=credentials('dockerhub-dockerdsgcibot')
+            }
+            steps {
+                dir('src/github.com/docker/app') {
+                    checkout scm
+                    script {
+                        sh 'docker login --username "${DOCKERHUB_CREDS_USR}" --password "${DOCKERHUB_CREDS_PSW}"'
+                        sh 'make TAG_NAME=${TAG_NAME} -f docker.Makefile dockerhub-publish'
+                        sh 'docker logout'
                     }
                 }
             }

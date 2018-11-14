@@ -155,6 +155,14 @@ cp docker-app-linux /usr/local/bin/docker-app
 
 **Note:** To use Application Packages as images (i.e.: `save`, `push`, or `deploy` when package is not present locally) on Windows, one must be in Linux container mode.
 
+### Pulling docker image
+`docker-app` also has Docker images. To pull the latest one, run:
+```bash
+$ docker pull docker/app
+```
+
+For more about the usage of the docker image, please refer to [Docker image usage](#docker-image-usage) for more information.
+
 ## Integrating with Helm
 
 `docker-app` comes with a few other helpful commands as well, in particular the ability to create Helm Charts from your Docker Applications. This can be useful if you're adopting Kubernetes, and standardising on Helm to manage the lifecycle of your application components, but want to maintain the simplicity of Compose when writing you applications. This also makes it easy to run the same applications locally just using Docker, if you don't want to be running a full Kubernetes cluster.
@@ -271,6 +279,19 @@ Commands:
 
 Run 'docker-app COMMAND --help' for more information on a command.
 ```
+
+### Docker image usage
+`docker-app` can also run as a Docker image, for example:
+```sh
+$ docker run -v ${PWD}:/mnt -w /mnt docker/app version
+Version:      <Version>
+Git commit:   <Commit id>
+Built:        <Date of the build>
+OS/Arch:      linux/amd64
+Experimental: off
+Renderers:    none
+```
+**Note**: the `-v` stands for volume that has to be mapped so the container can reach the host's file system in case of running any command that has files as input or output
 
 ## Shell completion
 
