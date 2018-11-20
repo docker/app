@@ -30,7 +30,7 @@ end you need to have `GOPATH` set in your environment.
 
 At this point you can use `go` to checkout `docker-app` in your `GOPATH`:
 
-```sh
+```console
 go get github.com/docker/app
 ```
 
@@ -39,14 +39,14 @@ You are ready to build `docker-app` yourself!
 `docker-app` uses `make` to create a repeatable build flow. It means that you
 can run:
 
-```sh
+```console
 make
 ```
 
 This is going to build all the project binaries in the `./bin/`
 directory, run tests (unit and end-to-end).
 
-```sh
+```console
 make bin/docker-app             # builds the docker-app binary
 make bin/docker-app-darwin      # builds the docker-app binary for darwin
 make bin/docker-app-windows.exe # builds the docker-app binary for windows
@@ -58,6 +58,16 @@ make test-e2e                   # run the end-to-end tests
 
 Vendoring of external imports uses the [`dep`](https://github.com/golang/dep) tool.
 Please refer to its documentation if you need to update a dependency.
+
+### Experimental
+
+Just add the `EXPERIMENTAL=on` flag before invoking a build target:
+```console
+$ make EXPERIMEMTAL=on bin/docker-app
+$ ./bin/docker-app version
+...
+Experimental: on
+```
 
 ## Build using Docker
 
@@ -89,7 +99,7 @@ capabilities without using the `Makefile` targets. The following
 examples show how to specify a test name and also how to use the flag
 directly against `go test` to run root-requiring tests.
 
-```sh
+```console
 # run the test <TEST_NAME>:
 go test -v -run "<TEST_NAME>" .
 ```
