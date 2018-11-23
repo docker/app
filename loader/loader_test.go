@@ -66,6 +66,18 @@ func TestLoadFromDirectory(t *testing.T) {
 	assertAppContent(t, app)
 }
 
+func TestLoadFromDirectoryDeprecatedSettings(t *testing.T) {
+	dir := fs.NewDir(t, "my-app",
+		fs.WithFile(internal.MetadataFileName, metadata),
+		fs.WithFile(internal.DeprecatedSettingsFileName, parameters),
+		fs.WithFile(internal.ComposeFileName, yaml),
+	)
+	defer dir.Remove()
+	app, err := LoadFromDirectory(dir.Path())
+	assert.Assert(t, app == nil)
+	assert.ErrorContains(t, err, "\"settings.yml\" has been deprecated in favor of \"parameters.yml\"; please rename \"settings.yml\" to \"parameters.yml\"")
+}
+
 func TestLoadFromTarInexistent(t *testing.T) {
 	_, err := LoadFromTar("any-tar.tar")
 	assert.ErrorContains(t, err, "open any-tar.tar")

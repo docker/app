@@ -18,6 +18,9 @@ const (
 	ComposeFileName = "docker-compose.yml"
 	// ParametersFileName is parameters file name
 	ParametersFileName = "parameters.yml"
+
+	// DeprecatedSettingsFileName is the deprecated settings file name (replaced by ParametersFileName)
+	DeprecatedSettingsFileName = "settings.yml"
 )
 
 var (
