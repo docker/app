@@ -41,11 +41,11 @@ func LoadFromSingleFile(path string, r io.Reader, ops ...func(*types.App) error)
 	metadata := strings.NewReader(parts[0])
 	// 1. is compose
 	compose := strings.NewReader(parts[1])
-	// 2. is settings
-	setting := strings.NewReader(parts[2])
+	// 2. is parameters
+	parameters := strings.NewReader(parts[2])
 	appOps := append([]func(*types.App) error{
 		types.WithComposes(compose),
-		types.WithSettings(setting),
+		types.WithParameters(parameters),
 		types.Metadata(metadata),
 	}, ops...)
 	return types.NewApp(path, appOps...)

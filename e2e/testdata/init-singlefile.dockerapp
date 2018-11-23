@@ -23,6 +23,6 @@ services:
     command: nginx $NGINX_ARGS
 
 ---
-# This section contains the default values for your application settings.
+# This section contains the default values for your application parameters.
 NGINX_ARGS: FILL ME
 NGINX_VERSION: latest

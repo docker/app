@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace dockerappvsix
 {
-    public class NewAppSettings
+    public class NewAppParameters
     {
         public string Name { get; set; }
         public string Description { get; set; }

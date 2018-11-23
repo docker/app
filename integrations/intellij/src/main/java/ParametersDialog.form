@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="SettingsDialog">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="ParametersDialog">
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
@@ -71,7 +71,7 @@
                 </constraints>
                 <properties>
                   <text value=""/>
-                  <toolTipText value="List of 'key=value' settings to override"/>
+                  <toolTipText value="List of 'key=value' parameters to override"/>
                 </properties>
               </component>
               <component id="f621c" class="javax.swing.JLabel">

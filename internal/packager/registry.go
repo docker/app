@@ -115,9 +115,9 @@ func createImageName(app *types.App, namespace, tag, repo string) string {
 
 func createPayload(app *types.App) (map[string]string, error) {
 	payload := map[string]string{
-		internal.MetadataFileName: string(app.MetadataRaw()),
-		internal.ComposeFileName:  string(app.Composes()[0]),
-		internal.SettingsFileName: string(app.SettingsRaw()[0]),
+		internal.MetadataFileName:   string(app.MetadataRaw()),
+		internal.ComposeFileName:    string(app.Composes()[0]),
+		internal.ParametersFileName: string(app.ParametersRaw()[0]),
 	}
 	if err := readAttachments(payload, app.Path, app.Attachments()); err != nil {
 		return nil, err

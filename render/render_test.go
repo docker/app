@@ -86,7 +86,7 @@ func TestRenderEnabledFalse(t *testing.T) {
 	}
 }
 
-func TestRenderUserSettings(t *testing.T) {
+func TestRenderUserParameters(t *testing.T) {
 	metadata := strings.NewReader(validMeta)
 	composeFile := strings.NewReader(`
 version: "3.6"
@@ -98,7 +98,7 @@ services:
   back:
     image: ${back.image}
 `)
-	settings := strings.NewReader(`
+	parameters := strings.NewReader(`
 front:
   image: wrong
   port: 8484
@@ -108,13 +108,13 @@ back:
 	app := &types.App{Path: "my-app"}
 	assert.NilError(t, types.Metadata(metadata)(app))
 	assert.NilError(t, types.WithComposes(composeFile)(app))
-	assert.NilError(t, types.WithSettings(settings)(app))
-	userSettings := map[string]string{
+	assert.NilError(t, types.WithParameters(parameters)(app))
+	userParameters := map[string]string{
 		"front.image": "nginx",
 		"front.port":  "4242",
 		"back.image":  "myapp",
 	}
-	c, err := Render(app, userSettings)
+	c, err := Render(app, userParameters)
 	assert.NilError(t, err)
 	s, err := yaml.Marshal(c)
 	assert.NilError(t, err)
@@ -132,7 +132,7 @@ services:
 `)
 }
 
-func TestRenderWithoutDefaultSettings(t *testing.T) {
+func TestRenderWithoutDefaultParameters(t *testing.T) {
 	metadata := strings.NewReader(validMeta)
 	composeFile := strings.NewReader(`
 version: "3.6"
@@ -140,15 +140,15 @@ services:
   front:
     image: ${front.image}
 `)
-	settings := strings.NewReader("")
+	parameters := strings.NewReader("")
 	app := &types.App{Path: "my-app"}
 	assert.NilError(t, types.Metadata(metadata)(app))
 	assert.NilError(t, types.WithComposes(composeFile)(app))
-	assert.NilError(t, types.WithSettings(settings)(app))
-	userSettings := map[string]string{
+	assert.NilError(t, types.WithParameters(parameters)(app))
+	userParameters := map[string]string{
 		"front.image": "nginx",
 	}
-	c, err := Render(app, userSettings)
+	c, err := Render(app, userParameters)
 	assert.NilError(t, err)
 	s, err := yaml.Marshal(c)
 	assert.NilError(t, err)
@@ -180,13 +180,13 @@ version: "3.6"
 services:
     hello:
         image: ${image}`)
-	settings := strings.NewReader(`image: hashicorp/http-echo`)
+	parameters := strings.NewReader(`image: hashicorp/http-echo`)
 	app := &types.App{Path: "my-app"}
 	err := types.Metadata(metadata)(app)
 	assert.NilError(t, err)
 	err = types.WithComposes(composeFile)(app)
 	assert.NilError(t, err)
-	err = types.WithSettings(settings)(app)
+	err = types.WithParameters(parameters)(app)
 	assert.NilError(t, err)
 	c, err := Render(app, nil)
 	assert.Assert(t, c != nil)

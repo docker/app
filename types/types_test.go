@@ -20,7 +20,7 @@ version: 0.1.0`
 services:
   web:
     image: nginx`
-	validSettings = `foo: bar`
+	validParameters = `foo: bar`
 )
 
 func TestNewApp(t *testing.T) {
@@ -32,14 +32,14 @@ func TestNewApp(t *testing.T) {
 func TestNewAppFromDefaultFiles(t *testing.T) {
 	dir := fs.NewDir(t, "my-app",
 		fs.WithFile(internal.MetadataFileName, validMeta),
-		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ParametersFileName, `foo: bar`),
 		fs.WithFile(internal.ComposeFileName, validCompose),
 	)
 	defer dir.Remove()
 	app, err := NewAppFromDefaultFiles(dir.Path())
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.SettingsRaw(), 1))
-	assertContentIs(t, app.SettingsRaw()[0], `foo: bar`)
+	assert.Assert(t, is.Len(app.ParametersRaw(), 1))
+	assertContentIs(t, app.ParametersRaw()[0], `foo: bar`)
 	assert.Assert(t, is.Len(app.Composes(), 1))
 	assertContentIs(t, app.Composes()[0], validCompose)
 	assertContentIs(t, app.MetadataRaw(), validMeta)
@@ -64,31 +64,31 @@ func TestWithCleanup(t *testing.T) {
 	assert.Assert(t, app.Cleanup != nil)
 }
 
-func TestWithSettingsFilesError(t *testing.T) {
+func TestWithParametersFilesError(t *testing.T) {
 	app := &App{Path: "any-app"}
-	err := WithSettingsFiles("any-settings-file")(app)
-	assert.ErrorContains(t, err, "open any-settings-file")
+	err := WithParametersFiles("any-parameters-file")(app)
+	assert.ErrorContains(t, err, "open any-parameters-file")
 }
 
-func TestWithSettingsFiles(t *testing.T) {
-	dir := fs.NewDir(t, "settings",
-		fs.WithFile("my-settings-file", validSettings),
+func TestWithParametersFiles(t *testing.T) {
+	dir := fs.NewDir(t, "parameters",
+		fs.WithFile("my-parameters-file", validParameters),
 	)
 	defer dir.Remove()
 	app := &App{Path: "my-app"}
-	err := WithSettingsFiles(dir.Join("my-settings-file"))(app)
+	err := WithParametersFiles(dir.Join("my-parameters-file"))(app)
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.SettingsRaw(), 1))
-	assertContentIs(t, app.SettingsRaw()[0], validSettings)
+	assert.Assert(t, is.Len(app.ParametersRaw(), 1))
+	assertContentIs(t, app.ParametersRaw()[0], validParameters)
 }
 
-func TestWithSettings(t *testing.T) {
-	r := strings.NewReader(validSettings)
+func TestWithParameters(t *testing.T) {
+	r := strings.NewReader(validParameters)
 	app := &App{Path: "my-app"}
-	err := WithSettings(r)(app)
+	err := WithParameters(r)(app)
 	assert.NilError(t, err)
-	assert.Assert(t, is.Len(app.SettingsRaw(), 1))
-	assertContentIs(t, app.SettingsRaw()[0], validSettings)
+	assert.Assert(t, is.Len(app.ParametersRaw(), 1))
+	assertContentIs(t, app.ParametersRaw()[0], validParameters)
 }
 
 func TestWithComposeFilesError(t *testing.T) {
@@ -152,7 +152,7 @@ func assertContentIs(t *testing.T, data []byte, expected string) {
 func TestWithAttachmentsAndNestedDirectories(t *testing.T) {
 	dir := fs.NewDir(t, "externalfile",
 		fs.WithFile(internal.MetadataFileName, validMeta),
-		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ParametersFileName, `foo: bar`),
 		fs.WithFile(internal.ComposeFileName, validCompose),
 		fs.WithFile("config.cfg", "something"),
 		fs.WithDir("nesteddirectory",
@@ -171,7 +171,7 @@ func TestWithAttachmentsAndNestedDirectories(t *testing.T) {
 func TestAttachmentsAreSorted(t *testing.T) {
 	dir := fs.NewDir(t, "externalfile",
 		fs.WithFile(internal.MetadataFileName, validMeta),
-		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ParametersFileName, `foo: bar`),
 		fs.WithFile(internal.ComposeFileName, validCompose),
 		fs.WithFile("c.cfg", "something"),
 		fs.WithFile("a.cfg", "something"),
@@ -197,11 +197,11 @@ func TestAttachmentsAreSorted(t *testing.T) {
 func TestWithAttachmentsIncludingNestedCoreFiles(t *testing.T) {
 	dir := fs.NewDir(t, "attachments",
 		fs.WithFile(internal.MetadataFileName, validMeta),
-		fs.WithFile(internal.SettingsFileName, `foo: bar`),
+		fs.WithFile(internal.ParametersFileName, `foo: bar`),
 		fs.WithFile(internal.ComposeFileName, validCompose),
 		fs.WithDir("nesteddirectory",
 			fs.WithFile(internal.MetadataFileName, validMeta),
-			fs.WithFile(internal.SettingsFileName, `foo: bar`),
+			fs.WithFile(internal.ParametersFileName, `foo: bar`),
 			fs.WithFile(internal.ComposeFileName, validCompose),
 		),
 	)
@@ -211,7 +211,7 @@ func TestWithAttachmentsIncludingNestedCoreFiles(t *testing.T) {
 	assert.Assert(t, is.Len(app.Attachments(), 3))
 	assert.Equal(t, app.Attachments()[0].Path(), path.Join("nesteddirectory", internal.ComposeFileName))
 	assert.Equal(t, app.Attachments()[1].Path(), path.Join("nesteddirectory", internal.MetadataFileName))
-	assert.Equal(t, app.Attachments()[2].Path(), path.Join("nesteddirectory", internal.SettingsFileName))
+	assert.Equal(t, app.Attachments()[2].Path(), path.Join("nesteddirectory", internal.ParametersFileName))
 }
 
 func TestValidateBrokenMetadata(t *testing.T) {
@@ -233,17 +233,17 @@ unknown: property`)
 - version: version is required`)
 }
 
-func TestValidateBrokenSettings(t *testing.T) {
+func TestValidateBrokenParameters(t *testing.T) {
 	metadata := strings.NewReader(`version: "0.1"
 name: myname`)
 	composeFile := strings.NewReader(`version: "3.6"`)
-	brokenSettings := strings.NewReader(`my-settings:
+	brokenParameters := strings.NewReader(`my-parameters:
     1: toto`)
 	app := &App{Path: "my-app"}
 	err := Metadata(metadata)(app)
 	assert.NilError(t, err)
 	err = WithComposes(composeFile)(app)
 	assert.NilError(t, err)
-	err = WithSettings(brokenSettings)(app)
-	assert.ErrorContains(t, err, `Non-string key in my-settings: 1`)
+	err = WithParameters(brokenParameters)(app)
+	assert.ErrorContains(t, err, `Non-string key in my-parameters: 1`)
 }

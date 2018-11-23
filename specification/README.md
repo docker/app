@@ -7,27 +7,27 @@ This section describes all the requirements for interoperability.
 A Docker App Package is a set of 3 YAML documents:
 * `metadata`
 * `docker-compose`
-* `settings`
+* `parameters`
 
 These documents can be split in 3 different files or merged into one YAML file, using the [multi document YAML feature](http://yaml.org/spec/1.2/spec.html#id2760395).
 The order of the documents in a multi-documents YAML is **strict**:
 1. metadata
 1. docker-compose
-1. settings
+1. parameters
 
 ### metadata.yml
 
-`metadata.yml` defines some informations to describe the application in a standard `YAML` file.  
+`metadata.yml` defines some informations to describe the application in a standard `YAML` file.
 See [JSON Schemas](schemas/) for validation.
 
 ### docker-compose.yml
 
-`docker-compose.yml` is a standard [Compose file](https://docs.docker.com/compose/compose-file/) with variable replacement.  
+`docker-compose.yml` is a standard [Compose file](https://docs.docker.com/compose/compose-file/) with variable replacement.
 `Compose` minimum version is **v3.2**, see [JSON Schemas](https://github.com/docker/cli/tree/master/cli/compose/schema/data) for validation.
 
-### settings.yml
+### parameters.yml
 
-`settings.yml` is a simple Key-Value file used to replace the variables defined in the `docker-compose` file. As it is an open document, there is no schema for this one.
+`parameters.yml` is a simple Key-Value file used to replace the variables defined in the `docker-compose` file. As it is an open document, there is no schema for this one.
 
 ## Validation
 
@@ -35,13 +35,9 @@ Use the `validate` command:
 ```
 Checks the rendered application is syntactically correct
 
-Usage:
-  docker-app validate [<app-name>] [-s key=value...] [-f settings-file...] [flags]
-
-Flags:
-  -h, --help                         help for validate
-  -s, --set stringArray              Override settings values
-  -f, --settings-files stringArray   Override settings files
+Options:
+  -f, --parameters-file stringArray   Override with parameters from file
+  -s, --set stringArray               Override parameters values
 ```
 
 Here is an example:

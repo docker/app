@@ -1,4 +1,4 @@
-package settings
+package parameters
 
 import (
 	"fmt"
@@ -10,16 +10,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Settings represents a settings map
-type Settings map[string]interface{}
+// Parameters represents a parameters map
+type Parameters map[string]interface{}
 
-// Flatten returns a flatten view of a settings
+// Flatten returns a flatten view of a parameters
 // This becomes a one-level map with keys joined with a dot
-func (s Settings) Flatten() map[string]string {
+func (s Parameters) Flatten() map[string]string {
 	return flatten(s)
 }
 
-func flatten(s Settings) map[string]string {
+func flatten(s Parameters) map[string]string {
 	m := map[string]string{}
 	for k, v := range s {
 		switch vv := v.(type) {
@@ -45,9 +45,9 @@ func flatten(s Settings) map[string]string {
 	return m
 }
 
-// FromFlatten takes a flatten map and loads it as a Settings map
+// FromFlatten takes a flatten map and loads it as a Parameters map
 // This uses yaml.Unmarshal to "guess" the type of the value
-func FromFlatten(m map[string]string) (Settings, error) {
+func FromFlatten(m map[string]string) (Parameters, error) {
 	s := map[string]interface{}{}
 	for k, v := range m {
 		ks := strings.Split(k, ".")
@@ -59,7 +59,7 @@ func FromFlatten(m map[string]string) (Settings, error) {
 			return s, err
 		}
 	}
-	return Settings(s), nil
+	return Parameters(s), nil
 }
 
 func isSupposedSlice(ks []string) (int64, bool) {

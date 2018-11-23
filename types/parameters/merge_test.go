@@ -1,4 +1,4 @@
-package settings
+package parameters
 
 import (
 	"testing"
@@ -40,9 +40,9 @@ func TestMerge(t *testing.T) {
 		"bar.baz": "boz",
 	})
 	assert.NilError(t, err)
-	settings, err := Merge(m1, m2, m3)
+	parameters, err := Merge(m1, m2, m3)
 	assert.NilError(t, err)
-	assert.Check(t, is.DeepEqual(settings.Flatten(), map[string]string{
+	assert.Check(t, is.DeepEqual(parameters.Flatten(), map[string]string{
 		"foo":      "bar",
 		"bar.baz":  "boz",
 		"bar.port": "10",

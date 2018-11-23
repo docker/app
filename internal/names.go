@@ -16,13 +16,13 @@ const (
 	MetadataFileName = "metadata.yml"
 	// ComposeFileName is compose file name
 	ComposeFileName = "docker-compose.yml"
-	// SettingsFileName is settings file name
-	SettingsFileName = "settings.yml"
+	// ParametersFileName is parameters file name
+	ParametersFileName = "parameters.yml"
 )
 
 var (
 	// FileNames lists the application file names, in order.
-	FileNames = []string{MetadataFileName, ComposeFileName, SettingsFileName}
+	FileNames = []string{MetadataFileName, ComposeFileName, ParametersFileName}
 )
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")

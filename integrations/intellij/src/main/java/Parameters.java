@@ -3,11 +3,11 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.*;
 import com.intellij.openapi.ui.popup.*;
 
-public class Settings extends AnAction {
-    public Settings() { super("Settings"); }
+public class Parameters extends AnAction {
+    public Parameters() { super("Parameters"); }
 
     public void actionPerformed(AnActionEvent event) {
-        SettingsDialog sf = new SettingsDialog();
+        ParametersDialog sf = new ParametersDialog();
         sf.pack();
         sf.load(event.getProject());
         sf.setVisible(true);

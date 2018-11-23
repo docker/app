@@ -72,7 +72,7 @@ func Init(name string, composeFile string, description string, maintainers []str
 	if err := prependToFile(filepath.Join(dirName, internal.ComposeFileName), "# This section contains the Compose file that describes your application services.\n"); err != nil {
 		return err
 	}
-	if err := prependToFile(filepath.Join(dirName, internal.SettingsFileName), "# This section contains the default values for your application settings.\n"); err != nil {
+	if err := prependToFile(filepath.Join(dirName, internal.ParametersFileName), "# This section contains the default values for your application parameters.\n"); err != nil {
 		return err
 	}
 	if err := prependToFile(filepath.Join(dirName, internal.MetadataFileName), "# This section contains your application metadata.\n"); err != nil {
@@ -110,7 +110,7 @@ func initFromScratch(name string) error {
 	if err := ioutil.WriteFile(filepath.Join(dirName, internal.ComposeFileName), composeData, 0644); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(dirName, internal.SettingsFileName), []byte{'\n'}, 0644)
+	return ioutil.WriteFile(filepath.Join(dirName, internal.ParametersFileName), []byte{'\n'}, 0644)
 }
 
 func checkComposeFileVersion(compose map[string]interface{}) error {
@@ -137,13 +137,13 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err := checkComposeFileVersion(cfgMap); err != nil {
 		return err
 	}
-	settings := make(map[string]string)
+	parameters := make(map[string]string)
 	envs, err := opts.ParseEnvFile(filepath.Join(filepath.Dir(composeFile), ".env"))
 	if err == nil {
 		for _, v := range envs {
 			kv := strings.SplitN(v, "=", 2)
 			if len(kv) == 2 {
-				settings[kv[0]] = kv[1]
+				parameters[kv[0]] = kv[1]
 			}
 		}
 	}
@@ -153,29 +153,29 @@ func initFromComposeFile(name string, composeFile string) error {
 	}
 	needsFilling := false
 	for k, v := range vars {
-		if _, ok := settings[k]; !ok {
+		if _, ok := parameters[k]; !ok {
 			if v != "" {
-				settings[k] = v
+				parameters[k] = v
 			} else {
-				settings[k] = "FILL ME"
+				parameters[k] = "FILL ME"
 				needsFilling = true
 			}
 		}
 	}
-	settingsYAML, err := yaml.Marshal(settings)
+	parametersYAML, err := yaml.Marshal(parameters)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal settings")
+		return errors.Wrap(err, "failed to marshal parameters")
 	}
 	err = ioutil.WriteFile(filepath.Join(dirName, internal.ComposeFileName), composeRaw, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write docker-compose.yml")
 	}
-	err = ioutil.WriteFile(filepath.Join(dirName, internal.SettingsFileName), settingsYAML, 0644)
+	err = ioutil.WriteFile(filepath.Join(dirName, internal.ParametersFileName), parametersYAML, 0644)
 	if err != nil {
-		return errors.Wrap(err, "failed to write settings.yml")
+		return errors.Wrap(err, "failed to write parameters.yml")
 	}
 	if needsFilling {
-		fmt.Println("You will need to edit settings.yml to fill in default values.")
+		fmt.Println("You will need to edit parameters.yml to fill in default values.")
 	}
 	return nil
 }

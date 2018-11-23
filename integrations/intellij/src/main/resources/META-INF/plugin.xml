@@ -23,7 +23,7 @@
             <action id="DockerApp.InitApp" class="InitApp" text="New Application..." description="Create a new application package"/>
             <action id="DockerApp.RenderApp" class="RenderApp" text="Render" description="Render application package"/>
             <action id="DockerApp.DeployApp" class="DeployApp" text="Deploy" description="Deploy application package to cluster"/>
-            <action id="DockerApp.Settings" class="Settings" text="Settings..." description="Configure deployment"/>
+            <action id="DockerApp.Parameters" class="Parameters" text="Parameters..." description="Configure deployment"/>
             <action id="DockerApp.SelectApp" class="SelectApp" text="Select application..." description="Select application package to use"/>
         </group>
     </actions>

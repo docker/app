@@ -11,7 +11,7 @@
     Title="New Docker APP"
              Height="300" Width="550" MinHeight="300" MinWidth="270">
     <platformui:DialogWindow.DataContext>
-        <local:NewAppSettings />
+        <local:NewAppParameters />
     </platformui:DialogWindow.DataContext>
 
     <platformui:DialogWindow.Resources>

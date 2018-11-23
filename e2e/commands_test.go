@@ -29,7 +29,7 @@ services:
   hello-world:
     image: hello-world
 ---
-# This section contains the default values for your application settings.`
+# This section contains the default values for your application parameters.`
 )
 
 func TestRenderTemplates(t *testing.T) {
@@ -59,14 +59,14 @@ func TestRender(t *testing.T) {
 
 func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	return func(t *testing.T) {
-		envSettings := map[string]string{}
+		envParameters := map[string]string{}
 		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
 		assert.NilError(t, err)
-		assert.NilError(t, yaml.Unmarshal(data, &envSettings))
+		assert.NilError(t, yaml.Unmarshal(data, &envParameters))
 		args := []string{dockerApp, "render", filepath.Join(appPath, "my.dockerapp"),
-			"-f", filepath.Join(appPath, "settings-0.yml"),
+			"-f", filepath.Join(appPath, "parameters-0.yml"),
 		}
-		for k, v := range envSettings {
+		for k, v := range envParameters {
 			args = append(args, "-s", fmt.Sprintf("%s=%s", k, v))
 		}
 		result := icmd.RunCmd(icmd.Cmd{
@@ -130,7 +130,7 @@ maintainers:
 		fs.WithMode(0755),
 		fs.WithFile(internal.MetadataFileName, meta, fs.WithMode(0644)), // too many variables, cheating
 		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
-		fs.WithFile(internal.SettingsFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
+		fs.WithFile(internal.ParametersFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
 	)
 	assert.Assert(t, fs.Equal(dirName, manifest))
 

@@ -4,7 +4,7 @@
 <script language="javascript">
 function compute() {
   t = document.getElementById('itemplate').value
-  s = document.getElementById('isettings').value
+  s = document.getElementById('iparameters').value
   r = yatee.ProcessJS(t, s)
   res = r[0]
   if (!res) {
@@ -39,7 +39,7 @@ services:
     "$i":
        image: $i:latest
 </textarea>
-<textarea id="isettings" rows=20 cols=80>
+<textarea id="iparameters" rows=20 cols=80>
 myapp:
   debug: false
   services:

@@ -101,11 +101,11 @@ Change default replicas, from:
 
 ### Give variables their default value
 
-Open `settings.yml` and add every variables with the default value you want, e.g.:
+Open `parameters.yml` and add every variables with the default value you want, e.g.:
 
 ---
 
-[voting-app.dockerapp/settings.yml](voting-app.dockerapp/settings.yml):
+[voting-app.dockerapp/parameters.yml](voting-app.dockerapp/parameters.yml):
 ```yml
 # Vote.
 vote:
@@ -140,13 +140,13 @@ worker:
 
 Test your application by running `docker-app render`.
 
-### Add settings for production and development environments
+### Add parameters for production and development environments
 
-Create `settings/development.yml` and `settings/production.yml` and add your target-specific variables.
+Create `parameters/development.yml` and `parameters/production.yml` and add your target-specific variables.
 
 ---
 
-[voting-app.dockerapp/settings/development.yml](voting-app.dockerapp/settings/development.yml):
+[voting-app.dockerapp/parameters/development.yml](voting-app.dockerapp/parameters/development.yml):
 ```yml
 # Vote.
 vote:
@@ -160,7 +160,7 @@ result:
 ```
 ---
 
-[voting-app.dockerapp/settings/production.yml](voting-app.dockerapp/settings/production.yml):
+[voting-app.dockerapp/parameters/production.yml](voting-app.dockerapp/parameters/production.yml):
 ```yml
 # Vote.
 vote:
