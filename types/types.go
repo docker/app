@@ -10,7 +10,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types/metadata"
-	"github.com/docker/app/types/settings"
+	"github.com/docker/app/types/parameters"
 )
 
 // SingleFileSeparator is the separator used in single-file app
@@ -26,8 +26,6 @@ const (
 	AppSourceMerged
 	// AppSourceImage represents an Application pulled from an image
 	AppSourceImage
-	// AppSourceURL represents an Application fetched from an URL
-	AppSourceURL
 	// AppSourceArchive represents an Application in an archive format
 	AppSourceArchive
 )
@@ -44,12 +42,12 @@ type App struct {
 	Cleanup func()
 	Source  AppSourceKind
 
-	composesContent [][]byte
-	settingsContent [][]byte
-	settings        settings.Settings
-	metadataContent []byte
-	metadata        metadata.AppMetadata
-	attachments     []Attachment
+	composesContent   [][]byte
+	parametersContent [][]byte
+	parameters        parameters.Parameters
+	metadataContent   []byte
+	metadata          metadata.AppMetadata
+	attachments       []Attachment
 }
 
 // Attachment is a summary of an attachment (attached file) stored in the app definition
@@ -73,14 +71,14 @@ func (a *App) Composes() [][]byte {
 	return a.composesContent
 }
 
-// SettingsRaw returns setting files content
-func (a *App) SettingsRaw() [][]byte {
-	return a.settingsContent
+// ParametersRaw returns setting files content
+func (a *App) ParametersRaw() [][]byte {
+	return a.parametersContent
 }
 
-// Settings returns map of settings
-func (a *App) Settings() settings.Settings {
-	return a.settings
+// Parameters returns map of parameters
+func (a *App) Parameters() parameters.Parameters {
+	return a.parameters
 }
 
 // MetadataRaw returns metadata file content
@@ -106,7 +104,7 @@ func (a *App) Extract(path string) error {
 	if err := ioutil.WriteFile(filepath.Join(path, internal.ComposeFileName), a.Composes()[0], 0644); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(path, internal.SettingsFileName), a.SettingsRaw()[0], 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(path, internal.ParametersFileName), a.ParametersRaw()[0], 0644); err != nil {
 		return err
 	}
 	return nil
@@ -121,9 +119,9 @@ func NewApp(path string, ops ...func(*App) error) (*App, error) {
 		Path:    path,
 		Cleanup: noop,
 
-		composesContent: [][]byte{},
-		settingsContent: [][]byte{},
-		metadataContent: []byte{},
+		composesContent:   [][]byte{},
+		parametersContent: [][]byte{},
+		metadataContent:   []byte{},
 	}
 
 	for _, op := range ops {
@@ -141,7 +139,7 @@ func NewAppFromDefaultFiles(path string, ops ...func(*App) error) (*App, error) 
 	appOps := append([]func(*App) error{
 		MetadataFile(filepath.Join(path, internal.MetadataFileName)),
 		WithComposeFiles(filepath.Join(path, internal.ComposeFileName)),
-		WithSettingsFiles(filepath.Join(path, internal.SettingsFileName)),
+		WithParametersFiles(filepath.Join(path, internal.ParametersFileName)),
 		WithAttachments(path),
 	}, ops...)
 	return NewApp(path, appOps...)
@@ -179,9 +177,9 @@ func WithSource(source AppSourceKind) func(*App) error {
 	}
 }
 
-// WithSettingsFiles adds the specified settings files to the app
-func WithSettingsFiles(files ...string) func(*App) error {
-	return settingsLoader(func() ([][]byte, error) { return readFiles(files...) })
+// WithParametersFiles adds the specified parameters files to the app
+func WithParametersFiles(files ...string) func(*App) error {
+	return parametersLoader(func() ([][]byte, error) { return readFiles(files...) })
 }
 
 // WithAttachments adds all local files (exc. main files) to the app
@@ -202,7 +200,7 @@ func WithAttachments(rootAppDir string) func(*App) error {
 			switch localFilePath {
 			case internal.ComposeFileName:
 			case internal.MetadataFileName:
-			case internal.SettingsFileName:
+			case internal.ParametersFileName:
 			default:
 				externalFile := Attachment{
 					// Standardise on forward slashes for windows boxes
@@ -216,24 +214,24 @@ func WithAttachments(rootAppDir string) func(*App) error {
 	}
 }
 
-// WithSettings adds the specified settings readers to the app
-func WithSettings(readers ...io.Reader) func(*App) error {
-	return settingsLoader(func() ([][]byte, error) { return readReaders(readers...) })
+// WithParameters adds the specified parameters readers to the app
+func WithParameters(readers ...io.Reader) func(*App) error {
+	return parametersLoader(func() ([][]byte, error) { return readReaders(readers...) })
 }
 
-func settingsLoader(f func() ([][]byte, error)) func(*App) error {
+func parametersLoader(f func() ([][]byte, error)) func(*App) error {
 	return func(app *App) error {
-		settingsContent, err := f()
+		parametersContent, err := f()
 		if err != nil {
 			return err
 		}
-		settingsContents := append(app.settingsContent, settingsContent...)
-		loaded, err := settings.LoadMultiple(settingsContents)
+		parametersContents := append(app.parametersContent, parametersContent...)
+		loaded, err := parameters.LoadMultiple(parametersContents)
 		if err != nil {
 			return err
 		}
-		app.settings = loaded
-		app.settingsContent = settingsContents
+		app.parameters = loaded
+		app.parametersContent = parametersContents
 		return nil
 	}
 }

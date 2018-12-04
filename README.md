@@ -2,6 +2,7 @@
 
 An *experimental* utility to help make Compose files more reusable and sharable.
 
+
 ## The problem application packages solve
 
 Compose files do a great job of describing a set of related services. Not only are Compose files easy to write, they are generally easy to read as well. However, a couple of problems often emerge:
@@ -35,9 +36,9 @@ hello.dockerapp
 ```
 
 We created a new file `hello.dockerapp` that contains three YAML documents:
-- metadatas
+- metadata
 - the Compose file
-- settings for your application
+- parameters for your application
 
 It should look like this:
 
@@ -63,7 +64,7 @@ services:
 {}
 ```
 
-Let's edit the settings section and add the following default values for our application:
+Let's edit the parameters section and add the following default values for our application:
 
 ```yaml
 port: 5678
@@ -107,7 +108,7 @@ You can then use that Compose file like any other. You could save it to disk or 
 $ docker-app render | docker-compose -f - up
 ```
 
-This is where it gets interesting. We can override those settings at runtime, using the `--set` option. Let's specify different option and run `render` again:
+This is where it gets interesting. We can override those parameters at runtime, using the `--set` option. Let's specify different option and run `render` again:
 
 ```
 $ docker-app render --set version=0.2.3 --set port=4567 --set text="hello production"
@@ -125,7 +126,7 @@ services:
       protocol: tcp
 ```
 
-If you prefer you can create a standalone configuration file to store those settings. Let's create `prod.yml` with the following contents:
+If you prefer you can create a standalone configuration file to store those parameters. Let's create `prod.yml` with the following contents:
 
 ```yaml
 version: 0.2.3
@@ -154,31 +155,11 @@ cp docker-app-linux /usr/local/bin/docker-app
 
 **Note:** To use Application Packages as images (i.e.: `save`, `push`, or `deploy` when package is not present locally) on Windows, one must be in Linux container mode.
 
-## Integrating with Helm
-
-`docker-app` comes with a few other helpful commands as well, in particular the ability to create Helm Charts from your Docker Applications. This can be useful if you're adopting Kubernetes, and standardising on Helm to manage the lifecycle of your application components, but want to maintain the simplicity of Compose when writing you applications. This also makes it easy to run the same applications locally just using Docker, if you don't want to be running a full Kubernetes cluster.
-
-```
-$ docker-app helm
-```
-
-This will create a folder, `<my-application-name>.chart`, in the current directory. The folder contains the required `Chart.yaml` file and templates describing the `stack` Kubernetes object based on the Compose file in your application.
-
-_Note that this requires the Compose Kubernetes controller available in Docker for Windows and Docker for Mac, and in Docker Enterprise Edition._
-
-### Helm chart for Docker EE 2.0
-
-In order to create a helm chart that is compatible with version 2.0 of Docker Enterprise Edition, you will need to use the `--stack-version` flag to create a compatible version of the helm chart using `v1beta1` like so:
-
-```bash
-$ docker-app helm --stack-version=v1beta1
-```
-
 ## Single file or directory representation
 
 If you prefer having the three core documents in separate YAML files, omit the `-s` / `--single-file` option to
 the `docker-app init` command. This will create a directory instead of a single file, containing
-`metadata.yml`, `docker-compose.yml` and `settings.yml`.
+`metadata.yml`, `docker-compose.yml` and `parameters.yml`.
 
 Converting between the two formats can be achieved by using the `docker-app split` and `docker-app merge` commands.
 
@@ -207,33 +188,16 @@ All `docker-app` commands accept an image name as input, which means you can run
 $ docker-app inspect myhubuser/hello
 ```
 
-## Forking an existing image
-
-Found an app on a remote registry you'd like to modify to better suit your needs? Use the `fork` subcommand:
-
-```bash
-$ docker-app fork remote/hello.dockerapp:1.0.0 mine/hello2 -m "Bob Dylan:bob@aol.com"
-```
-
-This command will create a local, editable copy of the app on your system. By default, the copy is created inside the current directory; you may use the `--path` flag to configure a different destination.
-
-For example, the following will create the `/opt/myapps/hello2.dockerapp` folder containing the forked app's files:
-
-```bash
-$ docker-app fork remote/hello.dockerapp:1.0.0 mine/hello2 --path /opt/myapps
-```
-
 ## Next steps
 
 We have lots of ideas for making Compose-based applications easier to share and reuse, and making applications a first-class part of the Docker toolchain. Please let us know what you think about this initial release and about any of the ideas below:
 
-* Introducing environments to the settings file
+* Introducing environments to the parameters file
 * Docker images which launch the application when run
 * Built-in commands for running applications
 * Saving required images into the application artifact to support offline installation
 * Signing applications with notary
 
-If you're interested in contributing to the project, jump to [BUILDING.md](BUILDING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Usage
 
@@ -242,9 +206,10 @@ $ docker-app
 
 Usage:  docker-app [OPTIONS] COMMAND
 
-Docker Application Packages
+Build and deploy Docker Application Packages.
 
 Options:
+  -c, --context string     context to use to connect to the daemon (overrides host flag, DOCKER_HOST env var and default context set with "docker context use")
   -D, --debug              Enable debug mode
   -H, --host list          Daemon socket(s) to connect to
   -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
@@ -256,18 +221,21 @@ Options:
   -v, --version            Print version information
 
 Commands:
-  completion  Generates completion scripts for the specified shell (bash or zsh)
-  deploy      Deploy or update an application
-  fork        Create a fork of an existing application to be modified
-  helm        Generate a Helm chart
-  init        Start building a Docker application
-  inspect     Shows metadata, settings and a summary of the compose file for a given application
-  merge       Merge a multi-file application into a single file
-  push        Push the application to a registry
-  render      Render the Compose file for the application
-  split       Split a single-file application into multiple files
-  validate    Checks the rendered application is syntactically correct
-  version     Print version information
+  add-credentialset Add a CNAB credentialset in the credential store for the given Docker Context
+  bundle            Create a CNAB invocation image and bundle.json for the application.
+  completion        Generates completion scripts for the specified shell (bash or zsh)
+  init              Start building a Docker application
+  inspect           Shows metadata, parameters and a summary of the compose file for a given application
+  install           Install an application
+  merge             Merge a multi-file application into a single file
+  pull              Pull an application from a registry
+  push              Push the application to a registry
+  render            Render the Compose file for the application
+  split             Split a single-file application into multiple files
+  status            Get an application status
+  uninstall         Uninstall an application
+  validate          Checks the rendered application is syntactically correct
+  version           Print version information
 
 Run 'docker-app COMMAND --help' for more information on a command.
 ```
@@ -296,9 +264,3 @@ Set the docker-app completion code for zsh to autoload on startup in your ~/.zsh
 ```sh
 source <(docker-app completion zsh)
 ```
-
-## Experimental
-
-Some commands are flagged as experimental and will remain in this state until they mature. These commands are only accessible using an experimental binary. Feel free to test these commands and give us some feedback!
-
-See [BUILDING.md/Experimental](BUILDING.md#experimental).

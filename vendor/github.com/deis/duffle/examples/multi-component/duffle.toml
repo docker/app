@@ -1,0 +1,22 @@
+name = "multi-component"
+
+[components]
+    [components.component-a]
+        name = "component-a"
+        registry = "deis"
+        builder = "docker"
+        configuration = { registry = "microsoft" }
+
+    [components.component-b]
+        name = "component-b"
+        builder = "docker"
+        configuration = { registry = "microsoft" }
+
+    [components.mock-builder]
+        name = "mock-builder"
+        builder = "mock"
+
+    [components.cnab]
+        name = "cnab"
+        builder = "docker"
+        configuration = { registry = "microsoft" }

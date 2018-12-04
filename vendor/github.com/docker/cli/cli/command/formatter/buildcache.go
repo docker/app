@@ -15,6 +15,7 @@ const (
 	defaultBuildCacheTableFormat = "table {{.ID}}\t{{.Type}}\t{{.Size}}\t{{.CreatedSince}}\t{{.LastUsedSince}}\t{{.UsageCount}}\t{{.Shared}}\t{{.Description}}"
 
 	cacheIDHeader       = "CACHE ID"
+	cacheTypeHeader     = "CACHE TYPE"
 	parentHeader        = "PARENT"
 	lastUsedSinceHeader = "LAST USED"
 	usageCountHeader    = "USAGE"
@@ -27,7 +28,7 @@ func NewBuildCacheFormat(source string, quiet bool) Format {
 	switch source {
 	case TableFormatKey:
 		if quiet {
-			return defaultQuietFormat
+			return DefaultQuietFormat
 		}
 		return Format(defaultBuildCacheTableFormat)
 	case RawFormatKey:
@@ -36,10 +37,12 @@ func NewBuildCacheFormat(source string, quiet bool) Format {
 		}
 		format := `build_cache_id: {{.ID}}
 parent_id: {{.Parent}}
-type: {{.Type}}
+build_cache_type: {{.CacheType}}
 description: {{.Description}}
-created_at: {{.CreatedSince}}
-last_used_at: {{.LastUsedSince}}
+created_at: {{.CreatedAt}}
+created_since: {{.CreatedSince}}
+last_used_at: {{.LastUsedAt}}
+last_used_since: {{.LastUsedSince}}
 usage_count: {{.UsageCount}}
 in_use: {{.InUse}}
 shared: {{.Shared}}
@@ -69,7 +72,7 @@ func buildCacheSort(buildCache []*types.BuildCache) {
 
 // BuildCacheWrite renders the context for a list of containers
 func BuildCacheWrite(ctx Context, buildCaches []*types.BuildCache) error {
-	render := func(format func(subContext subContext) error) error {
+	render := func(format func(subContext SubContext) error) error {
 		buildCacheSort(buildCaches)
 		for _, bc := range buildCaches {
 			err := format(&buildCacheContext{trunc: ctx.Trunc, v: bc})
@@ -82,8 +85,6 @@ func BuildCacheWrite(ctx Context, buildCaches []*types.BuildCache) error {
 	return ctx.Write(newBuildCacheContext(), render)
 }
 
-type buildCacheHeaderContext map[string]string
-
 type buildCacheContext struct {
 	HeaderContext
 	trunc bool
@@ -92,23 +93,23 @@ type buildCacheContext struct {
 
 func newBuildCacheContext() *buildCacheContext {
 	buildCacheCtx := buildCacheContext{}
-	buildCacheCtx.header = buildCacheHeaderContext{
+	buildCacheCtx.Header = SubHeaderContext{
 		"ID":            cacheIDHeader,
 		"Parent":        parentHeader,
-		"Type":          typeHeader,
-		"Size":          sizeHeader,
-		"CreatedSince":  createdSinceHeader,
+		"CacheType":     cacheTypeHeader,
+		"Size":          SizeHeader,
+		"CreatedSince":  CreatedSinceHeader,
 		"LastUsedSince": lastUsedSinceHeader,
 		"UsageCount":    usageCountHeader,
 		"InUse":         inUseHeader,
 		"Shared":        sharedHeader,
-		"Description":   descriptionHeader,
+		"Description":   DescriptionHeader,
 	}
 	return &buildCacheCtx
 }
 
 func (c *buildCacheContext) MarshalJSON() ([]byte, error) {
-	return marshalJSON(c)
+	return MarshalJSON(c)
 }
 
 func (c *buildCacheContext) ID() string {
@@ -129,7 +130,7 @@ func (c *buildCacheContext) Parent() string {
 	return c.v.Parent
 }
 
-func (c *buildCacheContext) Type() string {
+func (c *buildCacheContext) CacheType() string {
 	return c.v.Type
 }
 
@@ -141,8 +142,19 @@ func (c *buildCacheContext) Size() string {
 	return units.HumanSizeWithPrecision(float64(c.v.Size), 3)
 }
 
+func (c *buildCacheContext) CreatedAt() string {
+	return c.v.CreatedAt.String()
+}
+
 func (c *buildCacheContext) CreatedSince() string {
 	return units.HumanDuration(time.Now().UTC().Sub(c.v.CreatedAt)) + " ago"
+}
+
+func (c *buildCacheContext) LastUsedAt() string {
+	if c.v.LastUsedAt == nil {
+		return ""
+	}
+	return c.v.LastUsedAt.String()
 }
 
 func (c *buildCacheContext) LastUsedSince() string {

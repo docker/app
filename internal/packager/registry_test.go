@@ -17,7 +17,7 @@ version: 0.1.0`
 services:
   web:
     image: nginx`
-	validSettings = `foo: bar`
+	validParameters = `foo: bar`
 )
 
 func TestSplitImageName(t *testing.T) {
@@ -59,7 +59,7 @@ func TestSplitImageName(t *testing.T) {
 func TestCreatePayload(t *testing.T) {
 	dir := fs.NewDir(t, "externalfile",
 		fs.WithFile(internal.MetadataFileName, validMeta),
-		fs.WithFile(internal.SettingsFileName, validSettings),
+		fs.WithFile(internal.ParametersFileName, validParameters),
 		fs.WithFile(internal.ComposeFileName, validCompose),
 		fs.WithFile("config.cfg", "something"),
 		fs.WithDir("nesteddirectory",

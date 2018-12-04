@@ -1,0 +1,44 @@
+{
+    "name": "foo",
+    "version": "1.0",
+    "invocationImages": [
+        {
+            "imageType": "docker",
+            "image": "technosophos/helloworld:0.1.0"
+        }
+    ],
+    "images": [
+        {
+            "name": "image1",
+            "uri": "urn:image1uri",
+            "refs": [
+                {
+                    "path": "image1path",
+                    "field": "image.1.field"
+                }
+            ]
+        },
+        {
+            "name": "image2",
+            "uri": "urn:image2uri",
+            "refs": [
+                {
+                    "path": "image2path",
+                    "field": "image.2.field"
+                }
+            ]
+        }
+    ],
+    "credentials": {
+        "foo": {
+            "path": "pfoo"
+        },
+        "bar": {
+            "env": "ebar"
+        },
+        "quux": {
+            "path": "pquux",
+            "env": "equux"
+        }
+    }
+}

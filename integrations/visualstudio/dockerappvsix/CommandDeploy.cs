@@ -76,11 +76,11 @@ namespace dockerappvsix
             AddArgIfExists(g, "dockerapp_stackname", "--name", argsBuilder);
             AddArgIfExists(g, "dockerapp_namespace", "--namespace", argsBuilder);
             AddArgIfExists(g, "dockerapp_kubeconfig", "--kubeconfig", argsBuilder);
-            var settings = g.GetOrNull<string>("dockerapp_settings");
+            var parameters = g.GetOrNull<string>("dockerapp_parameters");
 
-            if (settings !=null)
+            if (parameters !=null)
             {
-                foreach (string s in (settings).Split('\n')) {
+                foreach (string s in (parameters).Split('\n')) {
                     argsBuilder.Append($" -s {s}");
                 }
             }

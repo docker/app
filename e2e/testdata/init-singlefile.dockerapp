@@ -6,7 +6,7 @@ name: tac
 # A short description of the application
 description: my cool app
 # Namespace to use when pushing to a registry. This is typically your Hub username.
-#namespace: myHubUsername
+#namespace: myhubusername
 # List of application maintainers with name and email for each
 maintainers:
   - name: bob
@@ -23,6 +23,6 @@ services:
     command: nginx $NGINX_ARGS
 
 ---
-# This section contains the default values for your application settings.
+# This section contains the default values for your application parameters.
 NGINX_ARGS: FILL ME
 NGINX_VERSION: latest

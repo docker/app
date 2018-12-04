@@ -51,10 +51,10 @@ volumes:
     name: db_data
 ```
 
-**Override default settings with file**. This example sets `debug` to `"false"` and the wordpress service published port to 80 as defined in `prod-settings.yml`.
+**Override default parameters with file**. This example sets `debug` to `"false"` and the wordpress service published port to 80 as defined in `prod-parameters.yml`.
 
 ```yaml
-# docker-app render wordpress --settings-files prod-settings.yml
+# docker-app render wordpress --parameters-files prod-parameters.yml
 version: "3.6"
 [...]
     environment:
@@ -119,32 +119,6 @@ wordpress.port                8080
 wordpress.scale.endpoint_mode vip
 wordpress.scale.mode          replicated
 wordpress.scale.replicas      1
-```
-
-### Generate helm package
-
-`docker-app helm wordpress` will output a Helm package in the `./wordpress.helm` folder. `--compose-file` (or `-c`), `--set` (or `-e`) and `--settings-files` (or `-f`) flags apply the same way they do for the `render` subcommand.
-
-```
-$ docker-app helm wordpress --settings-files prod-settings.yml --set mysql.user.name=mollydock
-$ tree wordpress.chart
-wordpress.chart
-├── Chart.yaml
-├── templates
-│   └── stack.yaml
-└── values.yaml
-
-1 directory, 3 files
-$ cat wordpress.chart/templates/stack.yaml
-apiversion: v1beta2
-kind: stacks.compose.docker.com
-metadata:
-  annotations: {}
-[...]
-spec:
-  services:
-  - deploy:
-  [...]
 ```
 
 ### Generate distributable app package

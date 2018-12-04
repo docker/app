@@ -4,7 +4,7 @@
 
 In this example, we will create a single service application that deploys a web page displaying a message.
 
-Initialize the single file project using `docker-app init --single-file hello-world`. A single file application contains the three sections, `metadata` which corresponds to `metadata.yml`, `settings` which corresponds to `settings.yml` and `services` which corresponds to `docker-compose.yml`.
+Initialize the single file project using `docker-app init --single-file hello-world`. A single file application contains the three sections, `metadata` which corresponds to `metadata.yml`, `parameters` which corresponds to `parameters.yml` and `services` which corresponds to `docker-compose.yml`.
 
 ```bash
 $ ls -l
@@ -22,7 +22,7 @@ name: hello-world
 # A short description of the application
 description:
 # Namespace to use when pushing to a registry. This is typically your Hub username.
-#namespace: myHubUsername
+#namespace: myhubusername
 # List of application maintainers with name and email for each
 maintainers:
   - name: user
@@ -34,7 +34,7 @@ version: "3.6"
 services: {}
 
 ---
-# This section contains the default values for your application settings.
+# This section contains the default values for your application parameters.
 ```
 
 Open `hello-world.dockerapp` with your favorite text editor.
@@ -67,7 +67,7 @@ services:
 
 ### Give variables their default value
 
-In the settings section, add every variables with the default value you want, e.g.:
+In the parameters section, add every variables with the default value you want, e.g.:
 
 ---
 
@@ -75,7 +75,7 @@ In the settings section, add every variables with the default value you want, e.
 ```yml
 [...]
 ---
-# This section contains the default values for your application settings.
+# This section contains the default values for your application parameters.
 port: 8080
 text: Hello, World!
 ```

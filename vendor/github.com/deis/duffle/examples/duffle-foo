@@ -1,0 +1,19 @@
+#!/bin/bash
+############
+# This is an example Duffle driver
+#
+# It implements `--handles` and `--help`, as well as handling the main
+# operation.
+############
+set -eo pipefail
+
+if [[ $1 == "--handles" ]]; then
+    echo docker,oci,qcow
+    exit 0;
+elif [[ $1 == "--help" ]]; then
+    echo "Put yer helptext here"
+    exit 1;
+fi
+
+echo -n "Plugin: The action is "
+cat - | jq .action

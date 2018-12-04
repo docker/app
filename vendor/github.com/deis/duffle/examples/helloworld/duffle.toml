@@ -1,0 +1,24 @@
+name = "helloworld"
+
+[components]
+    [components.cnab]
+        name = "cnab"
+        builder = "docker"
+        configuration = { registry = "microsoft" }
+
+[parameters]
+    [parameters.hello]
+    type = "int"
+    defaultValue = "1"
+    allowedValues = ["1", "2"]
+    minValue = 100
+    maxValue = 200
+    minLength = 100
+    maxLength = 200
+    [parameters.hello.metadata]
+    description = "hello"
+
+[credentials]
+    [credentials.quux]
+        path = "pquux"
+        env = "equux"

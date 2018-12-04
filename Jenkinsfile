@@ -60,6 +60,23 @@ pipeline {
                         }
                     }
                 }
+                stage('Build Invocation image'){
+                    agent {
+                        label 'ubuntu-1604-aufs-edge'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            checkout scm
+                            sh 'make -f docker.Makefile save-invocation-image'
+                            stash name: 'invocation-image', includes: 'invocation-image.tar'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
+                        }
+                    }
+                }
             }
         }
         stage('Test') {
@@ -116,6 +133,9 @@ pipeline {
 		    }
                     steps  {
                         dir('src/github.com/docker/app') {
+                            checkout scm
+                            unstash "invocation-image"
+                            sh 'make -f docker.Makefile load-invocation-image'
                             unstash "binaries"
                             dir('examples') {
                                 unstash "examples"

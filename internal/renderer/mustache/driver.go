@@ -15,9 +15,9 @@ func init() {
 // Driver is the mustache implementation of rendered drivers.
 type Driver struct{}
 
-// Apply applies the settings to the string
-func (d *Driver) Apply(s string, settings map[string]interface{}) (string, error) {
-	data, err := mustache.Render(s, settings)
+// Apply applies the parameters to the string
+func (d *Driver) Apply(s string, parameters map[string]interface{}) (string, error) {
+	data, err := mustache.Render(s, parameters)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to execute mustache template")
 	}

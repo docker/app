@@ -3,29 +3,15 @@ package loader
 import (
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/pkg/errors"
 )
-
-// LoadFromURL loads a docker app from an URL that should return a single-file app.
-func LoadFromURL(url string, ops ...func(*types.App) error) (*types.App, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to download "+url)
-	}
-	if resp.Body != nil {
-		defer resp.Body.Close()
-	}
-	if resp.StatusCode != 200 {
-		return nil, errors.Errorf("failed to download %s: %s", url, resp.Status)
-	}
-	return LoadFromSingleFile(url, resp.Body, ops...)
-}
 
 // LoadFromSingleFile loads a docker app from a single-file format (as a reader)
 func LoadFromSingleFile(path string, r io.Reader, ops ...func(*types.App) error) (*types.App, error) {
@@ -41,11 +27,11 @@ func LoadFromSingleFile(path string, r io.Reader, ops ...func(*types.App) error)
 	metadata := strings.NewReader(parts[0])
 	// 1. is compose
 	compose := strings.NewReader(parts[1])
-	// 2. is settings
+	// 2. is parameters
 	setting := strings.NewReader(parts[2])
 	appOps := append([]func(*types.App) error{
 		types.WithComposes(compose),
-		types.WithSettings(setting),
+		types.WithParameters(setting),
 		types.Metadata(metadata),
 	}, ops...)
 	return types.NewApp(path, appOps...)
@@ -53,6 +39,11 @@ func LoadFromSingleFile(path string, r io.Reader, ops ...func(*types.App) error)
 
 // LoadFromDirectory loads a docker app from a directory
 func LoadFromDirectory(path string, ops ...func(*types.App) error) (*types.App, error) {
+	if _, err := os.Stat(filepath.Join(path, internal.ParametersFileName)); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(path, internal.DeprecatedSettingsFileName)); err == nil {
+			return nil, errors.Errorf("\"settings.yml\" has been deprecated in favor of \"parameters.yml\"; please rename \"settings.yml\" to \"parameters.yml\"")
+		}
+	}
 	return types.NewAppFromDefaultFiles(path, ops...)
 }
 

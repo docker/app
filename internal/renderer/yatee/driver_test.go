@@ -29,7 +29,7 @@ version: "3.4"
 )
 
 var (
-	settings = map[string]interface{}{
+	parameters = map[string]interface{}{
 		"myapp": map[string]interface{}{
 			"enable":         true,
 			"alpine_version": "3.7",
@@ -46,7 +46,7 @@ func TestDriverErrors(t *testing.T) {
 
 func TestDriver(t *testing.T) {
 	d := &Driver{}
-	s, err := d.Apply(compose, settings)
+	s, err := d.Apply(compose, parameters)
 	assert.NilError(t, err)
 	t.Log(s)
 	assert.Check(t, is.Equal(s, expectedCompose))

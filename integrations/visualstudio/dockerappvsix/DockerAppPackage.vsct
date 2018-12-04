@@ -80,13 +80,13 @@
           <ButtonText>Select Application...</ButtonText>
         </Strings>
       </Button>
-      <Button guid="guidDockerAppPackageCmdSet" id="cmdidCommandSettings" priority="0x0103" type="Button">
+      <Button guid="guidDockerAppPackageCmdSet" id="cmdidCommandParameters" priority="0x0103" type="Button">
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Parent guid="guidDockerAppPackageCmdSet" id="DockerAppMenuGroup" />
         <Icon guid="guidImages" id="whale1" />
         <Strings>
-          <ButtonText>Settings...</ButtonText>
+          <ButtonText>Parameters...</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidDockerAppPackageCmdSet" id="cmdidCommandDeploy" priority="0x0103" type="Button">
@@ -110,7 +110,7 @@
             must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
       <Bitmap guid="guidImages" href="Resources\docker.ico" usedList="whale1" />
       <Bitmap guid="guidImages1" href="Resources\CommandSelectApp.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough" />
-      <Bitmap guid="guidImages2" href="Resources\CommandSettings.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough" />
+      <Bitmap guid="guidImages2" href="Resources\CommandParameters.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough" />
       <Bitmap guid="guidImages3" href="Resources\CommandDeploy.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough" />
       <Bitmap guid="guidImages4" href="Resources\CommandNew.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough" />
     </Bitmaps>
@@ -119,7 +119,7 @@
     <VisibilityItem guid="guidDockerAppPackageCmdSet" id="cmdidCommandNew"  context="UICONTEXT_SolutionExists" />
     <VisibilityItem guid="guidDockerAppPackageCmdSet" id="cmdidCommandRender"  context="UICONTEXT_SolutionExists" />
     <VisibilityItem guid="guidDockerAppPackageCmdSet" id="cmdidCommandSelectApp"  context="UICONTEXT_SolutionExists" />
-    <VisibilityItem guid="guidDockerAppPackageCmdSet" id="cmdidCommandSettings"  context="UICONTEXT_SolutionExists" />
+    <VisibilityItem guid="guidDockerAppPackageCmdSet" id="cmdidCommandParameters"  context="UICONTEXT_SolutionExists" />
     <VisibilityItem guid="guidDockerAppPackageCmdSet" id="cmdidCommandDeploy"  context="UICONTEXT_SolutionExists" />
   </VisibilityConstraints>
   <Symbols>
@@ -131,7 +131,7 @@
       <IDSymbol name="DockerAppMenuGroup" value="0x1020" />
       <IDSymbol name="cmdidCommandRender" value="0x0100" />
       <IDSymbol value="4129" name="cmdidCommandSelectApp" />
-      <IDSymbol value="4130" name="cmdidCommandSettings" />
+      <IDSymbol value="4130" name="cmdidCommandParameters" />
       <IDSymbol value="4131" name="cmdidCommandDeploy" />
       <IDSymbol value="4132" name="cmdidCommandNew" />
     </GuidSymbol>

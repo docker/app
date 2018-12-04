@@ -8,64 +8,77 @@ pipeline {
     options {
         skipDefaultCheckout(true)
     }
+    environment{
+        DOCKER_BUILDKIT=true
+    }
 
     stages {
         stage('Build') {
-            agent {
-                label 'team-local && linux'
-            }
-            steps  {
-                dir('src/github.com/docker/app') {
-                    script {
-                        try {
-                            checkout scm
-                            sh 'make -f docker.Makefile lint'
-                            sh 'make -f docker.Makefile cross e2e-cross tars'
-                            dir('bin') {
-                                stash name: 'binaries'
+            parallel {
+                stage('Binaries'){
+                    agent {
+                        label 'team-local && linux'
+                    }
+                    steps  {
+                        dir('src/github.com/docker/app') {
+                            script {
+                                try {
+                                    checkout scm
+                                    sh 'make -f docker.Makefile lint'
+                                    sh 'make -f docker.Makefile cross e2e-cross tars'
+                                    dir('bin') {
+                                        stash name: 'binaries'
+                                    }
+                                    dir('e2e') {
+                                        stash name: 'e2e'
+                                    }
+                                    dir('examples') {
+                                        stash name: 'examples'
+                                    }
+                                    if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
+                                        stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
+                                    }
+                                    archiveArtifacts 'bin/*.tar.gz'
+                                } finally {
+                                    def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm -f/
+                                    sh clean_images
+                                }
                             }
-                            dir('e2e') {
-                                stash name: 'e2e'
-                            }
-                            dir('examples') {
-                                stash name: 'examples'
-                            }
-                            if(!(env.BRANCH_NAME ==~ "PR-\\d+")) {
-                                stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
-                                archiveArtifacts 'bin/*.tar.gz'
-                            }
-                        } finally {
-                            def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm -f/
-                            sh clean_images
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
-            }
-            post {
-                always {
-                    deleteDir()
-                }
-            }
-        }
-        stage('Test') {
-            parallel {
-                stage("Coverage") {
-                    environment {
-                        CODECOV_TOKEN = credentials('jenkins-codecov-token')
-                    }
+                stage('Invocation image'){
                     agent {
                         label 'team-local && linux'
                     }
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make -f docker.Makefile coverage'
-                            archiveArtifacts '_build/ci-cov/all.out'
-                            archiveArtifacts '_build/ci-cov/coverage.html'
-                            sh 'curl -s https://codecov.io/bash | bash -s - -f _build/ci-cov/all.out -K'
+                            sh 'make -f docker.Makefile save-invocation-image'
+                        }
+                        dir('/tmp') {
+                            stash name: 'invocation-image', includes: 'invocation-image-*.tar'
+                            archiveArtifacts 'invocation-image-*.tar'
+                        }                        
+                        dir('src/github.com/docker/app') {
+                            sh 'make -f docker.Makefile clean-invocation-image'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
+            }
+        }
+        stage('Test') {
+            parallel {
                 stage("Gradle test") {
                     agent {
                         label 'team-local && linux'
@@ -84,11 +97,17 @@ pipeline {
                     agent {
                         label 'team-local && linux'
                     }
-		    environment {
-			DOCKERAPP_BINARY = '../docker-app-linux'
-		    }
+            environment {
+                DOCKERAPP_BINARY = '../docker-app-linux'
+                DUFFLE_HOME = "$WORKSPACE/.duffle_home"
+            }
                     steps  {
+                        dir('/tmp') {
+                            unstash "invocation-image"
+                        }
                         dir('src/github.com/docker/app') {
+                            checkout scm
+                            sh 'make -f docker.Makefile load-invocation-image'
                             unstash "binaries"
                             dir('examples') {
                                 unstash "examples"
@@ -96,6 +115,7 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+                            sh './duffle-linux init'
                             sh './docker-app-e2e-linux --e2e-path=e2e'
                         }
                     }
@@ -109,11 +129,17 @@ pipeline {
                     agent {
                         label 'team-local && mac'
                     }
-		    environment {
-			DOCKERAPP_BINARY = '../docker-app-darwin'
-		    }
+            environment {
+                DOCKERAPP_BINARY = '../docker-app-darwin'
+                DUFFLE_HOME = "$WORKSPACE/.duffle_home"
+            }
                     steps {
+                        dir('/tmp') {
+                            unstash "invocation-image"
+                        }
                         dir('src/github.com/docker/app') {
+                            checkout scm
+                            sh 'make -f docker.Makefile load-invocation-image'
                             unstash "binaries"
                             dir('examples') {
                                 unstash "examples"
@@ -121,6 +147,7 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+                            sh './duffle-darwin init'
                             sh './docker-app-e2e-darwin --e2e-path=e2e'
                         }
                     }
@@ -134,11 +161,17 @@ pipeline {
                     agent {
                         label 'team-local && windows && linux-containers'
                     }
-		    environment {
-			DOCKERAPP_BINARY = '../docker-app-windows.exe'
-		    }
+            environment {
+                DOCKERAPP_BINARY = '../docker-app-windows.exe'
+                DUFFLE_HOME = "$WORKSPACE\\.duffle_home"
+            }
                     steps {
+                        dir('/tmp') {
+                            unstash "invocation-image"
+                        }
                         dir('src/github.com/docker/app') {
+                            checkout scm
+                            bat 'make -f docker.Makefile load-invocation-image'
                             unstash "binaries"
                             dir('examples') {
                                 unstash "examples"
@@ -146,6 +179,7 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+                            bat 'duffle-windows.exe init'
                             bat 'docker-app-e2e-windows.exe --e2e-path=e2e'
                         }
                     }
@@ -158,24 +192,47 @@ pipeline {
             }
         }
         stage('Release') {
-            agent {
-                label 'team-local && linux'
-            }
             when {
                 buildingTag()
             }
-            steps {
-                dir('src/github.com/docker/app') {
-                    unstash 'artifacts'
-                    echo "Releasing $TAG_NAME"
-                    dir('bin') {
-                        release('docker/app')
+            parallel {
+                stage('Push invocation image'){
+                    agent {
+                        label 'team-local && linux'
+                    }
+                    environment {
+                        DOCKERHUB_CREDS=credentials('dockerhub-dockerdsgcibot')
+                    }
+                    steps{
+                        sh 'docker login --username "${DOCKERHUB_CREDS_USR}" --password "${DOCKERHUB_CREDS_PSW}"'
+                        dir('/tmp') {
+                            unstash "invocation-image"
+                        }
+                        dir('src/github.com/docker/app') {
+                            checkout scm                            
+                            sh 'make -f docker.Makefile load-invocation-image'
+                            sh 'make -f docker.Makefile push-invocation-image'
+                        }            
                     }
                 }
-            }
-            post {
-                always {
-                    deleteDir()
+                stage('Release Github binaries') {
+                    agent {
+                        label 'team-local && linux'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            unstash 'artifacts'
+                            echo "Releasing $TAG_NAME"
+                            dir('bin') {
+                                release('docker/app-cnab')
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
+                        }
+                    }
                 }
             }
         }

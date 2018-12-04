@@ -27,10 +27,20 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/opencontainers/runc"
   version = "v1.0.0-rc5"
 
-[[constraint]]
+[[override]]
   name = "github.com/docker/cli"
-  branch = "master"
+  branch = "docker-app-fork"
+  source = "git@github.com:simonferquel/cli.git"
 
+[[override]]
+  name = "github.com/docker/go-connections"
+  revision = "7395e3f8aa162843a74ed6d48e79627d9792ac55"
+
+[[constraint]]
+  name = "github.com/deis/duffle"
+  branch = "dockercon-version"
+  source = "git@github.com:simonferquel/duffle.git"
+  
 [[constraint]]
   name = "github.com/sirupsen/logrus"
   version = "v1.0.5"
@@ -105,4 +115,9 @@ required = ["github.com/wadey/gocovmerge"]
 
   [[prune.project]]
     name = "github.com/docker/cli"
+    non-go = false
+
+  [[prune.project]]
+    name = "github.com/deis/duffle"
+    unused-packages = false
     non-go = false

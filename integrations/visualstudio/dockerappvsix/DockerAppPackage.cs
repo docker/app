@@ -71,7 +71,7 @@ namespace dockerappvsix
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             await CommandRender.InitializeAsync(this);
             await CommandSelectApp.InitializeAsync(this);
-            await CommandSettings.InitializeAsync(this);
+            await CommandParameters.InitializeAsync(this);
             await CommandDeploy.InitializeAsync(this);
             await CommandNew.InitializeAsync(this);
         }

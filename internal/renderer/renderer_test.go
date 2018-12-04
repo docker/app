@@ -11,13 +11,13 @@ import (
 
 type fakeDriver struct{}
 
-func (d *fakeDriver) Apply(s string, settings map[string]interface{}) (string, error) {
+func (d *fakeDriver) Apply(s string, parameters map[string]interface{}) (string, error) {
 	return s + "fake", nil
 }
 
 type fakeErrorDriver struct{}
 
-func (d *fakeErrorDriver) Apply(s string, settings map[string]interface{}) (string, error) {
+func (d *fakeErrorDriver) Apply(s string, parameters map[string]interface{}) (string, error) {
 	return s, errors.New("error in driver")
 }
 

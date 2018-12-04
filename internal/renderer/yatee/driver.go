@@ -18,9 +18,9 @@ func init() {
 // Driver is the yatee implementation of rendered drivers.
 type Driver struct{}
 
-// Apply applies the settings to the string
-func (d *Driver) Apply(s string, settings map[string]interface{}) (string, error) {
-	yateed, err := yatee.Process(s, settings, yatee.OptionErrOnMissingKey)
+// Apply applies the parameters to the string
+func (d *Driver) Apply(s string, parameters map[string]interface{}) (string, error) {
+	yateed, err := yatee.Process(s, parameters, yatee.OptionErrOnMissingKey)
 	if err != nil {
 		return "", err
 	}

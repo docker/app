@@ -19,12 +19,12 @@ func main() {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
-	settings, err := yatee.LoadSettings(os.Args[2:])
+	parameters, err := yatee.LoadParameters(os.Args[2:])
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
-	output, err := yatee.Process(string(input), settings)
+	output, err := yatee.Process(string(input), parameters)
 	if err != nil {
 		fmt.Printf("processing error: %v\n", err)
 		os.Exit(1)

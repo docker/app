@@ -63,7 +63,7 @@ namespace dockerappvsix
             if (!(ns.ShowDialog() ?? false)) {
                 return;
             }
-            var s = ns.Settings;
+            var s = ns.Parameters;
             var argsBuilder = new StringBuilder("init " + s.Name.QuoteAndStripCarriageReturns());
             if (s.Description != "")
                 argsBuilder.Append($" --description {s.Description.QuoteAndStripCarriageReturns()}");

@@ -3,18 +3,18 @@ package command
 import (
 	"context"
 	"io"
-	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
-	"time"
+	"strconv"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/config"
 	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
-	"github.com/docker/cli/cli/connhelper"
+	dcontext "github.com/docker/cli/cli/context"
+	"github.com/docker/cli/cli/context/docker"
+	"github.com/docker/cli/cli/context/store"
 	cliflags "github.com/docker/cli/cli/flags"
 	manifeststore "github.com/docker/cli/cli/manifest/store"
 	registryclient "github.com/docker/cli/cli/registry/client"
@@ -33,6 +33,9 @@ import (
 	"github.com/theupdateframework/notary/passphrase"
 )
 
+// ContextDockerHost is the reported context when DOCKER_HOST env var or -H flag is set
+const ContextDockerHost = "<DOCKER_HOST>"
+
 // Streams is an interface which exposes the standard input and output streams
 type Streams interface {
 	In() *InStream
@@ -47,6 +50,8 @@ type Cli interface {
 	Err() io.Writer
 	In() *InStream
 	SetIn(in *InStream)
+	SetOut(out *OutStream)
+	SetErr(err io.Writer)
 	ConfigFile() *configfile.ConfigFile
 	ServerInfo() ServerInfo
 	ClientInfo() ClientInfo
@@ -56,6 +61,10 @@ type Cli interface {
 	RegistryClient(bool) registryclient.RegistryClient
 	ContentTrustEnabled() bool
 	NewContainerizedEngineClient(sockPath string) (clitypes.ContainerizedClient, error)
+	ContextStore() store.Store
+	CurrentContext() string
+	StackOrchestrator(flagValue string) (Orchestrator, error)
+	DockerEndpoint() docker.Endpoint
 }
 
 // DockerCli is an instance the docker command line client.
@@ -70,6 +79,9 @@ type DockerCli struct {
 	clientInfo            ClientInfo
 	contentTrust          bool
 	newContainerizeClient func(string) (clitypes.ContainerizedClient, error)
+	contextStore          store.Store
+	currentContext        string
+	dockerEndpoint        docker.Endpoint
 }
 
 // DefaultVersion returns api.defaultVersion or DOCKER_API_VERSION if specified.
@@ -82,9 +94,19 @@ func (cli *DockerCli) Client() client.APIClient {
 	return cli.client
 }
 
+// SetOut sets the writer used for stdout
+func (cli *DockerCli) SetOut(out *OutStream) {
+	cli.out = out
+}
+
 // Out returns the writer used for stdout
 func (cli *DockerCli) Out() *OutStream {
 	return cli.out
+}
+
+// SetErr sets the writer used for stderr
+func (cli *DockerCli) SetErr(err io.Writer) {
+	cli.err = err
 }
 
 // Err returns the writer used for stderr
@@ -133,6 +155,20 @@ func (cli *DockerCli) ContentTrustEnabled() bool {
 	return cli.contentTrust
 }
 
+// BuildKitEnabled returns whether buildkit is enabled either through a daemon setting
+// or otherwise the client-side DOCKER_BUILDKIT environment variable
+func BuildKitEnabled(si ServerInfo) (bool, error) {
+	buildkitEnabled := si.BuildkitVersion == types.BuilderBuildKit
+	if buildkitEnv := os.Getenv("DOCKER_BUILDKIT"); buildkitEnv != "" {
+		var err error
+		buildkitEnabled, err = strconv.ParseBool(buildkitEnv)
+		if err != nil {
+			return false, errors.Wrap(err, "DOCKER_BUILDKIT environment variable expects boolean value")
+		}
+	}
+	return buildkitEnabled, nil
+}
+
 // ManifestStore returns a store for local manifests
 func (cli *DockerCli) ManifestStore() manifeststore.Store {
 	// TODO: support override default location from config file
@@ -152,14 +188,21 @@ func (cli *DockerCli) RegistryClient(allowInsecure bool) registryclient.Registry
 // line flags are parsed.
 func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 	cli.configFile = cliconfig.LoadDefaultConfigFile(cli.err)
-
 	var err error
-	cli.client, err = NewAPIClientFromFlags(opts.Common, cli.configFile)
+	cli.contextStore = store.New(cliconfig.ContextStoreDir())
+	cli.currentContext = resolveContextName(opts.Common, cli.configFile)
+	endpoint, err := resolveDockerEndpoint(cli.contextStore, cli.currentContext, opts.Common)
+	if err != nil {
+		return errors.Wrap(err, "unable to resolve docker endpoint")
+	}
+	cli.dockerEndpoint = endpoint
+
+	cli.client, err = newAPIClientFromEndpoint(endpoint, cli.configFile)
 	if tlsconfig.IsErrEncryptedKey(err) {
 		passRetriever := passphrase.PromptRetrieverWithInOut(cli.In(), cli.Out(), nil)
 		newClient := func(password string) (client.APIClient, error) {
-			opts.Common.TLSOptions.Passphrase = password
-			return NewAPIClientFromFlags(opts.Common, cli.configFile)
+			endpoint.TLSPassword = password
+			return newAPIClientFromEndpoint(endpoint, cli.configFile)
 		}
 		cli.client, err = getClientWithPassword(passRetriever, newClient)
 	}
@@ -181,6 +224,78 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 	}
 	cli.initializeFromClient()
 	return nil
+}
+
+// NewAPIClientFromFlags creates a new APIClient from command line flags
+func NewAPIClientFromFlags(opts *cliflags.CommonOptions, configFile *configfile.ConfigFile) (client.APIClient, error) {
+	store := store.New(cliconfig.ContextStoreDir())
+	contextName := resolveContextName(opts, configFile)
+	endpoint, err := resolveDockerEndpoint(store, contextName, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to resolve docker endpoint")
+	}
+	return newAPIClientFromEndpoint(endpoint, configFile)
+}
+
+func newAPIClientFromEndpoint(ep docker.Endpoint, configFile *configfile.ConfigFile) (client.APIClient, error) {
+	clientOpts, err := ep.ClientOpts()
+	if err != nil {
+		return nil, err
+	}
+	customHeaders := configFile.HTTPHeaders
+	if customHeaders == nil {
+		customHeaders = map[string]string{}
+	}
+	customHeaders["User-Agent"] = UserAgent()
+	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
+	return client.NewClientWithOpts(clientOpts...)
+}
+
+func resolveDockerEndpoint(s store.Store, contextName string, opts *cliflags.CommonOptions) (docker.Endpoint, error) {
+	if contextName != ContextDockerHost {
+		ctxMeta, err := s.GetContextMetadata(contextName)
+		if err != nil {
+			return docker.Endpoint{}, err
+		}
+		epMeta, err := docker.EndpointFromContext(contextName, ctxMeta)
+		if err != nil {
+			return docker.Endpoint{}, err
+		}
+		return epMeta.WithTLSData(s)
+	}
+	host, err := getServerHost(opts.Hosts, opts.TLSOptions)
+	if err != nil {
+		return docker.Endpoint{}, err
+	}
+	verStr := api.DefaultVersion
+	if tmpStr := os.Getenv("DOCKER_API_VERSION"); tmpStr != "" {
+		verStr = tmpStr
+	}
+
+	var (
+		skipTLSVerify bool
+		tlsData       *dcontext.TLSData
+	)
+
+	if opts.TLSOptions != nil {
+		skipTLSVerify = opts.TLSOptions.InsecureSkipVerify
+		tlsData, err = dcontext.TLSDataFromFiles(opts.TLSOptions.CAFile, opts.TLSOptions.CertFile, opts.TLSOptions.KeyFile)
+		if err != nil {
+			return docker.Endpoint{}, err
+		}
+	}
+
+	return docker.Endpoint{
+		EndpointMeta: docker.EndpointMeta{
+			EndpointMetaBase: dcontext.EndpointMetaBase{
+				ContextName:   ContextDockerHost,
+				Host:          host,
+				SkipTLSVerify: skipTLSVerify,
+			},
+			APIVersion: verStr,
+		},
+		TLSData: tlsData,
+	}, nil
 }
 
 func isEnabled(value string) (bool, error) {
@@ -238,6 +353,45 @@ func (cli *DockerCli) NewContainerizedEngineClient(sockPath string) (clitypes.Co
 	return cli.newContainerizeClient(sockPath)
 }
 
+// ContextStore returns the ContextStore
+func (cli *DockerCli) ContextStore() store.Store {
+	return cli.contextStore
+}
+
+// CurrentContext returns the current context name
+func (cli *DockerCli) CurrentContext() string {
+	return cli.currentContext
+}
+
+// StackOrchestrator resolves which stack orchestrator is in use
+func (cli *DockerCli) StackOrchestrator(flagValue string) (Orchestrator, error) {
+	var ctxOrchestrator string
+
+	if cli.currentContext != ContextDockerHost && cli.contextStore != nil {
+		ctxRaw, err := cli.contextStore.GetContextMetadata(cli.currentContext)
+		if err != nil {
+			return "", err
+		}
+		ctxMeta, err := GetContextMetadata(ctxRaw)
+		if err != nil {
+			return "", err
+		}
+		ctxOrchestrator = string(ctxMeta.StackOrchestrator)
+	}
+
+	configFile := cli.configFile
+	if configFile == nil {
+		configFile = cliconfig.LoadDefaultConfigFile(cli.Err())
+	}
+
+	return GetStackOrchestrator(flagValue, ctxOrchestrator, configFile.StackOrchestrator, cli.Err())
+}
+
+// DockerEndpoint returns the current docker endpoint
+func (cli *DockerCli) DockerEndpoint() docker.Endpoint {
+	return cli.dockerEndpoint
+}
+
 // ServerInfo stores details about the supported features and platform of the
 // server
 type ServerInfo struct {
@@ -257,56 +411,7 @@ func NewDockerCli(in io.ReadCloser, out, err io.Writer, isTrusted bool, containe
 	return &DockerCli{in: NewInStream(in), out: NewOutStream(out), err: err, contentTrust: isTrusted, newContainerizeClient: containerizedFn}
 }
 
-// NewAPIClientFromFlags creates a new APIClient from command line flags
-func NewAPIClientFromFlags(opts *cliflags.CommonOptions, configFile *configfile.ConfigFile) (client.APIClient, error) {
-	unparsedHost, err := getUnparsedServerHost(opts.Hosts)
-	if err != nil {
-		return &client.Client{}, err
-	}
-	var clientOpts []func(*client.Client) error
-	helper, err := connhelper.GetConnectionHelper(unparsedHost)
-	if err != nil {
-		return &client.Client{}, err
-	}
-	if helper == nil {
-		clientOpts = append(clientOpts, withHTTPClient(opts.TLSOptions))
-		host, err := dopts.ParseHost(opts.TLSOptions != nil, unparsedHost)
-		if err != nil {
-			return &client.Client{}, err
-		}
-		clientOpts = append(clientOpts, client.WithHost(host))
-	} else {
-		clientOpts = append(clientOpts, func(c *client.Client) error {
-			httpClient := &http.Client{
-				// No tls
-				// No proxy
-				Transport: &http.Transport{
-					DialContext: helper.Dialer,
-				},
-			}
-			return client.WithHTTPClient(httpClient)(c)
-		})
-		clientOpts = append(clientOpts, client.WithHost(helper.Host))
-		clientOpts = append(clientOpts, client.WithDialContext(helper.Dialer))
-	}
-
-	customHeaders := configFile.HTTPHeaders
-	if customHeaders == nil {
-		customHeaders = map[string]string{}
-	}
-	customHeaders["User-Agent"] = UserAgent()
-	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
-
-	verStr := api.DefaultVersion
-	if tmpStr := os.Getenv("DOCKER_API_VERSION"); tmpStr != "" {
-		verStr = tmpStr
-	}
-	clientOpts = append(clientOpts, client.WithVersion(verStr))
-
-	return client.NewClientWithOpts(clientOpts...)
-}
-
-func getUnparsedServerHost(hosts []string) (string, error) {
+func getServerHost(hosts []string, tlsOptions *tlsconfig.Options) (string, error) {
 	var host string
 	switch len(hosts) {
 	case 0:
@@ -316,38 +421,27 @@ func getUnparsedServerHost(hosts []string) (string, error) {
 	default:
 		return "", errors.New("Please specify only one -H")
 	}
-	return host, nil
-}
 
-func withHTTPClient(tlsOpts *tlsconfig.Options) func(*client.Client) error {
-	return func(c *client.Client) error {
-		if tlsOpts == nil {
-			// Use the default HTTPClient
-			return nil
-		}
-
-		opts := *tlsOpts
-		opts.ExclusiveRootPools = true
-		tlsConfig, err := tlsconfig.Client(opts)
-		if err != nil {
-			return err
-		}
-
-		httpClient := &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: tlsConfig,
-				DialContext: (&net.Dialer{
-					KeepAlive: 30 * time.Second,
-					Timeout:   30 * time.Second,
-				}).DialContext,
-			},
-			CheckRedirect: client.CheckRedirect,
-		}
-		return client.WithHTTPClient(httpClient)(c)
-	}
+	return dopts.ParseHost(tlsOptions != nil, host)
 }
 
 // UserAgent returns the user agent string used for making API requests
 func UserAgent() string {
 	return "Docker-Client/" + cli.Version + " (" + runtime.GOOS + ")"
+}
+
+func resolveContextName(opts *cliflags.CommonOptions, config *configfile.ConfigFile) string {
+	if opts.Context != "" {
+		return opts.Context
+	}
+	if len(opts.Hosts) > 0 {
+		return ContextDockerHost
+	}
+	if _, present := os.LookupEnv("DOCKER_HOST"); present {
+		return ContextDockerHost
+	}
+	if ctxName, ok := os.LookupEnv("DOCKER_CONTEXT"); ok {
+		return ctxName
+	}
+	return ContextDockerHost
 }

@@ -10,29 +10,29 @@ import (
 )
 
 var (
-	validateSettingsFile []string
-	validateEnv          []string
+	validateParametersFile []string
+	validateEnv            []string
 )
 
 func validateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validate [<app-name>] [-s key=value...] [-f settings-file...]",
+		Use:   "validate [<app-name>] [-s key=value...] [-f parameters-file...]",
 		Short: "Checks the rendered application is syntactically correct",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app, err := packager.Extract(firstOrEmpty(args),
-				types.WithSettingsFiles(validateSettingsFile...),
+				types.WithParametersFiles(validateParametersFile...),
 			)
 			if err != nil {
 				return err
 			}
 			defer app.Cleanup()
-			argSettings := cliopts.ConvertKVStringsToMap(validateEnv)
-			_, err = render.Render(app, argSettings)
+			argParameters := cliopts.ConvertKVStringsToMap(validateEnv)
+			_, err = render.Render(app, argParameters)
 			return err
 		},
 	}
-	cmd.Flags().StringArrayVarP(&validateSettingsFile, "settings-files", "f", []string{}, "Override settings files")
-	cmd.Flags().StringArrayVarP(&validateEnv, "set", "s", []string{}, "Override settings values")
+	cmd.Flags().StringArrayVarP(&validateParametersFile, "parameters-files", "f", []string{}, "Override with parameters from files")
+	cmd.Flags().StringArrayVarP(&validateEnv, "set", "s", []string{}, "Override parameters values")
 	return cmd
 }

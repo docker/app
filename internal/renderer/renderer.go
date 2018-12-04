@@ -28,9 +28,9 @@ func Register(name string, driver driver.Driver) {
 	drivers[name] = driver
 }
 
-// Apply applies the specified render to the specified string with the specified settings.
+// Apply applies the specified render to the specified string with the specified parameters.
 // If the render is not present is the registered ones, it errors out.
-func Apply(s string, settings map[string]interface{}, renderers ...string) (string, error) {
+func Apply(s string, parameters map[string]interface{}, renderers ...string) (string, error) {
 	var err error
 	for _, r := range renderers {
 		if r == "none" {
@@ -42,7 +42,7 @@ func Apply(s string, settings map[string]interface{}, renderers ...string) (stri
 		if !present {
 			return "", errors.Errorf("unknown renderer %s", r)
 		}
-		s, err = d.Apply(s, settings)
+		s, err = d.Apply(s, parameters)
 		if err != nil {
 			return "", err
 		}

@@ -10,7 +10,8 @@ import (
 
 // NewKubernetesConfig resolves the path to the desired Kubernetes configuration file based on
 // the KUBECONFIG environment variable and command line flags.
-func NewKubernetesConfig(configPath string) clientcmd.ClientConfig {
+func NewKubernetesConfig(configPath string) (clientcmd.ClientConfig, error) {
+
 	kubeConfig := configPath
 	if kubeConfig == "" {
 		if config := os.Getenv("KUBECONFIG"); config != "" {
@@ -22,5 +23,5 @@ func NewKubernetesConfig(configPath string) clientcmd.ClientConfig {
 
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfig},
-		&clientcmd.ConfigOverrides{})
+		&clientcmd.ConfigOverrides{}), nil
 }

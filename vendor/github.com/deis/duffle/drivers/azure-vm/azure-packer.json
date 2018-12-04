@@ -1,0 +1,48 @@
+{
+    "variables": {
+      "resource_group": "{{env `ARM_RESOURCE_GROUP`}}",
+      "storage_account": "{{env `ARM_STORAGE_ACCOUNT`}}",
+      "subscription_id": "{{env `ARM_SUBSCRIPTION_ID`}}"
+    },
+    "builders": [{
+      "type": "azure-arm",
+  
+      "build_resource_group_name": "{{user `resource_group` }}",
+      "subscription_id": "{{user `subscription_id`}}",
+  
+      "os_type": "Linux",
+      "image_publisher": "Canonical",
+      "image_offer": "UbuntuServer",
+      "image_sku": "16.04-LTS",
+
+      "managed_image_name": "duffle-vm-example-0.1.1",
+      "managed_image_resource_group_name": "{{ user `resource_group` }}",
+  
+      "vm_size": "Standard_DS2_v2"
+    }],
+    "provisioners": [
+        {
+            "type": "file",
+            "source": "../examples/helloworld/cnab/app/run",
+            "destination": "/tmp/cnab-run"
+        },
+        {
+            "type": "file",
+            "source": "../examples/helloworld/cnab/bundle.json",
+            "destination": "/tmp/bundle.json"
+        },
+        {
+            "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
+            "inline": [
+                "apt-get update",
+                "apt-get upgrade -y",
+                "mkdir -p /cnab/app",
+                "mv /tmp/cnab-run /cnab/app/run",
+                "mv /tmp/bundle.json /cnab/bundle.json",
+                "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
+            ],
+            "inline_shebang": "/bin/sh -x",
+            "type": "shell"
+        }
+    ]
+  }

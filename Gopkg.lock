@@ -13,6 +13,14 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
+  digest = "1:a26f8da48b22e6176c1c6a2459904bb30bd0c49ada04b2963c2c3a203e81a620"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
+  version = "v1.4.2"
+
+[[projects]]
   digest = "1:99632bb2b4e2c066233ee9d19c1370a695ebd2be18625e31390476d356db5d8a"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
@@ -38,14 +46,6 @@
   ]
   pruneopts = "NUT"
   revision = "5312a61534124124185d41f09206b9fef1d88403"
-
-[[projects]]
-  digest = "1:5a23cd3a5496a0b2da7e3b348d14e77b11a210738c398200d7d6f04ea8cf3bd8"
-  name = "github.com/asaskevich/govalidator"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
-  version = "v9"
 
 [[projects]]
   branch = "master"
@@ -106,20 +106,37 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:8d9e9a68c0fd72cc68958c4e0388981cd916411db9af24fc0bab7ae6447c9432"
-  name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "v2.6.0"
+  branch = "dockercon-version"
+  digest = "1:556ecb25c7f3793960db62c5455ba73079c4929afc235acf8defa9f9ad980bfd"
+  name = "github.com/deis/duffle"
+  packages = [
+    "pkg/action",
+    "pkg/bundle",
+    "pkg/claim",
+    "pkg/credentials",
+    "pkg/crypto/digest",
+    "pkg/driver",
+    "pkg/duffle/home",
+    "pkg/image",
+    "pkg/loader",
+    "pkg/repo",
+    "pkg/signature",
+    "pkg/utils/crud",
+  ]
+  pruneopts = "T"
+  revision = "5b87a9f0576e5da01f3be2b610797e07ff7e6711"
+  source = "git@github.com:simonferquel/duffle.git"
 
 [[projects]]
-  branch = "master"
-  digest = "1:98bc0775999b81adb85e06a356d80d195f75ac4f8aa25c1623aee3eb5c5ccf1c"
+  branch = "docker-app-fork"
+  digest = "1:9d912cbbb32ca589bdcbfa8c30e21533d3f7230c8222c5fc6e7770c7f72ddcb6"
   name = "github.com/docker/cli"
   packages = [
     "cli",
     "cli/command",
     "cli/command/bundlefile",
+    "cli/command/context",
+    "cli/command/context/formatter",
     "cli/command/formatter",
     "cli/command/idresolver",
     "cli/command/inspect",
@@ -127,6 +144,7 @@
     "cli/command/service",
     "cli/command/service/progress",
     "cli/command/stack",
+    "cli/command/stack/formatter",
     "cli/command/stack/kubernetes",
     "cli/command/stack/loader",
     "cli/command/stack/options",
@@ -143,13 +161,16 @@
     "cli/config/credentials",
     "cli/connhelper",
     "cli/connhelper/ssh",
+    "cli/context",
+    "cli/context/docker",
+    "cli/context/kubernetes",
+    "cli/context/store",
     "cli/debug",
     "cli/flags",
     "cli/manifest/store",
     "cli/manifest/types",
     "cli/registry/client",
     "cli/trust",
-    "internal/licenseutils",
     "kubernetes",
     "kubernetes/client/clientset/scheme",
     "kubernetes/client/clientset/typed/compose/v1beta1",
@@ -165,7 +186,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "94efcf4886e6d4a1356c0dcf2228b709ade82df3"
+  revision = "2e4b9ab1898f4f8d062dbfa871783f2c43eb8e97"
+  source = "git@github.com:simonferquel/cli.git"
 
 [[projects]]
   digest = "1:1cb756deb458cb9be52d2e3fe67a19a7185b8c8453c691ba5eb0c7db00a51205"
@@ -277,7 +299,7 @@
   version = "v1.5.1-1"
 
 [[projects]]
-  digest = "1:f133477f38c590bdcd6fc534617df17983f7a21e5b686d4a3495abeb21c631ec"
+  digest = "1:2a47f7eb1a2c30428d1ee6808cb66d4deb17e68a3e55d696f03c8068552ba5e8"
   name = "github.com/docker/go-connections"
   packages = [
     "nat",
@@ -285,8 +307,7 @@
     "tlsconfig",
   ]
   pruneopts = "NUT"
-  revision = "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
-  version = "v0.3.0"
+  revision = "7395e3f8aa162843a74ed6d48e79627d9792ac55"
 
 [[projects]]
   branch = "master"
@@ -320,21 +341,6 @@
   revision = "aabc10ec26b754e797f9028f4589c5b7bd90dc20"
 
 [[projects]]
-  digest = "1:63255ad9ddd0cd677b1f5d70eaaf2dbb27241fecbedaa5ad3b1554fd2ac40efe"
-  name = "github.com/docker/licensing"
-  packages = [
-    ".",
-    "lib/errors",
-    "lib/go-auth/identity",
-    "lib/go-auth/jwt",
-    "lib/go-clientlib",
-    "lib/go-validation",
-    "model",
-  ]
-  pruneopts = "NUT"
-  revision = "369e5301dc601b478021c0f588f5c3d04626d804"
-
-[[projects]]
   digest = "1:155bae7a907260715d88c11d4d15c70e9b614c59fd79f0c2286ef7b2670c44ea"
   name = "github.com/docker/swarmkit"
   packages = [
@@ -355,6 +361,14 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "3f9db97f856818214da2e1057f8ad84803971cff"
+
+[[projects]]
+  digest = "1:0cb5b9c5e5754914abee038463a4c887f873861ec294c2535e3967e8042d3bcd"
+  name = "github.com/genuinetools/reg"
+  packages = ["registry"]
+  pruneopts = "NUT"
+  revision = "4a4d0e5d108ca9558879bdf1aba94d09e921cf1e"
+  version = "v0.16.0"
 
 [[projects]]
   digest = "1:81466b4218bf6adddac2572a30ac733a9255919bc2f470b4827a317bd4ee1756"
@@ -576,6 +590,14 @@
   revision = "39771216ff4c63d11f5e604076f9c45e8be1067b"
 
 [[projects]]
+  digest = "1:deffbc414da9eff0c34c5d2d97c89f6647432e1dd44c22acd9130be7c4e9401e"
+  name = "github.com/oklog/ulid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "02a8604050d8466dd915307496174adb9be4593a"
+  version = "v1.3.1"
+
+[[projects]]
   digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
   name = "github.com/opencontainers/go-digest"
   packages = ["."]
@@ -632,6 +654,14 @@
   version = "v2.0.1"
 
 [[projects]]
+  digest = "1:014d3763649dd2f071fcf4acb03f3a2964c0c6dcf5581f4585fdd0d492235518"
+  name = "github.com/peterhellberg/link"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d1cebc7ea14a5fc0de7cb4a45acae773161642c6"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:5cf3f025cbee5951a4ee961de067c8a89fc95a5adabead774f82822efabab121"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -679,14 +709,6 @@
   ]
   pruneopts = "NUT"
   revision = "ae68e2d4c00fed4943b5f6698d504a5fe083da8a"
-
-[[projects]]
-  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
 
 [[projects]]
   digest = "1:b2339e83ce9b5c4f79405f949429a7f68a9a904fed903c672aac1e7ceb7f5f02"
@@ -780,9 +802,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cb77e5934866333fa0784326a57e64c4da128001c94fbd1d29819d79bd3b1087"
+  digest = "1:4b660675009b1bb13d0faea73f8356cd81b5f560f40a35b366acfc6f63d35674"
   name = "golang.org/x/crypto"
   packages = [
+    "cast5",
+    "openpgp",
+    "openpgp/armor",
+    "openpgp/clearsign",
+    "openpgp/elgamal",
+    "openpgp/errors",
+    "openpgp/packet",
+    "openpgp/s2k",
     "pbkdf2",
     "ssh/terminal",
   ]
@@ -1092,10 +1122,22 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
+    "github.com/deis/duffle/pkg/action",
+    "github.com/deis/duffle/pkg/bundle",
+    "github.com/deis/duffle/pkg/claim",
+    "github.com/deis/duffle/pkg/credentials",
+    "github.com/deis/duffle/pkg/crypto/digest",
+    "github.com/deis/duffle/pkg/driver",
+    "github.com/deis/duffle/pkg/duffle/home",
+    "github.com/deis/duffle/pkg/image",
+    "github.com/deis/duffle/pkg/loader",
+    "github.com/deis/duffle/pkg/repo",
+    "github.com/deis/duffle/pkg/signature",
+    "github.com/deis/duffle/pkg/utils/crud",
     "github.com/docker/cli/cli",
     "github.com/docker/cli/cli/command",
+    "github.com/docker/cli/cli/command/context",
     "github.com/docker/cli/cli/command/stack",
-    "github.com/docker/cli/cli/command/stack/kubernetes",
     "github.com/docker/cli/cli/command/stack/options",
     "github.com/docker/cli/cli/command/stack/swarm",
     "github.com/docker/cli/cli/compose/loader",
@@ -1103,10 +1145,9 @@
     "github.com/docker/cli/cli/compose/template",
     "github.com/docker/cli/cli/compose/types",
     "github.com/docker/cli/cli/config",
+    "github.com/docker/cli/cli/context/store",
     "github.com/docker/cli/cli/debug",
     "github.com/docker/cli/cli/flags",
-    "github.com/docker/cli/kubernetes/compose/v1beta1",
-    "github.com/docker/cli/kubernetes/compose/v1beta2",
     "github.com/docker/cli/opts",
     "github.com/docker/distribution",
     "github.com/docker/distribution/manifest",
@@ -1116,12 +1157,12 @@
     "github.com/docker/distribution/registry/client/auth",
     "github.com/docker/distribution/registry/client/transport",
     "github.com/docker/docker/api/types",
-    "github.com/docker/docker/api/types/mount",
     "github.com/docker/docker/distribution",
     "github.com/docker/docker/pkg/archive",
+    "github.com/docker/docker/pkg/homedir",
+    "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/pkg/term",
     "github.com/docker/docker/registry",
-    "github.com/docker/go-connections/nat",
     "github.com/docker/go-units",
     "github.com/gopherjs/gopherjs/js",
     "github.com/imdario/mergo",
@@ -1141,8 +1182,6 @@
     "gotest.tools/golden",
     "gotest.tools/icmd",
     "gotest.tools/skip",
-    "k8s.io/apimachinery/pkg/apis/meta/v1",
-    "k8s.io/apimachinery/pkg/runtime",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -20,7 +20,7 @@ func Example() {
 	if err != nil {
 		panic("cannot load application")
 	}
-	// Render the app to a composefile format, using some user provided settings
+	// Render the app to a composefile format, using some user provided parameters
 	c, err := render.Render(app, map[string]string{
 		"text": "hello examples!",
 	})

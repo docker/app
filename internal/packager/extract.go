@@ -3,7 +3,6 @@ package packager
 import (
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +10,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/loader"
 	"github.com/docker/app/types"
-	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 )
 
@@ -43,52 +41,6 @@ func findApp() (string, error) {
 	return filepath.Join(cwd, hit), nil
 }
 
-func appNameFromRef(ref reference.Named) string {
-	parts := strings.Split(ref.Name(), "/")
-	return internal.DirNameFromAppName(parts[len(parts)-1])
-}
-
-func imageNameFromRef(ref reference.Named) string {
-	if tagged, ok := ref.(reference.Tagged); ok {
-		name := internal.DirNameFromAppName(ref.Name())
-		newRef, _ := reference.WithName(name)
-		newtaggedRef, _ := reference.WithTag(newRef, tagged.Tag())
-		return newtaggedRef.String()
-	}
-	return internal.DirNameFromAppName(ref.String())
-}
-
-// extractImage extracts a docker application in a docker image to a temporary directory
-func extractImage(appname string, ops ...func(*types.App) error) (*types.App, error) {
-	ref, err := reference.ParseNormalizedNamed(appname)
-	if err != nil {
-		return nil, err
-	}
-	literalImageName := appname
-	imagename := imageNameFromRef(ref)
-	appname = appNameFromRef(ref)
-	tempDir, err := ioutil.TempDir("", "dockerapp")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temporary directory")
-	}
-	// Attempt loading image based on default name permutation
-	path, err := Pull(imagename, tempDir)
-	if err != nil {
-		if literalImageName == imagename {
-			os.RemoveAll(tempDir)
-			return nil, err
-		}
-		// Attempt loading image based on the literal name
-		path, err = Pull(literalImageName, tempDir)
-		if err != nil {
-			os.RemoveAll(tempDir)
-			return nil, err
-		}
-	}
-	ops = append(ops, types.WithName(appname), types.WithCleanup(func() { os.RemoveAll(tempDir) }))
-	return loader.LoadFromDirectory(path, ops...)
-}
-
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.
 // It returns source file, effective app name, and cleanup function
 // If appname is empty, it looks into cwd, and all subdirs for a single matching .dockerapp
@@ -110,16 +62,10 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 	appname := internal.DirNameFromAppName(name)
 	s, err := os.Stat(appname)
 	if err != nil {
-		// URL or docker image
-		u, err := url.Parse(name)
-		if err == nil && (u.Scheme == "http" || u.Scheme == "https") {
-			ops = append(ops, types.WithSource(types.AppSourceURL))
-			return loader.LoadFromURL(name, ops...)
+		if os.IsNotExist(err) {
+			return nil, newNotFoundError(name)
 		}
-		// look for a docker image
-		ops = append(ops, types.WithSource(types.AppSourceImage))
-		app, err := extractImage(name, ops...)
-		return app, errors.Wrapf(err, "cannot locate application %q in filesystem or registry", name)
+		return nil, err
 	}
 	if s.IsDir() {
 		// directory: already decompressed

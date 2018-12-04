@@ -38,7 +38,7 @@ services:
 		t,
 		fs.WithMode(0755),
 		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
-		fs.WithFile(internal.SettingsFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
+		fs.WithFile(internal.ParametersFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
 	)
 
 	assert.Assert(t, fs.Equal(dir.Join(appName), manifest))
@@ -107,7 +107,7 @@ name: writemetadata_test
 # A short description of the application
 description: 
 # Namespace to use when pushing to a registry. This is typically your Hub username.
-#namespace: myHubUsername
+#namespace: myhubusername
 # List of application maintainers with name and email for each
 maintainers:
   - name: bearclaw

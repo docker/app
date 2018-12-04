@@ -1,0 +1,28 @@
+#!/bin/sh
+
+#set -eo pipefail
+
+action=$CNAB_ACTION
+name=$CNAB_INSTALLATION_NAME 
+
+case $action in
+    install)
+    echo "Install action"
+    ;;
+    uninstall)
+    echo "uninstall action"
+    ;;
+    upgrade)
+    echo "Upgrade action"
+    ;;
+    downgrade)
+    echo "Downgrade action"
+    ;;
+    status)
+    echo "Status action"
+    ;;
+    *)
+    echo "No action for $action"
+    ;;
+esac
+echo "Action $action complete for $name"

@@ -6,7 +6,8 @@
 _build/
 bin/
 !examples/simple/*.dockerapp
-!e2e/**/*.dockerapp
+!**/testdata/**/*.dockerapp
 .gradle
 coverage.html
 cover.out
+**/bundle.json

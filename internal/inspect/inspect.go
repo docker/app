@@ -9,21 +9,21 @@ import (
 
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
-	"github.com/docker/app/types/settings"
+	"github.com/docker/app/types/parameters"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	units "github.com/docker/go-units"
 )
 
 // Inspect dumps the metadata of an app
-func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error {
+func Inspect(out io.Writer, app *types.App, argParameters map[string]string) error {
 	// Render the compose file
-	config, err := render.Render(app, argSettings)
+	config, err := render.Render(app, argParameters)
 	if err != nil {
 		return err
 	}
 
-	// Extract all the settings
-	settingsKeys, allSettings, err := extractSettings(app, argSettings)
+	// Extract all the parameters
+	parametersKeys, allParameters, err := extractParameters(app, argParameters)
 	if err != nil {
 		return err
 	}
@@ -60,11 +60,11 @@ func Inspect(out io.Writer, app *types.App, argSettings map[string]string) error
 	}, "Secret")
 
 	// Add Setting section
-	printSection(out, len(settingsKeys), func(w io.Writer) {
-		for _, k := range settingsKeys {
-			fmt.Fprintf(w, "%s\t%s\n", k, allSettings[k])
+	printSection(out, len(parametersKeys), func(w io.Writer) {
+		for _, k := range parametersKeys {
+			fmt.Fprintf(w, "%s\t%s\n", k, allParameters[k])
 		}
-	}, "Setting", "Value")
+	}, "Parameter", "Value")
 
 	// Add Attachments section
 	attachments := app.Attachments()
@@ -123,26 +123,26 @@ func getReplicas(service composetypes.ServiceConfig) int {
 	return 1
 }
 
-func extractSettings(app *types.App, argSettings map[string]string) ([]string, map[string]string, error) {
-	allSettings, err := mergeAndFlattenSettings(app, argSettings)
+func extractParameters(app *types.App, argParameters map[string]string) ([]string, map[string]string, error) {
+	allParameters, err := mergeAndFlattenParameters(app, argParameters)
 	if err != nil {
 		return nil, nil, err
 	}
 	// sort the keys to get consistent output
-	var settingsKeys []string
-	for k := range allSettings {
-		settingsKeys = append(settingsKeys, k)
+	var parametersKeys []string
+	for k := range allParameters {
+		parametersKeys = append(parametersKeys, k)
 	}
-	sort.Slice(settingsKeys, func(i, j int) bool { return settingsKeys[i] < settingsKeys[j] })
-	return settingsKeys, allSettings, nil
+	sort.Slice(parametersKeys, func(i, j int) bool { return parametersKeys[i] < parametersKeys[j] })
+	return parametersKeys, allParameters, nil
 }
 
-func mergeAndFlattenSettings(app *types.App, argSettings map[string]string) (map[string]string, error) {
-	sArgs, err := settings.FromFlatten(argSettings)
+func mergeAndFlattenParameters(app *types.App, argParameters map[string]string) (map[string]string, error) {
+	sArgs, err := parameters.FromFlatten(argParameters)
 	if err != nil {
 		return nil, err
 	}
-	s, err := settings.Merge(app.Settings(), sArgs)
+	s, err := parameters.Merge(app.Parameters(), sArgs)
 	if err != nil {
 		return nil, err
 	}

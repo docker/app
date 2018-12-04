@@ -29,7 +29,7 @@ services:
 )
 
 var (
-	settings = map[string]interface{}{
+	parameters = map[string]interface{}{
 		"myapp": map[string]interface{}{
 			"enable":         true,
 			"alpine_version": "3.7",
@@ -41,7 +41,7 @@ func TestDriverErrors(t *testing.T) {
 	testCases := []struct {
 		name          string
 		template      string
-		settings      map[string]interface{}
+		parameters    map[string]interface{}
 		expectedError string
 	}{
 		{
@@ -52,7 +52,7 @@ func TestDriverErrors(t *testing.T) {
 	}
 	d := &Driver{}
 	for _, tc := range testCases {
-		_, err := d.Apply(tc.template, tc.settings)
+		_, err := d.Apply(tc.template, tc.parameters)
 		assert.Check(t, err != nil)
 		assert.Check(t, is.ErrorContains(err, tc.expectedError))
 	}
@@ -60,7 +60,7 @@ func TestDriverErrors(t *testing.T) {
 
 func TestDriver(t *testing.T) {
 	d := &Driver{}
-	s, err := d.Apply(compose, settings)
+	s, err := d.Apply(compose, parameters)
 	assert.NilError(t, err)
 	assert.Check(t, is.Equal(s, expectedCompose))
 }

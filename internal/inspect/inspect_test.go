@@ -23,7 +23,7 @@ func TestInspect(t *testing.T) {
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
 name: foo`),
-			fs.WithFile(internal.SettingsFileName, ``),
+			fs.WithFile(internal.ParametersFileName, ``),
 		),
 		fs.WithDir("no-description",
 			fs.WithFile(internal.ComposeFileName, composeYAML),
@@ -33,9 +33,9 @@ name: foo
 maintainers:
   - name: foo
     email: "foo@bar.com"`),
-			fs.WithFile(internal.SettingsFileName, ""),
+			fs.WithFile(internal.ParametersFileName, ""),
 		),
-		fs.WithDir("no-settings",
+		fs.WithDir("no-parameters",
 			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
@@ -44,7 +44,7 @@ maintainers:
   - name: foo
     email: "foo@bar.com"
 description: "this is sparta !"`),
-			fs.WithFile(internal.SettingsFileName, ""),
+			fs.WithFile(internal.ParametersFileName, ""),
 		),
 		fs.WithDir("overridden",
 			fs.WithFile(internal.ComposeFileName, `
@@ -60,7 +60,7 @@ services:
 version: 0.1.0
 name: foo
 `),
-			fs.WithFile(internal.SettingsFileName, ""),
+			fs.WithFile(internal.ParametersFileName, ""),
 		),
 		fs.WithDir("full",
 			fs.WithFile(internal.ComposeFileName, `
@@ -88,7 +88,7 @@ maintainers:
   - name: foo
     email: "foo@bar.com"
 description: "this is sparta !"`),
-			fs.WithFile(internal.SettingsFileName, `
+			fs.WithFile(internal.ParametersFileName, `
 port: 8080
 text: hello`),
 			fs.WithFile("config.cfg", "something"),
@@ -102,7 +102,7 @@ text: hello`),
 	}{
 		{name: "no-maintainers"},
 		{name: "no-description"},
-		{name: "no-settings"},
+		{name: "no-parameters"},
 		{name: "overridden", args: map[string]string{"web.port": "80"}},
 		{name: "full"},
 	} {

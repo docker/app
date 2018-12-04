@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	imageAddComposeFiles []string
-	imageAddSettingsFile []string
-	imageAddEnv          []string
+	imageAddComposeFiles   []string
+	imageAddParametersFile []string
+	imageAddEnv            []string
 )
 
 func imageAddCmd() *cobra.Command {
@@ -29,7 +29,7 @@ subdirectory.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			oappname := args[0]
 			app, err := packager.Extract(oappname,
-				types.WithSettingsFiles(imageAddSettingsFile...),
+				types.WithParametersFiles(imageAddParametersFile...),
 				types.WithComposeFiles(imageAddComposeFiles...),
 			)
 			if err != nil {
@@ -66,8 +66,8 @@ subdirectory.`,
 		},
 	}
 	if internal.Experimental == "on" {
-		cmd.Flags().StringArrayVarP(&imageAddComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
-		cmd.Flags().StringArrayVarP(&imageAddSettingsFile, "settings-files", "s", []string{}, "Override settings files")
+		cmd.Flags().StringArrayVarP(&imageAddComposeFiles, "compose-files", "c", []string{}, "Override Compose file")
+		cmd.Flags().StringArrayVarP(&imageAddParametersFile, "parameters-files", "f", []string{}, "Override with parameters from files")
 		cmd.Flags().StringArrayVarP(&imageAddEnv, "env", "e", []string{}, "Override environment values")
 	}
 	return cmd
