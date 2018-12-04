@@ -26,6 +26,10 @@ func pushCmd() *cobra.Command {
 				return err
 			}
 			defer app.Cleanup()
+			err = runValidation(app)
+			if err != nil {
+				return err
+			}
 			dgst, err := packager.Push(app, opts.namespace, opts.tag, opts.repo)
 			if err == nil {
 				fmt.Println(dgst)

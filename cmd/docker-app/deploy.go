@@ -38,7 +38,19 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 		Long:  `Deploy the application on either Swarm or Kubernetes.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeploy(dockerCli, cmd.Flags(), firstOrEmpty(args), opts)
+			app, err := packager.Extract(firstOrEmpty(args),
+				types.WithSettingsFiles(opts.deploySettingsFiles...),
+				types.WithComposeFiles(opts.deployComposeFiles...),
+			)
+			if err != nil {
+				return err
+			}
+			defer app.Cleanup()
+			err = runValidation(app)
+			if err != nil {
+				return err
+			}
+			return runDeploy(dockerCli, cmd.Flags(), app, opts)
 		},
 	}
 
@@ -55,15 +67,7 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
-	app, err := packager.Extract(appname,
-		types.WithSettingsFiles(opts.deploySettingsFiles...),
-		types.WithComposeFiles(opts.deployComposeFiles...),
-	)
-	if err != nil {
-		return err
-	}
-	defer app.Cleanup()
+func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, app *types.App, opts deployOptions) error {
 	deployOrchestrator, err := command.GetStackOrchestrator(opts.deployOrchestrator, dockerCli.ConfigFile().StackOrchestrator, dockerCli.Err())
 	if err != nil {
 		return err

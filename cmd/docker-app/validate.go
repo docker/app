@@ -20,19 +20,21 @@ func validateCmd() *cobra.Command {
 		Short: "Checks the rendered application is syntactically correct",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			app, err := packager.Extract(firstOrEmpty(args),
-				types.WithSettingsFiles(validateSettingsFile...),
-			)
+			app, err := packager.Extract(firstOrEmpty(args), types.WithSettingsFiles(validateSettingsFile...))
 			if err != nil {
 				return err
 			}
 			defer app.Cleanup()
-			argSettings := cliopts.ConvertKVStringsToMap(validateEnv)
-			_, err = render.Render(app, argSettings)
-			return err
+			return runValidation(app)
 		},
 	}
 	cmd.Flags().StringArrayVarP(&validateSettingsFile, "settings-files", "f", []string{}, "Override settings files")
 	cmd.Flags().StringArrayVarP(&validateEnv, "set", "s", []string{}, "Override settings values")
 	return cmd
+}
+
+func runValidation(app *types.App) error {
+	argSettings := cliopts.ConvertKVStringsToMap(validateEnv)
+	_, err := render.Render(app, argSettings)
+	return err
 }
