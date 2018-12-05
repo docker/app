@@ -1,0 +1,34 @@
+{
+    "name": "hellohelm",
+    "version": "0.1.0",
+    "invocationImages": [
+        {
+        "imageType": "docker",
+        "image": "cnab/hellohelm:latest"
+        }
+    ],
+    "images": [
+        {
+            "description": "alpine",
+            "image": "technosophos/demo2alpine:0.1.0",
+            "imageType": "docker",
+            "refs": [
+                {
+                    "path": "cnab/app/charts/alpine/values.yaml",
+                    "field": "image.repository"
+                }
+            ]
+        }
+    ],
+    "parameters": {
+        "port": {
+            "defaultValue": 8080,
+            "type": "int"
+        }
+    },
+    "credentials": {
+        "kubeconfig": {
+            "path": "/root/.kube/config"
+        }
+    }
+}

@@ -19,3 +19,11 @@ To learn how to create the Docker voting app from [Docker samples](https://githu
 To learn how to create a basic WordPress with a database.
 
 ![WordPress app screenshot](.resources/wordpress.png "WordPress app screenshot")
+
+### [CNAB simple application](cnab-simple)
+
+Inspect and bundle a simple application as a [CNAB](https://cnab.io).
+
+### [Deploy a Helm Chart using docker-app](cnab-helm)
+
+As `docker-app` is a [CNAB](https://cnab.io) compliant client, you can deploy any CNAB.
