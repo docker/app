@@ -1,7 +1,7 @@
 ## Requirements
 
 * Working Docker Desktop install with Kubernetes enabled
-* `docker-app` installed
+* [`docker-app` with CNAB support](https://github.com/docker/app/releases/tag/cnab-dockercon-preview) installed
 * Source code from this directory
 * Create a context with `docker-app context`
 * Set the `DOCKER_TARGET_CONTEXT` environment variable
