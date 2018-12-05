@@ -1,0 +1,91 @@
+{
+	"name": "hello",
+	"version": "0.1.0",
+	"description": "sample app for DockerCon",
+	"maintainers": [
+		{
+			"name": "garethr",
+			"email": "garethr@docker.com",
+			"url": ""
+		}
+	],
+	"invocationImages": [
+		{
+			"imageType": "docker",
+			"image": "hello:0.1.0-invoc"
+		}
+	],
+	"images": null,
+	"actions": {
+		"inspect": {
+			"Modifies": false
+		}
+	},
+	"parameters": {
+		"docker.kubernetes-namespace": {
+			"type": "string",
+			"defaultValue": "",
+			"required": false,
+			"metadata": {
+				"description": "Namespace in which to deploy"
+			},
+			"destination": {
+				"path": "",
+				"env": "DOCKER_KUBERNETES_NAMESPACE"
+			}
+		},
+		"docker.orchestrator": {
+			"type": "string",
+			"defaultValue": "",
+			"allowedValues": [
+				"",
+				"swarm",
+				"kubernetes"
+			],
+			"required": false,
+			"metadata": {
+				"description": "Orchestrator on which to deploy"
+			},
+			"destination": {
+				"path": "",
+				"env": "DOCKER_STACK_ORCHESTRATOR"
+			}
+		},
+		"port": {
+			"type": "string",
+			"defaultValue": "8765",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param1"
+			}
+		},
+		"text": {
+			"type": "string",
+			"defaultValue": "hello DockerCon",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param2"
+			}
+		},
+		"version": {
+			"type": "string",
+			"defaultValue": "latest",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param3"
+			}
+		}
+	},
+	"credentials": {
+		"docker.context": {
+			"path": "/cnab/app/context.dockercontext",
+			"env": ""
+		}
+	}
+}
