@@ -2,6 +2,12 @@
 
 An *experimental* utility to help make Compose files more reusable and sharable.
 
+## CNAB support (preview)
+
+You can find some preview binaries of `docker-app` with CNAB support [here](https://github.com/docker/app/releases/tag/cnab-dockercon-preview).
+
+There is a [simple example](https://github.com/docker/app/tree/cnab-preview/examples/cnab-simple) and an [example of how to deploy a Helm Chart](https://github.com/docker/app/tree/cnab-preview/examples/cnab-helm).
+
 ## The problem application packages solve
 
 Compose files do a great job of describing a set of related services. Not only are Compose files easy to write, they are generally easy to read as well. However, a couple of problems often emerge:
