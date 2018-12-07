@@ -1,9 +1,9 @@
 # GitHub code owners
 # See https://github.com/blog/2392-introducing-code-owners
 
-cmd/docker-app/***          @mnottale @vdemeester
-e2e/***                     @mnottale @vdemeester
-Jenkinsfile                 @vdemeester
-Dockerfile*                 @vdemeester
-*Makefile                   @vdemeester
+cmd/docker-app/***          @silvin-lubecki
+e2e/***                     @silvin-lubecki
+Jenkinsfile                 @silvin-lubecki @chris-crone
+Dockerfile*                 @silvin-lubecki @chris-crone
+*Makefile                   @silvin-lubecki @chris-crone
 docs                        @chris-crone
