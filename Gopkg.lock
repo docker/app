@@ -915,7 +915,7 @@
   source = "https://github.com/simonferquel/yaml"
 
 [[projects]]
-  digest = "1:3ed5e7fe69fc8d08c8e55f9af66b4cbddec002216ac457422134b3ab17d4c00e"
+  digest = "1:8eed93b935c1abf503719923397fce5258a94a7834f35323e41c5c61b9e7bfe6"
   name = "gotest.tools"
   packages = [
     "assert",
@@ -930,8 +930,8 @@
     "x/subtest",
   ]
   pruneopts = "NUT"
-  revision = "b6e20af1ed078cd01a6413b734051a292450b4cb"
-  version = "v2.1.0"
+  revision = "7c797b5133e5460410dbb22ba779bf35e6975dea"
+  version = "v2.2.0"
 
 [[projects]]
   digest = "1:ef716a2116d8a040e16fbcd7fca71d3354915a94720de6af22c7a09970234296"
