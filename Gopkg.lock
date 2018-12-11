@@ -744,7 +744,7 @@
   version = "v0.6.1"
 
 [[projects]]
-  digest = "1:c50d03312be5e5914ccb213c500c92d0231c6364bd5f968bc6b756ba7d99f1b0"
+  digest = "1:89ad20dbfd31a97fb68c073cd1e6ed32bdcee9c0086d5428009c89680a2d1ff5"
   name = "github.com/vbatts/tar-split"
   packages = [
     "archive/tar",
@@ -752,8 +752,8 @@
     "tar/storage",
   ]
   pruneopts = "NUT"
-  revision = "38ec4ddb06dedbea0a895c4848b248eb38af221b"
-  version = "v0.10.2"
+  revision = "620714a4c508c880ac1bdda9c8370a2b19af1a55"
+  version = "v0.11.1"
 
 [[projects]]
   branch = "master"
