@@ -92,27 +92,32 @@ func TestRenderUserParameters(t *testing.T) {
 version: "3.6"
 services:
   front:
-    image: ${front.image}
+    image: wordpress
     ports:
      - "${front.port}:80"
+    deploy:
+      replicas: ${front.deploy.replicas}
   back:
-    image: ${back.image}
+    image: mysql
+    ports:
+     - "${back.port}:90"
 `)
 	parameters := strings.NewReader(`
 front:
-  image: wrong
+  deploy:
+    replicas: 1
   port: 8484
 back:
-  image: wrong
+  port: 9090
 `)
 	app := &types.App{Path: "my-app"}
 	assert.NilError(t, types.Metadata(metadata)(app))
 	assert.NilError(t, types.WithComposes(composeFile)(app))
 	assert.NilError(t, types.WithParameters(parameters)(app))
 	userParameters := map[string]string{
-		"front.image": "nginx",
-		"front.port":  "4242",
-		"back.image":  "myapp",
+		"front.deploy.replicas": "9",
+		"front.port":            "4242",
+		"back.port":             "6666",
 	}
 	c, err := Render(app, userParameters)
 	assert.NilError(t, err)
@@ -121,9 +126,16 @@ back:
 	assert.Equal(t, string(s), `version: "3.6"
 services:
   back:
-    image: myapp
+    image: mysql
+    ports:
+    - mode: ingress
+      target: 90
+      published: 6666
+      protocol: tcp
   front:
-    image: nginx
+    deploy:
+      replicas: 9
+    image: wordpress
     ports:
     - mode: ingress
       target: 80
@@ -138,7 +150,9 @@ func TestRenderWithoutDefaultParameters(t *testing.T) {
 version: "3.6"
 services:
   front:
-    image: ${front.image}
+    image: nginx
+    deploy:
+      replicas: ${nginx.replicas}
 `)
 	parameters := strings.NewReader("")
 	app := &types.App{Path: "my-app"}
@@ -146,7 +160,7 @@ services:
 	assert.NilError(t, types.WithComposes(composeFile)(app))
 	assert.NilError(t, types.WithParameters(parameters)(app))
 	userParameters := map[string]string{
-		"front.image": "nginx",
+		"nginx.replicas": "9",
 	}
 	c, err := Render(app, userParameters)
 	assert.NilError(t, err)
@@ -155,6 +169,8 @@ services:
 	assert.Equal(t, string(s), `version: "3.6"
 services:
   front:
+    deploy:
+      replicas: 9
     image: nginx
 `)
 }
@@ -179,8 +195,10 @@ func TestValidateRenderedApplication(t *testing.T) {
 version: "3.6"
 services:
     hello:
-        image: ${image}`)
-	parameters := strings.NewReader(`image: hashicorp/http-echo`)
+        image: hashicorp/http-echo
+        ports:
+        - ${port}:${port}`)
+	parameters := strings.NewReader(`port: 8080`)
 	app := &types.App{Path: "my-app"}
 	err := types.Metadata(metadata)(app)
 	assert.NilError(t, err)

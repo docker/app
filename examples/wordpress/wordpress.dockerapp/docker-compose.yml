@@ -3,7 +3,7 @@ version: "3.6"
 services:
 
   mysql:
-    image: mysql:${mysql.image.version}
+    image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: ${mysql.rootpass}
       MYSQL_DATABASE: ${mysql.database}

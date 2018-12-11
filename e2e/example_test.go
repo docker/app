@@ -12,12 +12,16 @@ import (
 
 func TestExamplesAreValid(t *testing.T) {
 	err := filepath.Walk("../examples", func(p string, info os.FileInfo, err error) error {
+		dockerAppDir := filepath.Join(p, filepath.Base(p)+".dockerapp")
+		_, localErr := os.Stat(dockerAppDir)
 		switch {
 		case strings.HasSuffix(p, "examples"):
 			return nil
 		case strings.HasSuffix(p, ".resources"):
 			return filepath.SkipDir
 		case !info.IsDir():
+			return nil
+		case os.IsNotExist(localErr):
 			return nil
 		default:
 			result := icmd.RunCommand(dockerApp, "validate", filepath.Join(p, filepath.Base(p)+".dockerapp"))

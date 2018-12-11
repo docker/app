@@ -1,0 +1,20 @@
+debug: true
+mysql:
+  scale:
+    mode: global
+    replicas: 0
+    endpoint_mode: vip
+  rootpass: axx[<^cz3d.fPb
+  database: wordpressdata
+  user:
+    name: wordpress
+    password: wordpress
+wordpress:
+  scale:
+    mode: global
+    replicas: 0
+    endpoint_mode: vip
+  port: 8080
+volumes:
+  db_data:
+    name: db_data

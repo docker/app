@@ -171,7 +171,7 @@ pipeline {
                         }
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            bat 'make -f docker.Makefile load-invocation-image'
+                            bat 'make.exe -f docker.Makefile load-invocation-image'
                             unstash "binaries"
                             dir('examples') {
                                 unstash "examples"
