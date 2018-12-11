@@ -64,7 +64,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:910be320b74545fc7044a431fe6e3f1148c0d472e30c954bfcf2c8e4f0bdab17"
+  digest = "1:ead0a9a28c7fe1f1a79b433ce62e6765a94cd2874df2861d1ff39f5ee04825fc"
   name = "github.com/containerd/containerd"
   packages = [
     "errdefs",
@@ -72,8 +72,8 @@
     "platforms",
   ]
   pruneopts = "NUT"
-  revision = "468a545b9edcd5932818eb9de8e72413e616e86e"
-  version = "v1.1.2"
+  revision = "9b32062dc1f5a7c2564315c269b5059754f12b9d"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
