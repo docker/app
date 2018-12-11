@@ -27,6 +27,22 @@ endif
 GO_BUILD := CGO_ENABLED=0 go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 GO_TEST := CGO_ENABLED=0 go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 
+ADVERTISE_ADDRESS_OPTION :=
+# When on Linux get the default network
+ifneq ($(OS),Windows_NT)
+  UNAME_S := $(shell uname -s)
+  ifeq ($(UNAME_S),Linux)
+    DEFAULT_NETWORK_INTERFACE := $(shell netstat -r | grep default | awk '{print $$NF}')
+    ADVERTISE_ADDRESS_OPTION := --advertise-addr $(DEFAULT_NETWORK_INTERFACE)
+  endif
+endif
+
+INITIAL_SWARM_MODE := "off"
+$(shell docker node list $(TO_NULL))
+ifeq ($(.SHELLSTATUS),0)
+	INITIAL_SWARM_MODE="on"
+endif
+
 all: bin/$(BIN_NAME) test
 
 check_go_env:
@@ -56,9 +72,25 @@ lint: ## run linter(s)
 	@echo "Linting..."
 	@gometalinter --config=gometalinter.json ./...
 
-test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
+set-credentials:
+	# Set credentials
+	@bin/$(BIN_NAME) add-credentialset --force creds-test testTargetContext
+	@bin/$(BIN_NAME) context rm testTargetContext # Ideal would be having a "--force" on create
+	@bin/$(BIN_NAME) context create testTargetContext
+
+swarm-init:
+	@if [ $(INITIAL_SWARM_MODE) = "off" ]; then\
+		docker swarm init $(ADVERTISE_ADDRESS_OPTION) $(TO_NULL); # Required by "docker-app install" \
+	fi
+
+--run-test-e2e: bin/$(BIN_NAME) set-credentials swarm-init ## Private target that actually runs end-to-end tests, please call `test-e2e` instead
 	@echo "Running e2e tests..."
 	$(GO_TEST) -v ./e2e/
+
+test-e2e: --run-test-e2e
+	@if [ $(INITIAL_SWARM_MODE) = "off" ]; then\
+		docker swarm leave --force 2>&1 >/dev/null; # Unique manager requires "--force" to leave \
+	fi
 
 test-unit: ## run unit tests
 	@echo "Running unit tests..."

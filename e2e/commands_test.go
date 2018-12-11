@@ -2,6 +2,10 @@ package e2e
 
 import (
 	"fmt"
+	"net"
+	"strconv"
+	"time"
+
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,6 +19,7 @@ import (
 	"gotest.tools/fs"
 	"gotest.tools/golden"
 	"gotest.tools/icmd"
+	"gotest.tools/poll"
 	"gotest.tools/skip"
 )
 
@@ -30,6 +35,8 @@ services:
     image: hello-world
 ---
 # This section contains the default values for your application parameters.`
+	targetName       = "testTargetContext"
+	installationName = "test-simple-installation"
 )
 
 func TestRenderTemplates(t *testing.T) {
@@ -80,10 +87,10 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 func TestRenderFormatters(t *testing.T) {
 	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
 	result := icmd.RunCommand(dockerApp, "render", "--formatter", "json", appPath).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Stdout(), "expected-json-render.golden"))
+	golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 
 	result = icmd.RunCommand(dockerApp, "render", "--formatter", "yaml", appPath).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Stdout(), "expected-yaml-render.golden"))
+	golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
 }
 
 func TestInit(t *testing.T) {
@@ -148,7 +155,7 @@ maintainers:
 	defer os.Remove("tac.dockerapp")
 	appData, err := ioutil.ReadFile("tac.dockerapp")
 	assert.NilError(t, err)
-	assert.Assert(t, golden.Bytes(appData, "init-singlefile.dockerapp"))
+	golden.AssertBytes(t, appData, "init-singlefile.dockerapp")
 	// Check various commands work on single-file app package
 	icmd.RunCommand(dockerApp, "inspect", "tac").Assert(t, icmd.Success)
 	icmd.RunCommand(dockerApp, "render", "tac").Assert(t, icmd.Success)
@@ -213,12 +220,12 @@ func TestSplitMerge(t *testing.T) {
 	defer os.Remove("remerged.dockerapp")
 	// test that inspect works on single-file
 	result := icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
+	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 	// split it
 	icmd.RunCommand(dockerApp, "split", "remerged", "-o", "split.dockerapp").Assert(t, icmd.Success)
 	defer os.RemoveAll("split.dockerapp")
 	result = icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
+	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 	// test inplace
 	icmd.RunCommand(dockerApp, "merge", "split").Assert(t, icmd.Success)
 	icmd.RunCommand(dockerApp, "split", "split").Assert(t, icmd.Success)
@@ -272,4 +279,103 @@ func TestAttachmentsWithRegistry(t *testing.T) {
 	assert.Assert(t, strings.Contains(resultOutput, "config.cfg"))
 	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/config2.cfg"))
 	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
+}
+
+func TestBundle(t *testing.T) {
+	simpleDockerApp := filepath.Join("simple", "simple.dockerapp")
+	composeContent := string(golden.Get(t, filepath.Join(simpleDockerApp, internal.ComposeFileName)))
+	metadataContent := string(golden.Get(t, filepath.Join(simpleDockerApp, internal.MetadataFileName)))
+	parametersContent := string(golden.Get(t, filepath.Join(simpleDockerApp, internal.ParametersFileName)))
+
+	dir := fs.NewDir(t, "test-bundle",
+		fs.WithDir("simple.dockerapp",
+			fs.WithFile(internal.ComposeFileName, composeContent),
+			fs.WithFile(internal.MetadataFileName, metadataContent),
+			fs.WithFile(internal.ParametersFileName, parametersContent),
+		),
+	)
+	defer dir.Remove()
+
+	outputPath := dir.Join("bundle.json")
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerApp, "bundle"},
+		Dir:     dir.Path(),
+	}).Assert(t, icmd.Success)
+
+	golden.Assert(t, string(golden.Get(t, outputPath)), "simple-bundle.golden")
+}
+
+func TestLifeCycle(t *testing.T) {
+	simpleDockerApp := filepath.Join("testdata", "echo.dockerapp")
+
+	// Install
+	ret := icmd.RunCommand(dockerApp, "install", simpleDockerApp,
+		"--name", installationName,
+		"--target-context", targetName)
+	ret.Assert(t, icmd.Success)
+	golden.Assert(t, ret.Stdout(), "install-test-simple-installation-success.golden")
+
+	// Double install must fail
+	ret = icmd.RunCommand(dockerApp, "install", simpleDockerApp,
+		"--name", installationName,
+		"--target-context", targetName)
+	ret.Assert(t, icmd.Expected{ExitCode: 1})
+	golden.Assert(t, ret.Stderr(), "install-test-simple-installation-already-exists.golden")
+
+	// Status for 1 replica
+	icmd.RunCommand(dockerApp, "status", installationName,
+		"--target-context", targetName).
+		Assert(t, icmd.Success)
+	poll.WaitOn(t, checkStatusFn(t, "1/1"))
+	poll.WaitOn(t, checkPort)
+
+	// Upgrade
+	ret = icmd.RunCommand(dockerApp, "upgrade", installationName,
+		"--set", "echoapp.replicas=2",
+		"--target-context", targetName).
+		Assert(t, icmd.Success)
+
+	// Status for 2 replicas
+	icmd.RunCommand(dockerApp, "status", installationName,
+		"--target-context", targetName).
+		Assert(t, icmd.Success)
+	poll.WaitOn(t, checkStatusFn(t, "2/2"))
+	poll.WaitOn(t, checkPort)
+
+	// Uninstall
+	icmd.RunCommand(dockerApp, "uninstall", installationName,
+		"--target-context", targetName).
+		Assert(t, icmd.Success)
+}
+
+func checkStatusFn(t *testing.T, expectedReplicas string) func(t poll.LogT) poll.Result {
+	return func(_ poll.LogT) poll.Result {
+		var id, name, mode, replicas, image string
+		ret := icmd.RunCommand(dockerApp, "status", installationName, "--target-context", targetName)
+		ret.Assert(t, icmd.Success)
+		headerAndValues := strings.Split(ret.Stdout(), "\n")
+		assert.Assert(t, len(headerAndValues) > 1)
+		_, err := fmt.Sscanf(headerAndValues[1], "%s %s %s %s %s", &id, &name, &mode, &replicas, &image)
+		assert.NilError(t, err)
+		if len(id) == 12 &&
+			"test-simple-installation_hello" == name &&
+			"replicated" == mode &&
+			expectedReplicas == replicas &&
+			"hashicorp/http-echo:latest" == image {
+			return poll.Success()
+		}
+		return poll.Continue("failed to get the expected status")
+	}
+}
+
+func checkPort(t poll.LogT) poll.Result {
+	port := strconv.Itoa(8080)
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), time.Second)
+	if conn != nil {
+		conn.Close()
+	}
+	if err != nil {
+		return poll.Continue("could not connect to port '%s'", port)
+	}
+	return poll.Success()
 }

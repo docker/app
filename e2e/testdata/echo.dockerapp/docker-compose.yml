@@ -1,0 +1,9 @@
+version: '3.7'
+services:
+  hello:
+    image: hashicorp/http-echo:latest
+    deploy:
+      replicas: ${echoapp.replicas}
+    command: ["-text", "Hello DockerApp", "-listen",":${echoapp.port}"]
+    ports:
+      - ${echoapp.port}:${echoapp.port}

@@ -41,5 +41,6 @@ func TestMain(m *testing.M) {
 	hasExperimental = bytes.Contains(output, []byte("Experimental: on"))
 	i := strings.Index(string(output), "Renderers")
 	renderers = string(output)[i+10:]
+
 	os.Exit(m.Run())
 }

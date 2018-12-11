@@ -1,0 +1,6 @@
+version: 0.1.0
+name: echoapp
+description: "Simple echo app for tests"
+maintainers:
+  - name: Docker user
+    email: docker.user@docker.com

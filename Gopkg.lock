@@ -1108,7 +1108,7 @@
   source = "https://github.com/simonferquel/yaml"
 
 [[projects]]
-  digest = "1:8eed93b935c1abf503719923397fce5258a94a7834f35323e41c5c61b9e7bfe6"
+  digest = "1:c8cabb0929b51514bc4641a0989a8da285a6a27a6dd68c713efe7ff4c69551ee"
   name = "gotest.tools"
   packages = [
     "assert",
@@ -1119,6 +1119,7 @@
     "internal/difflib",
     "internal/format",
     "internal/source",
+    "poll",
     "skip",
     "x/subtest",
   ]
@@ -1350,6 +1351,7 @@
     "gotest.tools/fs",
     "gotest.tools/golden",
     "gotest.tools/icmd",
+    "gotest.tools/poll",
     "gotest.tools/skip",
   ]
   solver-name = "gps-cdcl"

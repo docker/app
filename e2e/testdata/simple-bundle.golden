@@ -1,0 +1,96 @@
+{
+	"name": "acmecorp/simple",
+	"version": "1.1.0-beta1",
+	"description": "new fancy webapp with microservices",
+	"maintainers": [
+		{
+			"name": "John Developer",
+			"email": "john.dev@acmecorp.cool",
+			"url": ""
+		},
+		{
+			"name": "Jane Developer",
+			"email": "jane.dev@acmecorp.cool",
+			"url": ""
+		}
+	],
+	"invocationImages": [
+		{
+			"imageType": "docker",
+			"image": "acmecorp/simple:1.1.0-beta1-invoc"
+		}
+	],
+	"images": null,
+	"actions": {
+		"inspect": {
+			"Modifies": false
+		}
+	},
+	"parameters": {
+		"api_host": {
+			"type": "string",
+			"defaultValue": "coolapp.com",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param1"
+			}
+		},
+		"docker.kubernetes-namespace": {
+			"type": "string",
+			"defaultValue": "",
+			"required": false,
+			"metadata": {
+				"description": "Namespace in which to deploy"
+			},
+			"destination": {
+				"path": "",
+				"env": "DOCKER_KUBERNETES_NAMESPACE"
+			}
+		},
+		"docker.orchestrator": {
+			"type": "string",
+			"defaultValue": "",
+			"allowedValues": [
+				"",
+				"swarm",
+				"kubernetes"
+			],
+			"required": false,
+			"metadata": {
+				"description": "Orchestrator on which to deploy"
+			},
+			"destination": {
+				"path": "",
+				"env": "DOCKER_STACK_ORCHESTRATOR"
+			}
+		},
+		"static_subdir": {
+			"type": "string",
+			"defaultValue": "data/static",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param2"
+			}
+		},
+		"web_port": {
+			"type": "string",
+			"defaultValue": "8082",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param3"
+			}
+		}
+	},
+	"credentials": {
+		"docker.context": {
+			"path": "/cnab/app/context.dockercontext",
+			"env": ""
+		}
+	}
+}
