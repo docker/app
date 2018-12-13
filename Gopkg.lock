@@ -199,11 +199,12 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:36a234ec493e5441cfaa669e68218c4a595e16506ae0fbfdd17a7f242eaf651f"
+  digest = "1:1e24787b24e90d893db0e74006d684fa1aa48172333f666c679d0daf9680e74a"
   name = "github.com/docker/cli"
   packages = [
     "cli",
     "cli-plugins/manager",
+    "cli-plugins/plugin",
     "cli/command",
     "cli/command/bundlefile",
     "cli/command/formatter",
@@ -1258,6 +1259,8 @@
   input-imports = [
     "github.com/cbroglie/mustache",
     "github.com/docker/cli/cli",
+    "github.com/docker/cli/cli-plugins/manager",
+    "github.com/docker/cli/cli-plugins/plugin",
     "github.com/docker/cli/cli/command",
     "github.com/docker/cli/cli/command/stack",
     "github.com/docker/cli/cli/command/stack/options",
@@ -1267,8 +1270,6 @@
     "github.com/docker/cli/cli/compose/template",
     "github.com/docker/cli/cli/compose/types",
     "github.com/docker/cli/cli/config",
-    "github.com/docker/cli/cli/debug",
-    "github.com/docker/cli/cli/flags",
     "github.com/docker/cli/opts",
     "github.com/docker/distribution",
     "github.com/docker/distribution/manifest",
@@ -1280,7 +1281,6 @@
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/distribution",
     "github.com/docker/docker/pkg/archive",
-    "github.com/docker/docker/pkg/term",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/gopherjs/gopherjs/js",

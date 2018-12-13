@@ -20,7 +20,7 @@ func TestExamplesAreValid(t *testing.T) {
 		case !info.IsDir():
 			return nil
 		default:
-			result := icmd.RunCommand(dockerApp, "validate", filepath.Join(p, filepath.Base(p)+".dockerapp"))
+			result := icmd.RunCommand(dockerApp, "app", "validate", filepath.Join(p, filepath.Base(p)+".dockerapp"))
 			result.Assert(t, icmd.Success)
 			return filepath.SkipDir
 		}
