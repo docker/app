@@ -28,9 +28,9 @@ RUN go get -d gopkg.in/mjibson/esc.v0 && \
     cd /go/src/github.com/mjibson/esc && \
     go build -v -o /usr/bin/esc . && \
     rm -rf /go/src/* /go/pkg/* /go/bin/*
-COPY vendor/github.com/deis/duffle /go/src/github.com/deis/duffle
+COPY vendor/github.com/deislabs/duffle /go/src/github.com/deislabs/duffle
 # Build duffle and init
-RUN (cd /go/src/github.com/deis/duffle && \
+RUN (cd /go/src/github.com/deislabs/duffle && \
   make bootstrap build-release && \
   ./bin/duffle-linux-amd64 init)
 COPY . .

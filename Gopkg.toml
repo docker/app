@@ -36,10 +36,15 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/docker/go-connections"
   revision = "7395e3f8aa162843a74ed6d48e79627d9792ac55"
 
-[[constraint]]
-  name = "github.com/deis/duffle"
+[[override]]
+  name = "github.com/deislabs/duffle"
   branch = "dockercon-version"
   source = "git@github.com:simonferquel/duffle.git"
+
+[[override]]
+  name = "github.com/containerd/containerd"
+  source = "github.com/simonferquel/containerd"
+  revision = "97d99161973592ddbf4b42a2073d61cc5bc46c57"
   
 [[constraint]]
   name = "github.com/sirupsen/logrus"
@@ -118,6 +123,6 @@ required = ["github.com/wadey/gocovmerge"]
     non-go = false
 
   [[prune.project]]
-    name = "github.com/deis/duffle"
+    name = "github.com/deislabs/duffle"
     unused-packages = false
     non-go = false

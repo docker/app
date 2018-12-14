@@ -4,8 +4,8 @@ import (
 	"errors"
 	"io/ioutil"
 
-	"github.com/deis/duffle/pkg/action"
-	"github.com/deis/duffle/pkg/claim"
+	"github.com/deislabs/duffle/pkg/action"
+	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/docker/app/types/parameters"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"

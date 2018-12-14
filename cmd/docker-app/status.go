@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/deis/duffle/pkg/action"
-	"github.com/deis/duffle/pkg/claim"
-	"github.com/deis/duffle/pkg/credentials"
-	"github.com/deis/duffle/pkg/utils/crud"
+	"github.com/deislabs/duffle/pkg/action"
+	"github.com/deislabs/duffle/pkg/claim"
+	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"

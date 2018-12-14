@@ -13,14 +13,6 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
-  digest = "1:a26f8da48b22e6176c1c6a2459904bb30bd0c49ada04b2963c2c3a203e81a620"
-  name = "github.com/Masterminds/semver"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
-  version = "v1.4.2"
-
-[[projects]]
   digest = "1:99632bb2b4e2c066233ee9d19c1370a695ebd2be18625e31390476d356db5d8a"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
@@ -64,16 +56,22 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:910be320b74545fc7044a431fe6e3f1148c0d472e30c954bfcf2c8e4f0bdab17"
+  digest = "1:6c6706e86f800e5c50f092454cefa168895fa0d1a488d0f2940db06a1c90d898"
   name = "github.com/containerd/containerd"
   packages = [
+    "content",
     "errdefs",
+    "images",
     "log",
     "platforms",
+    "reference",
+    "remotes",
+    "remotes/docker",
+    "version",
   ]
   pruneopts = "NUT"
-  revision = "468a545b9edcd5932818eb9de8e72413e616e86e"
-  version = "v1.1.2"
+  revision = "97d99161973592ddbf4b42a2073d61cc5bc46c57"
+  source = "github.com/simonferquel/containerd"
 
 [[projects]]
   branch = "master"
@@ -107,24 +105,22 @@
 
 [[projects]]
   branch = "dockercon-version"
-  digest = "1:985602b0f45553792cf7d4c54f42b484c260d14bc584bfd90e9a44b885f324d6"
-  name = "github.com/deis/duffle"
+  digest = "1:85184917d570e92e447e3cbfd5702d429abd226c6998fb0f185a325be7e11df6"
+  name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
     "pkg/bundle",
     "pkg/claim",
     "pkg/credentials",
-    "pkg/crypto/digest",
     "pkg/driver",
     "pkg/duffle/home",
     "pkg/image",
     "pkg/loader",
-    "pkg/repo",
     "pkg/signature",
     "pkg/utils/crud",
   ]
   pruneopts = "T"
-  revision = "154f998050e9731360a6aad81b8dcf83da404f9c"
+  revision = "74ea41e356407e163d476bf3e111ffd1f41524ab"
   source = "git@github.com:simonferquel/duffle.git"
 
 [[projects]]
@@ -188,6 +184,17 @@
   pruneopts = "UT"
   revision = "2e4b9ab1898f4f8d062dbfa871783f2c43eb8e97"
   source = "git@github.com:simonferquel/cli.git"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4356e3baa046193185f55b2920940481c236ab68ae138e6ff0a87b9d96b8152f"
+  name = "github.com/docker/cnab-to-oci"
+  packages = [
+    ".",
+    "remotes",
+  ]
+  pruneopts = "NUT"
+  revision = "22b307de03c68719cfb21c5972bd8f4f09ab963b"
 
 [[projects]]
   digest = "1:1cb756deb458cb9be52d2e3fe67a19a7185b8c8453c691ba5eb0c7db00a51205"
@@ -840,6 +847,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:b521f10a2d8fa85c04a8ef4e62f2d1e14d303599a55d64dabf9f5a02f84d35eb"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  pruneopts = "NUT"
+  revision = "42b317875d0fa942474b76e1b46a6060d720ae6e"
+
+[[projects]]
+  branch = "master"
   digest = "1:c57243c4b4edbe61062bb70f1785a1b1c3835e55cc5599b79a2ef026cba3ec23"
   name = "golang.org/x/sys"
   packages = [
@@ -1122,18 +1137,15 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
-    "github.com/deis/duffle/pkg/action",
-    "github.com/deis/duffle/pkg/bundle",
-    "github.com/deis/duffle/pkg/claim",
-    "github.com/deis/duffle/pkg/credentials",
-    "github.com/deis/duffle/pkg/crypto/digest",
-    "github.com/deis/duffle/pkg/driver",
-    "github.com/deis/duffle/pkg/duffle/home",
-    "github.com/deis/duffle/pkg/image",
-    "github.com/deis/duffle/pkg/loader",
-    "github.com/deis/duffle/pkg/repo",
-    "github.com/deis/duffle/pkg/signature",
-    "github.com/deis/duffle/pkg/utils/crud",
+    "github.com/deislabs/duffle/pkg/action",
+    "github.com/deislabs/duffle/pkg/bundle",
+    "github.com/deislabs/duffle/pkg/claim",
+    "github.com/deislabs/duffle/pkg/credentials",
+    "github.com/deislabs/duffle/pkg/driver",
+    "github.com/deislabs/duffle/pkg/duffle/home",
+    "github.com/deislabs/duffle/pkg/image",
+    "github.com/deislabs/duffle/pkg/loader",
+    "github.com/deislabs/duffle/pkg/utils/crud",
     "github.com/docker/cli/cli",
     "github.com/docker/cli/cli/command",
     "github.com/docker/cli/cli/command/context",
@@ -1149,6 +1161,7 @@
     "github.com/docker/cli/cli/debug",
     "github.com/docker/cli/cli/flags",
     "github.com/docker/cli/opts",
+    "github.com/docker/cnab-to-oci/remotes",
     "github.com/docker/distribution",
     "github.com/docker/distribution/manifest",
     "github.com/docker/distribution/manifest/schema2",
@@ -1160,7 +1173,6 @@
     "github.com/docker/docker/distribution",
     "github.com/docker/docker/pkg/archive",
     "github.com/docker/docker/pkg/homedir",
-    "github.com/docker/docker/pkg/idtools",
     "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/pkg/term",
     "github.com/docker/docker/registry",

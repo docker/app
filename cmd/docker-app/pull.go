@@ -2,23 +2,21 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 
-	"github.com/deis/duffle/pkg/bundle"
-	"github.com/deis/duffle/pkg/crypto/digest"
-	"github.com/deis/duffle/pkg/image"
-	"github.com/deis/duffle/pkg/loader"
-	"github.com/deis/duffle/pkg/repo"
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/spf13/cobra"
 )
 
 type pullOptions struct {
 	insecure bool
+	out      string
 }
 
 func pullCmd(dockerCli command.Cli) *cobra.Command {
@@ -28,11 +26,23 @@ func pullCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Pull an application from a registry",
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := pullBundle(dockerCli, args[0], true, opts.insecure)
-			return err
+			b, err := pullBundle(dockerCli, args[0], true, opts.insecure)
+			if err != nil {
+				return err
+			}
+			bundleJSON, err := json.MarshalIndent(b, "", "  ")
+			if err != nil {
+				return err
+			}
+			if opts.out == "-" {
+				fmt.Print(bundleJSON)
+				return nil
+			}
+			return ioutil.WriteFile(opts.out, bundleJSON, 0644)
 		},
 	}
 	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
+	cmd.Flags().StringVarP(&opts.out, "out", "o", "bundle.json", "path to the output bundle.json (- for stdout)")
 	return cmd
 }
 
@@ -41,44 +51,6 @@ func pullBundle(dockerCli command.Cli, name string, force, insecure bool) (*bund
 	if err != nil {
 		return nil, err
 	}
-	tagged, ok := named.(reference.NamedTagged)
-	if !ok {
-		return nil, fmt.Errorf("%q is not a tagged image name", name)
-	}
-	h := duffleHome()
-	index, err := repo.LoadIndex(h.Repositories())
-	if err != nil {
-		return nil, err
-	}
-	if !force {
-		sha, err := index.GetExactly(tagged)
-		if err == nil {
-			fpath := filepath.Join(h.Bundles(), sha)
-			return loader.NewDetectingLoader().Load(fpath)
-		}
-	}
-
-	signedBundle, err := image.PullBundle(context.TODO(), dockerCli, insecure, name)
-	if err != nil {
-		return nil, err
-	}
-	bndl, err := loader.NewDetectingLoader().LoadData(signedBundle)
-	if err != nil {
-		return nil, err
-	}
-	sha, err := digest.OfBuffer(signedBundle)
-	if err != nil {
-		return nil, fmt.Errorf("cannot compute digest from bundle: %v", err)
-	}
-
-	fpath := filepath.Join(h.Bundles(), sha)
-	if err := ioutil.WriteFile(fpath, signedBundle, 0644); err != nil {
-		return nil, err
-	}
-	index.Add(tagged, sha)
-
-	if err := index.WriteFile(h.Repositories(), 0644); err != nil {
-		return nil, fmt.Errorf("could not write to %s: %v", h.Repositories(), err)
-	}
-	return bndl, nil
+	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), insecure)
+	return remotes.Pull(context.Background(), named, resolver)
 }

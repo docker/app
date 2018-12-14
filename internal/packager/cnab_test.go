@@ -3,7 +3,7 @@ package packager
 import (
 	"testing"
 
-	"github.com/deis/duffle/pkg/bundle"
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/types"
 	"gotest.tools/assert"
 )

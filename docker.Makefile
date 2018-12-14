@@ -14,7 +14,7 @@ COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
 SCHEMAS_CTNR_NAME := $(BIN_NAME)-schemas-$(TAG)
 
 DUFFLE_BIN_NAME := duffle
-DUFFLE_PKG := /go/src/github.com/deis/duffle
+DUFFLE_PKG := /go/src/github.com/deislabs/duffle
 
 BUILD_ARGS=--build-arg=EXPERIMENTAL=$(EXPERIMENTAL) --build-arg=TAG=$(TAG) --build-arg=COMMIT=$(COMMIT)
 

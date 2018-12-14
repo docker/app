@@ -2,17 +2,16 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"os"
 
-	"github.com/deis/duffle/pkg/bundle"
-	"github.com/deis/duffle/pkg/image"
-	"github.com/deis/duffle/pkg/signature"
+	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/duffle/pkg/image"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cnab-to-oci/remotes"
+	"github.com/docker/distribution/reference"
 	"github.com/spf13/cobra"
 )
 
@@ -48,6 +47,10 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	defer app.Cleanup()
 
 	ref := makeReference(app, opts)
+	named, err := reference.ParseNormalizedNamed(ref)
+	if err != nil {
+		return err
+	}
 	bndle, err := makeBundleFromApp(dockerCli, app, opts.namespace, "")
 	if err != nil {
 		return err
@@ -55,52 +58,41 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	if err := fixupContainerImages(dockerCli, bndle); err != nil {
 		return err
 	}
-	signedData, err := makeSignedData(bndle)
+	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), opts.insecure)
+	if err := remotes.FixupBundle(context.Background(), bndle, named, resolver); err != nil {
+		return err
+	}
+	descriptor, err := remotes.Push(context.Background(), bndle, named, resolver)
 	if err != nil {
 		return err
 	}
-	digest, err := image.PushBundle(context.TODO(), dockerCli, opts.insecure, signedData, ref)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Successfully pushed %s@%s\n", ref, digest)
+	fmt.Printf("Successfully pushed %s@%s\n", ref, descriptor.Digest)
 	return nil
 }
 
 func fixupContainerImages(dockerCli command.Cli, bndle *bundle.Bundle) error {
 	imageResolver := image.NewResolver(true, dockerCli)
-	if err := bndle.FixupContainerImages(imageResolver); err != nil {
-		return err
+	for ix, invocImage := range bndle.InvocationImages {
+		if invocImage.ImageType != "" &&
+			invocImage.ImageType != "docker" &&
+			invocImage.Image != "oci" {
+			continue
+		}
+		named, err := reference.ParseNormalizedNamed(invocImage.Image)
+		if err != nil {
+			return err
+		}
+		var dig string
+		if digested, ok := named.(reference.Digested); ok {
+			dig = digested.Digest().String()
+		}
+		fixedUpRef, _, err := imageResolver.Resolve(invocImage.Image, dig)
+		if err != nil {
+			return err
+		}
+		bndle.InvocationImages[ix].Image = fixedUpRef
 	}
-	return bndle.Validate()
-}
-
-func makeSignedData(bndle *bundle.Bundle) ([]byte, error) {
-	keyRingFile := duffleHome().SecretKeyRing()
-	if _, err := os.Stat(keyRingFile); err != nil {
-		return nil, errors.New(`duffle home has not been initialized, please run "duffle init" first`)
-	}
-	// Load keyring
-	kr, err := signature.LoadKeyRing(keyRingFile)
-	if err != nil {
-		return nil, err
-	}
-	// Find identity
-	var k *signature.Key
-	all := kr.PrivateKeys()
-	if len(all) == 0 {
-		return nil, errors.New("no private keys found")
-	}
-	k = all[0]
-
-	// Sign the file
-	s := signature.NewSigner(k)
-	data, err := s.Clearsign(bndle)
-	if err != nil {
-		return nil, err
-	}
-	data = append(data, '\n')
-	return data, nil
+	return nil
 }
 
 func makeReference(app *types.App, opts pushOptions) string {

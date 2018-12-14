@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/deis/duffle/pkg/credentials"
-	"github.com/deis/duffle/pkg/duffle/home"
+	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/deislabs/duffle/pkg/duffle/home"
 	"github.com/docker/app/internal/yaml"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
