@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   front:
-    image: nginx:${myapp.nginx_version}
+    image: nginx
     deploy:
       replicas: ${myapp.nginx_replicas}
   debug:
@@ -26,4 +26,4 @@ services:
     command: monitor --source ${app.name}-${app.version} $$dollar
     x-enabled: "! ${myapp.debug}"
   app-watcher:
-    image: $watcher.image
+    image: watcher

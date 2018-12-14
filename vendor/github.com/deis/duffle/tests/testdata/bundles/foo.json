@@ -7,28 +7,16 @@
             "image": "technosophos/helloworld:0.1.0"
         }
     ],
-    "images": [
-        {
+    "images": {
+        "image1":{
             "description": "image1",
-            "image": "urn:image1uri",
-            "refs": [
-                {
-                    "path": "image1path",
-                    "field": "image.1.field"
-                }
-            ]
+            "image": "urn:image1uri"
         },
-        {
+        "image2":{
             "name": "image2",
-            "uri": "urn:image2uri",
-            "refs": [
-                {
-                    "path": "image2path",
-                    "field": "image.2.field"
-                }
-            ]
+            "uri": "urn:image2uri"
         }
-    ],
+    },
     "credentials": {
         "foo": {
             "path": "pfoo"

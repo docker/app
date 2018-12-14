@@ -1,2 +1,2 @@
 watcher:
-  image: watcher:latest
+  cmd: foo

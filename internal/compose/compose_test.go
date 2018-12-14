@@ -54,7 +54,8 @@ services:
 }
 
 func runLoad(composeFile []byte) ([]composetypes.ConfigFile, error) {
-	return Load([][]byte{composeFile}, func(data string) (string, error) {
+	files, _, err := Load([][]byte{composeFile}, func(data string) (string, error) {
 		return renderer.Apply(data, map[string]interface{}{"image": "nginx"})
 	})
+	return files, err
 }

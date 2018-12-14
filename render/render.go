@@ -58,7 +58,7 @@ func Render(app *types.App, env map[string]string) (*composetypes.Config, error)
 		}
 		renderers = rl
 	}
-	configFiles, err := compose.Load(app.Composes(), func(data string) (string, error) {
+	configFiles, _, err := compose.Load(app.Composes(), func(data string) (string, error) {
 		return renderer.Apply(data, allParameters, renderers...)
 	})
 	if err != nil {

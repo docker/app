@@ -83,6 +83,10 @@ func (b *Builder) PrepareBuild(bldr *Builder, mfst *manifest.Manifest, appDir st
 		Credentials: ctx.Manifest.Credentials,
 	}
 
+	if bf.Images == nil {
+		bf.Images = make(map[string]bundle.Image)
+	}
+
 	for _, c := range ctx.Components {
 		if err := c.PrepareBuild(ctx); err != nil {
 			return nil, nil, err
@@ -106,7 +110,8 @@ func (b *Builder) PrepareBuild(bldr *Builder, mfst *manifest.Manifest, appDir st
 		} else {
 			bundleImage := bundle.Image{Description: c.Name()}
 			bundleImage.Image = c.URI()
-			bf.Images = append(bf.Images, bundleImage)
+			bundleImage.ImageType = c.Type()
+			bf.Images[c.Name()] = bundleImage
 		}
 	}
 

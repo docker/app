@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/deis/duffle/pkg/bundle"
+	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/types"
 )
 
 // ToCNAB creates a CNAB bundle from an app package
-func ToCNAB(app *types.App, invocationImageName string) *bundle.Bundle {
+func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) {
 	mapping := ExtractCNABParameterMapping(app.Parameters())
 	flatParameters := app.Parameters().Flatten()
 	parameters := map[string]bundle.ParameterDefinition{
@@ -58,6 +59,23 @@ func ToCNAB(app *types.App, invocationImageName string) *bundle.Bundle {
 	if app.Metadata().Namespace != "" {
 		name = fmt.Sprintf("%s/%s", app.Metadata().Namespace, name)
 	}
+
+	_, images, err := compose.Load(app.Composes(), func(v string) (string, error) { return v, nil })
+	if err != nil {
+		return nil, err
+	}
+
+	bundleImages := map[string]bundle.Image{}
+	for serviceName, imageName := range images {
+		bundleImages[serviceName] = bundle.Image{
+			Description: imageName,
+			BaseImage: bundle.BaseImage{
+				Image:     imageName,
+				ImageType: "docker",
+			},
+		}
+	}
+
 	return &bundle.Bundle{
 		Credentials: map[string]bundle.Location{
 			"docker.context": {
@@ -82,5 +100,6 @@ func ToCNAB(app *types.App, invocationImageName string) *bundle.Bundle {
 				Modifies: false,
 			},
 		},
-	}
+		Images: bundleImages,
+	}, nil
 }

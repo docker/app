@@ -10,6 +10,20 @@ import (
 	"strings"
 )
 
+// Bundle is a CNAB metadata document
+type Bundle struct {
+	Name             string                         `json:"name" mapstructure:"name"`
+	Version          string                         `json:"version" mapstructure:"version"`
+	Description      string                         `json:"description" mapstructure:"description"`
+	Keywords         []string                       `json:"keywords,omitempty" mapstructure:"keywords,omitempty"`
+	Maintainers      []Maintainer                   `json:"maintainers,omitempty" mapstructure:"maintainers,omitempty"`
+	InvocationImages []InvocationImage              `json:"invocationImages" mapstructure:"invocationImages"`
+	Images           map[string]Image               `json:"images" mapstructure:"images"`
+	Actions          map[string]Action              `json:"actions,omitempty" mapstructure:"actions,omitempty"`
+	Parameters       map[string]ParameterDefinition `json:"parameters" mapstructure:"parameters"`
+	Credentials      map[string]Location            `json:"credentials" mapstructure:"credentials"`
+}
+
 //Unmarshal unmarshals a Bundle that was not signed.
 func Unmarshal(data []byte) (*Bundle, error) {
 	b := &Bundle{}
@@ -68,8 +82,7 @@ type ImagePlatform struct {
 // Image describes a container image in the bundle
 type Image struct {
 	BaseImage
-	Description string        `json:"description" mapstructure:"description"` //TODO: change? see where it's being used? change to description?
-	Refs        []LocationRef `json:"refs" mapstructure:"refs"`
+	Description string `json:"description" mapstructure:"description"` //TODO: change? see where it's being used? change to description?
 }
 
 // InvocationImage contains the image type and location for the installation of a bundle
@@ -102,20 +115,6 @@ type Action struct {
 	//
 	// If it is possible that an action modify a release, this must be set to true.
 	Modifies bool
-}
-
-// Bundle is a CNAB metadata document
-type Bundle struct {
-	Name             string                         `json:"name" mapstructure:"name"`
-	Version          string                         `json:"version" mapstructure:"version"`
-	Description      string                         `json:"description" mapstructure:"description"`
-	Keywords         []string                       `json:"keywords,omitempty" mapstructure:"keywords,omitempty"`
-	Maintainers      []Maintainer                   `json:"maintainers,omitempty" mapstructure:"maintainers,omitempty"`
-	InvocationImages []InvocationImage              `json:"invocationImages" mapstructure:"invocationImages"`
-	Images           []Image                        `json:"images" mapstructure:"images"`
-	Actions          map[string]Action              `json:"actions,omitempty" mapstructure:"actions,omitempty"`
-	Parameters       map[string]ParameterDefinition `json:"parameters" mapstructure:"parameters"`
-	Credentials      map[string]Location            `json:"credentials" mapstructure:"credentials"`
 }
 
 // ValuesOrDefaults returns parameter values or the default parameter values

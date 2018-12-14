@@ -107,7 +107,7 @@
 
 [[projects]]
   branch = "dockercon-version"
-  digest = "1:556ecb25c7f3793960db62c5455ba73079c4929afc235acf8defa9f9ad980bfd"
+  digest = "1:985602b0f45553792cf7d4c54f42b484c260d14bc584bfd90e9a44b885f324d6"
   name = "github.com/deis/duffle"
   packages = [
     "pkg/action",
@@ -124,7 +124,7 @@
     "pkg/utils/crud",
   ]
   pruneopts = "T"
-  revision = "5b87a9f0576e5da01f3be2b610797e07ff7e6711"
+  revision = "154f998050e9731360a6aad81b8dcf83da404f9c"
   source = "git@github.com:simonferquel/duffle.git"
 
 [[projects]]
@@ -1160,6 +1160,7 @@
     "github.com/docker/docker/distribution",
     "github.com/docker/docker/pkg/archive",
     "github.com/docker/docker/pkg/homedir",
+    "github.com/docker/docker/pkg/idtools",
     "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/pkg/term",
     "github.com/docker/docker/registry",

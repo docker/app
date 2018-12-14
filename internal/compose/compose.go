@@ -26,29 +26,32 @@ var (
 )
 
 // Load applies the specified function when loading a slice of compose data
-func Load(composes [][]byte, apply func(string) (string, error)) ([]composetypes.ConfigFile, error) {
+func Load(composes [][]byte, apply func(string) (string, error)) ([]composetypes.ConfigFile, map[string]string, error) {
 	configFiles := []composetypes.ConfigFile{}
 	for _, data := range composes {
 		s, err := apply(string(data))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		parsed, err := loader.ParseYAML([]byte(s))
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse Compose file %s", data)
+			return nil, nil, errors.Wrapf(err, "failed to parse Compose file %s", data)
 		}
 		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
 	}
 
-	if err := validateImageInConfigFiles(configFiles); err != nil {
-		return nil, err
+	images, err := validateImagesInConfigFiles(configFiles)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return configFiles, nil
+	return configFiles, images, nil
 }
 
-func validateImageInConfigFiles(configFiles []composetypes.ConfigFile) error {
+// validateImagesInConfigFiles validates that there is no unsupported variable expensions in service images and returns a map of service name -> image
+func validateImagesInConfigFiles(configFiles []composetypes.ConfigFile) (map[string]string, error) {
 	var errors []string
+	images := map[string]string{}
 	for _, configFile := range configFiles {
 		services, ok := configFile.Config["services"].(map[string]interface{})
 		if !ok {
@@ -63,6 +66,7 @@ func validateImageInConfigFiles(configFiles []composetypes.ConfigFile) error {
 			if !ok {
 				continue
 			}
+			images[serviceName] = imageName
 
 			if Pattern.MatchString(imageName) {
 				errors = append(errors,
@@ -73,10 +77,10 @@ func validateImageInConfigFiles(configFiles []composetypes.ConfigFile) error {
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("%s", strings.Join(errors, "\n"))
+		return nil, fmt.Errorf("%s", strings.Join(errors, "\n"))
 	}
 
-	return nil
+	return images, nil
 }
 
 // ExtractVariables extracts the variables from the specified compose data

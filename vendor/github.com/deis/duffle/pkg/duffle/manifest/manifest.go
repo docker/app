@@ -11,14 +11,16 @@ import (
 
 // Manifest represents a duffle manifest.
 type Manifest struct {
-	Name        string                                `mapstructure:"name"`
-	Version     string                                `mapstructure:"version"`
-	Description string                                `mapstructure:"description"`
-	Keywords    []string                              `mapstructure:"keywords"`
-	Maintainers []bundle.Maintainer                   `mapstructure:"maintainers"`
-	Components  map[string]*Component                 `mapstructure:"components"`
-	Parameters  map[string]bundle.ParameterDefinition `mapstructure:"parameters"`
-	Credentials map[string]bundle.Location            `mapstructure:"credentials"`
+	Name             string                                `json:"name" mapstructure:"name"`
+	Version          string                                `json:"version" mapstructure:"version"`
+	Description      string                                `json:"description,omitempty" mapstructure:"description,omitempty"`
+	Keywords         []string                              `json:"keywords,omitempty" mapstructure:"keywords,omitempty"`
+	Maintainers      []bundle.Maintainer                   `json:"maintainers,omitempty" mapstructure:"maintainers,omitempty"`
+	InvocationImages map[string]*InvocationImage           `json:"invocationImages,omitempty" mapstructure:"invocationImages,omitempty"`
+	Images           map[string]bundle.Image               `json:"images,omitempty" mapstructure:"images,omitempty"`
+	Actions          map[string]bundle.Action              `json:"actions,omitempty" mapstructure:"actions,omitempty"`
+	Parameters       map[string]bundle.ParameterDefinition `json:"parameters,omitempty" mapstructure:"parameters,omitempty"`
+	Credentials      map[string]bundle.Location            `json:"credentials,omitempty" mapstructure:"credentials,omitempty"`
 }
 
 // Component represents a component of a CNAB bundle
