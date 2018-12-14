@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
@@ -28,7 +29,7 @@ func validateCmd() *cobra.Command {
 			}
 			defer app.Cleanup()
 			argParameters := cliopts.ConvertKVStringsToMap(validateEnv)
-			_, err = render.Render(app, argParameters)
+			_, err = render.Render(app, argParameters, map[string]bundle.Image{})
 			return err
 		},
 	}

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
 
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
 	"github.com/docker/cli/cli/command"
@@ -12,6 +15,18 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
+
+func getBundleImageMap() (map[string]bundle.Image, error) {
+	mapJSON, err := ioutil.ReadFile("/cnab/app/image-map.json")
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]bundle.Image
+	if err := json.Unmarshal(mapJSON, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
 
 func install(instanceName string) error {
 	cli, err := setupDockerContext()
@@ -30,8 +45,12 @@ func install(instanceName string) error {
 	if err != nil {
 		return err
 	}
+	imageMap, err := getBundleImageMap()
+	if err != nil {
+		return err
+	}
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
-	rendered, err := render.Render(app, parameters)
+	rendered, err := render.Render(app, parameters, imageMap)
 	if err != nil {
 		return err
 	}

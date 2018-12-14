@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/packager"
@@ -37,7 +38,7 @@ subdirectory.`,
 			}
 			defer app.Cleanup()
 			d := cliopts.ConvertKVStringsToMap(imageAddEnv)
-			config, err := render.Render(app, d)
+			config, err := render.Render(app, d, map[string]bundle.Image{})
 			if err != nil {
 				return err
 			}

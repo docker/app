@@ -15,5 +15,9 @@ func inspect() error {
 	}
 	defer app.Cleanup()
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
-	return appinspect.Inspect(os.Stdout, app, parameters)
+	imageMap, err := getBundleImageMap()
+	if err != nil {
+		return err
+	}
+	return appinspect.Inspect(os.Stdout, app, parameters, imageMap)
 }

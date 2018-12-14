@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/types"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	yaml "gopkg.in/yaml.v2"
@@ -32,7 +33,7 @@ func TestRenderMissingValue(t *testing.T) {
 	finalEnv := map[string]string{
 		"imageName": "foo",
 	}
-	_, err := render(configFiles, finalEnv)
+	_, err := render(configFiles, finalEnv, map[string]bundle.Image{})
 	assert.Check(t, err != nil)
 	assert.Check(t, is.ErrorContains(err, "required variable"))
 }
@@ -55,7 +56,7 @@ func TestRender(t *testing.T) {
 		"version": "latest",
 		"foo.bar": "baz",
 	}
-	c, err := render(configFiles, finalEnv)
+	c, err := render(configFiles, finalEnv, map[string]bundle.Image{})
 	assert.NilError(t, err)
 	assert.Check(t, is.Len(c.Services, 1))
 	assert.Check(t, is.Equal(c.Services[0].Image, "busybox:latest"))
@@ -80,7 +81,7 @@ func TestRenderEnabledFalse(t *testing.T) {
 		}
 		c, err := render(configs, map[string]string{
 			"myapp.debug": "true",
-		})
+		}, map[string]bundle.Image{})
 		assert.NilError(t, err)
 		assert.Check(t, is.Len(c.Services, 0))
 	}
@@ -119,7 +120,7 @@ back:
 		"front.port":            "4242",
 		"back.port":             "6666",
 	}
-	c, err := Render(app, userParameters)
+	c, err := Render(app, userParameters, map[string]bundle.Image{})
 	assert.NilError(t, err)
 	s, err := yaml.Marshal(c)
 	assert.NilError(t, err)
@@ -162,7 +163,7 @@ services:
 	userParameters := map[string]string{
 		"nginx.replicas": "9",
 	}
-	c, err := Render(app, userParameters)
+	c, err := Render(app, userParameters, map[string]bundle.Image{})
 	assert.NilError(t, err)
 	s, err := yaml.Marshal(c)
 	assert.NilError(t, err)
@@ -184,7 +185,7 @@ unknown-property: value`)
 	assert.NilError(t, err)
 	err = types.WithComposes(brokenComposeFile)(app)
 	assert.NilError(t, err)
-	c, err := Render(app, nil)
+	c, err := Render(app, nil, map[string]bundle.Image{})
 	assert.Assert(t, is.Nil(c))
 	assert.Error(t, err, "failed to load Compose file: unknown-property Additional property unknown-property is not allowed")
 }
@@ -206,7 +207,7 @@ services:
 	assert.NilError(t, err)
 	err = types.WithParameters(parameters)(app)
 	assert.NilError(t, err)
-	c, err := Render(app, nil)
+	c, err := Render(app, nil, map[string]bundle.Image{})
 	assert.Assert(t, c != nil)
 	assert.NilError(t, err)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/formatter"
 	"github.com/docker/app/internal/packager"
@@ -39,7 +40,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 			}
 			defer app.Cleanup()
 			d := cliopts.ConvertKVStringsToMap(renderEnv)
-			rendered, err := render.Render(app, d)
+			rendered, err := render.Render(app, d, map[string]bundle.Image{})
 			if err != nil {
 				return err
 			}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/loader"
 	"github.com/docker/app/render"
 	yaml "gopkg.in/yaml.v2"
@@ -23,7 +24,7 @@ func Example() {
 	// Render the app to a composefile format, using some user provided parameters
 	c, err := render.Render(app, map[string]string{
 		"text": "hello examples!",
-	})
+	}, map[string]bundle.Image{})
 	if err != nil {
 		panic("cannot render application")
 	}
