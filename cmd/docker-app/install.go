@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,7 +24,10 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context/store"
 	cliopts "github.com/docker/cli/opts"
+	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/homedir"
+	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -107,9 +112,6 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if err != nil {
 		return err
 	}
-	if opts.sendRegistryAuth {
-		return errors.New("with-registry-auth is not supported at the moment")
-	}
 	if err := bndl.Validate(); err != nil {
 		return err
 	}
@@ -137,7 +139,19 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), bndl, opts.credentialsets)
+	c.Bundle = bndl
+	convertedParamValues := map[string]interface{}{}
+	if err := applyParameterValues(parameterValues, bndl.Parameters, convertedParamValues); err != nil {
+		return err
+	}
+	if _, ok := bndl.Parameters["docker.share-registry-creds"]; ok {
+		convertedParamValues["docker.share-registry-creds"] = opts.sendRegistryAuth
+	}
+	c.Parameters, err = bundle.ValuesOrDefaults(convertedParamValues, bndl)
+	if err != nil {
+		return err
+	}
+	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), bndl, opts.credentialsets, shouldPopulateRegistryCreds(c.Parameters), dockerCli)
 	if err != nil {
 		return err
 	}
@@ -145,17 +159,6 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err
 	}
 
-	c.Bundle = bndl
-	convertedParamValues := map[string]interface{}{}
-
-	if err := applyParameterValues(parameterValues, bndl.Parameters, convertedParamValues); err != nil {
-		return err
-	}
-
-	c.Parameters, err = bundle.ValuesOrDefaults(convertedParamValues, bndl)
-	if err != nil {
-		return err
-	}
 	inst := &action.Install{
 		Driver: driverImpl,
 	}
@@ -165,6 +168,18 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return fmt.Errorf("install failed: %v", err)
 	}
 	return err2
+}
+
+func shouldPopulateRegistryCreds(parameterValues map[string]interface{}) bool {
+	v, ok := parameterValues["docker.share-registry-creds"]
+	if !ok {
+		return false
+	}
+	result, ok := v.(bool)
+	if !ok {
+		return false
+	}
+	return result
 }
 
 func applyParameterValues(parameterValues map[string]string, parameterDefinitions map[string]bundle.ParameterDefinition, finalValues map[string]interface{}) error {
@@ -276,7 +291,13 @@ func stringsKVToStringInterface(src map[string]string) map[string]interface{} {
 	return result
 }
 
-func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
+func prepareCredentialSet(
+	contextName string,
+	contextStore store.Store,
+	b *bundle.Bundle,
+	namedCredentialsets []string,
+	addRegistryAuth bool,
+	dockerCli command.Cli) (map[string]string, error) {
 	creds := map[string]string{}
 	for _, file := range namedCredentialsets {
 		if _, err := os.Stat(file); err != nil {
@@ -309,6 +330,31 @@ func prepareCredentialSet(contextName string, contextStore store.Store, b *bundl
 	if requiresDockerContext && !hasDockerContext {
 		return nil, errors.New("no target context specified. use use --target-context= or DOCKER_TARGET_CONTEXT= to define it")
 	}
+	if _, ok := b.Credentials["docker.registry-creds"]; !ok {
+		return creds, nil
+	}
+	registryCreds := map[string]types.AuthConfig{}
+	if addRegistryAuth {
+		for _, img := range b.Images {
+			named, err := reference.ParseNormalizedNamed(img.Image)
+			if err != nil {
+				return nil, err
+			}
+			info, err := registry.ParseRepositoryInfo(named)
+			if err != nil {
+				return nil, err
+			}
+			key := registry.GetAuthConfigKey(info.Index)
+			if _, ok := registryCreds[key]; !ok {
+				registryCreds[key] = command.ResolveAuthConfig(context.Background(), dockerCli, info.Index)
+			}
+		}
+	}
+	registryCredsJSON, err := json.Marshal(registryCreds)
+	if err != nil {
+		return nil, err
+	}
+	creds["docker.registry-creds"] = string(registryCredsJSON)
 	return creds, nil
 }
 

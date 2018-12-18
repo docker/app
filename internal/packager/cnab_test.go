@@ -33,6 +33,9 @@ func TestToCNAB(t *testing.T) {
 			"docker.context": {
 				Path: "/cnab/app/context.dockercontext",
 			},
+			"docker.registry-creds": {
+				Path: "/cnab/app/registry-creds.json",
+			},
 		},
 		Parameters: map[string]bundle.ParameterDefinition{
 			"docker.orchestrator": {
@@ -59,6 +62,16 @@ func TestToCNAB(t *testing.T) {
 					Description: "Namespace in which to deploy",
 				},
 				DefaultValue: "",
+			},
+			"docker.share-registry-creds": {
+				DataType: "bool",
+				Destination: &bundle.Location{
+					EnvironmentVariable: "DOCKER_SHARE_REGISTRY_CREDS",
+				},
+				Metadata: bundle.ParameterMetadata{
+					Description: "Share registry credentials with the invocation image",
+				},
+				DefaultValue: false,
 			},
 			"watcher.cmd": {
 				DataType: "string",

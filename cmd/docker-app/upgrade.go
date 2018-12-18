@@ -66,13 +66,6 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), c.Bundle, opts.credentialsets)
-	if err != nil {
-		return err
-	}
-	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
-		return err
-	}
 	convertedParamValues := c.Parameters
 	if err := applyParameterValues(parameterValues, c.Bundle.Parameters, convertedParamValues); err != nil {
 		return err
@@ -80,6 +73,13 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 
 	c.Parameters, err = bundle.ValuesOrDefaults(convertedParamValues, c.Bundle)
 	if err != nil {
+		return err
+	}
+	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), c.Bundle, opts.credentialsets, shouldPopulateRegistryCreds(c.Parameters), dockerCli)
+	if err != nil {
+		return err
+	}
+	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
 		return err
 	}
 	u := &action.Upgrade{
