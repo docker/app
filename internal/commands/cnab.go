@@ -2,6 +2,8 @@ package commands
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,8 +25,10 @@ import (
 	"github.com/docker/cli/cli/context/docker"
 	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 )
 
@@ -73,6 +77,50 @@ func addDockerCredentials(contextName string, contextStore store.Store) credenti
 			}
 			creds[internal.CredentialDockerContextName] = string(data)
 		}
+		return nil
+	}
+}
+
+func shouldPopulateRegistryCreds(parameterValues map[string]interface{}) bool {
+	v, ok := parameterValues[internal.ParameterShareRegistryCredsName]
+	if !ok {
+		return false
+	}
+	result, ok := v.(bool)
+	if !ok {
+		return false
+	}
+	return result
+}
+
+func addRegistryCredentials(parameterValues map[string]interface{}, dockerCli command.Cli) credentialSetOpt {
+	return func(b *bundle.Bundle, creds map[string]string) error {
+		if _, ok := b.Credentials[internal.CredentialRegistryName]; !ok {
+			return nil
+		}
+
+		registryCreds := map[string]types.AuthConfig{}
+		if shouldPopulateRegistryCreds(parameterValues) {
+			for _, img := range b.Images {
+				named, err := reference.ParseNormalizedNamed(img.Image)
+				if err != nil {
+					return err
+				}
+				info, err := registry.ParseRepositoryInfo(named)
+				if err != nil {
+					return err
+				}
+				key := registry.GetAuthConfigKey(info.Index)
+				if _, ok := registryCreds[key]; !ok {
+					registryCreds[key] = command.ResolveAuthConfig(context.Background(), dockerCli, info.Index)
+				}
+			}
+		}
+		registryCredsJSON, err := json.Marshal(registryCreds)
+		if err != nil {
+			return err
+		}
+		creds[internal.CredentialRegistryName] = string(registryCredsJSON)
 		return nil
 	}
 }

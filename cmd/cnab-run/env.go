@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
 
 	"github.com/docker/app/internal"
@@ -32,9 +34,23 @@ func setupDockerContext() (command.Cli, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cli, cli.Initialize(&cliflags.ClientOptions{
+	if err := cli.Initialize(&cliflags.ClientOptions{
 		Common: &cliflags.CommonOptions{
 			Context: "cnab",
 		},
-	})
+	}); err != nil {
+		return nil, err
+	}
+	authConfigsJSON, err := ioutil.ReadFile(internal.CredentialRegistryPath)
+	if err != nil {
+		return nil, err
+	}
+
+	configFile := cli.ConfigFile()
+
+	if err := json.Unmarshal(authConfigsJSON, &configFile.AuthConfigs); err != nil {
+		return nil, err
+	}
+
+	return cli, nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -69,9 +68,6 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 
 func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
 	defer muteDockerCli(dockerCli)()
-	if opts.sendRegistryAuth {
-		return errors.New("with-registry-auth is not supported at the moment")
-	}
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
 	bind, err := requiredBindMount(targetContext, opts.orchestrator, dockerCli.ContextStore())
 	if err != nil {
@@ -102,24 +98,25 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(bndl,
-		addNamedCredentialSets(opts.credentialsets),
-		addDockerCredentials(targetContext, dockerCli.ContextStore()))
-	if err != nil {
-		return err
-	}
-	if err := credentials.Validate(creds, bndl.Credentials); err != nil {
-		return err
-	}
-
 	c.Bundle = bndl
 
 	c.Parameters, err = mergeBundleParameters(bndl,
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
 		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
+		withSendRegistryAuth(opts.sendRegistryAuth),
 	)
 	if err != nil {
+		return err
+	}
+	creds, err := prepareCredentialSet(bndl,
+		addNamedCredentialSets(opts.credentialsets),
+		addDockerCredentials(targetContext, dockerCli.ContextStore()),
+		addRegistryCredentials(c.Parameters, dockerCli))
+	if err != nil {
+		return err
+	}
+	if err := credentials.Validate(creds, bndl.Credentials); err != nil {
 		return err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strconv"
 
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal"
@@ -52,11 +53,15 @@ func installAction(instanceName string) error {
 	if err := os.Chdir(app.Path); err != nil {
 		return err
 	}
+	sendRegistryAuth, err := strconv.ParseBool(os.Getenv("DOCKER_SHARE_REGISTRY_CREDS"))
+	if err != nil {
+		return err
+	}
 	// todo: pass registry auth to invocation image
 	return stack.RunDeploy(cli, getFlagset(orchestrator), rendered, orchestrator, options.Deploy{
 		Namespace:        instanceName,
 		ResolveImage:     swarm.ResolveImageAlways,
-		SendRegistryAuth: false,
+		SendRegistryAuth: sendRegistryAuth,
 	})
 }
 

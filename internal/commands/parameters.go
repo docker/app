@@ -35,6 +35,19 @@ func withCommandLineParameters(overrides []string) parameterOperation {
 	}
 }
 
+func withSendRegistryAuth(sendRegistryAuth bool) parameterOperation {
+	return func(bndl *bundle.Bundle, params map[string]string) error {
+		if _, ok := bndl.Parameters[internal.ParameterShareRegistryCredsName]; ok {
+			val := "false"
+			if sendRegistryAuth {
+				val = "true"
+			}
+			params[internal.ParameterShareRegistryCredsName] = val
+		}
+		return nil
+	}
+}
+
 func withOrchestratorParameters(orchestrator string, kubeNamespace string) parameterOperation {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
 		if _, ok := bndl.Parameters[internal.ParameterOrchestratorName]; ok {

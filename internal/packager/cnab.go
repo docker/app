@@ -66,6 +66,16 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				internal.ActionRenderName,
 			},
 		},
+		internal.ParameterShareRegistryCredsName: {
+			DataType: "bool",
+			Destination: &bundle.Location{
+				EnvironmentVariable: "DOCKER_SHARE_REGISTRY_CREDS",
+			},
+			Metadata: &bundle.ParameterMetadata{
+				Description: "Share registry credentials with the invocation image",
+			},
+			DefaultValue: false,
+		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
 		parameters[name] = bundle.ParameterDefinition{
@@ -93,6 +103,9 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Credentials: map[string]bundle.Location{
 			internal.CredentialDockerContextName: {
 				Path: internal.CredentialDockerContextPath,
+			},
+			internal.CredentialRegistryName: {
+				Path: internal.CredentialRegistryPath,
 			},
 		},
 		Description: app.Metadata().Description,
