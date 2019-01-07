@@ -160,26 +160,6 @@ cp docker-app-linux /usr/local/bin/docker-app
 
 **Note:** To use Application Packages as images (i.e.: `save`, `push`, or `deploy` when package is not present locally) on Windows, one must be in Linux container mode.
 
-## Integrating with Helm
-
-`docker-app` comes with a few other helpful commands as well, in particular the ability to create Helm Charts from your Docker Applications. This can be useful if you're adopting Kubernetes, and standardising on Helm to manage the lifecycle of your application components, but want to maintain the simplicity of Compose when writing you applications. This also makes it easy to run the same applications locally just using Docker, if you don't want to be running a full Kubernetes cluster.
-
-```
-$ docker-app helm
-```
-
-This will create a folder, `<my-application-name>.chart`, in the current directory. The folder contains the required `Chart.yaml` file and templates describing the `stack` Kubernetes object based on the Compose file in your application.
-
-_Note that this requires the Compose Kubernetes controller available in Docker for Windows and Docker for Mac, and in Docker Enterprise Edition._
-
-### Helm chart for Docker EE 2.0
-
-In order to create a helm chart that is compatible with version 2.0 of Docker Enterprise Edition, you will need to use the `--stack-version` flag to create a compatible version of the helm chart using `v1beta1` like so:
-
-```bash
-$ docker-app helm --stack-version=v1beta1
-```
-
 ## Single file or directory representation
 
 If you prefer having the three core documents in separate YAML files, omit the `-s` / `--single-file` option to
@@ -265,7 +245,6 @@ Commands:
   completion  Generates completion scripts for the specified shell (bash or zsh)
   deploy      Deploy or update an application
   fork        Create a fork of an existing application to be modified
-  helm        Generate a Helm chart
   init        Start building a Docker application
   inspect     Shows metadata, settings and a summary of the compose file for a given application
   merge       Merge a multi-file application into a single file

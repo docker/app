@@ -57,12 +57,3 @@ deploy/development: render/development stop/development
 #
 pack:
 	docker-app pack -o $(PACK)
-
-#
-# Helm.
-#
-helm/production:
-	docker-app helm --settings-files $(SETTINGS_DIR)/production.yml
-
-helm/development:
-	docker-app helm --settings-files $(SETTINGS_DIR)/development.yml
