@@ -78,7 +78,7 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 }
 
 func TestRenderFormatters(t *testing.T) {
-	appPath := filepath.Join("testdata", "fork", "simple.dockerapp")
+	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
 	result := icmd.RunCommand(dockerApp, "render", "--formatter", "json", appPath).Assert(t, icmd.Success)
 	assert.Assert(t, golden.String(result.Stdout(), "expected-json-render.golden"))
 
@@ -234,47 +234,21 @@ func TestWithRegistry(t *testing.T) {
 	r := startRegistry(t)
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
-	t.Run("image", testImage(registry))
-	t.Run("fork", testFork(registry))
-}
+	// push to a registry
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp:0.1.0").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my:0.1.0").Assert(t, icmd.Success)
+	// push a single-file app to a registry
+	dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
+	defer dir.Remove()
+	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
 
-func testImage(registry string) func(*testing.T) {
-	return func(t *testing.T) {
-		// push to a registry
-		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-		icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp:0.1.0").Assert(t, icmd.Success)
-		icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp").Assert(t, icmd.Success)
-		icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my").Assert(t, icmd.Success)
-		icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my:0.1.0").Assert(t, icmd.Success)
-		// push a single-file app to a registry
-		dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
-		defer dir.Remove()
-		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
-
-		// push with custom repo name
-		icmd.RunCommand(dockerApp, "push", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-		icmd.RunCommand(dockerApp, "inspect", registry+"/rainbows/unicorns:marshmallows").Assert(t, icmd.Success)
-	}
-}
-
-func testFork(registry string) func(*testing.T) {
-	return func(t *testing.T) {
-		icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", "testdata/fork/simple").Assert(t, icmd.Success)
-
-		tempDir := fs.NewDir(t, "dockerapptest")
-		defer tempDir.Remove()
-
-		icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1", "acmecorp/scarlet.devil",
-			"-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
-		metadata := golden.Get(t, tempDir.Join("scarlet.devil.dockerapp", "metadata.yml"))
-		assert.Assert(t, golden.Bytes(metadata, "expected-fork-metadata.golden"))
-
-		icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/simple.dockerapp:1.1.0-beta1",
-			"-p", tempDir.Path(), "-m", "Remilia Scarlet:remilia@acmecorp.cool").Assert(t, icmd.Success)
-		metadata2 := golden.Get(t, tempDir.Join("simple.dockerapp", "metadata.yml"))
-		assert.Assert(t, golden.Bytes(metadata2, "expected-fork-metadata-no-rename.golden"))
-	}
+	// push with custom repo name
+	icmd.RunCommand(dockerApp, "push", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", registry+"/rainbows/unicorns:marshmallows").Assert(t, icmd.Success)
 }
 
 func TestAttachmentsWithRegistry(t *testing.T) {
@@ -298,16 +272,4 @@ func TestAttachmentsWithRegistry(t *testing.T) {
 	assert.Assert(t, strings.Contains(resultOutput, "config.cfg"))
 	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/config2.cfg"))
 	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
-
-	// Test forking with external files
-	tempDir := fs.NewDir(t, "dockerapptest")
-	defer tempDir.Remove()
-
-	icmd.RunCommand(dockerApp, "fork", registry+"/acmecorp/attachments.dockerapp:0.1.0",
-		"-p", tempDir.Path()).Assert(t, icmd.Success)
-	externalFile := golden.Get(t, tempDir.Join("attachments.dockerapp", "config.cfg"))
-	assert.Assert(t, golden.Bytes(externalFile, filepath.Join("attachments.dockerapp", "config.cfg")))
-
-	nestedAttachment := golden.Get(t, tempDir.Join("attachments.dockerapp", "nesteddir", "config2.cfg"))
-	assert.Assert(t, golden.Bytes(nestedAttachment, filepath.Join("attachments.dockerapp", "nesteddir", "config2.cfg")))
 }

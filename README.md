@@ -193,22 +193,6 @@ All `docker-app` commands accept an image name as input, which means you can run
 $ docker-app inspect myhubuser/hello
 ```
 
-## Forking an existing image
-
-Found an app on a remote registry you'd like to modify to better suit your needs? Use the `fork` subcommand:
-
-```bash
-$ docker-app fork remote/hello.dockerapp:1.0.0 mine/hello2 -m "Bob Dylan:bob@aol.com"
-```
-
-This command will create a local, editable copy of the app on your system. By default, the copy is created inside the current directory; you may use the `--path` flag to configure a different destination.
-
-For example, the following will create the `/opt/myapps/hello2.dockerapp` folder containing the forked app's files:
-
-```bash
-$ docker-app fork remote/hello.dockerapp:1.0.0 mine/hello2 --path /opt/myapps
-```
-
 ## Next steps
 
 We have lots of ideas for making Compose-based applications easier to share and reuse, and making applications a first-class part of the Docker toolchain. Please let us know what you think about this initial release and about any of the ideas below:
@@ -244,7 +228,6 @@ Options:
 Commands:
   completion  Generates completion scripts for the specified shell (bash or zsh)
   deploy      Deploy or update an application
-  fork        Create a fork of an existing application to be modified
   init        Start building a Docker application
   inspect     Shows metadata, settings and a summary of the compose file for a given application
   merge       Merge a multi-file application into a single file
