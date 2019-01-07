@@ -121,32 +121,6 @@ wordpress.scale.mode          replicated
 wordpress.scale.replicas      1
 ```
 
-### Generate helm package
-
-`docker-app helm wordpress` will output a Helm package in the `./wordpress.helm` folder. `--compose-file` (or `-c`), `--set` (or `-e`) and `--settings-files` (or `-f`) flags apply the same way they do for the `render` subcommand.
-
-```
-$ docker-app helm wordpress --settings-files prod-settings.yml --set mysql.user.name=mollydock
-$ tree wordpress.chart
-wordpress.chart
-├── Chart.yaml
-├── templates
-│   └── stack.yaml
-└── values.yaml
-
-1 directory, 3 files
-$ cat wordpress.chart/templates/stack.yaml
-apiversion: v1beta2
-kind: stacks.compose.docker.com
-metadata:
-  annotations: {}
-[...]
-spec:
-  services:
-  - deploy:
-  [...]
-```
-
 ### Generate distributable app package
 
 **Note:** If using Windows, this only works in Linux container mode.
