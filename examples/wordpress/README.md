@@ -21,7 +21,7 @@ services:
       overlay: null
     volumes:
     - type: volume
-      source: db_data
+      source: db-data
       target: /var/lib/mysql
   wordpress:
     depends_on:
@@ -47,8 +47,8 @@ services:
 networks:
   overlay: {}
 volumes:
-  db_data:
-    name: db_data
+  db-data:
+    name: db-data
 ```
 
 **Override default parameters with file**. This example sets `debug` to `"false"` and the wordpress service published port to 80 as defined in `prod-parameters.yml`.
@@ -114,7 +114,7 @@ mysql.scale.mode              replicated
 mysql.scale.replicas          1
 mysql.user.name               wordpress
 mysql.user.password           wordpress
-volumes.db_data.name          db_data
+volumes.db_data.name          db-data
 wordpress.port                8080
 wordpress.scale.endpoint_mode vip
 wordpress.scale.mode          replicated

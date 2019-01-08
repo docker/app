@@ -100,7 +100,7 @@ name: app-test
 # A short description of the application
 description: my cool app
 # Namespace to use when pushing to a registry. This is typically your Hub username.
-#namespace: myHubUsername
+#namespace: myhubusername
 # List of application maintainers with name and email for each
 maintainers:
   - name: bob
