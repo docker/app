@@ -51,10 +51,10 @@ volumes:
     name: db_data
 ```
 
-**Override default settings with file**. This example sets `debug` to `"false"` and the wordpress service published port to 80 as defined in `prod-settings.yml`.
+**Override default parameters with file**. This example sets `debug` to `"false"` and the wordpress service published port to 80 as defined in `prod-parameters.yml`.
 
 ```yaml
-# docker-app render wordpress --settings-files prod-settings.yml
+# docker-app render wordpress --parameters-files prod-parameters.yml
 version: "3.6"
 [...]
     environment:
@@ -103,8 +103,8 @@ services:
 wordpress 0.1.0
 Maintained by: sakuya.izayoi <sizayoi@sdmansion.jp>
 
-Setting                       Default
--------                       -------
+Parameters                    Default
+----------                    -------
 debug                         true
 mysql.database                wordpressdata
 mysql.image.version           5.6

@@ -11,29 +11,29 @@ import (
 )
 
 var (
-	inspectSettingsFile []string
-	inspectEnv          []string
+	inspectParametersFile []string
+	inspectEnv            []string
 )
 
 // inspectCmd represents the inspect command
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "inspect [<app-name>] [-s key=value...] [-f settings-file...]",
-		Short: "Shows metadata, settings and a summary of the compose file for a given application",
+		Use:   "inspect [<app-name>] [-s key=value...] [-f parameters-file...]",
+		Short: "Shows metadata, parameters and a summary of the compose file for a given application",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app, err := packager.Extract(firstOrEmpty(args),
-				types.WithSettingsFiles(inspectSettingsFile...),
+				types.WithParametersFiles(inspectParametersFile...),
 			)
 			if err != nil {
 				return err
 			}
 			defer app.Cleanup()
-			argSettings := cliopts.ConvertKVStringsToMap(inspectEnv)
-			return inspect.Inspect(dockerCli.Out(), app, argSettings)
+			argParameters := cliopts.ConvertKVStringsToMap(inspectEnv)
+			return inspect.Inspect(dockerCli.Out(), app, argParameters)
 		},
 	}
-	cmd.Flags().StringArrayVarP(&inspectSettingsFile, "settings-files", "f", []string{}, "Override settings files")
-	cmd.Flags().StringArrayVarP(&inspectEnv, "set", "s", []string{}, "Override settings values")
+	cmd.Flags().StringArrayVarP(&inspectParametersFile, "parameters-files", "f", []string{}, "Override with parameters from files")
+	cmd.Flags().StringArrayVarP(&inspectEnv, "set", "s", []string{}, "Override parameters values")
 	return cmd
 }

@@ -1,4 +1,4 @@
-package settings
+package parameters
 
 import (
 	"bytes"
@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Load loads the given data in settings
-func Load(data []byte, ops ...func(*Options)) (Settings, error) {
+// Load loads the given data in parameters
+func Load(data []byte, ops ...func(*Options)) (Parameters, error) {
 	options := &Options{}
 	for _, op := range ops {
 		op(options)
@@ -22,32 +22,32 @@ func Load(data []byte, ops ...func(*Options)) (Settings, error) {
 	decoder := yaml.NewDecoder(r)
 	if err := decoder.Decode(&s); err != nil {
 		if err == io.EOF {
-			return Settings{}, nil
+			return Parameters{}, nil
 		}
-		return nil, errors.Wrap(err, "failed to read settings")
+		return nil, errors.Wrap(err, "failed to read parameters")
 	}
 	converted, err := convertToStringKeysRecursive(s, "")
 	if err != nil {
 		return nil, err
 	}
-	settings := converted.(map[string]interface{})
+	parameters := converted.(map[string]interface{})
 	if options.prefix != "" {
-		settings = map[string]interface{}{
-			options.prefix: settings,
+		parameters = map[string]interface{}{
+			options.prefix: parameters,
 		}
 	}
-	return settings, nil
+	return parameters, nil
 }
 
-// LoadMultiple loads multiple data in settings
-func LoadMultiple(datas [][]byte, ops ...func(*Options)) (Settings, error) {
-	m := Settings(map[string]interface{}{})
+// LoadMultiple loads multiple data in parameters
+func LoadMultiple(datas [][]byte, ops ...func(*Options)) (Parameters, error) {
+	m := Parameters(map[string]interface{}{})
 	for _, data := range datas {
-		settings, err := Load(data, ops...)
+		parameters, err := Load(data, ops...)
 		if err != nil {
 			return nil, err
 		}
-		m, err = Merge(m, settings)
+		m, err = Merge(m, parameters)
 		if err != nil {
 			return nil, err
 		}
@@ -55,8 +55,8 @@ func LoadMultiple(datas [][]byte, ops ...func(*Options)) (Settings, error) {
 	return m, nil
 }
 
-// LoadFile loads a file (path) in settings (i.e. flatten map)
-func LoadFile(path string, ops ...func(*Options)) (Settings, error) {
+// LoadFile loads a file (path) in parameters (i.e. flatten map)
+func LoadFile(path string, ops ...func(*Options)) (Parameters, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -64,15 +64,15 @@ func LoadFile(path string, ops ...func(*Options)) (Settings, error) {
 	return Load(data, ops...)
 }
 
-// LoadFiles loads multiple path in settings, merging them.
-func LoadFiles(paths []string, ops ...func(*Options)) (Settings, error) {
-	m := Settings(map[string]interface{}{})
+// LoadFiles loads multiple path in parameters, merging them.
+func LoadFiles(paths []string, ops ...func(*Options)) (Parameters, error) {
+	m := Parameters(map[string]interface{}{})
 	for _, path := range paths {
-		settings, err := LoadFile(path, ops...)
+		parameters, err := LoadFile(path, ops...)
 		if err != nil {
 			return nil, err
 		}
-		m, err = Merge(m, settings)
+		m, err = Merge(m, parameters)
 		if err != nil {
 			return nil, err
 		}

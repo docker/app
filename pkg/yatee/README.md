@@ -27,7 +27,7 @@ If, for, variable expansion, arithmetic expressions.
         "$i":
           image: $i:latest
 
-When processed with the following settings file:
+When processed with the following parameters file:
 
     myapp:
       debug: false
@@ -65,17 +65,17 @@ Will produce the following output:
 
 The yatee go package exports the following two functions:
 
-    // LoadSettings loads a set of settings file and produce a property dictionary
-    func LoadSettings(files []string) (map[string]interface{}, error)
-    // Process resolves input templated yaml using values given in settings
-    func Process(inputString string, settings map[string]interface{}) (map[interface{}] interface{}, error)
+    // LoadParameters loads a set of parameters file and produce a property dictionary
+    func LoadParameters(files []string) (map[string]interface{}, error)
+    // Process resolves input templated yaml using values given in parameters
+    func Process(inputString string, parameters map[string]interface{}) (map[interface{}] interface{}, error)
 
 # Tell me more about the templating
 
 ## All features at a glance
 
-- `$foo.bar and ${foo.bar}` are replaced by the value of `foo.bar` in the settings structure. Nesting is allowed.
-- `${foo?IF_TRUE:IF_FALSE}` is replaced by IF_TRUE if `foo` in settings is true (not empty, 0 or `false`).
+- `$foo.bar and ${foo.bar}` are replaced by the value of `foo.bar` in the parameters structure. Nesting is allowed.
+- `${foo?IF_TRUE:IF_FALSE}` is replaced by IF_TRUE if `foo` in parameters is true (not empty, 0 or `false`).
 - `$(expr)` is evaluated as an arithmetic expression. Integers, parenthesis, and the operators
    '+-*/%' are supported. Note that there is no operator precedence, evaluation is from left to right.
 - `$$` is replaced by a single literal `$` without any variable expansion.
@@ -91,7 +91,7 @@ The yatee go package exports the following two functions:
 
 ## Variable expansion examples
 
-All examples below use the following settings:
+All examples below use the following parameters:
 
     app:
       debug: true
@@ -115,7 +115,7 @@ $$$foo                 | $$bar
 
 ## Control flow examples
 
-Using the same settings as above.
+Using the same parameters as above.
 
 ### If
 

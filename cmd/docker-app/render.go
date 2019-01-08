@@ -16,22 +16,22 @@ import (
 )
 
 var (
-	formatDriver       string
-	renderComposeFiles []string
-	renderSettingsFile []string
-	renderEnv          []string
-	renderOutput       string
+	formatDriver         string
+	renderComposeFiles   []string
+	renderParametersFile []string
+	renderEnv            []string
+	renderOutput         string
 )
 
 func renderCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "render <app-name> [-s key=value...] [-f settings-file...]",
+		Use:   "render <app-name> [-s key=value...] [-f parameters-file...]",
 		Short: "Render the Compose file for the application",
 		Long:  `Render the Compose file for the application.`,
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app, err := packager.Extract(firstOrEmpty(args),
-				types.WithSettingsFiles(renderSettingsFile...),
+				types.WithParametersFiles(renderParametersFile...),
 				types.WithComposeFiles(renderComposeFiles...),
 			)
 			if err != nil {
@@ -64,10 +64,10 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 		cmd.Long += `- External Compose files or template Compose files can be specified with the -c flag.
   (Repeat the flag for multiple files). These files will be merged in order with
   the app's own Compose file.`
-		cmd.Flags().StringArrayVarP(&renderComposeFiles, "compose-files", "c", []string{}, "Override Compose files")
+		cmd.Flags().StringArrayVarP(&renderComposeFiles, "compose-files", "c", []string{}, "Override Compose file")
 	}
-	cmd.Flags().StringArrayVarP(&renderSettingsFile, "settings-files", "f", []string{}, "Override settings files")
-	cmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override settings values")
+	cmd.Flags().StringArrayVarP(&renderParametersFile, "parameters-files", "f", []string{}, "Override with parameters from files")
+	cmd.Flags().StringArrayVarP(&renderEnv, "set", "s", []string{}, "Override parameters values")
 	cmd.Flags().StringVarP(&renderOutput, "output", "o", "-", "Output file")
 	cmd.Flags().StringVar(&formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
 	return cmd

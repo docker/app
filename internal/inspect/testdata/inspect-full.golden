@@ -20,10 +20,10 @@ Secret (1)
 ----------
 my-secret
 
-Settings (2) Value
------------- -----
-port         8080
-text         hello
+Parameters (2) Value
+-------------- -----
+port           8080
+text           hello
 
 Attachment (1) Size
 -------------- ----

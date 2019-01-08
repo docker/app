@@ -17,15 +17,15 @@ public class RenderApp extends AnAction {
         PropertiesComponent pc = PropertiesComponent.getInstance(project);
         String appPath = pc.getValue("docker_app_path");
         try {
-            String rawSettings = pc.getValue("docker_app_overrides");
-            String settings = "";
-            if (!rawSettings.isEmpty()) {
-                String[] split = rawSettings.split("\n");
+            String rawParameters = pc.getValue("docker_app_overrides");
+            String parameters = "";
+            if (!rawParameters.isEmpty()) {
+                String[] split = rawParameters.split("\n");
                 for (String l: split) {
-                    settings += " -s " + l;
+                    parameters += " -s " + l;
                 }
             }
-            Process p = Runtime.getRuntime().exec("docker-app render " + appPath + settings, null, new File(project.getBasePath()));
+            Process p = Runtime.getRuntime().exec("docker-app render " + appPath + parameters, null, new File(project.getBasePath()));
             Scanner se = new Scanner(p.getErrorStream()).useDelimiter("\\A");
             String stderr = se.hasNext() ? se.next() : "";
             Scanner so = new Scanner(p.getInputStream()).useDelimiter("\\A");

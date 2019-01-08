@@ -17,20 +17,20 @@ using System.Windows.Shapes;
 namespace dockerappvsix
 {
     /// <summary>
-    /// Interaction logic for SettingsDialog.xaml
+    /// Interaction logic for ParametersDialog.xaml
     /// </summary>
-    public partial class SettingsDialog : DialogWindow
+    public partial class ParametersDialog : DialogWindow
     {
-        public SettingsDialog()
+        public ParametersDialog()
         {
             InitializeComponent();
         }
 
-        public AppPackageSettings Settings
+        public AppPackageParameters Parameters
         {
             get
             {
-                return DataContext as AppPackageSettings;
+                return DataContext as AppPackageParameters;
             }
         }
 
@@ -48,11 +48,11 @@ namespace dockerappvsix
 
         private void OnBrowse(object sender, RoutedEventArgs e)
         {
-            var baseFile = Settings.KubeConfig;
+            var baseFile = Parameters.KubeConfig;
             var ofd = new Microsoft.Win32.OpenFileDialog();
             ofd.FileName = baseFile;
             if (ofd.ShowDialog() ?? false) {
-                Settings.KubeConfig = ofd.FileName;
+                Parameters.KubeConfig = ofd.FileName;
             }
         }
     }

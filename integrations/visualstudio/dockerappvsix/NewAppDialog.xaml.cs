@@ -26,11 +26,11 @@ namespace dockerappvsix
             InitializeComponent();
         }
 
-        public NewAppSettings Settings
+        public NewAppParameters Parameters
         {
             get
             {
-                return DataContext as NewAppSettings;
+                return DataContext as NewAppParameters;
             }
         }
         

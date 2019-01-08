@@ -63,8 +63,8 @@ func merge(res map[string]interface{}, src map[interface{}]interface{}) {
 	}
 }
 
-// LoadSettings loads a set of settings file and produce a property dictionary
-func LoadSettings(files []string) (map[string]interface{}, error) {
+// LoadParameters loads a set of parameters file and produce a property dictionary
+func LoadParameters(files []string) (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
@@ -292,18 +292,18 @@ func isTrue(cond string) bool {
 	return (cond != "" && cond != "false" && cond != "0") != reverse
 }
 
-func recurseList(input []interface{}, settings map[string]interface{}, flattened map[string]interface{}, o options) ([]interface{}, error) {
+func recurseList(input []interface{}, parameters map[string]interface{}, flattened map[string]interface{}, o options) ([]interface{}, error) {
 	var res []interface{}
 	for _, v := range input {
 		switch vv := v.(type) {
 		case yml.MapSlice:
-			newv, err := recurse(vv, settings, flattened, o)
+			newv, err := recurse(vv, parameters, flattened, o)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, newv)
 		case []interface{}:
-			newv, err := recurseList(vv, settings, flattened, o)
+			newv, err := recurseList(vv, parameters, flattened, o)
 			if err != nil {
 				return nil, err
 			}
@@ -338,7 +338,7 @@ func recurseList(input []interface{}, settings map[string]interface{}, flattened
 
 // FIXME complexity on this is 47… get it lower than 16
 // nolint: gocyclo
-func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[string]interface{}, o options) (yml.MapSlice, error) {
+func recurse(input yml.MapSlice, parameters map[string]interface{}, flattened map[string]interface{}, o options) (yml.MapSlice, error) {
 	res := yml.MapSlice{}
 	for _, kvp := range input {
 		k := kvp.Key
@@ -417,7 +417,7 @@ func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[
 					}
 					for i := rangestart; i < rangeend; i++ {
 						flattened[varname] = fmt.Sprintf("%v", i)
-						val, err := recurse(mii, settings, flattened, o)
+						val, err := recurse(mii, parameters, flattened, o)
 						if err != nil {
 							return nil, err
 						}
@@ -430,7 +430,7 @@ func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[
 					rangevalues := strings.Split(varrange, " ")
 					for _, i := range rangevalues {
 						flattened[varname] = i
-						val, err := recurse(mii, settings, flattened, o)
+						val, err := recurse(mii, parameters, flattened, o)
 						if err != nil {
 							return nil, err
 						}
@@ -451,7 +451,7 @@ func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[
 					return nil, fmt.Errorf("@if value must be a mapping")
 				}
 				if isTrue(fmt.Sprintf("%v", cond)) {
-					val, err := recurse(mii, settings, flattened, o)
+					val, err := recurse(mii, parameters, flattened, o)
 					if err != nil {
 						return nil, err
 					}
@@ -488,13 +488,13 @@ func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[
 		}
 		switch vv := v.(type) {
 		case yml.MapSlice:
-			newv, err := recurse(vv, settings, flattened, o)
+			newv, err := recurse(vv, parameters, flattened, o)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, yml.MapItem{Key: rk, Value: newv})
 		case []interface{}:
-			newv, err := recurseList(vv, settings, flattened, o)
+			newv, err := recurseList(vv, parameters, flattened, o)
 			if err != nil {
 				return nil, err
 			}
@@ -512,10 +512,10 @@ func recurse(input yml.MapSlice, settings map[string]interface{}, flattened map[
 	return res, nil
 }
 
-// ProcessStrings resolves input templated yaml using values in settings yaml
-func ProcessStrings(input, settings string) (string, error) {
+// ProcessStrings resolves input templated yaml using values in parameters yaml
+func ProcessStrings(input, parameters string) (string, error) {
 	ps := make(map[interface{}]interface{})
-	err := yaml.Unmarshal([]byte(settings), ps)
+	err := yaml.Unmarshal([]byte(parameters), ps)
 	if err != nil {
 		return "", err
 	}
@@ -532,8 +532,8 @@ func ProcessStrings(input, settings string) (string, error) {
 	return string(sres), nil
 }
 
-// ProcessWithOrder resolves input templated yaml using values given in settings, returning a MapSlice with order preserved
-func ProcessWithOrder(inputString string, settings map[string]interface{}, opts ...string) (yml.MapSlice, error) {
+// ProcessWithOrder resolves input templated yaml using values given in parameters, returning a MapSlice with order preserved
+func ProcessWithOrder(inputString string, parameters map[string]interface{}, opts ...string) (yml.MapSlice, error) {
 	var o options
 	for _, v := range opts {
 		switch v {
@@ -549,13 +549,13 @@ func ProcessWithOrder(inputString string, settings map[string]interface{}, opts 
 		return nil, err
 	}
 	flattened := make(map[string]interface{})
-	flatten(settings, flattened, "")
-	return recurse(input, settings, flattened, o)
+	flatten(parameters, flattened, "")
+	return recurse(input, parameters, flattened, o)
 }
 
-// Process resolves input templated yaml using values given in settings, returning a map
-func Process(inputString string, settings map[string]interface{}, opts ...string) (map[interface{}]interface{}, error) {
-	mapSlice, err := ProcessWithOrder(inputString, settings, opts...)
+// Process resolves input templated yaml using values given in parameters, returning a map
+func Process(inputString string, parameters map[string]interface{}, opts ...string) (map[interface{}]interface{}, error) {
+	mapSlice, err := ProcessWithOrder(inputString, parameters, opts...)
 	if err != nil {
 		return nil, err
 	}

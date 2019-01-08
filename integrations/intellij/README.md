@@ -34,9 +34,9 @@ By default all operations will look for a single Docker Application at the root 
 
 `Render` renders the application in a popup window.
 
-## Settings
+## Parameters
 
-`Settings` pops-up a dialog that can be used to configure deployment parameters, such as which orchestrator to use, the stack name and namespace, and settings overrides.
+`Parameters` pops-up a dialog that can be used to configure deployment parameters, such as which orchestrator to use, the stack name and namespace, and parameters overrides.
 
 ## Deploy
 

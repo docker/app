@@ -28,12 +28,12 @@ public class DeployApp extends AnAction {
             String orchestrator = "swarm";
             if (pc.getValue("docker_app_orchestrator").equals("kubernetes"))
                 orchestrator = "kubernetes";
-            String rawSettings = pc.getValue("docker_app_overrides");
-            String settings = "";
-            if (!rawSettings.isEmpty()) {
-                String[] split = rawSettings.split("\n");
+            String rawParameters = pc.getValue("docker_app_overrides");
+            String parameters = "";
+            if (!rawParameters.isEmpty()) {
+                String[] split = rawParameters.split("\n");
                 for (String l: split) {
-                    settings += " -s " + l;
+                    parameters += " -s " + l;
                 }
             }
             String kubeconfig = pc.getValue("docker_app_kubeconfig");
@@ -53,7 +53,7 @@ public class DeployApp extends AnAction {
                     + kubeconfig
                     + namespace
                     + name
-                    + settings;
+                    + parameters;
             Process p = Runtime.getRuntime().exec(cmd,null, new File(project.getBasePath()));
             BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
             String line;

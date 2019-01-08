@@ -1,4 +1,4 @@
-package settings
+package parameters
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 
 func TestLoadErrors(t *testing.T) {
 	_, err := Load([]byte("invalid yaml"))
-	assert.Check(t, is.ErrorContains(err, "failed to read settings"))
+	assert.Check(t, is.ErrorContains(err, "failed to read parameters"))
 
 	_, err = Load([]byte(`
 foo: bar
@@ -25,7 +25,7 @@ foo:
 }
 
 func TestLoad(t *testing.T) {
-	settings, err := Load([]byte(`
+	parameters, err := Load([]byte(`
 foo: bar
 bar:
   baz: banana
@@ -34,7 +34,7 @@ baz:
   - a
   - b`))
 	assert.NilError(t, err)
-	assert.Check(t, is.DeepEqual(settings.Flatten(), map[string]string{
+	assert.Check(t, is.DeepEqual(parameters.Flatten(), map[string]string{
 		"foo":      "bar",
 		"bar.baz":  "banana",
 		"bar.port": "80",
@@ -44,12 +44,12 @@ baz:
 }
 
 func TestLoadWithPrefix(t *testing.T) {
-	settings, err := Load([]byte(`
+	parameters, err := Load([]byte(`
 foo: bar
 bar: baz
 `), WithPrefix("p"))
 	assert.NilError(t, err)
-	assert.Check(t, is.DeepEqual(settings.Flatten(), map[string]string{
+	assert.Check(t, is.DeepEqual(parameters.Flatten(), map[string]string{
 		"p.foo": "bar",
 		"p.bar": "baz",
 	}))
@@ -69,9 +69,9 @@ bar:
 	)
 	defer dir.Remove()
 
-	settings, err := LoadFiles([]string{dir.Join("s1"), dir.Join("s2")})
+	parameters, err := LoadFiles([]string{dir.Join("s1"), dir.Join("s2")})
 	assert.NilError(t, err)
-	assert.Check(t, is.DeepEqual(settings.Flatten(), map[string]string{
+	assert.Check(t, is.DeepEqual(parameters.Flatten(), map[string]string{
 		"foo":      "baz",
 		"bar.baz":  "banana",
 		"bar.port": "10",
@@ -91,9 +91,9 @@ bar:
   port: 10`),
 	}
 
-	settings, err := LoadMultiple(datas)
+	parameters, err := LoadMultiple(datas)
 	assert.NilError(t, err)
-	assert.Check(t, is.DeepEqual(settings.Flatten(), map[string]string{
+	assert.Check(t, is.DeepEqual(parameters.Flatten(), map[string]string{
 		"foo":      "baz",
 		"bar.baz":  "banana",
 		"bar.port": "10",

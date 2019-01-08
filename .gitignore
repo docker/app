@@ -5,8 +5,9 @@
 *.dockerapp
 _build/
 bin/
-!examples/simple/*.dockerapp
+!examples/*/*.dockerapp
 !e2e/**/*.dockerapp
+!integrations/**/*.dockerapp
 .gradle
 coverage.html
 cover.out

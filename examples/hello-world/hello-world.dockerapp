@@ -23,6 +23,6 @@ services:
       - ${port}:5678
 
 ---
-# This section contains the default values for your application settings.
+# This section contains the default values for your application parameters.
 port: 8080
 text: Hello, World!

@@ -1,4 +1,4 @@
-package settings
+package parameters
 
 import (
 	"testing"
@@ -45,7 +45,7 @@ func TestFromFlatten(t *testing.T) {
 		"frog":      "{bear}",
 	})
 	assert.NilError(t, err)
-	assert.Check(t, is.DeepEqual(s, Settings{
+	assert.Check(t, is.DeepEqual(s, Parameters{
 		"foo": "bar",
 		"bar": map[string]interface{}{
 			"baz":  "banana",

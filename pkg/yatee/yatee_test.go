@@ -28,9 +28,9 @@ func TestEval(t *testing.T) {
 	testEval(t, "${foo?foo:bar}", env, "foo")
 }
 
-func testProcess(t *testing.T, input, output, settings, error string) {
+func testProcess(t *testing.T, input, output, parameters, error string) {
 	ps := make(map[interface{}]interface{})
-	err := yaml.Unmarshal([]byte(settings), ps)
+	err := yaml.Unmarshal([]byte(parameters), ps)
 	assert.NilError(t, err)
 	s := make(map[string]interface{})
 	merge(s, ps)
@@ -46,7 +46,7 @@ func testProcess(t *testing.T, input, output, settings, error string) {
 }
 
 func TestProcess(t *testing.T) {
-	settings := `
+	parameters := `
 foo: bar
 loop: $loop
 app:
@@ -75,7 +75,7 @@ ab:
   yes1: 1
   yes2: 2
   yes3: 3
-`, settings, "")
+`, parameters, "")
 
 	testProcess(t,
 		`switch:
@@ -94,7 +94,7 @@ ab:
 `, `switch:
   yes1: 1
   yes2: 2
-`, settings, "")
+`, parameters, "")
 
 	testProcess(t,
 		`services:
@@ -107,7 +107,7 @@ ab:
   app1: 2
   bappa: fooa
   bappb: foob
-`, settings, "")
+`, parameters, "")
 
 	testProcess(t,
 		`list:
@@ -119,7 +119,7 @@ ab:
 - v1
 - vtrue
 - vtrue2
-`, settings, "")
+`, parameters, "")
 
 	testProcess(t,
 		`services:
@@ -135,19 +135,19 @@ ab:
   foo01: 1
   foo10: 2
   foo11: 3
-`, settings, "")
+`, parameters, "")
 
 	testProcess(t,
 		"services: $loop",
 		"",
-		settings,
+		parameters,
 		"eval loop detected")
 }
 
 func testProcessWithOrder(t *testing.T, input, output, error string) {
-	settings := make(map[string]interface{})
+	parameters := make(map[string]interface{})
 
-	res, err := ProcessWithOrder(input, settings)
+	res, err := ProcessWithOrder(input, parameters)
 
 	assert.NilError(t, err, "Error processing input: "+input)
 	sres, err := yaml.Marshal(res)

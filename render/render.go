@@ -10,7 +10,7 @@ import (
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/types"
-	"github.com/docker/app/types/settings"
+	"github.com/docker/app/types/parameters"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -42,24 +42,24 @@ var (
 	Pattern = regexp.MustCompile(patternString)
 )
 
-// Render renders the Compose file for this app, merging in settings files, other compose files, and env
-// appname string, composeFiles []string, settingsFiles []string
+// Render renders the Compose file for this app, merging in parameters files, other compose files, and env
+// appname string, composeFiles []string, parametersFiles []string
 func Render(app *types.App, env map[string]string) (*composetypes.Config, error) {
-	// prepend the app settings to the argument settings
-	// load the settings into a struct
-	fileSettings := app.Settings()
+	// prepend the app parameters to the argument parameters
+	// load the parameters into a struct
+	fileParameters := app.Parameters()
 	// inject our metadata
-	metaPrefixed, err := settings.Load(app.MetadataRaw(), settings.WithPrefix("app"))
+	metaPrefixed, err := parameters.Load(app.MetadataRaw(), parameters.WithPrefix("app"))
 	if err != nil {
 		return nil, err
 	}
-	envSettings, err := settings.FromFlatten(env)
+	envParameters, err := parameters.FromFlatten(env)
 	if err != nil {
 		return nil, err
 	}
-	allSettings, err := settings.Merge(fileSettings, metaPrefixed, envSettings)
+	allParameters, err := parameters.Merge(fileParameters, metaPrefixed, envParameters)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to merge settings")
+		return nil, errors.Wrap(err, "failed to merge parameters")
 	}
 	// prepend our app compose file to the list
 	renderers := renderer.Drivers()
@@ -73,12 +73,12 @@ func Render(app *types.App, env map[string]string) (*composetypes.Config, error)
 		renderers = rl
 	}
 	configFiles, err := compose.Load(app.Composes(), func(data string) (string, error) {
-		return renderer.Apply(data, allSettings, renderers...)
+		return renderer.Apply(data, allParameters, renderers...)
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load composefiles")
 	}
-	return render(configFiles, allSettings.Flatten())
+	return render(configFiles, allParameters.Flatten())
 }
 
 func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (*composetypes.Config, error) {

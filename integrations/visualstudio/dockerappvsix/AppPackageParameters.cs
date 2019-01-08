@@ -9,14 +9,14 @@ using System.Threading.Tasks;
 
 namespace dockerappvsix
 {
-    public class AppPackageSettings : INotifyPropertyChanged
+    public class AppPackageParameters : INotifyPropertyChanged
     {
         private bool _isSwarm;
         private bool _isKubernetes;
         private string _kubeConfig;
         private string _namespace;
         private string _stackName;
-        private string _settings;
+        private string _parameters;
 
         public bool IsSwarm
         {
@@ -63,12 +63,12 @@ namespace dockerappvsix
                 OnPropertyChanged();
             }
         }
-        public string Settings
+        public string Parameters
         {
-            get => _settings;
+            get => _parameters;
             set
             {
-                _settings = value;
+                _parameters = value;
                 OnPropertyChanged();
             }
         }
@@ -81,7 +81,7 @@ namespace dockerappvsix
             KubeConfig = g.GetOrNull<string>("dockerapp_kubeconfig");
             Namespace = g.GetOrNull<string>("dockerapp_namespace");
             StackName = g.GetOrNull<string>("dockerapp_stackname");
-            Settings = g.GetOrNull<string>("dockerapp_settings");
+            Parameters = g.GetOrNull<string>("dockerapp_parameters");
         }
 
         public void Save(Globals g)
@@ -95,8 +95,8 @@ namespace dockerappvsix
             g.VariablePersists["dockerapp_namespace"] = true;
             g["dockerapp_stackname"] = StackName;
             g.VariablePersists["dockerapp_stackname"] = true;
-            g["dockerapp_settings"] = Settings;
-            g.VariablePersists["dockerapp_settings"] = true;
+            g["dockerapp_parameters"] = Parameters;
+            g.VariablePersists["dockerapp_parameters"] = true;
         }
 
         private void OnPropertyChanged([CallerMemberName]string name = null)

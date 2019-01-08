@@ -14,7 +14,7 @@ namespace dockerappvsix
 {
     
 
-    internal sealed class CommandSettings
+    internal sealed class CommandParameters
     {
 
         public const int CommandId = 4130;
@@ -25,7 +25,7 @@ namespace dockerappvsix
 
         private readonly AsyncPackage _package;
         
-        private CommandSettings(AsyncPackage package, OleMenuCommandService commandService)
+        private CommandParameters(AsyncPackage package, OleMenuCommandService commandService)
         {
             _package = package ?? throw new ArgumentNullException(nameof(package));
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
@@ -35,7 +35,7 @@ namespace dockerappvsix
             commandService.AddCommand(menuItem);
         }
         
-        public static CommandSettings Instance
+        public static CommandParameters Instance
         {
             get;
             private set;
@@ -51,12 +51,12 @@ namespace dockerappvsix
 
         public static async Task InitializeAsync(AsyncPackage package)
         {
-            // Verify the current thread is the UI thread - the call to AddCommand in CommandSettings's constructor requires
+            // Verify the current thread is the UI thread - the call to AddCommand in CommandParameters's constructor requires
             // the UI thread.
             ThreadHelper.ThrowIfNotOnUIThread();
 
             OleMenuCommandService commandService = await package.GetServiceAsync((typeof(IMenuCommandService))) as OleMenuCommandService;
-            Instance = new CommandSettings(package, commandService);
+            Instance = new CommandParameters(package, commandService);
         }
         
         private async void ExecuteAsync(object sender, EventArgs e)
@@ -64,10 +64,10 @@ namespace dockerappvsix
             ThreadHelper.ThrowIfNotOnUIThread();
             DTE dte = await this._package.GetServiceAsync(typeof(DTE)) as DTE;
             Globals g = dte.Solution.Globals;
-            SettingsDialog sd = new SettingsDialog();
-            sd.Settings.LoadFromSolution(g);
+            ParametersDialog sd = new ParametersDialog();
+            sd.Parameters.LoadFromSolution(g);
             if (sd.ShowDialog() ?? false) {
-                sd.Settings.Save(g);
+                sd.Parameters.Save(g);
             }
         }
     }

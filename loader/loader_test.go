@@ -24,7 +24,7 @@ version: 1.0.0`
 services:
   web:
     image: nginx`
-	settings = `foo: bar`
+	parameters = `foo: bar`
 )
 
 func TestLoadFromSingleFile(t *testing.T) {
@@ -32,7 +32,7 @@ func TestLoadFromSingleFile(t *testing.T) {
 ---
 %s
 ---
-%s`, metadata, yaml, settings)
+%s`, metadata, yaml, parameters)
 	app, err := LoadFromSingleFile("my-app", strings.NewReader(singlefile))
 	assert.NilError(t, err)
 	assert.Assert(t, app != nil)
@@ -55,7 +55,7 @@ bar`))
 func TestLoadFromDirectory(t *testing.T) {
 	dir := fs.NewDir(t, "my-app",
 		fs.WithFile(internal.MetadataFileName, metadata),
-		fs.WithFile(internal.SettingsFileName, settings),
+		fs.WithFile(internal.ParametersFileName, parameters),
 		fs.WithFile(internal.ComposeFileName, yaml),
 	)
 	defer dir.Remove()
@@ -64,6 +64,18 @@ func TestLoadFromDirectory(t *testing.T) {
 	assert.Assert(t, app != nil)
 	assert.Assert(t, is.Equal(app.Path, dir.Path()))
 	assertAppContent(t, app)
+}
+
+func TestLoadFromDirectoryDeprecatedSettings(t *testing.T) {
+	dir := fs.NewDir(t, "my-app",
+		fs.WithFile(internal.MetadataFileName, metadata),
+		fs.WithFile(internal.DeprecatedSettingsFileName, parameters),
+		fs.WithFile(internal.ComposeFileName, yaml),
+	)
+	defer dir.Remove()
+	app, err := LoadFromDirectory(dir.Path())
+	assert.Assert(t, app == nil)
+	assert.ErrorContains(t, err, "\"settings.yml\" has been deprecated in favor of \"parameters.yml\"; please rename \"settings.yml\" to \"parameters.yml\"")
 }
 
 func TestLoadFromTarInexistent(t *testing.T) {
@@ -85,7 +97,7 @@ func createAppTar(t *testing.T) *fs.File {
 	t.Helper()
 	dir := fs.NewDir(t, "my-app",
 		fs.WithFile(internal.MetadataFileName, metadata),
-		fs.WithFile(internal.SettingsFileName, settings),
+		fs.WithFile(internal.ParametersFileName, parameters),
 		fs.WithFile(internal.ComposeFileName, yaml),
 	)
 	defer dir.Remove()
@@ -104,8 +116,8 @@ func assertContentIs(t *testing.T, actual []byte, expected string) {
 }
 
 func assertAppContent(t *testing.T, app *types.App) {
-	assert.Assert(t, is.Len(app.SettingsRaw(), 1))
-	assertContentIs(t, app.SettingsRaw()[0], settings)
+	assert.Assert(t, is.Len(app.ParametersRaw(), 1))
+	assertContentIs(t, app.ParametersRaw()[0], parameters)
 	assert.Assert(t, is.Len(app.Composes(), 1))
 	assertContentIs(t, app.Composes()[0], yaml)
 	assertContentIs(t, app.MetadataRaw(), metadata)

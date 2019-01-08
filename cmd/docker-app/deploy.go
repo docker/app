@@ -19,7 +19,7 @@ import (
 
 type deployOptions struct {
 	deployComposeFiles     []string
-	deploySettingsFiles    []string
+	deployParametersFiles  []string
 	deployEnv              []string
 	deployOrchestrator     string
 	deployKubeConfig       string
@@ -42,8 +42,8 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringArrayVarP(&opts.deploySettingsFiles, "settings-files", "f", []string{}, "Override settings files")
-	cmd.Flags().StringArrayVarP(&opts.deployEnv, "set", "s", []string{}, "Override settings values")
+	cmd.Flags().StringArrayVarP(&opts.deployParametersFiles, "parameters-files", "f", []string{}, "Override with parameters from files")
+	cmd.Flags().StringArrayVarP(&opts.deployEnv, "set", "s", []string{}, "Override parameters values")
 	cmd.Flags().StringVarP(&opts.deployOrchestrator, "orchestrator", "o", "swarm", "Orchestrator to deploy on (swarm, kubernetes)")
 	cmd.Flags().StringVarP(&opts.deployKubeConfig, "kubeconfig", "k", "", "Kubernetes config file to use")
 	cmd.Flags().StringVarP(&opts.deployNamespace, "namespace", "n", "default", "Kubernetes namespace to deploy into")
@@ -57,7 +57,7 @@ func deployCmd(dockerCli command.Cli) *cobra.Command {
 
 func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts deployOptions) error {
 	app, err := packager.Extract(appname,
-		types.WithSettingsFiles(opts.deploySettingsFiles...),
+		types.WithParametersFiles(opts.deployParametersFiles...),
 		types.WithComposeFiles(opts.deployComposeFiles...),
 	)
 	if err != nil {

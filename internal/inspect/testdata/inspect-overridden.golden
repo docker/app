@@ -4,6 +4,6 @@ Service (1) Replicas Ports Image
 ----------- -------- ----- -----
 web         1        80    nginx
 
-Setting (1) Value
------------ -----
-web.port    80
+Parameter (1) Value
+------------- -----
+web.port      80

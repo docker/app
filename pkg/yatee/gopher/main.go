@@ -5,8 +5,8 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 )
 
-func processJS(input, settings string) (string, string) {
-	res, err := yatee.ProcessStrings(input, settings)
+func processJS(input, parameters string) (string, string) {
+	res, err := yatee.ProcessStrings(input, parameters)
 	var errStr string
 	if err != nil {
 		errStr = err.Error()

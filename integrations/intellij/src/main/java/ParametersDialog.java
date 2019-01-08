@@ -3,7 +3,7 @@ import java.awt.event.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.ide.util.PropertiesComponent;
 
-public class SettingsDialog extends JDialog {
+public class ParametersDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -15,7 +15,7 @@ public class SettingsDialog extends JDialog {
     private JTextField tStackName;
     private boolean validated;
 
-    public SettingsDialog() {
+    public ParametersDialog() {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);

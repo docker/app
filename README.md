@@ -41,9 +41,9 @@ hello.dockerapp
 ```
 
 We created a new file `hello.dockerapp` that contains three YAML documents:
-- metadatas
+- metadata
 - the Compose file
-- settings for your application
+- parameters for your application
 
 It should look like this:
 
@@ -69,7 +69,7 @@ services:
 {}
 ```
 
-Let's edit the settings section and add the following default values for our application:
+Let's edit the parameters section and add the following default values for our application:
 
 ```yaml
 port: 5678
@@ -113,7 +113,7 @@ You can then use that Compose file like any other. You could save it to disk or 
 $ docker-app render | docker-compose -f - up
 ```
 
-This is where it gets interesting. We can override those settings at runtime, using the `--set` option. Let's specify different option and run `render` again:
+This is where it gets interesting. We can override those parameters at runtime, using the `--set` option. Let's specify different option and run `render` again:
 
 ```
 $ docker-app render --set version=0.2.3 --set port=4567 --set text="hello production"
@@ -131,7 +131,7 @@ services:
       protocol: tcp
 ```
 
-If you prefer you can create a standalone configuration file to store those settings. Let's create `prod.yml` with the following contents:
+If you prefer you can create a standalone configuration file to store those parameters. Let's create `prod.yml` with the following contents:
 
 ```yaml
 version: 0.2.3
@@ -164,7 +164,7 @@ cp docker-app-linux /usr/local/bin/docker-app
 
 If you prefer having the three core documents in separate YAML files, omit the `-s` / `--single-file` option to
 the `docker-app init` command. This will create a directory instead of a single file, containing
-`metadata.yml`, `docker-compose.yml` and `settings.yml`.
+`metadata.yml`, `docker-compose.yml` and `parameters.yml`.
 
 Converting between the two formats can be achieved by using the `docker-app split` and `docker-app merge` commands.
 
@@ -197,7 +197,7 @@ $ docker-app inspect myhubuser/hello
 
 We have lots of ideas for making Compose-based applications easier to share and reuse, and making applications a first-class part of the Docker toolchain. Please let us know what you think about this initial release and about any of the ideas below:
 
-* Introducing environments to the settings file
+* Introducing environments to the parameters file
 * Docker images which launch the application when run
 * Built-in commands for running applications
 * Saving required images into the application artifact to support offline installation
@@ -212,9 +212,10 @@ $ docker-app
 
 Usage:  docker-app [OPTIONS] COMMAND
 
-Docker Application Packages
+Build and deploy Docker Application Packages.
 
 Options:
+  -c, --context string     context to use to connect to the daemon (overrides host flag, DOCKER_HOST env var and default context set with "docker context use")
   -D, --debug              Enable debug mode
   -H, --host list          Daemon socket(s) to connect to
   -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
@@ -229,7 +230,7 @@ Commands:
   completion  Generates completion scripts for the specified shell (bash or zsh)
   deploy      Deploy or update an application
   init        Start building a Docker application
-  inspect     Shows metadata, settings and a summary of the compose file for a given application
+  inspect     Shows metadata, parameters and a summary of the compose file for a given application
   merge       Merge a multi-file application into a single file
   push        Push the application to a registry
   render      Render the Compose file for the application

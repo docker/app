@@ -66,7 +66,7 @@ namespace dockerappvsix
             {
                 string app = file.FileName;
                 string f = Path.GetFileName(app);
-                if (f == "docker-compose.yml" || f == "settings.yml" || f == "metadata.yml")
+                if (f == "docker-compose.yml" || f == "parameters.yml" || f == "metadata.yml")
                     app = Path.GetDirectoryName(app);
                 message = "Docker Application set to " + app;
                 g["dockerapp_applocation"] = app;
