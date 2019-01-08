@@ -13,4 +13,4 @@ wordpress:
     replicas: 0
 volumes:
   db_data:
-    name: db_data
+    name: db-data

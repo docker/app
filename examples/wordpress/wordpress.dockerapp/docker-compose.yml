@@ -10,7 +10,7 @@ services:
       MYSQL_USER: ${mysql.user.name}
       MYSQL_PASSWORD: ${mysql.user.password}
     volumes:
-      - source: db_data
+      - source: db-data
         target: /var/lib/mysql
         type: volume
     networks:
@@ -40,7 +40,7 @@ services:
       - mysql
 
 volumes:
-  db_data:
+  db-data:
     name: ${volumes.db_data.name}
 
 networks:

@@ -8,7 +8,7 @@ services:
       MYSQL_USER: ${mysql.user.name}
       MYSQL_PASSWORD: ${mysql.user.password}
     volumes:
-      - source: db_data
+      - source: db-data
         target: /var/lib/mysql
         type: volume
     deploy:
@@ -27,5 +27,5 @@ services:
       replicas: ${wordpress.scale.replicas}
 
 volumes:
-  db_data:
+  db-data:
     name: ${volumes.db_data.name}
