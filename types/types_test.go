@@ -217,7 +217,7 @@ func TestWithAttachmentsIncludingNestedCoreFiles(t *testing.T) {
 func TestValidateBrokenMetadata(t *testing.T) {
 	r := strings.NewReader(`#version: 0.1.0-missing
 name: _INVALID-name
-namespace: myHubUsername
+namespace: myhubusername
 maintainers:
     - name: user
       email: user@email.com
