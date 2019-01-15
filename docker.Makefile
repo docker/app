@@ -1,11 +1,11 @@
 include vars.mk
 
-LINT_IMAGE_NAME := $(BIN_NAME)-lint:$(TAG)
-DEV_IMAGE_NAME := $(BIN_NAME)-dev:$(TAG)
-BIN_IMAGE_NAME := $(BIN_NAME)-bin:$(TAG)
-CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(TAG)
-E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(TAG)
-GRADLE_IMAGE_NAME := $(BIN_NAME)-gradle:$(TAG)
+LINT_IMAGE_NAME := $(BIN_NAME)-lint:$(BUILD_TAG)
+DEV_IMAGE_NAME := $(BIN_NAME)-dev:$(BUILD_TAG)
+BIN_IMAGE_NAME := $(BIN_NAME)-bin:$(BUILD_TAG)
+CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(BUILD_TAG)
+E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(BUILD_TAG)
+GRADLE_IMAGE_NAME := $(BIN_NAME)-gradle:$(BUILD_TAG)
 
 BIN_CTNR_NAME := $(BIN_NAME)-bin-$(TAG)
 CROSS_CTNR_NAME := $(BIN_NAME)-cross-$(TAG)
@@ -13,9 +13,13 @@ E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
 COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
 SCHEMAS_CTNR_NAME := $(BIN_NAME)-schemas-$(TAG)
 
-BUILD_ARGS="--build-arg=EXPERIMENTAL=$(EXPERIMENTAL)"
+BUILD_ARGS=--build-arg=EXPERIMENTAL=$(EXPERIMENTAL) --build-arg=TAG=$(TAG) --build-arg=COMMIT=$(COMMIT)
 
 PKG_PATH := /go/src/$(PKG_NAME)
+
+CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(BUILD_TAG)
+PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(TAG)
+CNAB_BASE_INVOCATION_IMAGE_PATH := _build/invocation-image.tar
 
 .DEFAULT: all
 all: cross test
@@ -64,7 +68,7 @@ test: test-unit test-e2e ## run all tests
 test-unit: build_dev_image ## run unit tests
 	docker run --rm $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) test-unit
 
-test-e2e: build_dev_image ## run end-to-end tests
+test-e2e: build_dev_image invocation-image ## run end-to-end tests
 	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
@@ -95,7 +99,18 @@ specification/bindata.go: specification/schemas/*.json build_dev_image
 
 schemas: specification/bindata.go ## generate specification/bindata.go from json schemas
 
+invocation-image:
+	docker build $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME) .
+
+save-invocation-image: invocation-image
+	@$(call mkdir,_build)
+	docker save $(CNAB_BASE_INVOCATION_IMAGE_NAME) -o $(CNAB_BASE_INVOCATION_IMAGE_PATH)
+
+push-invocation-image:
+	docker tag $(CNAB_BASE_INVOCATION_IMAGE_NAME) $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)
+	docker push $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)
+
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help
+.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help invocation-image save-invocation-image push-invocation-image

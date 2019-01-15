@@ -1,5 +1,7 @@
 * text=auto
-*.sh text eol=lf
-*.go text eol=lf
+* text eol=lf
+*.png binary
 *.exe binary
+*.ico binary
+*.jar binary
 vendor/** -text
