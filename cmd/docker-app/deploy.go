@@ -64,7 +64,7 @@ func runDeploy(dockerCli command.Cli, flags *pflag.FlagSet, appname string, opts
 		return err
 	}
 	defer app.Cleanup()
-	deployOrchestrator, err := command.GetStackOrchestrator(opts.deployOrchestrator, dockerCli.ConfigFile().StackOrchestrator, dockerCli.Err())
+	deployOrchestrator, err := command.GetStackOrchestrator(opts.deployOrchestrator, "", dockerCli.ConfigFile().StackOrchestrator, dockerCli.Err())
 	if err != nil {
 		return err
 	}

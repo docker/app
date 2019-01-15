@@ -2,6 +2,7 @@ package packager
 
 import (
 	"archive/tar"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,26 +10,70 @@ import (
 	"path/filepath"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/types"
 	"github.com/docker/docker/pkg/archive"
 )
+
+var dockerFile = `FROM docker/cnab-app-base:` + internal.Version + `
+COPY . .`
+
+const dockerIgnore = "Dockerfile"
 
 func tarAdd(tarout *tar.Writer, path, file string) error {
 	payload, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
 	}
+	return tarAddBytes(tarout, path, payload)
+}
+
+func tarAddBytes(tarout *tar.Writer, path string, payload []byte) error {
 	h := &tar.Header{
 		Name:     path,
 		Size:     int64(len(payload)),
 		Mode:     0644,
 		Typeflag: tar.TypeReg,
 	}
-	err = tarout.WriteHeader(h)
+	err := tarout.WriteHeader(h)
 	if err != nil {
 		return err
 	}
 	_, err = tarout.Write(payload)
 	return err
+}
+
+// PackInvocationImageContext creates a Docker build context for building a CNAB invocation image
+func PackInvocationImageContext(app *types.App, target io.Writer) error {
+	tarout := tar.NewWriter(target)
+	defer tarout.Close()
+	prefix := fmt.Sprintf("%s%s/", app.Metadata().Name, internal.AppExtension)
+	if len(app.Composes()) != 1 {
+		return errors.New("app should have one and only one compose file")
+	}
+	if len(app.ParametersRaw()) != 1 {
+		return errors.New("app should have one and only parameters file")
+	}
+	if err := tarAddBytes(tarout, "Dockerfile", []byte(dockerFile)); err != nil {
+		return err
+	}
+	if err := tarAddBytes(tarout, ".dockerignore", []byte(dockerIgnore)); err != nil {
+		return err
+	}
+	if err := tarAddBytes(tarout, prefix+internal.MetadataFileName, app.MetadataRaw()); err != nil {
+		return err
+	}
+	if err := tarAddBytes(tarout, prefix+internal.ComposeFileName, app.Composes()[0]); err != nil {
+		return err
+	}
+	if err := tarAddBytes(tarout, prefix+internal.ParametersFileName, app.ParametersRaw()[0]); err != nil {
+		return err
+	}
+	for _, attachment := range app.Attachments() {
+		if err := tarAdd(tarout, prefix+attachment.Path(), filepath.Join(app.Path, attachment.Path())); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Pack packs the app as a single file
