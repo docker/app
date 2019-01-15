@@ -37,3 +37,11 @@ RUN make EXPERIMENTAL=${EXPERIMENTAL} cross
 FROM cross AS e2e-cross
 ARG EXPERIMENTAL="off"
 RUN make EXPERIMENTAL=${EXPERIMENTAL} e2e-cross
+
+# builder of invocation image entrypoint
+FROM build AS invocation-build
+COPY . .
+ARG EXPERIMENTAL="off"
+ARG TAG
+ARG COMMIT
+RUN make EXPERIMENTAL=${EXPERIMENTAL} TAG=${TAG} COMMIT=${COMMIT} bin/run

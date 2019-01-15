@@ -29,7 +29,13 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[constraint]]
   name = "github.com/docker/cli"
-  branch = "master"
+  branch = "expose-stack-commands-1500"
+  source = "github.com/silvin-lubecki/cli"
+
+[[constraint]]
+  name = "github.com/deis/duffle"
+  branch = "dockercon-version"
+  source = "git@github.com:simonferquel/duffle.git"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
