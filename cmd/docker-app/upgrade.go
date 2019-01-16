@@ -56,7 +56,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	}
 
 	if opts.bundleOrDockerApp != "" {
-		b, err := resolveBundle(dockerCli, opts.namespace, opts.bundleOrDockerApp, opts.insecure)
+		b, err := resolveBundle(dockerCli, opts.namespace, opts.bundleOrDockerApp)
 		if err != nil {
 			return err
 		}

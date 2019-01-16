@@ -13,7 +13,6 @@ const (
 	cnabActionUninstall = cnabAction("uninstall")
 	cnabActionUpgrade   = cnabAction("upgrade")
 	cnabActionStatus    = cnabAction("status")
-	cnabActionInspect   = cnabAction("inspect")
 )
 
 type cnabOperation struct {

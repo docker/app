@@ -145,8 +145,46 @@ You can then run using that configuration file like so:
 $ docker-app render -f prod.yml
 ```
 
-
 More examples are available in the [examples](examples) directory.
+
+## CNAB
+
+Under the hood `docker-app` produces a CNAB bundle (a docker invocation image and a `bundle.json`) from an Application Package, but is also a generic CNAB client.
+CNAB proposes four actions, and docker-app adds them as commands:
+- `install`
+- `upgrade`
+- `status`
+- `uninstall`
+
+**Note**: These four commands needs a Docker Context to know which daemon or orchestrator to target.
+
+```sh
+$ docker  context create swarm --description "swarm context" --default-stack-orchestrator=swarm --docker=host=unix:///var/run/docker.sock
+swarm
+Successfully created context "swarm"
+
+$ docker context ls
+NAME                DESCRIPTION                               DOCKER ENDPOINT               KUBERNETES ENDPOINT   ORCHESTRATOR
+default             Current DOCKER_HOST based configuration
+swarm *             swarm context                             unix:///var/run/docker.sock                         swarm
+```
+
+Here is an example installing an application package, querying a status and then uninstalling it:
+```sh
+$ docker-app install examples/hello-world/hello-world.dockerapp --name hello --target-context=swarm
+Creating network hello_default
+Creating service hello_hello
+
+$ export DOCKER_TARGET_CONTEXT=swarm
+
+$ docker-app status hello
+ID                  NAME                MODE                REPLICAS            IMAGE                        PORTS
+0m1wn7jrgkgj        hello_hello         replicated          1/1                 hashicorp/http-echo:latest   *:8080->5678/tcp
+
+$ docker-app uninstall hello
+Removing service hello_hello
+Removing network hello_default
+```
 
 ## Installation
 
@@ -158,7 +196,7 @@ tar xf docker-app-linux.tar.gz
 cp docker-app-linux /usr/local/bin/docker-app
 ```
 
-**Note:** To use Application Packages as images (i.e.: `save`, `push`, or `deploy` when package is not present locally) on Windows, one must be in Linux container mode.
+**Note:** To use Application Packages as images (i.e.: `save`, `push`, or `install` when package is not present locally) on Windows, one must be in Linux container mode.
 
 ## Single file or directory representation
 
@@ -172,7 +210,7 @@ Note that you cannot store attachments in the single file format. If you want to
 
 ## Attachments (Storing additional files)
 
-If you want to store additional files in the application package, such as `prod.yml`, `test.yml` or other config files, use the directory format and simply place these files inside the *.dockerapp/ directory. These will be bundled into the package when using `docker-app push`
+If you want to store additional files in the application package, such as `prod.yml`, `test.yml` or other config files, use the directory format and simply place these files inside the *.dockerapp/ directory. These will be bundled into the package when using `docker-app push`.
 
 ## Sharing your application on the Hub
 
@@ -215,26 +253,30 @@ Usage:  docker-app [OPTIONS] COMMAND
 Build and deploy Docker Application Packages.
 
 Options:
-  -c, --context string     context to use to connect to the daemon (overrides host flag, DOCKER_HOST env var and default context set with "docker context use")
+  -c, --context string     Name of the context to use to connect to the daemon (overrides DOCKER_HOST env var and default context set with "docker context use")
   -D, --debug              Enable debug mode
   -H, --host list          Daemon socket(s) to connect to
   -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
       --tls                Use TLS; implied by --tlsverify
-      --tlscacert string   Trust certs signed only by this CA (default "/Users/chris/.docker/ca.pem")
-      --tlscert string     Path to TLS certificate file (default "/Users/chris/.docker/cert.pem")
-      --tlskey string      Path to TLS key file (default "/Users/chris/.docker/key.pem")
+      --tlscacert string   Trust certs signed only by this CA (default "/Users/silvin/.docker/ca.pem")
+      --tlscert string     Path to TLS certificate file (default "/Users/silvin/.docker/cert.pem")
+      --tlskey string      Path to TLS key file (default "/Users/silvin/.docker/key.pem")
       --tlsverify          Use TLS and verify the remote
   -v, --version            Print version information
 
 Commands:
+  bundle      Create a CNAB invocation image and bundle.json for the application.
   completion  Generates completion scripts for the specified shell (bash or zsh)
-  deploy      Deploy or update an application
   init        Start building a Docker application
   inspect     Shows metadata, parameters and a summary of the compose file for a given application
+  install     Install an application
   merge       Merge a multi-file application into a single file
   push        Push the application to a registry
   render      Render the Compose file for the application
   split       Split a single-file application into multiple files
+  status      Get an application status
+  uninstall   Uninstall an application
+  upgrade     Upgrade an installed application
   validate    Checks the rendered application is syntactically correct
   version     Print version information
 

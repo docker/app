@@ -103,7 +103,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err
 	}
 
-	bndl, err := resolveBundle(dockerCli, opts.namespace, appname, opts.insecure)
+	bndl, err := resolveBundle(dockerCli, opts.namespace, appname)
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,7 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, namespace, name string)
 	return makeBundleFromApp(dockerCli, app, namespace, "")
 }
 
-func resolveBundle(dockerCli command.Cli, namespace, name string, insecure bool) (*bundle.Bundle, error) {
+func resolveBundle(dockerCli command.Cli, namespace, name string) (*bundle.Bundle, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
 	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
@@ -267,14 +267,6 @@ func getTargetContext(optstargetContext string) string {
 	return targetContext
 }
 
-func stringsKVToStringInterface(src map[string]string) map[string]interface{} {
-	result := map[string]interface{}{}
-	for k, v := range src {
-		result[k] = v
-	}
-	return result
-}
-
 func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
 	creds := map[string]string{}
 	for _, file := range namedCredentialsets {
@@ -306,7 +298,7 @@ func prepareCredentialSet(contextName string, contextStore store.Store, b *bundl
 	_, requiresDockerContext := b.Credentials["docker.context"]
 	_, hasDockerContext := creds["docker.context"]
 	if requiresDockerContext && !hasDockerContext {
-		return nil, errors.New("no target context specified. use use --target-context= or DOCKER_TARGET_CONTEXT= to define it")
+		return nil, errors.New("no target context specified. Use --target-context= or DOCKER_TARGET_CONTEXT= to define it")
 	}
 	return creds, nil
 }
