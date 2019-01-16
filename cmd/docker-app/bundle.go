@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/deis/duffle/pkg/bundle"
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"

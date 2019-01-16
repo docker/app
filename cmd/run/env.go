@@ -32,7 +32,10 @@ func setupDockerContext() (command.Cli, error) {
 	if err := contextstore.Import("cnab", s, f); err != nil {
 		return nil, err
 	}
-	cli := command.NewDockerCli(os.Stdin, os.Stdout, os.Stderr, false, nil)
+	cli, err := command.NewDockerCli()
+	if err != nil {
+		return nil, err
+	}
 	return cli, cli.Initialize(&cliflags.ClientOptions{
 		Common: &cliflags.CommonOptions{
 			Context: "cnab",

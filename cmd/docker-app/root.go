@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
@@ -83,4 +84,28 @@ func dockerPreRun(opts *cliflags.ClientOptions) {
 	if opts.Common.Debug {
 		debug.Enable()
 	}
+}
+
+func muteDockerCli(dockerCli command.Cli) {
+	dockerCli.Apply(command.WithCombinedStreams(ioutil.Discard))
+}
+
+type parametersOptions struct {
+	parametersFiles []string
+	env             []string
+}
+
+func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
+	flags.StringArrayVarP(&o.parametersFiles, "parameters-files", "f", []string{}, "Override parameters files")
+	flags.StringArrayVarP(&o.env, "set", "s", []string{}, "Override parameters values")
+}
+
+type credentialOptions struct {
+	targetContext  string
+	credentialsets []string
+}
+
+func (o *credentialOptions) addFlags(flags *pflag.FlagSet) {
+	flags.StringVar(&o.targetContext, "target-context", "", "Context on which the application is executed")
+	flags.StringArrayVarP(&o.credentialsets, "credential-set", "c", []string{}, "Use a duffle credentialset (either a YAML file, or a credential set present in the duffle credential store)")
 }

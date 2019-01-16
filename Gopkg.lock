@@ -29,6 +29,30 @@
   version = "v0.4.11"
 
 [[projects]]
+  digest = "1:22efafa7722ed855e8bab8039d2ee6b121971c2945804ec759f5ff1b1681ad08"
+  name = "github.com/Microsoft/hcsshim"
+  packages = [
+    ".",
+    "internal/guestrequest",
+    "internal/guid",
+    "internal/hcs",
+    "internal/hcserror",
+    "internal/hns",
+    "internal/interop",
+    "internal/logfields",
+    "internal/longpath",
+    "internal/mergemaps",
+    "internal/safefile",
+    "internal/schema1",
+    "internal/schema2",
+    "internal/timeout",
+    "internal/wclayer",
+  ]
+  pruneopts = "NUT"
+  revision = "79a8f772c4265236cf9da6af7f766b5caf2afb80"
+  version = "v0.8.4"
+
+[[projects]]
   branch = "master"
   digest = "1:7da1a26e347165227c79dfb10b90b3b5dedb6cbae50e88cdb81f5b6259b5b951"
   name = "github.com/Nvveen/Gotty"
@@ -64,12 +88,56 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:ead0a9a28c7fe1f1a79b433ce62e6765a94cd2874df2861d1ff39f5ee04825fc"
+  digest = "1:c41ccacec3d1871a9a76c0a105cb4e50bd7d6489d91f0262e37ab66c3d79cc6a"
   name = "github.com/containerd/containerd"
   packages = [
+    ".",
+    "api/services/containers/v1",
+    "api/services/content/v1",
+    "api/services/diff/v1",
+    "api/services/events/v1",
+    "api/services/images/v1",
+    "api/services/introspection/v1",
+    "api/services/leases/v1",
+    "api/services/namespaces/v1",
+    "api/services/snapshots/v1",
+    "api/services/tasks/v1",
+    "api/services/version/v1",
+    "api/types",
+    "api/types/task",
+    "archive",
+    "archive/compression",
+    "cio",
+    "containers",
+    "content",
+    "content/proxy",
+    "defaults",
+    "diff",
     "errdefs",
+    "events",
+    "events/exchange",
+    "filters",
+    "identifiers",
+    "images",
+    "images/archive",
+    "leases",
+    "leases/proxy",
     "log",
+    "mount",
+    "namespaces",
+    "oci",
+    "pkg/dialer",
     "platforms",
+    "plugin",
+    "reference",
+    "remotes",
+    "remotes/docker",
+    "remotes/docker/schema1",
+    "rootfs",
+    "runtime/linux/runctypes",
+    "snapshots",
+    "snapshots/proxy",
+    "sys",
   ]
   pruneopts = "NUT"
   revision = "9b32062dc1f5a7c2564315c269b5059754f12b9d"
@@ -77,17 +145,42 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c105cbb54ef4f64e0b30ed51b03fa9dd2cfba6d5e8a08eeac9b2be919457097c"
+  digest = "1:792024d8e8fabed9bbfd7d86b9dc71855854272a5f5eb52d0836be492fb13118"
   name = "github.com/containerd/continuity"
   packages = [
     "devices",
     "driver",
+    "fs",
     "pathdriver",
     "syscallx",
     "sysx",
   ]
   pruneopts = "NUT"
   revision = "0377f7d767206f3a9e8881d0f02267b0d89c7a62"
+
+[[projects]]
+  digest = "1:a72272dfefbb22c87cda3dbefbb256741d861d2fb727210a66e0df0df6084b30"
+  name = "github.com/containerd/cri"
+  packages = ["pkg/util"]
+  pruneopts = "NUT"
+  revision = "f3687c59470b76ee57c90d4b3dd92888dec58c2b"
+  version = "v1.11.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:dd731323a802a9d3e8f037a4531c4e8a9ab417a8e97a3a7e7ff2214e2a8b6248"
+  name = "github.com/containerd/fifo"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "650d792183512bf92167787990b8f08a9175b3df"
+
+[[projects]]
+  branch = "master"
+  digest = "1:07ac073876dbf7df80789ba4c2959a969200b34875a34fc13848f76d60b51551"
+  name = "github.com/containerd/typeurl"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "461401dc8f19d80baa4b70178935e4501286c00b"
 
 [[projects]]
   digest = "1:9e2dbc126e8e5314cba3ab654b2183376dc81cb657ca8c588f86990f5da88cbc"
@@ -106,17 +199,26 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "dockercon-version"
-  digest = "1:96b6594299245f764ecfc93ac72d1970834eb4c37f49f880d1f4bc06810f5289"
-  name = "github.com/deis/duffle"
-  packages = ["pkg/bundle"]
+  branch = "master-docker-app"
+  digest = "1:00492a2d9a8dd69a2c1c882ccfc90b60420b014ea57adc12bcef91b4f92c9008"
+  name = "github.com/deislabs/duffle"
+  packages = [
+    "pkg/action",
+    "pkg/bundle",
+    "pkg/claim",
+    "pkg/credentials",
+    "pkg/driver",
+    "pkg/duffle/home",
+    "pkg/loader",
+    "pkg/signature",
+    "pkg/utils/crud",
+  ]
   pruneopts = "NUT"
-  revision = "74ea41e356407e163d476bf3e111ffd1f41524ab"
-  source = "git@github.com:simonferquel/duffle.git"
+  revision = "85a7e9ff937150d0e4cae5acf36bfb2598a536cd"
+  source = "github.com/silvin-lubecki/duffle"
 
 [[projects]]
-  branch = "expose-stack-commands-1500"
-  digest = "1:934affc0c01e14833fa0fabe838af5627c10e4da99d91cb9cd2717f4989ffa9e"
+  digest = "1:657236b6a87fbaf9e27e2029be1b4f49fc6367f61a4ac106c012576c414cbcc0"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -155,7 +257,10 @@
     "cli/manifest/store",
     "cli/manifest/types",
     "cli/registry/client",
+    "cli/streams",
     "cli/trust",
+    "internal/containerizedengine",
+    "internal/versions",
     "kubernetes",
     "opts",
     "service/logs",
@@ -163,8 +268,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "dcd86e41f081c20d1e1a21e7732a0d63caa9ecc1"
-  source = "github.com/silvin-lubecki/cli"
+  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
 [[projects]]
   digest = "1:26cd5aeffe3ab0eb5d0275b3e9095cf2b4f1ca79d0ad787386a7bb39ce91b75d"
@@ -210,7 +314,8 @@
   revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
 
 [[projects]]
-  digest = "1:dbff9d4a36a22c2a0ce719cce0f40681f6a5576de7c68894b83bd98e964c8802"
+  branch = "master"
+  digest = "1:b1ebf6d2021d75519a0e508774eb0df1a9f25ddcef2a3a75c4e3d662fc0cd773"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -240,6 +345,7 @@
     "image/v1",
     "layer",
     "oci",
+    "oci/caps",
     "pkg/archive",
     "pkg/chrootarchive",
     "pkg/containerfs",
@@ -272,7 +378,7 @@
     "registry/resumable",
   ]
   pruneopts = "NUT"
-  revision = "53e55db9d3f0f0910ea95515222c8a35e106f10e"
+  revision = "5ec31380a5d3ea92fc68e53cd1fc96f11ac02e6e"
 
 [[projects]]
   digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
@@ -365,6 +471,14 @@
   pruneopts = "NUT"
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:dfd1bfac4ef78bce8efe6c52548baaaba18f634c0101581f4773336c653289c2"
+  name = "github.com/gogo/googleapis"
+  packages = ["google/rpc"]
+  pruneopts = "NUT"
+  revision = "8558fb44d2f1fc223118afc694129d2c2d2924d1"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:1f05c5d4f7fe7a5ce1c509907a9f367f89e0c23de046263b8e298a7e350d0153"
@@ -586,6 +700,14 @@
   revision = "39771216ff4c63d11f5e604076f9c45e8be1067b"
 
 [[projects]]
+  digest = "1:deffbc414da9eff0c34c5d2d97c89f6647432e1dd44c22acd9130be7c4e9401e"
+  name = "github.com/oklog/ulid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "02a8604050d8466dd915307496174adb9be4593a"
+  version = "v1.3.1"
+
+[[projects]]
   digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
   name = "github.com/opencontainers/go-digest"
   packages = ["."]
@@ -594,9 +716,10 @@
   version = "v1.0.0-rc1"
 
 [[projects]]
-  digest = "1:11db38d694c130c800d0aefb502fb02519e514dc53d9804ce51d1ad25ec27db6"
+  digest = "1:70711188c19c53147099d106169d6a81941ed5c2658651432de564a7d60fd288"
   name = "github.com/opencontainers/image-spec"
   packages = [
+    "identity",
     "specs-go",
     "specs-go/v1",
   ]
@@ -605,7 +728,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:665148313bcef8bee229ade70b3d345344121db27777e3b1edb78ca5088bb9c4"
+  digest = "1:6e97f51acb1a79b2e97f7941e226389462d95bd5c28f0ba5c541e5ebe905bbe3"
   name = "github.com/opencontainers/runc"
   packages = [
     "libcontainer/configs",
@@ -614,8 +737,8 @@
     "libcontainer/user",
   ]
   pruneopts = "NUT"
-  revision = "4fc53a81fb7c994640722ac585fa9ca548971871"
-  version = "v1.0.0-rc5"
+  revision = "ccb5efd37fb7c86364786e9137e22948751de7ed"
+  version = "v1.0.0-rc6"
 
 [[projects]]
   digest = "1:57234a321bf1f8f98a8a9a5122a2404cc60d0800516f4ab7a7b2375e4b2d19ea"
@@ -715,6 +838,14 @@
   revision = "3ebe029320b2676d667ae88da602a5f854788a8a"
 
 [[projects]]
+  branch = "master"
+  digest = "1:e14e467ed00ab98665623c5060fa17e3d7079be560ffc33cabafd05d35894f05"
+  name = "github.com/syndtr/gocapability"
+  packages = ["capability"]
+  pruneopts = "NUT"
+  revision = "d98352740cb2c55f81556b63d4a1ec64c5a319c2"
+
+[[projects]]
   digest = "1:5657d02714d03999f98887942ca12e7d0492676d4485966a5a7819b84887790f"
   name = "github.com/theupdateframework/notary"
   packages = [
@@ -782,9 +913,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cb77e5934866333fa0784326a57e64c4da128001c94fbd1d29819d79bd3b1087"
+  digest = "1:4b660675009b1bb13d0faea73f8356cd81b5f560f40a35b366acfc6f63d35674"
   name = "golang.org/x/crypto"
   packages = [
+    "cast5",
+    "openpgp",
+    "openpgp/armor",
+    "openpgp/clearsign",
+    "openpgp/elgamal",
+    "openpgp/errors",
+    "openpgp/packet",
+    "openpgp/s2k",
     "pbkdf2",
     "ssh/terminal",
   ]
@@ -823,6 +962,14 @@
   ]
   pruneopts = "NUT"
   revision = "36a7019397c4c86cf59eeab3bc0d188bac444277"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b521f10a2d8fa85c04a8ef4e62f2d1e14d303599a55d64dabf9f5a02f84d35eb"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  pruneopts = "NUT"
+  revision = "37e7f081c4d4c64e13b10787722085407fe5d15f"
 
 [[projects]]
   branch = "master"
@@ -904,26 +1051,45 @@
   revision = "02b4e95473316948020af0b7a4f0f22c73929b0e"
 
 [[projects]]
-  digest = "1:b9ba2a8f52d3479fd19feeafed21d9b3c4810b98e02d746db3bf08389f0c993d"
+  digest = "1:4e459e7e437c4ad1ae163acec3d1359bfc88d22142764ca5893d8d380e79988d"
   name = "google.golang.org/grpc"
   packages = [
     ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
+    "connectivity",
     "credentials",
-    "grpclb/grpc_lb_v1",
+    "credentials/internal",
+    "encoding",
+    "encoding/proto",
     "grpclog",
+    "health/grpc_health_v1",
     "internal",
+    "internal/backoff",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
     "keepalive",
     "metadata",
     "naming",
     "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
     "stats",
     "status",
     "tap",
-    "transport",
   ]
   pruneopts = "NUT"
-  revision = "v1.3.0"
+  revision = "a02b0774206b209466313a0b525d2c738fe407eb"
+  version = "v1.18.0"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -1130,7 +1296,14 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
-    "github.com/deis/duffle/pkg/bundle",
+    "github.com/deislabs/duffle/pkg/action",
+    "github.com/deislabs/duffle/pkg/bundle",
+    "github.com/deislabs/duffle/pkg/claim",
+    "github.com/deislabs/duffle/pkg/credentials",
+    "github.com/deislabs/duffle/pkg/driver",
+    "github.com/deislabs/duffle/pkg/duffle/home",
+    "github.com/deislabs/duffle/pkg/loader",
+    "github.com/deislabs/duffle/pkg/utils/crud",
     "github.com/docker/cli/cli",
     "github.com/docker/cli/cli/command",
     "github.com/docker/cli/cli/command/stack",
@@ -1157,7 +1330,7 @@
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/distribution",
     "github.com/docker/docker/pkg/archive",
-    "github.com/docker/docker/pkg/term",
+    "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/gopherjs/gopherjs/js",

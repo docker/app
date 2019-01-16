@@ -25,17 +25,17 @@ required = ["github.com/wadey/gocovmerge"]
 # We need > 0.1.1 as it depends on uppercase Sirupsen/logrus.
 [[override]]
   name = "github.com/opencontainers/runc"
-  version = "v1.0.0-rc5"
+  version = "v1.0.0-rc6"
 
-[[constraint]]
+[[override]]
   name = "github.com/docker/cli"
-  branch = "expose-stack-commands-1500"
-  source = "github.com/silvin-lubecki/cli"
+  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
-[[constraint]]
-  name = "github.com/deis/duffle"
-  branch = "dockercon-version"
-  source = "git@github.com:simonferquel/duffle.git"
+# Waiting for https://github.com/deislabs/duffle/pull/617 to be merged
+[[override]]
+  name = "github.com/deislabs/duffle"
+  branch = "master-docker-app"
+  source = "github.com/silvin-lubecki/duffle"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
@@ -56,10 +56,6 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "github.com/docker/go-metrics"
   revision = "d466d4f6fd960e01820085bd7e1a24426ee7ef18"
-
-[[override]]
-  name = "github.com/docker/docker"
-  revision = "53e55db9d3f0f0910ea95515222c8a35e106f10e"
 
 [[override]]
   name = "github.com/docker/distribution"
@@ -84,10 +80,6 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "k8s.io/client-go"
   revision = "kubernetes-1.11.1"
-
-[[override]]
-  name = "google.golang.org/grpc"
-  revision = "v1.3.0"
 
 # This is using a fork waiting for go-yaml/yaml#375 to be merged
 # This PR allows to set a max decoded value, thus not being exposed to yaml bombs

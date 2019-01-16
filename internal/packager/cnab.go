@@ -3,7 +3,7 @@ package packager
 import (
 	"fmt"
 
-	"github.com/deis/duffle/pkg/bundle"
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/types"
 )
 
