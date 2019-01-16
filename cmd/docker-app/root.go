@@ -44,7 +44,7 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 // addCommands adds all the commands from cli/command to the root command
 func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 	cmd.AddCommand(
-		deployCmd(dockerCli),
+		installCmd(dockerCli),
 		initCmd(),
 		inspectCmd(dockerCli),
 		mergeCmd(dockerCli),

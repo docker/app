@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deis/duffle/pkg/action"
-	"github.com/deis/duffle/pkg/bundle"
-	"github.com/deis/duffle/pkg/claim"
-	"github.com/deis/duffle/pkg/credentials"
-	"github.com/deis/duffle/pkg/driver"
-	"github.com/deis/duffle/pkg/duffle/home"
-	"github.com/deis/duffle/pkg/loader"
-	"github.com/deis/duffle/pkg/utils/crud"
+	"github.com/deislabs/duffle/pkg/action"
+	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/duffle/pkg/claim"
+	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/deislabs/duffle/pkg/driver"
+	"github.com/deislabs/duffle/pkg/duffle/home"
+	"github.com/deislabs/duffle/pkg/loader"
+	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types/parameters"
@@ -85,7 +85,7 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	opts.parametersOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVarP(&opts.orchestrator, "orchestrator", "o", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "Namespace to use (default: namespace in metadata)")
-	cmd.Flags().StringVar(&opts.kubeNamespace, "kube-namespace", "default", "Kubernetes namespace to install into")
+	cmd.Flags().StringVar(&opts.kubeNamespace, "kubernetes-namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Installation name (defaults to application name)")
 	cmd.Flags().StringVar(&opts.targetContext, "target-context", "", "Context on which to install the application")
 	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
@@ -248,8 +248,7 @@ func resolveBundle(dockerCli command.Cli, namespace, name string, insecure bool)
 	case nameKindDir, nameKindEmpty:
 		return extractAndLoadAppBasedBundle(dockerCli, namespace, name)
 	case nameKindReference:
-		// revert to local duffle bundle store or pull the bundle image
-		return pullBundle(dockerCli, name, false, insecure)
+		// TODO: pull the bundle
 	}
 	return nil, fmt.Errorf("could not resolve bundle %q", name)
 }
@@ -262,7 +261,7 @@ func getTargetContext(optstargetContext string) string {
 	case os.Getenv("DOCKER_TARGET_CONTEXT") != "":
 		targetContext = os.Getenv("DOCKER_TARGET_CONTEXT")
 	}
-	if targetContext == command.ContextDockerHost {
+	if targetContext == "default" {
 		targetContext = ""
 	}
 	return targetContext
