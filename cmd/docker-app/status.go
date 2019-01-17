@@ -11,7 +11,7 @@ import (
 )
 
 func statusCmd(dockerCli command.Cli) *cobra.Command {
-	var opts uninstallOptions
+	var opts credentialOptions
 
 	cmd := &cobra.Command{
 		Use:   "status <installation-name>",
@@ -21,14 +21,12 @@ func statusCmd(dockerCli command.Cli) *cobra.Command {
 			return runStatus(dockerCli, args[0], opts)
 		},
 	}
-
-	cmd.Flags().StringVar(&opts.targetContext, "target-context", "", "Context on which to request the application status")
-	cmd.Flags().StringArrayVarP(&opts.credentialsets, "credential-set", "c", []string{}, "Use a duffle credentialset (either a YAML file, or a credential set present in the duffle credential store)")
+	opts.addFlags(cmd.Flags())
 
 	return cmd
 }
 
-func runStatus(dockerCli command.Cli, claimName string, opts uninstallOptions) error {
+func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) error {
 	muteDockerCli(dockerCli)
 	h := duffleHome()
 
@@ -37,7 +35,7 @@ func runStatus(dockerCli command.Cli, claimName string, opts uninstallOptions) e
 	if err != nil {
 		return err
 	}
-	targetContext := getTargetContext(opts.targetContext)
+	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
 
 	driverImpl, err := prepareDriver(dockerCli)
 	if err != nil {

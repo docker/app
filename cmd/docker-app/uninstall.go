@@ -12,13 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type uninstallOptions struct {
-	targetContext  string
-	credentialsets []string
-}
-
 func uninstallCmd(dockerCli command.Cli) *cobra.Command {
-	var opts uninstallOptions
+	var opts credentialOptions
 
 	cmd := &cobra.Command{
 		Use:   "uninstall <installation-name>",
@@ -28,14 +23,12 @@ func uninstallCmd(dockerCli command.Cli) *cobra.Command {
 			return runUninstall(dockerCli, args[0], opts)
 		},
 	}
-
-	cmd.Flags().StringVar(&opts.targetContext, "target-context", "", "Context on which to uninstall the application")
-	cmd.Flags().StringArrayVarP(&opts.credentialsets, "credential-set", "c", []string{}, "Use a duffle credentialset (either a YAML file, or a credential set present in the duffle credential store)")
+	opts.addFlags(cmd.Flags())
 
 	return cmd
 }
 
-func runUninstall(dockerCli command.Cli, claimName string, opts uninstallOptions) error {
+func runUninstall(dockerCli command.Cli, claimName string, opts credentialOptions) error {
 	muteDockerCli(dockerCli)
 	h := duffleHome()
 
@@ -44,7 +37,7 @@ func runUninstall(dockerCli command.Cli, claimName string, opts uninstallOptions
 	if err != nil {
 		return err
 	}
-	targetContext := getTargetContext(opts.targetContext)
+	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
 
 	driverImpl, err := prepareDriver(dockerCli)
 	if err != nil {

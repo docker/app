@@ -14,8 +14,7 @@ import (
 
 type upgradeOptions struct {
 	parametersOptions
-	targetContext     string
-	credentialsets    []string
+	credentialOptions
 	bundleOrDockerApp string
 	namespace         string
 	insecure          bool
@@ -32,8 +31,7 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
-	cmd.Flags().StringVar(&opts.targetContext, "target-context", "", "Context on which to upgrade the application")
-	cmd.Flags().StringArrayVarP(&opts.credentialsets, "credential-set", "c", []string{}, "Use a duffle credentialset (either a YAML file, or a credential set present in the duffle credential store)")
+	opts.credentialOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "bundle", "", "Override with new bundle or Docker App")
 	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "Namespace to use (default: namespace in metadata)")
 	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
@@ -43,7 +41,7 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 
 func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOptions) error {
 	muteDockerCli(dockerCli)
-	targetContext := getTargetContext(opts.targetContext)
+	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
 	parameterValues, err := prepareParameters(opts.parametersOptions)
 	if err != nil {
 		return err
