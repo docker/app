@@ -44,11 +44,11 @@ RUN make EXPERIMENTAL=${EXPERIMENTAL} e2e-cross
 FROM build AS invocation-build
 COPY . .
 ARG EXPERIMENTAL="off"
-RUN make EXPERIMENTAL=${EXPERIMENTAL} bin/run
+RUN make EXPERIMENTAL=${EXPERIMENTAL} bin/cnab-run
 
 # cnab invocation image
 FROM alpine:${ALPINE_VERSION} AS invocation
 RUN apk add --no-cache ca-certificates
-COPY --from=invocation-build /go/src/github.com/docker/app/bin/run /cnab/app/run
+COPY --from=invocation-build /go/src/github.com/docker/app/bin/cnab-run /cnab/app/run
 WORKDIR /cnab/app
 CMD /cnab/app/run
