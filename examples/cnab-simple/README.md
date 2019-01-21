@@ -31,27 +31,26 @@ version        latest
 
 Install the application:
 
-```
-docker-app install
+```console
+$ docker-app install
 ```
 
 Show the details of the installation:
 
-```
-docker-app status hello
+```console
+$ docker-app status hello
 ```
 
 Upgrade the installation, demonstrating setting parameters:
 
-```
-docker-app upgrade--set port=9876 --set text="hello DockerCon EU"
+```console
+$ docker-app upgrade--set port=9876 --set text="hello DockerCon EU"
 ```
 
 Uninstall the application installation:
 
-
-```
-docker-app uninstall hello
+```console
+$ docker-app uninstall hello
 ```
 
 Demonstrate building a `bundle.json` for CNAB.

@@ -13,7 +13,6 @@ var (
 	initSingleFile  bool
 )
 
-// initCmd represents the init command
 func initCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init <app-name> [-c <compose-file>] [-d <description>] [-m name:email ...]",

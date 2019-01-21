@@ -19,7 +19,7 @@ func install(instanceName string) error {
 		return errors.Wrap(err, "unable to restore docker context")
 	}
 	app, err := packager.Extract("")
-	// todo: merge addition compose file
+	// todo: merge additional compose file
 	if err != nil {
 		return err
 	}

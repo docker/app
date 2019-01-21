@@ -36,19 +36,18 @@ const (
 )
 
 const longDescription = `Install the application on either Swarm or Kubernetes.
-Bundle name is optional, and can be
-- empty: resolve to any *.dockerapp file or directory in working dir
-- existing file path: work with any *.dockerapp file or dir, or any CNAB bundle file (signed or unsigned)
+Bundle name is optional, and can:
+- be empty and resolve to any *.dockerapp in working directory
+- be a BUNDLE file path and resolve to any *.dockerapp file or dir, or any CNAB file (signed or unsigned)
 - match a bundle name in the local duffle bundle repository
-- refers to a CNAB bundle in a container registry
+- refer to a CNAB in a container registry
 `
 
-// installCmd represents the install command
 func installCmd(dockerCli command.Cli) *cobra.Command {
 	var opts installOptions
 
 	cmd := &cobra.Command{
-		Use:     "install [<bundle name>] [options]",
+		Use:     "install [<bundle name>] [OPTIONS]",
 		Aliases: []string{"deploy"},
 		Short:   "Install an application",
 		Long:    longDescription,
@@ -134,6 +133,8 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		Driver: driverImpl,
 	}
 	err = inst.Run(c, creds, dockerCli.Out())
+	// Even if the installation failed, the claim is persisted with its failure status,
+	// so any installation needs a clean uninstallation.
 	err2 := claimStore.Store(*c)
 	if err != nil {
 		return fmt.Errorf("install failed: %v", err)

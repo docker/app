@@ -149,17 +149,17 @@ More examples are available in the [examples](examples) directory.
 
 ## CNAB
 
-Under the hood `docker-app` produces a CNAB bundle (a docker invocation image and a `bundle.json`) from an Application Package, but is also a generic CNAB client.
-CNAB proposes four actions, and docker-app adds them as commands:
+Under the hood `docker-app` is CNAB compliant. It generates a CNAB from your application source and is able to install and manage any other CNAB too.
+CNAB specifies four actions which `docker-app` provides as commands:
 - `install`
 - `upgrade`
 - `status`
 - `uninstall`
 
-**Note**: These four commands needs a Docker Context to know which daemon or orchestrator to target.
+**Note**: These commands need a Docker Context so that `docker-app` knows which endpoint and orchestrator to target.
 
-```sh
-$ docker  context create swarm --description "swarm context" --default-stack-orchestrator=swarm --docker=host=unix:///var/run/docker.sock
+```console
+$ docker context create swarm --description "swarm context" --default-stack-orchestrator=swarm --docker=host=unix:///var/run/docker.sock
 swarm
 Successfully created context "swarm"
 
@@ -170,7 +170,7 @@ swarm *             swarm context                             unix:///var/run/do
 ```
 
 Here is an example installing an application package, querying a status and then uninstalling it:
-```sh
+```console
 $ docker-app install examples/hello-world/hello-world.dockerapp --name hello --target-context=swarm
 Creating network hello_default
 Creating service hello_hello
@@ -258,9 +258,9 @@ Options:
   -H, --host list          Daemon socket(s) to connect to
   -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
       --tls                Use TLS; implied by --tlsverify
-      --tlscacert string   Trust certs signed only by this CA (default "/Users/silvin/.docker/ca.pem")
-      --tlscert string     Path to TLS certificate file (default "/Users/silvin/.docker/cert.pem")
-      --tlskey string      Path to TLS key file (default "/Users/silvin/.docker/key.pem")
+      --tlscacert string   Trust certs signed only by this CA (default "/[home]/.docker/ca.pem")
+      --tlscert string     Path to TLS certificate file (default "/[home]/.docker/cert.pem")
+      --tlskey string      Path to TLS key file (default "/[home]/.docker/key.pem")
       --tlsverify          Use TLS and verify the remote
   -v, --version            Print version information
 
@@ -274,7 +274,7 @@ Commands:
   push        Push the application to a registry
   render      Render the Compose file for the application
   split       Split a single-file application into multiple files
-  status      Get an application status
+  status      Get the installation status. If the installation is a docker application, the status shows the stack services.
   uninstall   Uninstall an application
   upgrade     Upgrade an installed application
   validate    Checks the rendered application is syntactically correct
@@ -288,11 +288,11 @@ Run 'docker-app COMMAND --help' for more information on a command.
 ### Bash
 
 Load the docker-app completion code for bash into the current shell:
-```sh
+```console
 $ source <(docker-app completion bash)
 ```
 Set the docker-app completion code for bash to autoload on startup in your ~/.bashrc, ~/.profile or ~/.bash_profile:
-```sh
+```console
 source <(docker-app completion bash)
 ```
 **Note**: `bash-completion` is needed.
@@ -300,11 +300,11 @@ source <(docker-app completion bash)
 ### Zsh
 
 Load the docker-app completion code for zsh into the current shell
-```sh
+```console
 $ source <(docker-app completion zsh)
 ```
 Set the docker-app completion code for zsh to autoload on startup in your ~/.zshrc
-```sh
+```console
 source <(docker-app completion zsh)
 ```
 

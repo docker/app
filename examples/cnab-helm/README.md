@@ -1,6 +1,6 @@
 ## Requirements
 
-* Working Docker Desktop install with Kubernetes enabled
+* Any with Kubernetes enabled with [compose-on-kubernetes](https://github.com/docker/compose-on-kubernetes) installed
 * [`docker-app` with CNAB support](https://github.com/docker/app/releases/tag/cnab-dockercon-preview) installed
 * Source code from this directory
 * Create a context with `docker-app context`
@@ -10,11 +10,11 @@
 
 ## Examples
 
-
 Install the Helm chart example using `docker-app`
 
+**Note**: This example comes from [deislabs/bundles](https://github.com/deislabs/bundles/tree/master/hellohelm).
 
-```
+```console
 $ docker-app install -c local bundle.json
 Do install for hellohelm
 helm install --namespace hellohelm -n hellohelm /cnab/app/charts/alpine
@@ -28,7 +28,6 @@ RESOURCES:
 NAME              AGE
 hellohelm-alpine  0s
 ```
-
 
 Check the status of the Helm-based application:
 
