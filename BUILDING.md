@@ -63,7 +63,7 @@ Please refer to its documentation if you need to update a dependency.
 
 Just add the `EXPERIMENTAL=on` flag before invoking a build target:
 ```console
-$ make EXPERIMEMTAL=on bin/docker-app
+$ make EXPERIMENTAL=on bin/docker-app
 $ ./bin/docker-app version
 ...
 Experimental: on
