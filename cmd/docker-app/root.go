@@ -20,10 +20,11 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 	var flags *pflag.FlagSet
 
 	cmd := &cobra.Command{
-		Use:          "docker-app",
-		Short:        "Docker Application Packages",
-		Long:         `Build and deploy Docker Application Packages.`,
-		SilenceUsage: true,
+		Use:              "docker-app",
+		Short:            "Docker Application Packages",
+		Long:             `Build and deploy Docker Application Packages.`,
+		SilenceUsage:     true,
+		TraverseChildren: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.Common.SetDefaultOptions(flags)
 			dockerPreRun(opts)
