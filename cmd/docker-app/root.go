@@ -35,7 +35,6 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 	cli.SetupRootCommand(cmd)
 	flags = cmd.Flags()
 	flags.BoolP("version", "v", false, "Print version information")
-	opts.Common.InstallFlags(flags)
 	cmd.SetVersionTemplate("docker-app version {{.Version}}\n")
 	addCommands(cmd, dockerCli)
 	return cmd

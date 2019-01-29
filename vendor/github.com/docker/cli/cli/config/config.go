@@ -18,6 +18,7 @@ const (
 	ConfigFileName = "config.json"
 	configFileDir  = ".docker"
 	oldConfigfile  = ".dockercfg"
+	contextsDir    = "contexts"
 )
 
 var (
@@ -35,9 +36,19 @@ func Dir() string {
 	return configDir
 }
 
+// ContextStoreDir returns the directory the docker contexts are stored in
+func ContextStoreDir() string {
+	return filepath.Join(Dir(), contextsDir)
+}
+
 // SetDir sets the directory the configuration file is stored in
 func SetDir(dir string) {
 	configDir = dir
+}
+
+// Path returns the path to a file relative to the config dir
+func Path(p ...string) string {
+	return filepath.Join(append([]string{Dir()}, p...)...)
 }
 
 // LegacyLoadFromReader is a convenience function that creates a ConfigFile object from
