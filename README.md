@@ -152,10 +152,27 @@ More examples are available in the [examples](examples) directory.
 
 Pre-built binaries are available on [GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and macOS.
 
+### Linux or macOS
+
 ```bash
-wget https://github.com/docker/app/releases/download/v0.6.0/docker-app-linux.tar.gz
-tar xf docker-app-linux.tar.gz
-cp docker-app-linux /usr/local/bin/docker-app
+export OSTYPE="$(uname | tr A-Z a-z)"
+curl -fsSL --output "/tmp/docker-app-${OSTYPE}.tar.gz" "https://github.com/docker/app/releases/download/v0.6.0/docker-app-${OSTYPE}.tar.gz"
+tar xf "/tmp/docker-app-${OSTYPE}.tar.gz" -C /tmp/
+install -b "/tmp/docker-app-${OSTYPE}" /usr/local/bin/docker-app
+```
+
+### Windows
+```powershell
+function Expand-Tar($tarFile, $dest) {
+
+    if (-not (Get-Command Expand-7Zip -ErrorAction Ignore)) {
+        Install-Package -Scope CurrentUser -Force 7Zip4PowerShell > $null
+    }
+
+    Expand-7Zip $tarFile $dest
+}
+Invoke-WebRequest -Uri https://github.com/docker/app/releases/download/v0.6.0/docker-app-windows.tar.gz
+Expand-Tar docker-app-windows.tar.gz docker-app-windows.exe
 ```
 
 **Note:** To use Application Packages as images (i.e.: `save`, `push`, or `deploy` when package is not present locally) on Windows, one must be in Linux container mode.
