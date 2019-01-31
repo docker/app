@@ -15,7 +15,6 @@ var (
 	inspectEnv            []string
 )
 
-// inspectCmd represents the inspect command
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "inspect [<app-name>] [-s key=value...] [-f parameters-file...]",

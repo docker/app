@@ -19,8 +19,13 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make -f docker.Makefile lint'
-                            sh 'make -f docker.Makefile vendor'
+                            sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG lint'
+                            sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG vendor'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
@@ -33,7 +38,7 @@ pipeline {
                             script {
                                 try {
                                     checkout scm
-                                    sh 'make -f docker.Makefile cross e2e-cross tars'
+                                    sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG cross e2e-cross tars'
                                     dir('bin') {
                                         stash name: 'binaries'
                                     }
@@ -48,7 +53,7 @@ pipeline {
                                         archiveArtifacts 'bin/*.tar.gz'
                                     }
                                 } finally {
-                                    def clean_images = /docker image ls --format "{{.ID}}\t{{.Tag}}" | grep $(git describe --always --dirty) | awk '{print $1}' | xargs docker image rm -f/
+                                    def clean_images = /docker image ls --format="{{.ID}}" '*$BUILD_TAG*' | xargs docker image rm -f/
                                     sh clean_images
                                 }
                             }
@@ -56,6 +61,28 @@ pipeline {
                     }
                     post {
                         always {
+                            deleteDir()
+                        }
+                    }
+                }
+                stage('Build Invocation image'){
+                    agent {
+                        label 'ubuntu-1604-aufs-edge'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            checkout scm
+                            sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG save-invocation-image'
+                            dir('_build') {
+                                stash name: 'invocation-image', includes: 'invocation-image.tar'
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            dir('src/github.com/docker/app') {
+                                sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
+                            }
                             deleteDir()
                         }
                     }
@@ -71,9 +98,14 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make -f docker.Makefile coverage'
+                            sh 'make BUILD_TAG=$BUILD_TAG -f docker.Makefile coverage'
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
@@ -84,7 +116,12 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make EXPERIMENTAL=on -f docker.Makefile coverage'
+                            sh 'make EXPERIMENTAL=on BUILD_TAG=$BUILD_TAG -f docker.Makefile coverage'
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
@@ -98,7 +135,7 @@ pipeline {
                             dir("bin") {
                                 unstash "binaries"
                             }
-                            sh 'make -f docker.Makefile gradle-test'
+                            sh 'make BUILD_TAG=$BUILD_TAG -f docker.Makefile gradle-test'
                         }
                     }
                     post {
@@ -111,11 +148,16 @@ pipeline {
                     agent {
                         label 'ubuntu-1604-aufs-edge'
                     }
-		    environment {
-			DOCKERAPP_BINARY = '../docker-app-linux'
-		    }
+                    environment {
+                        DOCKERAPP_BINARY = '../docker-app-linux'
+                    }
                     steps  {
                         dir('src/github.com/docker/app') {
+                            checkout scm
+                            dir('_build') {
+                                unstash "invocation-image"
+                                sh 'docker load -i invocation-image.tar'
+                            }
                             unstash "binaries"
                             dir('examples') {
                                 unstash "examples"
@@ -128,6 +170,7 @@ pipeline {
                     }
                     post {
                         always {
+                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
                             deleteDir()
                         }
                     }

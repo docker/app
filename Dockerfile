@@ -17,6 +17,7 @@ RUN curl -Ls https://download.docker.com/linux/static/$DOCKERCLI_CHANNEL/x86_64/
 
 WORKDIR /go/src/github.com/docker/app/
 
+# main dev image
 FROM build AS dev
 ENV PATH=${PATH}:/go/src/github.com/docker/app/bin/
 ARG DEP_VERSION=v0.5.0
@@ -36,4 +37,18 @@ RUN make EXPERIMENTAL=${EXPERIMENTAL} cross
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross
 ARG EXPERIMENTAL="off"
+# Run e2e tests
 RUN make EXPERIMENTAL=${EXPERIMENTAL} e2e-cross
+
+# builder of invocation image entrypoint
+FROM build AS invocation-build
+COPY . .
+ARG EXPERIMENTAL="off"
+RUN make EXPERIMENTAL=${EXPERIMENTAL} bin/cnab-run
+
+# cnab invocation image
+FROM alpine:${ALPINE_VERSION} AS invocation
+RUN apk add --no-cache ca-certificates
+COPY --from=invocation-build /go/src/github.com/docker/app/bin/cnab-run /cnab/app/run
+WORKDIR /cnab/app
+CMD /cnab/app/run

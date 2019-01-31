@@ -1,0 +1,20 @@
+version: 0.1.0
+name: hello
+description: sample app for DockerCon 
+maintainers:
+  - name: garethr
+    email: garethr@docker.com
+
+---
+version: '3.6'
+services:
+  hello:
+    image: hashicorp/http-echo:${version}
+    command: ["-text", "${text}"]
+    ports:
+     - ${port}:5678
+
+---
+port: 8765
+text: hello DockerCon
+version: latest

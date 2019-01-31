@@ -1,0 +1,29 @@
+version: "3.7"
+services:
+  front:
+    image: nginx:${myapp.nginx_version}
+    deploy:
+      replicas: ${myapp.nginx_replicas}
+  debug:
+    image: busybox:latest
+    ports:
+    - $aport
+    - $sport:$dport
+    privileged: ${privileged}
+    read_only: $read_only
+    tty: $tty
+    stdin_open: $stdin_open
+    deploy:
+      resources:
+        limits:
+          memory: $memory
+    healthcheck:
+      test: ["/ping", "debug"]
+      interval: 2m
+      timeout: $timeout
+  monitor:
+    image: busybox:latest
+    command: monitor --source ${app.name}-${app.version} $$dollar
+    x-enabled: "! ${myapp.debug}"
+  app-watcher:
+    image: $watcher.image

@@ -1,7 +1,7 @@
 package kubernetes
 
 import (
-	"github.com/docker/cli/kubernetes"
+	kubernetes "github.com/docker/compose-on-kubernetes/api"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
@@ -15,8 +15,8 @@ import (
 type Factory struct {
 	namespace     string
 	config        *restclient.Config
-	coreClientSet *corev1.CoreV1Client
-	appsClientSet *appsv1beta2.AppsV1beta2Client
+	coreClientSet corev1.CoreV1Interface
+	appsClientSet appsv1beta2.AppsV1beta2Interface
 	clientSet     *kubeclient.Clientset
 }
 

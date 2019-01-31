@@ -25,8 +25,9 @@ else
 endif
 
 ifeq ($(TAG),)
-  TAG := $(shell git describe --always --dirty 2> $(NULL))
+  TAG := $(shell git describe --always --dirty --abbrev=10 2> $(NULL))
 endif
 ifeq ($(COMMIT),)
   COMMIT := $(shell git rev-parse --short HEAD 2> $(NULL))
 endif
+BUILD_TAG ?= $(TAG)
