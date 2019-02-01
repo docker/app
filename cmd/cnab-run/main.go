@@ -13,6 +13,7 @@ const (
 	cnabActionUninstall = cnabAction("uninstall")
 	cnabActionUpgrade   = cnabAction("upgrade")
 	cnabActionStatus    = cnabAction("status")
+	cnabActionInspect   = cnabAction("inspect")
 )
 
 type cnabOperation struct {
@@ -66,6 +67,11 @@ func main() {
 	case cnabActionStatus:
 		if err := status(op.installation); err != nil {
 			fmt.Fprintf(os.Stderr, "Status failed: %s", err)
+			os.Exit(1)
+		}
+	case cnabActionInspect:
+		if err := inspect(); err != nil {
+			fmt.Fprintf(os.Stderr, "Inspect failed: %s", err)
 			os.Exit(1)
 		}
 	default:

@@ -8,11 +8,12 @@ import (
 	"gotest.tools/assert"
 )
 
-func startRegistry(t *testing.T) *Container {
-	c := &Container{image: "registry:2", privatePort: 5000}
-	c.Start(t)
-	return c
-}
+// TODO: uncomment once we pull on `resolveBundle`
+// func startRegistry(t *testing.T) *Container {
+// 	c := &Container{image: "registry:2", privatePort: 5000}
+// 	c.Start(t)
+// 	return c
+// }
 
 // readFile returns the content of the file at the designated path normalizing
 // line endings by removing any \r.
