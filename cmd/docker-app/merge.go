@@ -42,7 +42,7 @@ func extraFiles(appname string) ([]string, error) {
 
 //handleInPlace returns the operation target path and if it's in-place
 func handleInPlace(app *types.App) (string, bool) {
-	if app.Source == types.AppSourceURL || app.Source == types.AppSourceImage {
+	if app.Source == types.AppSourceImage {
 		return internal.DirNameFromAppName(app.Name), false
 	}
 	return app.Path + ".tmp", true

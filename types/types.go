@@ -26,8 +26,6 @@ const (
 	AppSourceMerged
 	// AppSourceImage represents an Application pulled from an image
 	AppSourceImage
-	// AppSourceURL represents an Application fetched from an URL
-	AppSourceURL
 	// AppSourceArchive represents an Application in an archive format
 	AppSourceArchive
 )

@@ -226,12 +226,6 @@ func TestSplitMerge(t *testing.T) {
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
-func TestURL(t *testing.T) {
-	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
-	result := icmd.RunCommand(dockerApp, "inspect", url).Assert(t, icmd.Success)
-	golden.Assert(t, result.Combined(), "helloworld-inspect.golden")
-}
-
 func TestWithRegistry(t *testing.T) {
 	r := startRegistry(t)
 	defer r.Stop(t)
