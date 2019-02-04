@@ -13,6 +13,7 @@ import (
 var (
 	e2ePath         = flag.String("e2e-path", ".", "Set path to the e2e directory")
 	dockerApp       = os.Getenv("DOCKERAPP_BINARY")
+	dockerCli       = os.Getenv("DOCKERCLI_BINARY")
 	hasExperimental = false
 	renderers       = ""
 )
@@ -32,6 +33,9 @@ func TestMain(m *testing.M) {
 	dockerApp, err = filepath.Abs(dockerApp)
 	if err != nil {
 		panic(err)
+	}
+	if dockerCli == "" {
+		dockerCli = "docker"
 	}
 	cmd := exec.Command(dockerApp, "version")
 	output, err := cmd.CombinedOutput()

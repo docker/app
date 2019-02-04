@@ -81,6 +81,9 @@ func ToCNAB(app *types.App, invocationImageName string) *bundle.Bundle {
 			"inspect": {
 				Modifies: false,
 			},
+			"status": {
+				Modifies: false,
+			},
 		},
 	}
 }

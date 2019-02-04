@@ -28,7 +28,7 @@ func NewContainer(image string, privatePort int) *Container {
 
 // Start starts a new docker container on a random port
 func (c *Container) Start(t *testing.T) {
-	result := icmd.RunCommand("docker", "run", "--rm", "-d", "-P", c.image).Assert(t, icmd.Success)
+	result := icmd.RunCommand("docker", "run", "--rm", "--privileged", "-d", "-P", c.image).Assert(t, icmd.Success)
 	c.container = strings.Trim(result.Stdout(), " \r\n")
 	time.Sleep(time.Second * 3)
 }

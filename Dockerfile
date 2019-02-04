@@ -1,19 +1,19 @@
 ARG ALPINE_VERSION=3.8
 ARG GO_VERSION=1.11.0
 
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS build
-ARG DOCKERCLI_VERSION=18.03.1-ce
-ARG DOCKERCLI_CHANNEL=edge
-RUN apk add --no-cache \
-  bash \
-  make\
-  git \
-  curl \
-  util-linux \
-  coreutils
-RUN curl -Ls https://download.docker.com/linux/static/$DOCKERCLI_CHANNEL/x86_64/docker-$DOCKERCLI_VERSION.tgz | \
-  tar -xz docker/docker && \
-  mv docker/docker /usr/bin/docker
+FROM dockercore/golang-cross:1.11.5@sha256:17a7e0f158521c50316a0d0c1ab1f6a75350b4d82e7ef03c98bcfbdf04feb4f3 AS build
+ENV     DISABLE_WARN_OUTSIDE_CONTAINER=1
+
+RUN apt-get install -y -q --no-install-recommends \
+    coreutils \
+    util-linux \
+    uuid-runtime
+
+WORKDIR /go/src/github.com/docker/cli
+
+RUN git clone https://github.com/docker/cli.git .
+RUN make cross binary && \
+ cp build/docker-linux-amd64 /usr/bin/docker
 
 WORKDIR /go/src/github.com/docker/app/
 
@@ -32,13 +32,15 @@ COPY . .
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM dev AS cross
 ARG EXPERIMENTAL="off"
-RUN make EXPERIMENTAL=${EXPERIMENTAL} cross
+ARG TAG="unknown"
+RUN make EXPERIMENTAL=${EXPERIMENTAL} TAG=${TAG} cross
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross
 ARG EXPERIMENTAL="off"
+ARG TAG="unknown"
 # Run e2e tests
-RUN make EXPERIMENTAL=${EXPERIMENTAL} e2e-cross
+RUN make EXPERIMENTAL=${EXPERIMENTAL} TAG=${TAG} e2e-cross
 
 # builder of invocation image entrypoint
 FROM build AS invocation-build

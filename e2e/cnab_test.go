@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"path"
+	"runtime"
 	"testing"
 
 	"gotest.tools/assert"
@@ -41,6 +42,13 @@ func TestCallCustomStatusAction(t *testing.T) {
 				Env: []string{fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path())},
 			}
 
+			// We need to explicitly set the SYSTEMROOT on windows
+			// otherwise we get the error:
+			// "panic: failed to read random bytes: CryptAcquireContext: Provider DLL failed to initialize correctly."
+			// See: https://github.com/golang/go/issues/25210
+			if runtime.GOOS == "windows" {
+				cmd.Env = append(cmd.Env, `SYSTEMROOT=C:\WINDOWS`)
+			}
 			// Build CNAB invocation image
 			cmd.Command = []string{"docker", "build", "-f", path.Join(testDir, "cnab", "build", "Dockerfile"), "-t", fmt.Sprintf("e2e/%s:v0.1.0", testCase.cnab), testDir}
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)

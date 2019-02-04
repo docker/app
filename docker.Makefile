@@ -4,10 +4,12 @@ LINT_IMAGE_NAME := $(BIN_NAME)-lint:$(BUILD_TAG)
 DEV_IMAGE_NAME := $(BIN_NAME)-dev:$(BUILD_TAG)
 BIN_IMAGE_NAME := $(BIN_NAME)-bin:$(BUILD_TAG)
 CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(BUILD_TAG)
+CLI_IMAGE_NAME := $(BIN_NAME)-cli:$(BUILD_TAG)
 E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(BUILD_TAG)
 GRADLE_IMAGE_NAME := $(BIN_NAME)-gradle:$(BUILD_TAG)
 
 BIN_CTNR_NAME := $(BIN_NAME)-bin-$(TAG)
+CLI_CNTR_NAME := $(BIN_NAME)-cli-$(TAG)
 CROSS_CTNR_NAME := $(BIN_NAME)-cross-$(TAG)
 E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
 COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
@@ -43,6 +45,17 @@ cross: create_bin ## cross-compile binaries (linux, darwin, windows)
 	@$(call chmod,+x,bin/$(BIN_NAME)-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-darwin)
 	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
+
+cli-cross: create_bin
+	docker build $(BUILD_ARGS) --target=build -t $(CLI_IMAGE_NAME)  .
+	docker create --name $(CLI_CNTR_NAME) $(CLI_IMAGE_NAME) noop
+	docker cp $(CLI_CNTR_NAME):/go/src/github.com/docker/cli/build/docker-linux-amd64 bin/docker-linux
+	docker cp $(CLI_CNTR_NAME):/go/src/github.com/docker/cli/build/docker-darwin-amd64 bin/docker-darwin
+	docker cp $(CLI_CNTR_NAME):/go/src/github.com/docker/cli/build/docker-windows-amd64 bin/docker-windows.exe
+	docker rm $(CLI_CNTR_NAME)
+	@$(call chmod,+x,bin/docker-linux)
+	@$(call chmod,+x,bin/docker-darwin)
+	@$(call chmod,+x,bin/docker-windows.exe)
 
 e2e-cross: create_bin
 	docker build $(BUILD_ARGS) --target=e2e-cross -t $(E2E_CROSS_IMAGE_NAME)  .
@@ -113,4 +126,4 @@ push-invocation-image:
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help invocation-image save-invocation-image push-invocation-image
+.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help invocation-image save-invocation-image push-invocation-image

@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -272,4 +274,96 @@ func TestAttachmentsWithRegistry(t *testing.T) {
 	assert.Assert(t, strings.Contains(resultOutput, "config.cfg"))
 	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/config2.cfg"))
 	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
+}
+
+func TestDeployDockerApp(t *testing.T) {
+	tmpDir := fs.NewDir(t, t.Name())
+	defer tmpDir.Remove()
+
+	cmd := icmd.Cmd{
+		Env: []string{
+			fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path()),
+			fmt.Sprintf("DOCKER_CONFIG=%s", tmpDir.Path()),
+			"DOCKER_TARGET_CONTEXT=swarm-target-context",
+		},
+	}
+
+	// We need to explicitly set the SYSTEMROOT on windows
+	// otherwise we get the error:
+	// "panic: failed to read random bytes: CryptAcquireContext: Provider DLL failed to initialize correctly."
+	// See: https://github.com/golang/go/issues/25210
+	if runtime.GOOS == "windows" {
+		cmd.Env = append(cmd.Env, `SYSTEMROOT=C:\WINDOWS`)
+	}
+
+	// Running a swarm using docker in docker to install the application
+	// and run the invocation image
+	swarm := NewContainer("docker:18.09-dind", 2375)
+	swarm.Start(t)
+	defer swarm.Stop(t)
+
+	// The dind doesn't have the cnab-app-base image so we save it in order to load it later
+	icmd.RunCommand(dockerCli, "save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "-o", tmpDir.Join("cnab-app-base.tar.gz")).Assert(t, icmd.Success)
+
+	// We  need two contexts:
+	// - one for `docker` so that it connects to the dind swarm created before
+	// - the target context for the invocation image to install within the swarm
+	cmd.Command = []string{dockerCli, "context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// When creating a context on a Windows host we cannot use
+	// the unix socket but it's needed inside the invocation image.
+	// The workaround is to create a context with an empty host.
+	// This host will default to the unix socket inside the
+	// invocation image
+	host := ""
+	cmd.Command = []string{dockerCli, "context", "create", "swarm-target-context", "--docker", fmt.Sprintf("host=%s", host), "--default-stack-orchestrator", "swarm"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// Initialize the swarm
+	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")
+	cmd.Command = []string{dockerCli, "swarm", "init"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// Load the needed base cnab image into the swarm docker engine
+	cmd.Command = []string{dockerCli, "load", "-i", tmpDir.Join("cnab-app-base.tar.gz")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// Install a Docker Application Package
+	cmd.Command = []string{dockerApp, "install", "testdata/simple/simple.dockerapp", "--name", t.Name()}
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			fmt.Sprintf("Creating network %s_back", t.Name()),
+			fmt.Sprintf("Creating network %s_front", t.Name()),
+			fmt.Sprintf("Creating service %s_db", t.Name()),
+			fmt.Sprintf("Creating service %s_api", t.Name()),
+			fmt.Sprintf("Creating service %s_web", t.Name()),
+		})
+
+	// Query the application status
+	cmd.Command = []string{dockerApp, "status", t.Name()}
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			fmt.Sprintf("[[:alnum:]]+        %s_db    replicated          [0-1]/1                 postgres:9.3", t.Name()),
+			fmt.Sprintf(`[[:alnum:]]+        %s_web   replicated          [0-1]/1                 nginx:latest        \*:8082->80/tcp`, t.Name()),
+			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", t.Name()),
+		})
+
+	// Uninstall the application
+	cmd.Command = []string{dockerApp, "uninstall", t.Name()}
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			fmt.Sprintf("Removing service %s_api", t.Name()),
+			fmt.Sprintf("Removing service %s_db", t.Name()),
+			fmt.Sprintf("Removing service %s_web", t.Name()),
+			fmt.Sprintf("Removing network %s_front", t.Name()),
+			fmt.Sprintf("Removing network %s_back", t.Name()),
+		})
+}
+
+func checkContains(t *testing.T, combined string, expectedLines []string) {
+	for _, expected := range expectedLines {
+		exp := regexp.MustCompile(expected)
+		assert.Assert(t, exp.MatchString(combined), expected, combined)
+	}
 }
