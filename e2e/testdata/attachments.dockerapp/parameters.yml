@@ -1,10 +1,7 @@
 privileged: false
 myapp:
   debug: false
-  nginx_version: latest
   nginx_replicas: 2
-watcher:
-  image: watcher:latest
 read_only: true
 stdin_open: true
 tty: true

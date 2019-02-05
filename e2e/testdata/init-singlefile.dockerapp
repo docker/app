@@ -19,10 +19,10 @@ maintainers:
 version: "3.2"
 services:
   nginx:
-    image: nginx:${NGINX_VERSION}
-    command: nginx $NGINX_ARGS
+    image: nginx:latest
+    command: nginx $NGINX_ARGS ${NGINX_DRY_RUN}
 
 ---
 # This section contains the default values for your application parameters.
 NGINX_ARGS: FILL ME
-NGINX_VERSION: latest
+NGINX_DRY_RUN: -t

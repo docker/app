@@ -26,7 +26,7 @@ services:
         constraints: [node.role == manager]
 
   vote:
-    image: ${vote.image.name}:${vote.image.tag}
+    image: dockersamples/examplevotingapp_vote:latest
     ports:
       - ${vote.port}:80
     networks:
@@ -41,7 +41,7 @@ services:
         condition: on-failure
 
   result:
-    image: ${result.image.name}:${result.image.tag}
+    image: dockersamples/examplevotingapp_result:latest
     ports:
       - ${result.port}:80
     networks:
@@ -57,7 +57,7 @@ services:
         condition: on-failure
 
   worker:
-    image: ${worker.image.name}:${worker.image.tag}
+    image: dockersamples/examplevotingapp_worker:latest
     networks:
       - frontend
       - backend
@@ -74,7 +74,7 @@ services:
         constraints: [node.role == manager]
 
   visualizer:
-    image: ${visualizer.image.name}:${visualizer.image.tag}
+    image: dockersamples/visualizer:latest
     ports:
       - ${visualizer.port}:8080
     stop_grace_period: 1m30s

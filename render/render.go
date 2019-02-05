@@ -3,7 +3,6 @@ package render
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/docker/app/internal/compose"
@@ -27,19 +26,6 @@ import (
 	_ "github.com/docker/app/internal/formatter/json"
 	// Register yaml formatter
 	_ "github.com/docker/app/internal/formatter/yaml"
-)
-
-var (
-	delimiter    = "\\$"
-	substitution = "[_a-z][._a-z0-9]*(?::?[-?][^}]*)?"
-
-	patternString = fmt.Sprintf(
-		"%s(?i:(?P<escaped>%s)|(?P<named>%s)|{(?P<braced>%s)}|(?P<invalid>))",
-		delimiter, delimiter, substitution, substitution,
-	)
-
-	// Pattern is the variable regexp pattern used to interpolate or extract variables when rendering
-	Pattern = regexp.MustCompile(patternString)
 )
 
 // Render renders the Compose file for this app, merging in parameters files, other compose files, and env
@@ -99,7 +85,7 @@ func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (
 }
 
 func substitute(template string, mapping composetemplate.Mapping) (string, error) {
-	return composetemplate.SubstituteWith(template, mapping, Pattern, errorIfMissing)
+	return composetemplate.SubstituteWith(template, mapping, compose.ExtrapolationPattern, errorIfMissing)
 }
 
 func errorIfMissing(substitution string, mapping composetemplate.Mapping) (string, bool, error) {

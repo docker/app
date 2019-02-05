@@ -1,5 +1,5 @@
 version: "3.4"
 services:
   test:
-    image: alpine:${myapp.alpine_version}
+    image: alpine:latest
     command: bash -c "${myapp.command1} ${myapp.command2} ${myapp.command3}"

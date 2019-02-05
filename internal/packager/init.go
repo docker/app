@@ -15,7 +15,6 @@ import (
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/loader"
-	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
 	composeloader "github.com/docker/cli/cli/compose/loader"
@@ -147,7 +146,7 @@ func initFromComposeFile(name string, composeFile string) error {
 			}
 		}
 	}
-	vars, err := compose.ExtractVariables(composeRaw, render.Pattern)
+	vars, err := compose.ExtractVariables(composeRaw, compose.ExtrapolationPattern)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}

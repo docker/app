@@ -90,8 +90,8 @@ func TestInit(t *testing.T) {
 	composeData := `version: "3.2"
 services:
   nginx:
-    image: nginx:${NGINX_VERSION}
-    command: nginx $NGINX_ARGS
+    image: nginx:latest
+    command: nginx $NGINX_ARGS ${NGINX_DRY_RUN}
 `
 	meta := `# Version of the application
 version: 0.1.0
@@ -108,7 +108,7 @@ maintainers:
   - name: joe
     email: joe@joe.com
 `
-	envData := "# some comment\nNGINX_VERSION=latest"
+	envData := "# some comment\nNGINX_DRY_RUN=-t"
 	dir := fs.NewDir(t, "app_input",
 		fs.WithFile(internal.ComposeFileName, composeData),
 		fs.WithFile(".env", envData),
@@ -130,7 +130,7 @@ maintainers:
 		fs.WithMode(0755),
 		fs.WithFile(internal.MetadataFileName, meta, fs.WithMode(0644)), // too many variables, cheating
 		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
-		fs.WithFile(internal.ParametersFileName, "NGINX_ARGS: FILL ME\nNGINX_VERSION: latest\n", fs.WithMode(0644)),
+		fs.WithFile(internal.ParametersFileName, "NGINX_ARGS: FILL ME\nNGINX_DRY_RUN: -t\n", fs.WithMode(0644)),
 	)
 	assert.Assert(t, fs.Equal(dirName, manifest))
 
