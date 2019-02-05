@@ -190,8 +190,6 @@ version: {{ .Version }}
 name: {{ .Name }}
 # A short description of the application
 description: {{ .Description }}
-# Namespace to use when pushing to a registry. This is typically your Hub username.
-{{ if len .Namespace}}namespace: {{ .Namespace }} {{ else }}#namespace: myhubusername{{ end }}
 # List of application maintainers with name and email for each
 {{ if len .Maintainers }}maintainers:
 {{ range .Maintainers }}  - name: {{ .Name  }}

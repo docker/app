@@ -15,7 +15,7 @@ func TestToCNAB(t *testing.T) {
 	assert.NilError(t, err)
 	expected := &bundle.Bundle{
 		Description: "hello",
-		Name:        "my-namespace/packing",
+		Name:        "packing",
 		Maintainers: []bundle.Maintainer{
 			{Name: "bearclaw", Email: "bearclaw@bearclaw.com"},
 			{Name: "bob", Email: "bob@bob.com"},

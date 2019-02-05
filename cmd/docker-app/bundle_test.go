@@ -11,7 +11,6 @@ func TestMakeInvocationImage(t *testing.T) {
 	testcases := []struct {
 		name      string
 		imageName string
-		namespace string
 		meta      metadata.AppMetadata
 		expected  string
 		err       string
@@ -24,8 +23,7 @@ func TestMakeInvocationImage(t *testing.T) {
 		{
 			name:      "specify-image-name-and-namespace",
 			imageName: "my-invocation-image",
-			namespace: "my-namespace",
-			expected:  "my-namespace/my-invocation-image",
+			expected:  "my-invocation-image",
 		},
 		{
 			name:     "simple-metadata",
@@ -33,21 +31,19 @@ func TestMakeInvocationImage(t *testing.T) {
 			expected: "name:version-invoc",
 		},
 		{
-			name:      "simple-metadata-with-overridden-namespace",
-			namespace: "my-namespace",
-			meta:      metadata.AppMetadata{Name: "name", Version: "version"},
-			expected:  "my-namespace/name:version-invoc",
+			name:     "simple-metadata-with-overridden-namespace",
+			meta:     metadata.AppMetadata{Name: "name", Version: "version"},
+			expected: "name:version-invoc",
 		},
 		{
 			name:     "metadata-with-namespace",
-			meta:     metadata.AppMetadata{Name: "name", Version: "version", Namespace: "namespace"},
-			expected: "namespace/name:version-invoc",
+			meta:     metadata.AppMetadata{Name: "name", Version: "version"},
+			expected: "name:version-invoc",
 		},
 		{
-			name:      "metadata-with-namespace-and-overridden-namespace",
-			namespace: "my-namespace",
-			meta:      metadata.AppMetadata{Name: "name", Version: "version", Namespace: "namespace"},
-			expected:  "my-namespace/name:version-invoc",
+			name:     "metadata-with-namespace-and-overridden-namespace",
+			meta:     metadata.AppMetadata{Name: "name", Version: "version"},
+			expected: "name:version-invoc",
 		},
 		{
 			name: "simple-metadata",
@@ -57,7 +53,7 @@ func TestMakeInvocationImage(t *testing.T) {
 	}
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			actual, err := makeImageName(c.meta, c.namespace, c.imageName, "-invoc")
+			actual, err := makeImageName(c.meta, c.imageName, "-invoc")
 			if c.err != "" {
 				assert.ErrorContains(t, err, c.err)
 				assert.Equal(t, actual, "")

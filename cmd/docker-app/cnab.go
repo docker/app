@@ -117,16 +117,16 @@ func getAppNameKind(name string) (string, nameKind) {
 	return name, nameKindFile
 }
 
-func extractAndLoadAppBasedBundle(dockerCli command.Cli, namespace, name string) (*bundle.Bundle, error) {
+func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.Bundle, error) {
 	app, err := packager.Extract(name)
 	if err != nil {
 		return nil, err
 	}
 	defer app.Cleanup()
-	return makeBundleFromApp(dockerCli, app, namespace, "")
+	return makeBundleFromApp(dockerCli, app, "")
 }
 
-func resolveBundle(dockerCli command.Cli, namespace, name string) (*bundle.Bundle, error) {
+func resolveBundle(dockerCli command.Cli, name string) (*bundle.Bundle, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
 	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
@@ -136,11 +136,11 @@ func resolveBundle(dockerCli command.Cli, namespace, name string) (*bundle.Bundl
 	switch kind {
 	case nameKindFile:
 		if strings.HasSuffix(name, internal.AppExtension) {
-			return extractAndLoadAppBasedBundle(dockerCli, namespace, name)
+			return extractAndLoadAppBasedBundle(dockerCli, name)
 		}
 		return loader.NewDetectingLoader().Load(name)
 	case nameKindDir, nameKindEmpty:
-		return extractAndLoadAppBasedBundle(dockerCli, namespace, name)
+		return extractAndLoadAppBasedBundle(dockerCli, name)
 	case nameKindReference:
 		// TODO: pull the bundle
 		fmt.Fprintln(dockerCli.Err(), "WARNING: pulling a CNAB is not yet supported")

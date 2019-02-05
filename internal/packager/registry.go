@@ -95,14 +95,8 @@ func Push(app *types.App, namespace, tag, repo string) (string, error) {
 }
 
 func createImageName(app *types.App, namespace, tag, repo string) string {
-	if namespace == "" || tag == "" {
-		metadata := app.Metadata()
-		if namespace == "" {
-			namespace = metadata.Namespace
-		}
-		if tag == "" {
-			tag = metadata.Version
-		}
+	if tag == "" {
+		tag = app.Metadata().Version
 	}
 	if repo == "" {
 		repo = internal.AppNameFromDir(app.Name) + internal.AppExtension

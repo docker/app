@@ -22,7 +22,6 @@ import (
 
 type bundleOptions struct {
 	invocationImageName string
-	namespace           string
 	out                 string
 }
 
@@ -38,13 +37,12 @@ func bundleCmd(dockerCli command.Cli) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.invocationImageName, "invocation-image", "i", "", "specify the name of invocation image to build")
-	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "namespace to use (default: namespace in metadata)")
 	cmd.Flags().StringVarP(&opts.out, "out", "o", "bundle.json", "path to the output bundle.json (- for stdout)")
 	return cmd
 }
 
 func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error {
-	bundle, err := makeBundle(dockerCli, appName, opts.namespace, opts.invocationImageName)
+	bundle, err := makeBundle(dockerCli, appName, opts.invocationImageName)
 	if err != nil {
 		return err
 	}
@@ -63,22 +61,22 @@ func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error 
 	return ioutil.WriteFile(opts.out, bundleBytes, 0644)
 }
 
-func makeBundle(dockerCli command.Cli, appName, namespace, invocationImageName string) (*bundle.Bundle, error) {
+func makeBundle(dockerCli command.Cli, appName, invocationImageName string) (*bundle.Bundle, error) {
 	app, err := packager.Extract(appName)
 	if err != nil {
 		return nil, err
 	}
 	defer app.Cleanup()
-	return makeBundleFromApp(dockerCli, app, namespace, invocationImageName)
+	return makeBundleFromApp(dockerCli, app, invocationImageName)
 }
 
-func makeBundleFromApp(dockerCli command.Cli, app *types.App, namespace, invocationImageName string) (*bundle.Bundle, error) {
+func makeBundleFromApp(dockerCli command.Cli, app *types.App, invocationImageName string) (*bundle.Bundle, error) {
 	meta := app.Metadata()
-	invocationImageName, err := makeImageName(meta, namespace, invocationImageName, "-invoc")
+	invocationImageName, err := makeImageName(meta, invocationImageName, "-invoc")
 	if err != nil {
 		return nil, err
 	}
-	if _, err := makeImageName(app.Metadata(), namespace, "", ""); err != nil {
+	if _, err := makeImageName(app.Metadata(), "", ""); err != nil {
 		return nil, err
 	}
 
@@ -102,15 +100,9 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, namespace, invocat
 	return packager.ToCNAB(app, invocationImageName)
 }
 
-func makeImageName(meta metadata.AppMetadata, namespace, name, suffix string) (string, error) {
+func makeImageName(meta metadata.AppMetadata, name, suffix string) (string, error) {
 	if name == "" {
 		name = fmt.Sprintf("%s:%s%s", meta.Name, meta.Version, suffix)
-	}
-	if namespace == "" {
-		namespace = meta.Namespace
-	}
-	if namespace != "" {
-		name = fmt.Sprintf("%s/%s", namespace, name)
 	}
 	if _, err := reference.ParseNormalizedNamed(name); err != nil {
 		return "", errors.Wrapf(err, "image name %q is invalid, please check namespace, name and version fields", name)
