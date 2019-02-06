@@ -14,10 +14,8 @@ import (
 	"github.com/deislabs/duffle/pkg/loader"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/types/parameters"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context/store"
-	cliopts "github.com/docker/cli/opts"
 	"github.com/pkg/errors"
 )
 
@@ -95,40 +93,6 @@ func prepareDriver(dockerCli command.Cli) (driver.Driver, error) {
 	}
 
 	return driverImpl, err
-}
-
-func applyParameterValues(parameterValues map[string]string, parameterDefinitions map[string]bundle.ParameterDefinition, finalValues map[string]interface{}) error {
-	for k, v := range parameterValues {
-		pd, ok := parameterDefinitions[k]
-		if !ok {
-			return fmt.Errorf("parameter %q is not defined in the bundle", k)
-		}
-		value, err := pd.ConvertValue(v)
-		if err != nil {
-			return errors.Wrapf(err, "invalid value for parameter %q", k)
-		}
-		if err := pd.ValidateParameterValue(value); err != nil {
-			return errors.Wrapf(err, "invalid value for parameter %q", k)
-		}
-		finalValues[k] = value
-	}
-	return nil
-}
-
-func prepareParameters(opts parametersOptions) (map[string]string, error) {
-	p, err := parameters.LoadFiles(opts.parametersFiles)
-	if err != nil {
-		return nil, err
-	}
-	d := cliopts.ConvertKVStringsToMap(opts.env)
-	overrides, err := parameters.FromFlatten(d)
-	if err != nil {
-		return nil, err
-	}
-	if p, err = parameters.Merge(p, overrides); err != nil {
-		return nil, err
-	}
-	return p.Flatten(), nil
 }
 
 func getAppNameKind(name string) (string, nameKind) {

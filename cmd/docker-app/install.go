@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/utils/crud"
@@ -70,18 +69,14 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 
 func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
 	muteDockerCli(dockerCli)
-	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	parameterValues, err := prepareParameters(opts.parametersOptions)
-	if err != nil {
-		return err
+	if opts.sendRegistryAuth {
+		return errors.New("with-registry-auth is not supported at the moment")
 	}
+	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
 
 	bndl, err := resolveBundle(dockerCli, opts.namespace, appname)
 	if err != nil {
 		return err
-	}
-	if opts.sendRegistryAuth {
-		return errors.New("with-registry-auth is not supported at the moment")
 	}
 	if err := bndl.Validate(); err != nil {
 		return err
@@ -99,12 +94,6 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if err != nil {
 		return err
 	}
-	if _, ok := bndl.Parameters["docker.orchestrator"]; ok {
-		parameterValues["docker.orchestrator"] = opts.orchestrator
-	}
-	if _, ok := bndl.Parameters["docker.kubernetes-namespace"]; ok {
-		parameterValues["docker.kubernetes-namespace"] = opts.kubeNamespace
-	}
 
 	driverImpl, err := prepareDriver(dockerCli)
 	if err != nil {
@@ -119,16 +108,16 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	}
 
 	c.Bundle = bndl
-	convertedParamValues := map[string]interface{}{}
 
-	if err := applyParameterValues(parameterValues, bndl.Parameters, convertedParamValues); err != nil {
-		return err
-	}
-
-	c.Parameters, err = bundle.ValuesOrDefaults(convertedParamValues, bndl)
+	c.Parameters, err = mergeBundleParameters(bndl,
+		withFileParameters(opts.parametersFiles),
+		withCommandLineParameters(opts.overrides),
+		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
+	)
 	if err != nil {
 		return err
 	}
+
 	inst := &action.Install{
 		Driver: driverImpl,
 	}

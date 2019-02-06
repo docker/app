@@ -92,12 +92,12 @@ func muteDockerCli(dockerCli command.Cli) {
 
 type parametersOptions struct {
 	parametersFiles []string
-	env             []string
+	overrides       []string
 }
 
 func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
 	flags.StringArrayVarP(&o.parametersFiles, "parameters-files", "f", []string{}, "Override parameters files")
-	flags.StringArrayVarP(&o.env, "set", "s", []string{}, "Override parameters values")
+	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameters values")
 }
 
 type credentialOptions struct {
