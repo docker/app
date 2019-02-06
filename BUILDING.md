@@ -103,3 +103,11 @@ directly against `go test` to run root-requiring tests.
 # run the test <TEST_NAME>:
 go test -v -run "<TEST_NAME>" .
 ```
+
+**NOTE** if the tests fail with an error message like `"Error: manifest
+ for docker/cnab-app-base:v0.6.0-68-g3ae57efdb6-dirty not found"`, it means
+ you forgot to rebuild the base invocation image, simply run
+
+ ```sh
+ $ make -f docker.Makefile invocation-image
+ ```

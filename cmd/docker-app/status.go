@@ -7,6 +7,7 @@ import (
 	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -48,8 +49,10 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
 		return err
 	}
-	status := &action.Status{
+	status := &action.RunCustom{
+		Action: "status",
 		Driver: driverImpl,
 	}
-	return status.Run(&c, creds, dockerCli.Out())
+	err = status.Run(&c, creds, dockerCli.Out())
+	return errors.Wrap(err, "Status failed")
 }

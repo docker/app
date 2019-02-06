@@ -71,6 +71,9 @@ func TestToCNAB(t *testing.T) {
 			"inspect": {
 				Modifies: false,
 			},
+			"status": {
+				Modifies: false,
+			},
 		},
 	}
 	assert.DeepEqual(t, actual, expected)

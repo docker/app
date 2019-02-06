@@ -150,10 +150,9 @@ More examples are available in the [examples](examples) directory.
 ## CNAB
 
 Under the hood `docker-app` is CNAB compliant. It generates a CNAB from your application source and is able to install and manage any other CNAB too.
-CNAB specifies four actions which `docker-app` provides as commands:
+CNAB specifies three actions which `docker-app` provides as commands:
 - `install`
 - `upgrade`
-- `status`
 - `uninstall`
 
 **Note**: These commands need a Docker Context so that `docker-app` knows which endpoint and orchestrator to target.
