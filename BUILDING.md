@@ -108,6 +108,6 @@ go test -v -run "<TEST_NAME>" .
  for docker/cnab-app-base:v0.6.0-68-g3ae57efdb6-dirty not found"`, it means
  you forgot to rebuild the base invocation image, simply run
 
- ```sh
- $ make -f docker.Makefile invocation-image
- ```
+```sh
+$ make invocation-image
+```

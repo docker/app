@@ -27,6 +27,8 @@ endif
 GO_BUILD := CGO_ENABLED=0 go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 GO_TEST := CGO_ENABLED=0 go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 
+CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(BUILD_TAG)
+
 all: bin/$(BIN_NAME) test
 
 check_go_env:
@@ -96,6 +98,9 @@ specification/bindata.go: specification/schemas/*.json
 	go generate github.com/docker/app/specification
 
 schemas: specification/bindata.go ## generate specification/bindata.go from json schemas
+
+invocation-image:
+	docker build -f Dockerfile.invocation-image $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME) .
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
