@@ -1,16 +1,14 @@
 ARG ALPINE_VERSION=3.8
-ARG GO_VERSION=1.11.0
 
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS build
-ARG DOCKERCLI_VERSION=18.03.1-ce
-ARG DOCKERCLI_CHANNEL=edge
-RUN apk add --no-cache \
-  make
+FROM dockercore/golang-cross:1.11.5@sha256:17a7e0f158521c50316a0d0c1ab1f6a75350b4d82e7ef03c98bcfbdf04feb4f3 AS build
+
+RUN apt-get install -y -q --no-install-recommends \
+    coreutils \
+    util-linux \
+    uuid-runtime
 
 WORKDIR /go/src/github.com/docker/app/
 
-# builder of invocation image entrypoint
-FROM build AS invocation-build
 COPY . .
 ARG EXPERIMENTAL="off"
 RUN make EXPERIMENTAL=${EXPERIMENTAL} bin/cnab-run
@@ -18,6 +16,6 @@ RUN make EXPERIMENTAL=${EXPERIMENTAL} bin/cnab-run
  # local cnab invocation image
 FROM alpine:${ALPINE_VERSION} as invocation
 RUN apk add --no-cache ca-certificates
-COPY --from=invocation-build /go/src/github.com/docker/app/bin/cnab-run /cnab/app/run
+COPY --from=build /go/src/github.com/docker/app/bin/cnab-run /cnab/app/run
 WORKDIR /cnab/app
 CMD /cnab/app/run

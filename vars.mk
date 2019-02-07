@@ -5,6 +5,8 @@ E2E_NAME := $(BIN_NAME)-e2e
 # Enable experimental features. "on" or "off"
 EXPERIMENTAL := off
 
+ALPINE_VERSION=3.8
+
 # Failing to resolve sh.exe to a full path denotes a windows vanilla shell.
 # Although 'simple' commands are still exec'ed, 'complex' ones are batch'ed instead of sh'ed.
 ifeq ($(SHELL),sh.exe)
@@ -33,3 +35,5 @@ endif
 ifeq ($(TAG),)
   TAG := $(BUILD_TAG)
 endif
+
+CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(BUILD_TAG)
