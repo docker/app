@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -111,22 +110,25 @@ maintainers:
     email: joe@joe.com
 `
 	envData := "# some comment\nNGINX_DRY_RUN=-t"
-	dir := fs.NewDir(t, "app_input",
+	tmpDir := fs.NewDir(t, "app_input",
 		fs.WithFile(internal.ComposeFileName, composeData),
 		fs.WithFile(".env", envData),
 	)
-	defer dir.Remove()
+	defer tmpDir.Remove()
 
 	testAppName := "app-test"
 	dirName := internal.DirNameFromAppName(testAppName)
-	defer os.RemoveAll(dirName)
 
-	icmd.RunCommand(dockerApp, "init", testAppName,
-		"-c", dir.Join(internal.ComposeFileName),
+	cmd := icmd.Cmd{Dir: tmpDir.Path()}
+
+	cmd.Command = []string{dockerApp,
+		"init", testAppName,
+		"-c", tmpDir.Join(internal.ComposeFileName),
 		"-d", "my cool app",
 		"-m", "bob",
-		"-m", "joe:joe@joe.com",
-	).Assert(t, icmd.Success)
+		"-m", "joe:joe@joe.com"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
 	manifest := fs.Expected(
 		t,
 		fs.WithMode(0755),
@@ -134,26 +136,32 @@ maintainers:
 		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
 		fs.WithFile(internal.ParametersFileName, "NGINX_ARGS: FILL ME\nNGINX_DRY_RUN: -t\n", fs.WithMode(0644)),
 	)
-	assert.Assert(t, fs.Equal(dirName, manifest))
+	assert.Assert(t, fs.Equal(tmpDir.Join(dirName), manifest))
 
 	// validate metadata with JSON Schema
-	icmd.RunCommand(dockerApp, "validate", testAppName).Assert(t, icmd.Success)
+	cmd.Command = []string{dockerApp, "validate", testAppName}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	// test single-file init
-	icmd.RunCommand(dockerApp, "init", "tac",
-		"-c", dir.Join(internal.ComposeFileName),
+	cmd.Command = []string{dockerApp,
+		"init", "tac",
+		"-c", tmpDir.Join(internal.ComposeFileName),
 		"-d", "my cool app",
 		"-m", "bob",
 		"-m", "joe:joe@joe.com",
 		"-s",
-	).Assert(t, icmd.Success)
-	defer os.Remove("tac.dockerapp")
-	appData, err := ioutil.ReadFile("tac.dockerapp")
+	}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	appData, err := ioutil.ReadFile(tmpDir.Join("tac.dockerapp"))
 	assert.NilError(t, err)
 	assert.Assert(t, golden.Bytes(appData, "init-singlefile.dockerapp"))
 	// Check various commands work on single-file app package
-	icmd.RunCommand(dockerApp, "inspect", "tac").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "render", "tac").Assert(t, icmd.Success)
+	cmd.Command = []string{dockerApp, "inspect", "tac"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Command = []string{dockerApp, "render", "tac"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
 func TestDetectApp(t *testing.T) {
@@ -189,19 +197,32 @@ func TestDetectApp(t *testing.T) {
 }
 
 func TestSplitMerge(t *testing.T) {
-	icmd.RunCommand(dockerApp, "merge", "testdata/render/envvariables/my.dockerapp", "-o", "remerged.dockerapp").Assert(t, icmd.Success)
-	defer os.Remove("remerged.dockerapp")
+	tmpDir := fs.NewDir(t, "split_merge")
+	defer tmpDir.Remove()
+
+	icmd.RunCommand(dockerApp, "merge", "testdata/render/envvariables/my.dockerapp", "-o", tmpDir.Join("remerged.dockerapp")).Assert(t, icmd.Success)
+
+	cmd := icmd.Cmd{Dir: tmpDir.Path()}
+
 	// test that inspect works on single-file
-	result := icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
+	cmd.Command = []string{dockerApp, "inspect", "remerged"}
+	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
+
 	// split it
-	icmd.RunCommand(dockerApp, "split", "remerged", "-o", "split.dockerapp").Assert(t, icmd.Success)
-	defer os.RemoveAll("split.dockerapp")
-	result = icmd.RunCommand(dockerApp, "inspect", "remerged").Assert(t, icmd.Success)
+	cmd.Command = []string{dockerApp, "split", "remerged", "-o", "split.dockerapp"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Command = []string{dockerApp, "inspect", "remerged"}
+	result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
+
 	// test inplace
-	icmd.RunCommand(dockerApp, "merge", "split").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "split", "split").Assert(t, icmd.Success)
+	cmd.Command = []string{dockerApp, "merge", "split"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Command = []string{dockerApp, "split", "split"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
 func TestURL(t *testing.T) {
