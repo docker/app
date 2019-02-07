@@ -3,21 +3,15 @@ package main
 import (
 	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/claim"
-	"github.com/docker/app/types/parameters"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	cliopts "github.com/docker/cli/opts"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-var (
-	inspectParametersFile []string
-	inspectEnv            []string
-)
-
 // inspectCmd represents the inspect command
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
+	var opts parametersOptions
 	cmd := &cobra.Command{
 		Use:   "inspect [<app-name>] [-s key=value...] [-f parameters-file...]",
 		Short: "Shows metadata, parameters and a summary of the compose file for a given application",
@@ -25,21 +19,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			muteDockerCli(dockerCli)
 			appname := firstOrEmpty(args)
-			bundle, err := resolveBundle(dockerCli, "", appname)
-			if err != nil {
-				return err
-			}
-			params, err := parameters.LoadFiles(inspectParametersFile)
-			if err != nil {
-				return err
-			}
-			overrides, err := parameters.FromFlatten(cliopts.ConvertKVStringsToMap(inspectEnv))
-			if err != nil {
-				return err
-			}
-			if params, err = parameters.Merge(params, overrides); err != nil {
-				return err
-			}
+
 			c, err := claim.New("inspect")
 			if err != nil {
 				return err
@@ -48,8 +28,20 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			bundle, err := resolveBundle(dockerCli, "", appname)
+			if err != nil {
+				return err
+			}
 			c.Bundle = bundle
-			c.Parameters = stringsKVToStringInterface(params.Flatten())
+
+			parameters, err := mergeBundleParameters(c.Bundle,
+				withFileParameters(opts.parametersFiles),
+				withCommandLineParameters(opts.overrides),
+			)
+			if err != nil {
+				return err
+			}
+			c.Parameters = parameters
 
 			a := &action.RunCustom{
 				Action: "inspect",
@@ -59,7 +51,6 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 			return errors.Wrap(err, "Inspect failed")
 		},
 	}
-	cmd.Flags().StringArrayVarP(&inspectParametersFile, "parameters-files", "f", []string{}, "Override with parameters from files")
-	cmd.Flags().StringArrayVarP(&inspectEnv, "set", "s", []string{}, "Override parameters values")
+	opts.addFlags(cmd.Flags())
 	return cmd
 }

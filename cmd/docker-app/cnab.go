@@ -19,14 +19,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func stringsKVToStringInterface(src map[string]string) map[string]interface{} {
-	result := map[string]interface{}{}
-	for k, v := range src {
-		result[k] = v
-	}
-	return result
-}
-
 func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
 	creds := map[string]string{}
 	for _, file := range namedCredentialsets {
