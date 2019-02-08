@@ -1,6 +1,3 @@
-ARG ALPINE_VERSION=3.8
-ARG GO_VERSION=1.11.0
-
 FROM dockercore/golang-cross:1.11.5@sha256:17a7e0f158521c50316a0d0c1ab1f6a75350b4d82e7ef03c98bcfbdf04feb4f3 AS build
 ENV     DISABLE_WARN_OUTSIDE_CONTAINER=1
 
@@ -41,16 +38,3 @@ ARG EXPERIMENTAL="off"
 ARG TAG="unknown"
 # Run e2e tests
 RUN make EXPERIMENTAL=${EXPERIMENTAL} TAG=${TAG} e2e-cross
-
-# builder of invocation image entrypoint
-FROM build AS invocation-build
-COPY . .
-ARG EXPERIMENTAL="off"
-RUN make EXPERIMENTAL=${EXPERIMENTAL} bin/cnab-run
-
-# cnab invocation image
-FROM alpine:${ALPINE_VERSION} AS invocation
-RUN apk add --no-cache ca-certificates
-COPY --from=invocation-build /go/src/github.com/docker/app/bin/cnab-run /cnab/app/run
-WORKDIR /cnab/app
-CMD /cnab/app/run
