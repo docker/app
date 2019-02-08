@@ -188,28 +188,6 @@ func TestDetectApp(t *testing.T) {
 	})
 }
 
-func TestPack(t *testing.T) {
-	skip.If(t, !hasExperimental, "experimental mode needed for this test")
-	tempDir, err := ioutil.TempDir("", "dockerapp")
-	assert.NilError(t, err)
-	defer os.RemoveAll(tempDir)
-	icmd.RunCommand(dockerApp, "pack", "testdata/attachments", "-o", filepath.Join(tempDir, "test.dockerapp")).Assert(t, icmd.Success)
-	// check that our commands run on the packed version
-	icmd.RunCommand(dockerApp, "inspect", filepath.Join(tempDir, "test")).Assert(t, icmd.Expected{
-		Out: "myapp",
-	})
-	icmd.RunCommand(dockerApp, "render", filepath.Join(tempDir, "test")).Assert(t, icmd.Expected{
-		Out: "nginx",
-	})
-	assert.NilError(t, os.Mkdir(filepath.Join(tempDir, "output"), 0755))
-	icmd.RunCmd(icmd.Cmd{
-		Command: []string{dockerApp, "unpack", "test", "-o", "output"},
-		Dir:     tempDir,
-	}).Assert(t, icmd.Success)
-	_, err = os.Stat(filepath.Join(tempDir, "output", "test.dockerapp", "docker-compose.yml"))
-	assert.NilError(t, err)
-}
-
 func TestSplitMerge(t *testing.T) {
 	icmd.RunCommand(dockerApp, "merge", "testdata/render/envvariables/my.dockerapp", "-o", "remerged.dockerapp").Assert(t, icmd.Success)
 	defer os.Remove("remerged.dockerapp")
