@@ -83,12 +83,9 @@ func pullImage(ctx context.Context, cli command.Cli, image string) error {
 		return err
 	}
 	defer responseBody.Close()
-	return jsonmessage.DisplayJSONMessagesStream(
-		responseBody,
-		cli.Out(),
-		cli.Out().FD(),
-		cli.Out().IsTerminal(),
-		nil)
+
+	// passing isTerm = false here because of https://github.com/Nvveen/Gotty/pull/1
+	return jsonmessage.DisplayJSONMessagesStream(responseBody, cli.Out(), cli.Out().FD(), false, nil)
 }
 
 func (d *DockerDriver) initializeDockerCli() (command.Cli, error) {

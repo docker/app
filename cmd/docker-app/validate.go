@@ -28,7 +28,7 @@ func validateCmd() *cobra.Command {
 			}
 			defer app.Cleanup()
 			argParameters := cliopts.ConvertKVStringsToMap(validateEnv)
-			_, err = render.Render(app, argParameters)
+			_, err = render.Render(app, argParameters, nil)
 			return err
 		},
 	}

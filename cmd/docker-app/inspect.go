@@ -29,7 +29,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 			}
 			defer app.Cleanup()
 			argParameters := cliopts.ConvertKVStringsToMap(inspectEnv)
-			return inspect.Inspect(dockerCli.Out(), app, argParameters)
+			return inspect.Inspect(dockerCli.Out(), app, argParameters, nil)
 		},
 	}
 	cmd.Flags().StringArrayVarP(&inspectParametersFile, "parameters-files", "f", []string{}, "Override with parameters from files")

@@ -18,7 +18,7 @@ type Bundle struct {
 	Keywords         []string                       `json:"keywords,omitempty" mapstructure:"keywords,omitempty"`
 	Maintainers      []Maintainer                   `json:"maintainers,omitempty" mapstructure:"maintainers,omitempty"`
 	InvocationImages []InvocationImage              `json:"invocationImages" mapstructure:"invocationImages"`
-	Images           []Image                        `json:"images" mapstructure:"images"`
+	Images           map[string]Image               `json:"images" mapstructure:"images"`
 	Actions          map[string]Action              `json:"actions,omitempty" mapstructure:"actions,omitempty"`
 	Parameters       map[string]ParameterDefinition `json:"parameters" mapstructure:"parameters"`
 	Credentials      map[string]Location            `json:"credentials" mapstructure:"credentials"`

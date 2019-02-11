@@ -18,12 +18,12 @@ func Example() {
 	defer f.Close()
 	app, err := loader.LoadFromSingleFile("myApp", f)
 	if err != nil {
-		panic("cannot load application")
+		panic("cannot load application: " + err.Error())
 	}
 	// Render the app to a composefile format, using some user provided parameters
 	c, err := render.Render(app, map[string]string{
 		"text": "hello examples!",
-	})
+	}, nil)
 	if err != nil {
 		panic("cannot render application")
 	}

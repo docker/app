@@ -31,11 +31,9 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/docker/cli"
   revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
-# Waiting for https://github.com/deislabs/duffle/pull/617 to be merged
 [[override]]
   name = "github.com/deislabs/duffle"
-  branch = "master-docker-app"
-  source = "github.com/silvin-lubecki/duffle"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"

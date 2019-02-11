@@ -39,7 +39,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 			}
 			defer app.Cleanup()
 			d := cliopts.ConvertKVStringsToMap(renderEnv)
-			rendered, err := render.Render(app, d)
+			rendered, err := render.Render(app, d, nil)
 			if err != nil {
 				return err
 			}

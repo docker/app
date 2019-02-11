@@ -11,7 +11,8 @@ import (
 func TestToCNAB(t *testing.T) {
 	app, err := types.NewAppFromDefaultFiles("testdata/packages/packing.dockerapp")
 	assert.NilError(t, err)
-	actual := ToCNAB(app, "test-image")
+	actual, err := ToCNAB(app, "test-image")
+	assert.NilError(t, err)
 	expected := &bundle.Bundle{
 		Description: "hello",
 		Name:        "my-namespace/packing",
@@ -59,12 +60,12 @@ func TestToCNAB(t *testing.T) {
 				},
 				DefaultValue: "",
 			},
-			"watcher.image": {
+			"watcher.cmd": {
 				DataType: "string",
 				Destination: &bundle.Location{
 					EnvironmentVariable: "docker_param1",
 				},
-				DefaultValue: "watcher:latest",
+				DefaultValue: "foo",
 			},
 		},
 		Actions: map[string]bundle.Action{
@@ -73,6 +74,36 @@ func TestToCNAB(t *testing.T) {
 			},
 			"status": {
 				Modifies: false,
+			},
+		},
+		Images: map[string]bundle.Image{
+			"front": {
+				Description: "nginx",
+				BaseImage: bundle.BaseImage{
+					Image:     "nginx",
+					ImageType: "docker",
+				},
+			},
+			"debug": {
+				Description: "busybox:latest",
+				BaseImage: bundle.BaseImage{
+					Image:     "busybox:latest",
+					ImageType: "docker",
+				},
+			},
+			"monitor": {
+				Description: "busybox:latest",
+				BaseImage: bundle.BaseImage{
+					Image:     "busybox:latest",
+					ImageType: "docker",
+				},
+			},
+			"app-watcher": {
+				Description: "watcher",
+				BaseImage: bundle.BaseImage{
+					Image:     "watcher",
+					ImageType: "docker",
+				},
 			},
 		},
 	}
