@@ -99,7 +99,7 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, namespace, invocat
 	if err := jsonmessage.DisplayJSONMessagesStream(buildResp.Body, ioutil.Discard, 0, false, func(jsonmessage.JSONMessage) {}); err != nil {
 		return nil, err
 	}
-	return packager.ToCNAB(app, invocationImageName), nil
+	return packager.ToCNAB(app, invocationImageName)
 }
 
 func makeImageName(meta metadata.AppMetadata, namespace, name, suffix string) (string, error) {

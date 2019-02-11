@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/parameters"
@@ -15,9 +16,9 @@ import (
 )
 
 // Inspect dumps the metadata of an app
-func Inspect(out io.Writer, app *types.App, argParameters map[string]string) error {
+func Inspect(out io.Writer, app *types.App, argParameters map[string]string, imageMap map[string]bundle.Image) error {
 	// Render the compose file
-	config, err := render.Render(app, argParameters)
+	config, err := render.Render(app, argParameters, imageMap)
 	if err != nil {
 		return err
 	}

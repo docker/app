@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/app/internal/slices"
@@ -30,7 +31,7 @@ import (
 
 // Render renders the Compose file for this app, merging in parameters files, other compose files, and env
 // appname string, composeFiles []string, parametersFiles []string
-func Render(app *types.App, env map[string]string) (*composetypes.Config, error) {
+func Render(app *types.App, env map[string]string, imageMap map[string]bundle.Image) (*composetypes.Config, error) {
 	// prepend the app parameters to the argument parameters
 	// load the parameters into a struct
 	fileParameters := app.Parameters()
@@ -58,16 +59,16 @@ func Render(app *types.App, env map[string]string) (*composetypes.Config, error)
 		}
 		renderers = rl
 	}
-	configFiles, err := compose.Load(app.Composes(), func(data string) (string, error) {
+	configFiles, _, err := compose.Load(app.Composes(), func(data string) (string, error) {
 		return renderer.Apply(data, allParameters, renderers...)
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load composefiles")
 	}
-	return render(configFiles, allParameters.Flatten())
+	return render(configFiles, allParameters.Flatten(), imageMap)
 }
 
-func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (*composetypes.Config, error) {
+func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string, imageMap map[string]bundle.Image) (*composetypes.Config, error) {
 	rendered, err := loader.Load(composetypes.ConfigDetails{
 		WorkingDir:  ".",
 		ConfigFiles: configFiles,
@@ -80,6 +81,12 @@ func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string) (
 	}
 	if err := processEnabled(rendered); err != nil {
 		return nil, err
+	}
+	for ix, service := range rendered.Services {
+		if img, ok := imageMap[service.Name]; ok {
+			service.Image = img.Image
+			rendered.Services[ix] = service
+		}
 	}
 	return rendered, nil
 }

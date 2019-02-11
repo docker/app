@@ -110,7 +110,7 @@ text: hello`),
 			outBuffer := new(bytes.Buffer)
 			app, err := types.NewAppFromDefaultFiles(dir.Join(testcase.name))
 			assert.NilError(t, err)
-			err = Inspect(outBuffer, app, testcase.args)
+			err = Inspect(outBuffer, app, testcase.args, nil)
 			assert.NilError(t, err)
 			assert.Assert(t, golden.String(outBuffer.String(), fmt.Sprintf("inspect-%s.golden", testcase.name)))
 		})
