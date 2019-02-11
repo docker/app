@@ -1,0 +1,71 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "metadata_schema_v0.2.json",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "version": {
+            "type": "string"
+        },
+        "description": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "maintainers": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/maintainer"
+            }
+        },
+        "parents": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/parent"
+            }
+        }
+    },
+    "required": [
+        "name",
+        "version"
+    ],
+    "definitions": {
+        "maintainer": {
+            "id": "#/definitions/maintainer",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "email"
+                }
+            }
+        },
+        "parent": {
+            "id": "#/definitions/parent",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "format": "hostname"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "maintainers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/maintainer"
+                    }
+                }
+            }
+        }
+    }
+}

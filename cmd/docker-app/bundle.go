@@ -21,8 +21,7 @@ import (
 )
 
 type bundleOptions struct {
-	invocationImageName string
-	out                 string
+	out string
 }
 
 func bundleCmd(dockerCli command.Cli) *cobra.Command {
@@ -36,13 +35,12 @@ func bundleCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.invocationImageName, "invocation-image", "i", "", "specify the name of invocation image to build")
 	cmd.Flags().StringVarP(&opts.out, "out", "o", "bundle.json", "path to the output bundle.json (- for stdout)")
 	return cmd
 }
 
 func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error {
-	bundle, err := makeBundle(dockerCli, appName, opts.invocationImageName)
+	bundle, err := makeBundle(dockerCli, appName)
 	if err != nil {
 		return err
 	}
@@ -61,22 +59,22 @@ func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error 
 	return ioutil.WriteFile(opts.out, bundleBytes, 0644)
 }
 
-func makeBundle(dockerCli command.Cli, appName, invocationImageName string) (*bundle.Bundle, error) {
+func makeBundle(dockerCli command.Cli, appName string) (*bundle.Bundle, error) {
 	app, err := packager.Extract(appName)
 	if err != nil {
 		return nil, err
 	}
 	defer app.Cleanup()
-	return makeBundleFromApp(dockerCli, app, invocationImageName)
+	return makeBundleFromApp(dockerCli, app)
 }
 
-func makeBundleFromApp(dockerCli command.Cli, app *types.App, invocationImageName string) (*bundle.Bundle, error) {
+func makeBundleFromApp(dockerCli command.Cli, app *types.App) (*bundle.Bundle, error) {
 	meta := app.Metadata()
-	invocationImageName, err := makeImageName(meta, invocationImageName, "-invoc")
+	invocationImageName, err := makeImageName(meta)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := makeImageName(app.Metadata(), "", ""); err != nil {
+	if _, err := makeImageName(meta); err != nil {
 		return nil, err
 	}
 
@@ -100,12 +98,10 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, invocationImageNam
 	return packager.ToCNAB(app, invocationImageName)
 }
 
-func makeImageName(meta metadata.AppMetadata, name, suffix string) (string, error) {
-	if name == "" {
-		name = fmt.Sprintf("%s:%s%s", meta.Name, meta.Version, suffix)
-	}
+func makeImageName(meta metadata.AppMetadata) (string, error) {
+	name := fmt.Sprintf("%s:%s-invoc", meta.Name, meta.Version)
 	if _, err := reference.ParseNormalizedNamed(name); err != nil {
-		return "", errors.Wrapf(err, "image name %q is invalid, please check namespace, name and version fields", name)
+		return "", errors.Wrapf(err, "image name %q is invalid, please check name and version fields", name)
 	}
 	return name, nil
 }

@@ -123,7 +123,7 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.B
 		return nil, err
 	}
 	defer app.Cleanup()
-	return makeBundleFromApp(dockerCli, app, "")
+	return makeBundleFromApp(dockerCli, app)
 }
 
 func resolveBundle(dockerCli command.Cli, name string) (*bundle.Bundle, error) {

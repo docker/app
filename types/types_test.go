@@ -216,8 +216,7 @@ func TestWithAttachmentsIncludingNestedCoreFiles(t *testing.T) {
 
 func TestValidateBrokenMetadata(t *testing.T) {
 	r := strings.NewReader(`#version: 0.1.0-missing
-name: _INVALID-name
-namespace: myhubusername
+name: MustBeAValidUntaggedRegistryReferenceButNotEvaluatedByTheSchema
 maintainers:
     - name: user
       email: user@email.com
@@ -229,7 +228,6 @@ unknown: property`)
 	err := Metadata(r)(app)
 	assert.Error(t, err, `failed to validate metadata:
 - maintainers.2.email: Does not match format 'email'
-- name: Does not match format 'hostname'
 - version: version is required`)
 }
 

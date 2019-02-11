@@ -241,10 +241,10 @@ func TestBundle(t *testing.T) {
 
 	// List the images on the build context daemon and checks the invocation image is there
 	cmd.Command = []string{dockerCli, "image", "ls", "--format", "{{.Repository}}:{{.Tag}}"}
-	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "acmecorp/simple:1.1.0-beta1-invoc"})
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "simple:1.1.0-beta1-invoc"})
 
 	// Copy all the files from the invocation image and check them
-	cmd.Command = []string{dockerCli, "create", "--name", "invocation", "acmecorp/simple:1.1.0-beta1-invoc"}
+	cmd.Command = []string{dockerCli, "create", "--name", "invocation", "simple:1.1.0-beta1-invoc"}
 	id := strings.TrimSpace(icmd.RunCmd(cmd).Assert(t, icmd.Success).Stdout())
 	cmd.Command = []string{dockerCli, "cp", "invocation:/cnab/app/simple.dockerapp", tmpDir.Join("simple.dockerapp")}
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
