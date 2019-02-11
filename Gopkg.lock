@@ -159,7 +159,7 @@
   revision = "0377f7d767206f3a9e8881d0f02267b0d89c7a62"
 
 [[projects]]
-  digest = "1:a72272dfefbb22c87cda3dbefbb256741d861d2fb727210a66e0df0df6084b30"
+  digest = "1:9a4926a6de553a8f80d958a622308b86dadf199dde2602e88fe6e1943d1890e9"
   name = "github.com/containerd/cri"
   packages = ["pkg/util"]
   pruneopts = "NUT"
@@ -183,7 +183,7 @@
   revision = "461401dc8f19d80baa4b70178935e4501286c00b"
 
 [[projects]]
-  digest = "1:9e2dbc126e8e5314cba3ab654b2183376dc81cb657ca8c588f86990f5da88cbc"
+  digest = "1:76a167b7658125360bbd52626d85031c89383c0ec6f3e4e25afd776c9a27f286"
   name = "github.com/coreos/etcd"
   packages = ["raft/raftpb"]
   pruneopts = "NUT"
@@ -199,8 +199,8 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "master-docker-app"
-  digest = "1:00492a2d9a8dd69a2c1c882ccfc90b60420b014ea57adc12bcef91b4f92c9008"
+  branch = "master"
+  digest = "1:e2033d363ec4e251ae535f558c51269c78c05bcb0e1eded55ea1800ff58d86ef"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
@@ -214,8 +214,7 @@
     "pkg/utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "85a7e9ff937150d0e4cae5acf36bfb2598a536cd"
-  source = "github.com/silvin-lubecki/duffle"
+  revision = "eaa7595bd231ca353ec886708405fe4deba91968"
 
 [[projects]]
   digest = "1:657236b6a87fbaf9e27e2029be1b4f49fc6367f61a4ac106c012576c414cbcc0"
@@ -315,7 +314,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b1ebf6d2021d75519a0e508774eb0df1a9f25ddcef2a3a75c4e3d662fc0cd773"
+  digest = "1:6e16b5aee97695cb06862f865a433e510622be6a03a34ddea5be12622cafb7c5"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -1108,7 +1107,7 @@
   source = "https://github.com/simonferquel/yaml"
 
 [[projects]]
-  digest = "1:8eed93b935c1abf503719923397fce5258a94a7834f35323e41c5c61b9e7bfe6"
+  digest = "1:fba52eeb003a81a7ad2eb9c92f139c43a8b0a4e8cc51c049fd03a2eb8f6894ae"
   name = "gotest.tools"
   packages = [
     "assert",
@@ -1277,7 +1276,7 @@
   revision = "kubernetes-1.11.1"
 
 [[projects]]
-  digest = "1:18254705f2e912ec0142b7b36546c5d38d74e9d137c8d243985bff4d247eed81"
+  digest = "1:34af467590a9aa09701c1c3bea1fa6cdd5e8a8478e0baff9b8f6d4ba9518a42d"
   name = "k8s.io/kubernetes"
   packages = ["pkg/api/v1/pod"]
   pruneopts = "NUT"
