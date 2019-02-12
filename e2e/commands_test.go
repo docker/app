@@ -328,7 +328,7 @@ func TestBundle(t *testing.T) {
 	assert.Assert(t, fs.Equal(tmpDir.Join("simple.dockerapp"), manifest))
 }
 
-func TestDeployDockerApp(t *testing.T) {
+func TestDockerAppLifecycle(t *testing.T) {
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 
@@ -399,6 +399,19 @@ func TestDeployDockerApp(t *testing.T) {
 			fmt.Sprintf(`[[:alnum:]]+        %s_web   replicated          [0-1]/1                 nginx:latest        \*:8082->80/tcp`, t.Name()),
 			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", t.Name()),
 		})
+
+	// Upgrade the application, changing the port
+	cmd.Command = []string{dockerApp, "upgrade", t.Name(), "--set", "web_port=8081"}
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			fmt.Sprintf("Updating service %s_db", t.Name()),
+			fmt.Sprintf("Updating service %s_api", t.Name()),
+			fmt.Sprintf("Updating service %s_web", t.Name()),
+		})
+
+	// Query the application status again, the port should have change
+	cmd.Command = []string{dockerApp, "status", t.Name()}
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "8081"})
 
 	// Uninstall the application
 	cmd.Command = []string{dockerApp, "uninstall", t.Name()}
