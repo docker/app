@@ -276,6 +276,58 @@ func TestAttachmentsWithRegistry(t *testing.T) {
 	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
 }
 
+func TestBundle(t *testing.T) {
+	tmpDir := fs.NewDir(t, t.Name())
+	defer tmpDir.Remove()
+	// Using a custom DOCKER_CONFIG to store contexts in a temporary directory
+	cmd := icmd.Cmd{Env: append(os.Environ(), "DOCKER_CONFIG="+tmpDir.Path())}
+
+	// Running a docker in docker to bundle the application
+	dind := NewContainer("docker:18.09-dind", 2375)
+	dind.Start(t)
+	defer dind.Stop(t)
+
+	// Create a build context
+	cmd.Command = []string{dockerCli, "context", "create", "build-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, dind.GetAddress(t))}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// The dind doesn't have the cnab-app-base image so we save it in order to load it later
+	cmd.Command = []string{dockerCli, "save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "-o", tmpDir.Join("cnab-app-base.tar.gz")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=build-context")
+	cmd.Command = []string{dockerCli, "load", "-i", tmpDir.Join("cnab-app-base.tar.gz")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// Bundle the docker application package to a CNAB bundle, using the build-context.
+	cmd.Command = []string{dockerApp, "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--out", tmpDir.Join("bundle.json")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// Check the resulting CNAB bundle.json
+	golden.Assert(t, string(golden.Get(t, tmpDir.Join("bundle.json"))), "simple-bundle.json.golden")
+
+	// List the images on the build context daemon and checks the invocation image is there
+	cmd.Command = []string{dockerCli, "image", "ls", "--format", "{{.Repository}}:{{.Tag}}"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "acmecorp/simple:1.1.0-beta1-invoc"})
+
+	// Copy all the files from the invocation image and check them
+	cmd.Command = []string{dockerCli, "create", "--name", "invocation", "acmecorp/simple:1.1.0-beta1-invoc"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	cmd.Command = []string{dockerCli, "cp", "invocation:/cnab/app/simple.dockerapp", tmpDir.Join("simple.dockerapp")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	appDir := filepath.Join("testdata", "simple", "simple.dockerapp")
+	manifest := fs.Expected(
+		t,
+		fs.WithMode(0755),
+		fs.WithFile(internal.MetadataFileName, readFile(t, filepath.Join(appDir, internal.MetadataFileName)), fs.WithMode(0644)),
+		fs.WithFile(internal.ComposeFileName, readFile(t, filepath.Join(appDir, internal.ComposeFileName)), fs.WithMode(0644)),
+		fs.WithFile(internal.ParametersFileName, readFile(t, filepath.Join(appDir, internal.ParametersFileName)), fs.WithMode(0644)),
+	)
+
+	assert.Assert(t, fs.Equal(tmpDir.Join("simple.dockerapp"), manifest))
+}
+
 func TestDeployDockerApp(t *testing.T) {
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
