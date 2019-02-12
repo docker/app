@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -81,10 +82,10 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 func TestRenderFormatters(t *testing.T) {
 	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
 	result := icmd.RunCommand(dockerApp, "render", "--formatter", "json", appPath).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Stdout(), "expected-json-render.golden"))
+	golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 
 	result = icmd.RunCommand(dockerApp, "render", "--formatter", "yaml", appPath).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Stdout(), "expected-yaml-render.golden"))
+	golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
 }
 
 func TestInit(t *testing.T) {
@@ -155,7 +156,7 @@ maintainers:
 
 	appData, err := ioutil.ReadFile(tmpDir.Join("tac.dockerapp"))
 	assert.NilError(t, err)
-	assert.Assert(t, golden.Bytes(appData, "init-singlefile.dockerapp"))
+	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
 	// Check various commands work on single-file app package
 	cmd.Command = []string{dockerApp, "inspect", "tac"}
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -207,7 +208,7 @@ func TestSplitMerge(t *testing.T) {
 	// test that inspect works on single-file
 	cmd.Command = []string{dockerApp, "inspect", "remerged"}
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
+	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 
 	// split it
 	cmd.Command = []string{dockerApp, "split", "remerged", "-o", "split.dockerapp"}
@@ -215,7 +216,7 @@ func TestSplitMerge(t *testing.T) {
 
 	cmd.Command = []string{dockerApp, "inspect", "remerged"}
 	result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
+	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 
 	// test inplace
 	cmd.Command = []string{dockerApp, "merge", "split"}
@@ -228,7 +229,7 @@ func TestSplitMerge(t *testing.T) {
 func TestURL(t *testing.T) {
 	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
 	result := icmd.RunCommand(dockerApp, "inspect", url).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "helloworld-inspect.golden"))
+	golden.Assert(t, result.Combined(), "helloworld-inspect.golden")
 }
 
 func TestWithRegistry(t *testing.T) {
@@ -315,8 +316,7 @@ func TestDeployDockerApp(t *testing.T) {
 	// The workaround is to create a context with an empty host.
 	// This host will default to the unix socket inside the
 	// invocation image
-	host := ""
-	cmd.Command = []string{dockerCli, "context", "create", "swarm-target-context", "--docker", fmt.Sprintf("host=%s", host), "--default-stack-orchestrator", "swarm"}
+	cmd.Command = []string{dockerCli, "context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm"}
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	// Initialize the swarm
