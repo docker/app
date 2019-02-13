@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/utils/crud"
@@ -42,10 +41,6 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOptions) error {
 	muteDockerCli(dockerCli)
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	parameterValues, err := prepareParameters(opts.parametersOptions)
-	if err != nil {
-		return err
-	}
 	h := duffleHome()
 	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(h.Claims(), "json"))
 	c, err := claimStore.Read(installationName)
@@ -71,15 +66,15 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
 		return err
 	}
-	convertedParamValues := c.Parameters
-	if err := applyParameterValues(parameterValues, c.Bundle.Parameters, convertedParamValues); err != nil {
-		return err
-	}
 
-	c.Parameters, err = bundle.ValuesOrDefaults(convertedParamValues, c.Bundle)
+	c.Parameters, err = mergeBundleParameters(c.Bundle,
+		withFileParameters(opts.parametersFiles),
+		withCommandLineParameters(opts.overrides),
+	)
 	if err != nil {
 		return err
 	}
+
 	u := &action.Upgrade{
 		Driver: driverImpl,
 	}
