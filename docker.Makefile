@@ -19,8 +19,11 @@ BUILD_ARGS=--build-arg=EXPERIMENTAL=$(EXPERIMENTAL) --build-arg=TAG=$(TAG) --bui
 
 PKG_PATH := /go/src/$(PKG_NAME)
 
-PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(TAG)
+
+CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(BUILD_TAG)
 CNAB_BASE_INVOCATION_IMAGE_PATH := _build/invocation-image.tar
+
+PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(TAG)
 
 .DEFAULT: all
 all: cross test
@@ -114,6 +117,10 @@ schemas: specification/bindata.go ## generate specification/bindata.go from json
 invocation-image:
 	docker build -f Dockerfile.invocation-image $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME) .
 
+save-invocation-image-tag:
+	docker tag $(CNAB_BASE_INVOCATION_IMAGE_NAME) docker/cnab-app-base:$(INVOCATION_IMAGE_TAG)
+	docker save docker/cnab-app-base:$(INVOCATION_IMAGE_TAG) -o _build/$(OUTPUT)
+
 save-invocation-image: invocation-image
 	@$(call mkdir,_build)
 	docker save $(CNAB_BASE_INVOCATION_IMAGE_NAME) -o $(CNAB_BASE_INVOCATION_IMAGE_PATH)
@@ -125,4 +132,4 @@ push-invocation-image:
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help save-invocation-image push-invocation-image
+.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image

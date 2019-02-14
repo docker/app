@@ -35,5 +35,3 @@ endif
 ifeq ($(TAG),)
   TAG := $(BUILD_TAG)
 endif
-
-CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(BUILD_TAG)
