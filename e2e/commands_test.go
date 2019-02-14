@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -81,10 +82,10 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 func TestRenderFormatters(t *testing.T) {
 	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
 	result := icmd.RunCommand(dockerApp, "render", "--formatter", "json", appPath).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Stdout(), "expected-json-render.golden"))
+	golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 
 	result = icmd.RunCommand(dockerApp, "render", "--formatter", "yaml", appPath).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Stdout(), "expected-yaml-render.golden"))
+	golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
 }
 
 func TestInit(t *testing.T) {
@@ -155,7 +156,7 @@ maintainers:
 
 	appData, err := ioutil.ReadFile(tmpDir.Join("tac.dockerapp"))
 	assert.NilError(t, err)
-	assert.Assert(t, golden.Bytes(appData, "init-singlefile.dockerapp"))
+	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
 	// Check various commands work on single-file app package
 	cmd.Command = []string{dockerApp, "inspect", "tac"}
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -207,7 +208,7 @@ func TestSplitMerge(t *testing.T) {
 	// test that inspect works on single-file
 	cmd.Command = []string{dockerApp, "inspect", "remerged"}
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
+	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 
 	// split it
 	cmd.Command = []string{dockerApp, "split", "remerged", "-o", "split.dockerapp"}
@@ -215,7 +216,7 @@ func TestSplitMerge(t *testing.T) {
 
 	cmd.Command = []string{dockerApp, "inspect", "remerged"}
 	result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "envvariables-inspect.golden"))
+	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 
 	// test inplace
 	cmd.Command = []string{dockerApp, "merge", "split"}
@@ -228,7 +229,7 @@ func TestSplitMerge(t *testing.T) {
 func TestURL(t *testing.T) {
 	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
 	result := icmd.RunCommand(dockerApp, "inspect", url).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "helloworld-inspect.golden"))
+	golden.Assert(t, result.Combined(), "helloworld-inspect.golden")
 }
 
 func TestWithRegistry(t *testing.T) {
@@ -275,7 +276,59 @@ func TestAttachmentsWithRegistry(t *testing.T) {
 	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
 }
 
-func TestDeployDockerApp(t *testing.T) {
+func TestBundle(t *testing.T) {
+	tmpDir := fs.NewDir(t, t.Name())
+	defer tmpDir.Remove()
+	// Using a custom DOCKER_CONFIG to store contexts in a temporary directory
+	cmd := icmd.Cmd{Env: append(os.Environ(), "DOCKER_CONFIG="+tmpDir.Path())}
+
+	// Running a docker in docker to bundle the application
+	dind := NewContainer("docker:18.09-dind", 2375)
+	dind.Start(t)
+	defer dind.Stop(t)
+
+	// Create a build context
+	cmd.Command = []string{dockerCli, "context", "create", "build-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, dind.GetAddress(t))}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// The dind doesn't have the cnab-app-base image so we save it in order to load it later
+	cmd.Command = []string{dockerCli, "save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "-o", tmpDir.Join("cnab-app-base.tar.gz")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=build-context")
+	cmd.Command = []string{dockerCli, "load", "-i", tmpDir.Join("cnab-app-base.tar.gz")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// Bundle the docker application package to a CNAB bundle, using the build-context.
+	cmd.Command = []string{dockerApp, "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--out", tmpDir.Join("bundle.json")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// Check the resulting CNAB bundle.json
+	golden.Assert(t, string(golden.Get(t, tmpDir.Join("bundle.json"))), "simple-bundle.json.golden")
+
+	// List the images on the build context daemon and checks the invocation image is there
+	cmd.Command = []string{dockerCli, "image", "ls", "--format", "{{.Repository}}:{{.Tag}}"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "acmecorp/simple:1.1.0-beta1-invoc"})
+
+	// Copy all the files from the invocation image and check them
+	cmd.Command = []string{dockerCli, "create", "--name", "invocation", "acmecorp/simple:1.1.0-beta1-invoc"}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	cmd.Command = []string{dockerCli, "cp", "invocation:/cnab/app/simple.dockerapp", tmpDir.Join("simple.dockerapp")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	appDir := filepath.Join("testdata", "simple", "simple.dockerapp")
+	manifest := fs.Expected(
+		t,
+		fs.WithMode(0755),
+		fs.WithFile(internal.MetadataFileName, readFile(t, filepath.Join(appDir, internal.MetadataFileName)), fs.WithMode(0644)),
+		fs.WithFile(internal.ComposeFileName, readFile(t, filepath.Join(appDir, internal.ComposeFileName)), fs.WithMode(0644)),
+		fs.WithFile(internal.ParametersFileName, readFile(t, filepath.Join(appDir, internal.ParametersFileName)), fs.WithMode(0644)),
+	)
+
+	assert.Assert(t, fs.Equal(tmpDir.Join("simple.dockerapp"), manifest))
+}
+
+func TestDockerAppLifecycle(t *testing.T) {
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 
@@ -315,8 +368,7 @@ func TestDeployDockerApp(t *testing.T) {
 	// The workaround is to create a context with an empty host.
 	// This host will default to the unix socket inside the
 	// invocation image
-	host := ""
-	cmd.Command = []string{dockerCli, "context", "create", "swarm-target-context", "--docker", fmt.Sprintf("host=%s", host), "--default-stack-orchestrator", "swarm"}
+	cmd.Command = []string{dockerCli, "context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm"}
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	// Initialize the swarm
@@ -347,6 +399,19 @@ func TestDeployDockerApp(t *testing.T) {
 			fmt.Sprintf(`[[:alnum:]]+        %s_web   replicated          [0-1]/1                 nginx:latest        \*:8082->80/tcp`, t.Name()),
 			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", t.Name()),
 		})
+
+	// Upgrade the application, changing the port
+	cmd.Command = []string{dockerApp, "upgrade", t.Name(), "--set", "web_port=8081"}
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			fmt.Sprintf("Updating service %s_db", t.Name()),
+			fmt.Sprintf("Updating service %s_api", t.Name()),
+			fmt.Sprintf("Updating service %s_web", t.Name()),
+		})
+
+	// Query the application status again, the port should have change
+	cmd.Command = []string{dockerApp, "status", t.Name()}
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "8081"})
 
 	// Uninstall the application
 	cmd.Command = []string{dockerApp, "uninstall", t.Name()}
