@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/types"
 )
@@ -85,10 +86,10 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Version:     app.Metadata().Version,
 		Parameters:  parameters,
 		Actions: map[string]bundle.Action{
-			"inspect": {
+			internal.Namespace + "inspect": {
 				Modifies: false,
 			},
-			"status": {
+			internal.Namespace + "status": {
 				Modifies: false,
 			},
 		},

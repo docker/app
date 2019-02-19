@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/docker/app/internal"
 )
 
 type cnabAction string
@@ -12,8 +14,8 @@ const (
 	cnabActionInstall   = cnabAction("install")
 	cnabActionUninstall = cnabAction("uninstall")
 	cnabActionUpgrade   = cnabAction("upgrade")
-	cnabActionStatus    = cnabAction("status")
-	cnabActionInspect   = cnabAction("inspect")
+	cnabActionStatus    = cnabAction(internal.Namespace + "status")
+	cnabActionInspect   = cnabAction(internal.Namespace + "inspect")
 )
 
 type cnabOperation struct {

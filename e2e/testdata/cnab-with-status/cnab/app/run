@@ -13,7 +13,7 @@ case $action in
     upgrade)
     echo "Upgrade action"
     ;;
-    status)
+    com.docker.app.status)
     echo "Status action"
     ;;
     *)

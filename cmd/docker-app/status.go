@@ -5,6 +5,7 @@ import (
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/utils/crud"
+	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/pkg/errors"
@@ -50,7 +51,7 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 		return err
 	}
 	status := &action.RunCustom{
-		Action: "status",
+		Action: internal.Namespace + "status",
 		Driver: driverImpl,
 	}
 	err = status.Run(&c, creds, dockerCli.Out())

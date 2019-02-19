@@ -8,7 +8,7 @@
     }
   ],
   "actions": {
-    "status": {
+    "com.docker.app.status": {
       "modifies": false
     }
   }

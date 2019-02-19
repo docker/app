@@ -21,6 +21,9 @@ const (
 
 	// DeprecatedSettingsFileName is the deprecated settings file name (replaced by ParametersFileName)
 	DeprecatedSettingsFileName = "settings.yml"
+
+	// Namespace is the reverse DNS namespace used with labels and CNAB custom actions.
+	Namespace = "com.docker.app."
 )
 
 var (

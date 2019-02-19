@@ -3,6 +3,8 @@ package packager
 import (
 	"testing"
 
+	"github.com/docker/app/internal"
+
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/types"
 	"gotest.tools/assert"
@@ -69,10 +71,10 @@ func TestToCNAB(t *testing.T) {
 			},
 		},
 		Actions: map[string]bundle.Action{
-			"inspect": {
+			internal.Namespace + "inspect": {
 				Modifies: false,
 			},
-			"status": {
+			internal.Namespace + "status": {
 				Modifies: false,
 			},
 		},
