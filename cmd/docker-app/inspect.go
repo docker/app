@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// inspectCmd represents the inspect command
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	var opts parametersOptions
 	cmd := &cobra.Command{

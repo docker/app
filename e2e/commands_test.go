@@ -19,21 +19,6 @@ import (
 	"gotest.tools/skip"
 )
 
-// TODO: uncomment once we pull on `resolveBundle`
-// const (
-// 	singleFileApp = `version: 0.1.0
-// name: helloworld
-// description: "hello world app"
-// namespace: "foo"
-// ---
-// version: '3.5'
-// services:
-//   hello-world:
-//     image: hello-world
-// ---
-// # This section contains the default values for your application parameters.`
-// )
-
 func TestRenderTemplates(t *testing.T) {
 	skip.If(t, !hasExperimental, "experimental mode needed for this test")
 	appsPath := filepath.Join("testdata", "templates")
@@ -225,49 +210,6 @@ func TestSplitMerge(t *testing.T) {
 	cmd.Command = []string{dockerApp, "split", "split"}
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
-
-// TODO: uncomment once we pull on `resolveBundle`
-//func TestWithRegistry(t *testing.T) {
-//	r := startRegistry(t)
-//	defer r.Stop(t)
-//	registry := r.GetAddress(t)
-//	// push to a registry
-//	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-//	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-//
-//	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp:0.1.0").Assert(t, icmd.Success)
-//	// push a single-file app to a registry
-//	dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
-//	defer dir.Remove()
-//	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
-//
-//	// push with custom repo name
-//	icmd.RunCommand(dockerApp, "push", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-//	icmd.RunCommand(dockerApp, "inspect", registry+"/rainbows/unicorns:marshmallows").Assert(t, icmd.Success)
-//}
-//
-//func TestAttachmentsWithRegistry(t *testing.T) {
-//	r := startRegistry(t)
-//	defer r.Stop(t)
-//	registry := r.GetAddress(t)
-//
-//	dir := fs.NewDir(t, "testattachments",
-//		fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")),
-//	)
-//	defer dir.Remove()
-//
-//	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", dir.Join("attachments.dockerapp")).Assert(t, icmd.Success)
-//
-//	// inspect will run the core pull code too
-//	result := icmd.RunCommand(dockerApp, "inspect", registry+"/acmecorp/attachments.dockerapp:0.1.0")
-//
-//	result.Assert(t, icmd.Success)
-//	resultOutput := result.Combined()
-//
-//	assert.Assert(t, strings.Contains(resultOutput, "config.cfg"))
-//	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/config2.cfg"))
-//	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
-//}
 
 func TestBundle(t *testing.T) {
 	tmpDir := fs.NewDir(t, t.Name())
