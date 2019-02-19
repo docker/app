@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -329,19 +328,11 @@ func TestDockerAppLifecycle(t *testing.T) {
 	defer tmpDir.Remove()
 
 	cmd := icmd.Cmd{
-		Env: []string{
+		Env: append(os.Environ(),
 			fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path()),
 			fmt.Sprintf("DOCKER_CONFIG=%s", tmpDir.Path()),
 			"DOCKER_TARGET_CONTEXT=swarm-target-context",
-		},
-	}
-
-	// We need to explicitly set the SYSTEMROOT on windows
-	// otherwise we get the error:
-	// "panic: failed to read random bytes: CryptAcquireContext: Provider DLL failed to initialize correctly."
-	// See: https://github.com/golang/go/issues/25210
-	if runtime.GOOS == "windows" {
-		cmd.Env = append(cmd.Env, `SYSTEMROOT=C:\WINDOWS`)
+		),
 	}
 
 	// Running a swarm using docker in docker to install the application
