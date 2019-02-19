@@ -12,8 +12,7 @@ import (
 func TestWithLoadFiles(t *testing.T) {
 	tmpDir := fs.NewDir(t,
 		t.Name(),
-		fs.WithFile("params.yaml", `
-param1:
+		fs.WithFile("params.yaml", `param1:
   param2: value1
 param3: 3
 overridden: bar`))

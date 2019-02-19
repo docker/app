@@ -1,38 +1,55 @@
 package main
 
 import (
-	"github.com/docker/app/internal/inspect"
-	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/types"
+	"github.com/deislabs/duffle/pkg/action"
+	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	cliopts "github.com/docker/cli/opts"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-var (
-	inspectParametersFile []string
-	inspectEnv            []string
-)
-
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
+	var opts parametersOptions
 	cmd := &cobra.Command{
 		Use:   "inspect [<app-name>] [-s key=value...] [-f parameters-file...]",
 		Short: "Shows metadata, parameters and a summary of the compose file for a given application",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			app, err := packager.Extract(firstOrEmpty(args),
-				types.WithParametersFiles(inspectParametersFile...),
+			muteDockerCli(dockerCli)
+			appname := firstOrEmpty(args)
+
+			c, err := claim.New("inspect")
+			if err != nil {
+				return err
+			}
+			driverImpl, err := prepareDriver(dockerCli)
+			if err != nil {
+				return err
+			}
+			bundle, err := resolveBundle(dockerCli, "", appname)
+			if err != nil {
+				return err
+			}
+			c.Bundle = bundle
+
+			parameters, err := mergeBundleParameters(c.Bundle,
+				withFileParameters(opts.parametersFiles),
+				withCommandLineParameters(opts.overrides),
 			)
 			if err != nil {
 				return err
 			}
-			defer app.Cleanup()
-			argParameters := cliopts.ConvertKVStringsToMap(inspectEnv)
-			return inspect.Inspect(dockerCli.Out(), app, argParameters, nil)
+			c.Parameters = parameters
+
+			a := &action.RunCustom{
+				Action: "inspect",
+				Driver: driverImpl,
+			}
+			err = a.Run(c, map[string]string{"docker.context": ""}, dockerCli.Out())
+			return errors.Wrap(err, "Inspect failed")
 		},
 	}
-	cmd.Flags().StringArrayVarP(&inspectParametersFile, "parameters-files", "f", []string{}, "Override with parameters from files")
-	cmd.Flags().StringArrayVarP(&inspectEnv, "set", "s", []string{}, "Override parameters values")
+	opts.addFlags(cmd.Flags())
 	return cmd
 }

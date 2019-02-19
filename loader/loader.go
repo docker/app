@@ -3,7 +3,6 @@ package loader
 import (
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,21 +12,6 @@ import (
 	"github.com/docker/docker/pkg/archive"
 	"github.com/pkg/errors"
 )
-
-// LoadFromURL loads a docker app from an URL that should return a single-file app.
-func LoadFromURL(url string, ops ...func(*types.App) error) (*types.App, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to download "+url)
-	}
-	if resp.Body != nil {
-		defer resp.Body.Close()
-	}
-	if resp.StatusCode != 200 {
-		return nil, errors.Errorf("failed to download %s: %s", url, resp.Status)
-	}
-	return LoadFromSingleFile(url, resp.Body, ops...)
-}
 
 // LoadFromSingleFile loads a docker app from a single-file format (as a reader)
 func LoadFromSingleFile(path string, r io.Reader, ops ...func(*types.App) error) (*types.App, error) {

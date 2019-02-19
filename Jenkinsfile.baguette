@@ -148,7 +148,7 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
-                            sh './docker-app-e2e-linux --e2e-path=e2e'
+                            sh './docker-app-e2e-linux -test.v --e2e-path=e2e'
                         }
                     }
                     post {
@@ -180,7 +180,7 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
-                            sh './docker-app-e2e-darwin --e2e-path=e2e'
+                            sh './docker-app-e2e-darwin -test.v --e2e-path=e2e'
                         }
                     }
                     post {
@@ -212,7 +212,7 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
-                            bat 'docker-app-e2e-windows.exe --e2e-path=e2e'
+                            bat 'docker-app-e2e-windows.exe -test.v --e2e-path=e2e'
                         }
                     }
                     post {

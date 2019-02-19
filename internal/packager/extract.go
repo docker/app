@@ -3,7 +3,6 @@ package packager
 import (
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,12 +109,6 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 	appname := internal.DirNameFromAppName(name)
 	s, err := os.Stat(appname)
 	if err != nil {
-		// URL or docker image
-		u, err := url.Parse(name)
-		if err == nil && (u.Scheme == "http" || u.Scheme == "https") {
-			ops = append(ops, types.WithSource(types.AppSourceURL))
-			return loader.LoadFromURL(name, ops...)
-		}
 		// look for a docker image
 		ops = append(ops, types.WithSource(types.AppSourceImage))
 		app, err := extractImage(name, ops...)

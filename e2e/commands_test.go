@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -18,20 +17,6 @@ import (
 	"gotest.tools/golden"
 	"gotest.tools/icmd"
 	"gotest.tools/skip"
-)
-
-const (
-	singleFileApp = `version: 0.1.0
-name: helloworld
-description: "hello world app"
-namespace: "foo"
----
-version: '3.5'
-services:
-  hello-world:
-    image: hello-world
----
-# This section contains the default values for your application parameters.`
 )
 
 func TestRenderTemplates(t *testing.T) {
@@ -226,56 +211,6 @@ func TestSplitMerge(t *testing.T) {
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
-func TestURL(t *testing.T) {
-	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
-	result := icmd.RunCommand(dockerApp, "inspect", url).Assert(t, icmd.Success)
-	golden.Assert(t, result.Combined(), "helloworld-inspect.golden")
-}
-
-func TestWithRegistry(t *testing.T) {
-	r := startRegistry(t)
-	defer r.Stop(t)
-	registry := r.GetAddress(t)
-	// push to a registry
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp:0.1.0").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my:0.1.0").Assert(t, icmd.Success)
-	// push a single-file app to a registry
-	dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
-	defer dir.Remove()
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
-
-	// push with custom repo name
-	icmd.RunCommand(dockerApp, "push", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/rainbows/unicorns:marshmallows").Assert(t, icmd.Success)
-}
-
-func TestAttachmentsWithRegistry(t *testing.T) {
-	r := startRegistry(t)
-	defer r.Stop(t)
-	registry := r.GetAddress(t)
-
-	dir := fs.NewDir(t, "testattachments",
-		fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")),
-	)
-	defer dir.Remove()
-
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", dir.Join("attachments.dockerapp")).Assert(t, icmd.Success)
-
-	// inspect will run the core pull code too
-	result := icmd.RunCommand(dockerApp, "inspect", registry+"/acmecorp/attachments.dockerapp:0.1.0")
-
-	result.Assert(t, icmd.Success)
-	resultOutput := result.Combined()
-
-	assert.Assert(t, strings.Contains(resultOutput, "config.cfg"))
-	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/config2.cfg"))
-	assert.Assert(t, strings.Contains(resultOutput, "nesteddir/nested2/nested3/config3.cfg"))
-}
-
 func TestBundle(t *testing.T) {
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
@@ -312,8 +247,10 @@ func TestBundle(t *testing.T) {
 
 	// Copy all the files from the invocation image and check them
 	cmd.Command = []string{dockerCli, "create", "--name", "invocation", "acmecorp/simple:1.1.0-beta1-invoc"}
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	id := strings.TrimSpace(icmd.RunCmd(cmd).Assert(t, icmd.Success).Stdout())
 	cmd.Command = []string{dockerCli, "cp", "invocation:/cnab/app/simple.dockerapp", tmpDir.Join("simple.dockerapp")}
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	cmd.Command = []string{dockerCli, "rm", "--force", id}
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	appDir := filepath.Join("testdata", "simple", "simple.dockerapp")
@@ -333,19 +270,11 @@ func TestDockerAppLifecycle(t *testing.T) {
 	defer tmpDir.Remove()
 
 	cmd := icmd.Cmd{
-		Env: []string{
+		Env: append(os.Environ(),
 			fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path()),
 			fmt.Sprintf("DOCKER_CONFIG=%s", tmpDir.Path()),
 			"DOCKER_TARGET_CONTEXT=swarm-target-context",
-		},
-	}
-
-	// We need to explicitly set the SYSTEMROOT on windows
-	// otherwise we get the error:
-	// "panic: failed to read random bytes: CryptAcquireContext: Provider DLL failed to initialize correctly."
-	// See: https://github.com/golang/go/issues/25210
-	if runtime.GOOS == "windows" {
-		cmd.Env = append(cmd.Env, `SYSTEMROOT=C:\WINDOWS`)
+		),
 	}
 
 	// Running a swarm using docker in docker to install the application
