@@ -36,6 +36,5 @@ type AppMetadata struct {
 	Version     string      `json:"version"`
 	Name        string      `json:"name"`
 	Description string      `json:"description,omitempty"`
-	Namespace   string      `json:"namespace,omitempty"`
 	Maintainers Maintainers `json:"maintainers,omitempty"`
 }

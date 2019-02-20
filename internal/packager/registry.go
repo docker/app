@@ -85,32 +85,20 @@ func ExtractImagePayloadToDiskFiles(appDir string, payload map[string]string) er
 }
 
 // Push pushes an app to a registry. Returns the image digest.
-func Push(app *types.App, namespace, tag, repo string) (string, error) {
+func Push(app *types.App, tag string) (string, error) {
 	payload, err := createPayload(app)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read external file while creating payload for push")
 	}
-	imageName := createImageName(app, namespace, tag, repo)
+	imageName := createImageName(app, tag)
 	return resto.PushConfigMulti(context.Background(), payload, imageName, resto.RegistryOptions{}, nil)
 }
 
-func createImageName(app *types.App, namespace, tag, repo string) string {
-	if namespace == "" || tag == "" {
-		metadata := app.Metadata()
-		if namespace == "" {
-			namespace = metadata.Namespace
-		}
-		if tag == "" {
-			tag = metadata.Version
-		}
+func createImageName(app *types.App, registryReference string) string {
+	if registryReference != "" {
+		return registryReference
 	}
-	if repo == "" {
-		repo = internal.AppNameFromDir(app.Name) + internal.AppExtension
-	}
-	if namespace != "" && namespace[len(namespace)-1] != '/' {
-		namespace += "/"
-	}
-	return namespace + repo + ":" + tag
+	return app.Metadata().Name + ":" + app.Metadata().Version
 }
 
 func createPayload(app *types.App) (map[string]string, error) {

@@ -1,11 +1,10 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "id": "metadata_schema_v0.1.json",
+    "id": "metadata_schema_v0.2.json",
     "type": "object",
     "properties": {
         "name": {
-            "type": "string",
-            "format": "hostname"
+            "type": "string"
         },
         "version": {
             "type": "string"
@@ -15,9 +14,6 @@
                 "string",
                 "null"
             ]
-        },
-        "namespace": {
-            "type": "string"
         },
         "maintainers": {
             "type": "array",
@@ -59,9 +55,6 @@
                 "name": {
                     "type": "string",
                     "format": "hostname"
-                },
-                "namespace": {
-                    "type": "string"
                 },
                 "version": {
                     "type": "string"

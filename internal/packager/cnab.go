@@ -1,8 +1,6 @@
 package packager
 
 import (
-	"fmt"
-
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
@@ -56,10 +54,6 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Name:  m.Name,
 		})
 	}
-	name := app.Metadata().Name
-	if app.Metadata().Namespace != "" {
-		name = fmt.Sprintf("%s/%s", app.Metadata().Namespace, name)
-	}
 
 	bundleImages, err := extractBundleImages(app.Composes())
 	if err != nil {
@@ -82,7 +76,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			},
 		},
 		Maintainers: maintainers,
-		Name:        name,
+		Name:        app.Metadata().Name,
 		Version:     app.Metadata().Version,
 		Parameters:  parameters,
 		Actions: map[string]bundle.Action{

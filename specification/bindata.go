@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -100,7 +102,24 @@ func (f *_escFile) Close() error {
 }
 
 func (f *_escFile) Readdir(count int) ([]os.FileInfo, error) {
-	return nil, nil
+	if !f.isDir {
+		return nil, fmt.Errorf(" escFile.Readdir: '%s' is not directory", f.name)
+	}
+
+	fis, ok := _escDirs[f.local]
+	if !ok {
+		return nil, fmt.Errorf(" escFile.Readdir: '%s' is directory, but we have no info about content of this dir, local=%s", f.name, f.local)
+	}
+	limit := count
+	if count <= 0 || limit > len(fis) {
+		limit = len(fis)
+	}
+
+	if len(fis) == 0 && count > 0 {
+		return nil, io.EOF
+	}
+
+	return []os.FileInfo(fis[0:limit]), nil
 }
 
 func (f *_escFile) Stat() (os.FileInfo, error) {
@@ -191,25 +210,48 @@ func _escFSMustString(useLocal bool, name string) string {
 var _escData = map[string]*_escFile{
 
 	"/schemas/metadata_schema_v0.1.json": {
+		name:    "metadata_schema_v0.1.json",
 		local:   "schemas/metadata_schema_v0.1.json",
-		size:    1019,
+		size:    1916,
 		modtime: 1518458244,
 		compressed: `
-H4sIAAAAAAAC/5xSy27CQAy85ytW2x6BUKmn/AqqkJsYWJR91GuQUJV/rxLz2nYTUHNKxvZkxuPvQiml
-9Gusd2hBV0rvmENVlvvo3VzQhadt2RBseL58LwV70TOZNE0/ZJGhAYa1VNfH5eJt0VNc2vgUsG/0n3us
-+YIG8gGJDUZdKZEy4A4sJkjCEZmM2545rtWNJws8OPCRB4ZrQ3fr1UekaLx7SJ8dbjDWZAJPEawSdKhk
-FYvTQ9vqBP7I/rj3EwPU+D/dFoxjMA4pjhMAEZx+r9Uw2r8zU+ml/nJJPiX//ulmeXa0YNqn6FejHdMB
-PQgrCW58+u44RXLeZTGN3L7k7bwVTfh1MIRNYlM2n7n7Qo6sK34CAAD//7xaWqb7AwAA
+H4sIAAAAAAAC/7RUwY7iMAy99yuqsEegrLQnfgUh5G1dCKJJxjFIaMS/j9pAaaZpWoG4OvbLs/38vpM0
+TVPxx+YHrECsU3FgNussO1qtFi661LTPCoKSF6t/mYvNxNxVyqIuqpChAIade91dVsu/yxrikcZXg3Wi
+/n/EnB9RQ9ogsUQr1qmj0sQVVOhFPAzLJNX+jtG+lpoq4KYDbblBaBNuz1xxQbJSq1H4YHGBNidpOAaw
+8aLNS5Cx6/R8OgkvvA1+XPdjDeT4Gu8KpGKQCskOAwARXH+PVTJW/RonGsKyrptlBZZSyXoqNnt+5fd1
+CxIzQKj446TcN4OEkg4tQfh1loSFt0onyYCMmsj2Xtr50hd0Zyi9Tt0FDQ5xHp6Ld0jPcYYPKn5Yo0oK
+LK6twQrkaRRyE3yN30bkRtpbCVd1vMDR63cyWZrT9nXP/eQ2Rlvt215sb8OG8pYchtz1LdCYe00yjAnG
+8aKrhQUVlZgzm+SW/AQAAP//m8slr3wHAAA=
 `,
 	},
 
-	"/": {
-		isDir: true,
-		local: "",
+	"/schemas/metadata_schema_v0.2.json": {
+		name:    "metadata_schema_v0.2.json",
+		local:   "schemas/metadata_schema_v0.2.json",
+		size:    1732,
+		modtime: 1518458244,
+		compressed: `
+H4sIAAAAAAAC/7RUzY7yMAy89ymq8B0LRZ/2xKsghLzUBSOSdB2DhFa8+6oNf9mmP2LFdZyxx/bE30ma
+pqn65zY71KAWqdqJVIs83ztrph6dWd7mBUMp0/lH7rGJyjyTipqkUaAAgbWPrk/z2f9ZneL2TM4V1g/t
+5x43ckMrthWyEDq1SL2UBjegMUCCHE6YzFbdg5fswTwhO7LmNXKBbsNUSV+CZYA2kWvKrB0xx8NBBfAq
+WlgDGQEyyK5bOTDD+VcVRYK6zfE7ZSxr3iQvsCRDdVsuf5QKhV2iwipgNPJ2Ub5Mp6DkSZZi/DoSYxHs
+wjsm4oMGWV2pTyVDvz0NpdWpN3jnELP4XAKfP8YZ93u/7wctHFncnYMa6DCYchmN9pu7x+R3s8dZqrSs
+QepWvLx2J6OtOW5f17fv3MZgqzvrpMk4am9dd+xPZug7M6N+9ogf/uL5iW++1wv+KiSX5CcAAP//f4Kg
+RsQGAAA=
+`,
 	},
 
 	"/schemas": {
+		name:  "schemas",
+		local: `schemas`,
 		isDir: true,
-		local: "schemas",
+	},
+}
+
+var _escDirs = map[string][]os.FileInfo{
+
+	"schemas": {
+		_escData["/schemas/metadata_schema_v0.1.json"],
+		_escData["/schemas/metadata_schema_v0.2.json"],
 	},
 }

@@ -14,9 +14,8 @@ func TestValidateInvalidMetadata(t *testing.T) {
 	metadata := map[string]interface{}{
 		"name": "_INVALID",
 	}
-	assert.Error(t, Validate(metadata, "v0.1"),
-		`- name: Does not match format 'hostname'
-- version: version is required`)
+	assert.Error(t, Validate(metadata, "v0.2"),
+		`- version: version is required`)
 }
 
 func TestValidateMetadata(t *testing.T) {
@@ -24,5 +23,31 @@ func TestValidateMetadata(t *testing.T) {
 		"name":    "my-name",
 		"version": "my-version",
 	}
-	assert.NilError(t, Validate(metadata, "v0.1"))
+	assert.NilError(t, Validate(metadata, "v0.2"))
+}
+
+func TestValidateMetadataNoName(t *testing.T) {
+	metadata := map[string]interface{}{
+		//"name":    "my-name",
+		// MUST fail! No name
+		"version": "my-version",
+	}
+	assert.Error(t, Validate(metadata, "v0.2"), "- name: name is required")
+}
+
+func TestValidateMetadataNoVersion(t *testing.T) {
+	metadata := map[string]interface{}{
+		"name": "my-name",
+		//"version": "my-version",
+		// MUST fail! No version
+	}
+	assert.Error(t, Validate(metadata, "v0.2"), "- version: version is required")
+}
+
+func TestValidateMetadataV0_2(t *testing.T) {
+	metadata := map[string]interface{}{
+		"name":    "my-name",
+		"version": "my-version",
+	}
+	assert.NilError(t, Validate(metadata, "v0.2"))
 }

@@ -1,5 +1,5 @@
 {
-	"name": "acmecorp/simple",
+	"name": "simple",
 	"version": "1.1.0-beta1",
 	"description": "new fancy webapp with microservices",
 	"maintainers": [
@@ -17,7 +17,7 @@
 	"invocationImages": [
 		{
 			"imageType": "docker",
-			"image": "acmecorp/simple:1.1.0-beta1-invoc"
+			"image": "simple:1.1.0-beta1-invoc"
 		}
 	],
 	"images": {

@@ -15,7 +15,6 @@ type upgradeOptions struct {
 	parametersOptions
 	credentialOptions
 	bundleOrDockerApp string
-	namespace         string
 	insecure          bool
 }
 
@@ -32,7 +31,6 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "bundle", "", "Override with new bundle or Docker App")
-	cmd.Flags().StringVar(&opts.namespace, "namespace", "", "Namespace to use (default: namespace in metadata)")
 	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
 
 	return cmd
@@ -49,7 +47,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	}
 
 	if opts.bundleOrDockerApp != "" {
-		b, err := resolveBundle(dockerCli, opts.namespace, opts.bundleOrDockerApp)
+		b, err := resolveBundle(dockerCli, opts.bundleOrDockerApp)
 		if err != nil {
 			return err
 		}

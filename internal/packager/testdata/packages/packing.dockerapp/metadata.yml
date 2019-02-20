@@ -1,6 +1,5 @@
 version: 0.1.0
 name: packing
-namespace: my-namespace
 description: "hello"
 maintainers:
   - name: bearclaw

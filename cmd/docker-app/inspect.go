@@ -28,7 +28,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bundle, err := resolveBundle(dockerCli, "", appname)
+			bundle, err := resolveBundle(dockerCli, appname)
 			if err != nil {
 				return err
 			}
