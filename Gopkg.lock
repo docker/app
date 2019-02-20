@@ -88,7 +88,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:c41ccacec3d1871a9a76c0a105cb4e50bd7d6489d91f0262e37ab66c3d79cc6a"
+  digest = "1:ad40ed5bb7f282f772b23f31d541b52d3dcfa115a203d2941dd270bda0684f0b"
   name = "github.com/containerd/containerd"
   packages = [
     ".",
@@ -135,21 +135,21 @@
     "remotes/docker/schema1",
     "rootfs",
     "runtime/linux/runctypes",
+    "runtime/v2/runc/options",
     "snapshots",
     "snapshots/proxy",
     "sys",
+    "version",
   ]
   pruneopts = "NUT"
-  revision = "9b32062dc1f5a7c2564315c269b5059754f12b9d"
-  version = "v1.2.1"
+  revision = "97d99161973592ddbf4b42a2073d61cc5bc46c57"
+  source = "github.com/simonferquel/containerd"
 
 [[projects]]
   branch = "master"
-  digest = "1:792024d8e8fabed9bbfd7d86b9dc71855854272a5f5eb52d0836be492fb13118"
+  digest = "1:da6bbba18ca233cac27a74e7b8bc62a72fb8b6ce8af061116ce88380dc0b5f2a"
   name = "github.com/containerd/continuity"
   packages = [
-    "devices",
-    "driver",
     "fs",
     "pathdriver",
     "syscallx",
@@ -270,6 +270,17 @@
   revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
 [[projects]]
+  branch = "master"
+  digest = "1:bb87249b384a079dc5b5501194dd80b23c159f1c145ac8d065ead8f98b665a4e"
+  name = "github.com/docker/cnab-to-oci"
+  packages = [
+    "converter",
+    "remotes",
+  ]
+  pruneopts = "NUT"
+  revision = "978f2ab2bb687351c76f8123c5f04866a624456b"
+
+[[projects]]
   digest = "1:26cd5aeffe3ab0eb5d0275b3e9095cf2b4f1ca79d0ad787386a7bb39ce91b75d"
   name = "github.com/docker/compose-on-kubernetes"
   packages = [
@@ -288,14 +299,13 @@
   version = "v0.4.18"
 
 [[projects]]
-  digest = "1:1cb756deb458cb9be52d2e3fe67a19a7185b8c8453c691ba5eb0c7db00a51205"
+  digest = "1:c2fd3505322eed56c220992927a13029d32b7fea0e9cc1ece7a2217369d76914"
   name = "github.com/docker/distribution"
   packages = [
     ".",
     "digestset",
     "manifest",
     "manifest/manifestlist",
-    "manifest/schema1",
     "manifest/schema2",
     "metrics",
     "reference",
@@ -314,7 +324,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6e16b5aee97695cb06862f865a433e510622be6a03a34ddea5be12622cafb7c5"
+  digest = "1:4f55cc4abd8ca6cafba0028f9b8848334210a62dd5beea880a3bc4f635dba093"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -334,20 +344,8 @@
     "api/types/versions",
     "api/types/volume",
     "client",
-    "daemon/graphdriver",
-    "distribution",
-    "distribution/metadata",
-    "distribution/xfer",
-    "dockerversion",
     "errdefs",
-    "image",
-    "image/v1",
-    "layer",
-    "oci",
-    "oci/caps",
     "pkg/archive",
-    "pkg/chrootarchive",
-    "pkg/containerfs",
     "pkg/fileutils",
     "pkg/homedir",
     "pkg/idtools",
@@ -355,24 +353,15 @@
     "pkg/jsonmessage",
     "pkg/longpath",
     "pkg/mount",
-    "pkg/parsers/kernel",
-    "pkg/plugingetter",
-    "pkg/plugins",
-    "pkg/plugins/transport",
     "pkg/pools",
     "pkg/progress",
-    "pkg/reexec",
     "pkg/stdcopy",
     "pkg/streamformatter",
     "pkg/stringid",
-    "pkg/symlink",
     "pkg/system",
     "pkg/tarsum",
     "pkg/term",
     "pkg/term/windows",
-    "pkg/useragent",
-    "plugin/v2",
-    "reference",
     "registry",
     "registry/resumable",
   ]
@@ -432,14 +421,6 @@
   pruneopts = "NUT"
   revision = "47565b4f722fb6ceae66b95f853feed578a4a51c"
   version = "v0.3.3"
-
-[[projects]]
-  branch = "master"
-  digest = "1:ce43438a8204a4259b4461153a392bc3e504bef7e4785a8192344f002c7bd935"
-  name = "github.com/docker/libtrust"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "aabc10ec26b754e797f9028f4589c5b7bd90dc20"
 
 [[projects]]
   digest = "1:155bae7a907260715d88c11d4d15c70e9b614c59fd79f0c2286ef7b2670c44ea"
@@ -727,11 +708,9 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:6e97f51acb1a79b2e97f7941e226389462d95bd5c28f0ba5c541e5ebe905bbe3"
+  digest = "1:971cda0c4952d270accd75052ba5690025d3831a9ab1d22f12bb83dfcbd8f8a5"
   name = "github.com/opencontainers/runc"
   packages = [
-    "libcontainer/configs",
-    "libcontainer/devices",
     "libcontainer/system",
     "libcontainer/user",
   ]
@@ -868,18 +847,6 @@
   version = "v0.6.1"
 
 [[projects]]
-  digest = "1:89ad20dbfd31a97fb68c073cd1e6ed32bdcee9c0086d5428009c89680a2d1ff5"
-  name = "github.com/vbatts/tar-split"
-  packages = [
-    "archive/tar",
-    "tar/asm",
-    "tar/storage",
-  ]
-  pruneopts = "NUT"
-  revision = "620714a4c508c880ac1bdda9c8370a2b19af1a55"
-  version = "v0.11.1"
-
-[[projects]]
   branch = "master"
   digest = "1:b70423ea2ca23eb78d7729c3c98fbdf33a22059ce9ea06640066cddbbeb0006d"
   name = "github.com/wadey/gocovmerge"
@@ -972,12 +939,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c57243c4b4edbe61062bb70f1785a1b1c3835e55cc5599b79a2ef026cba3ec23"
+  digest = "1:5420733d35e5e562fffc7c5b99660f3587af042b5420f19b17fe0426e6a5259d"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
-    "windows/registry",
   ]
   pruneopts = "NUT"
   revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
@@ -1319,30 +1285,21 @@
     "github.com/docker/cli/cli/debug",
     "github.com/docker/cli/cli/flags",
     "github.com/docker/cli/opts",
-    "github.com/docker/distribution",
-    "github.com/docker/distribution/manifest",
-    "github.com/docker/distribution/manifest/schema2",
+    "github.com/docker/cnab-to-oci/remotes",
     "github.com/docker/distribution/reference",
-    "github.com/docker/distribution/registry/client",
-    "github.com/docker/distribution/registry/client/auth",
-    "github.com/docker/distribution/registry/client/transport",
     "github.com/docker/docker/api/types",
-    "github.com/docker/docker/distribution",
     "github.com/docker/docker/pkg/archive",
     "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/gopherjs/gopherjs/js",
     "github.com/imdario/mergo",
-    "github.com/opencontainers/go-digest",
-    "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
     "github.com/wadey/gocovmerge",
     "github.com/xeipuuv/gojsonschema",
-    "golang.org/x/crypto/ssh/terminal",
     "gopkg.in/yaml.v2",
     "gotest.tools/assert",
     "gotest.tools/assert/cmp",

@@ -18,9 +18,11 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -29,6 +31,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
+	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -41,6 +44,85 @@ type dockerPusher struct {
 
 	// TODO: namespace tracker
 	tracker StatusTracker
+}
+
+func (p dockerPusher) MountBlob(ctx context.Context, desc ocispec.Descriptor, from string) error {
+	originRef, err := reference.Parse(from)
+	if err != nil {
+		return err
+	}
+	ctx, err = contextWithMountScope(ctx, originRef, p.refspec)
+	if err != nil {
+		return err
+	}
+	ref := remotes.MakeRefKey(ctx, desc)
+	status, err := p.tracker.GetStatus(ref)
+	if err == nil {
+		if status.Offset == status.Total {
+			return errors.Wrapf(errdefs.ErrAlreadyExists, "ref %v", ref)
+		}
+		// TODO: Handle incomplete status
+	} else if !errdefs.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get status")
+	}
+
+	existCheck := path.Join("blobs", desc.Digest.String())
+
+	req, err := http.NewRequest(http.MethodHead, p.url(existCheck), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", strings.Join([]string{desc.MediaType, `*`}, ", "))
+	resp, err := p.doRequestWithRetries(ctx, req, nil)
+	if err != nil {
+		if errors.Cause(err) != ErrInvalidAuthorization {
+			return err
+		}
+		log.G(ctx).WithError(err).Debugf("Unable to check existence, continuing with mount")
+	} else {
+		if resp.StatusCode == http.StatusOK {
+			p.tracker.SetStatus(ref, Status{
+				Status: content.Status{
+					Ref: ref,
+					// TODO: Set updated time?
+				},
+			})
+			return errors.Wrapf(errdefs.ErrAlreadyExists, "content %v on remote", desc.Digest)
+		} else if resp.StatusCode != http.StatusNotFound {
+			// TODO: log error
+			return errors.Errorf("unexpected response: %s", resp.Status)
+		}
+	}
+
+	i := strings.Index(originRef.Locator, "/")
+	originRepoPath := originRef.Locator[i+1:]
+	req, err = http.NewRequest(http.MethodPost, fmt.Sprintf("%s/?mount=%s&from=%s", p.url("blobs", "uploads"), desc.Digest, originRepoPath), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err = p.doRequestWithRetries(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusCreated:
+	default:
+		// TODO: log error
+		return errors.Errorf("unexpected response: %s", resp.Status)
+	}
+
+	p.tracker.SetStatus(ref, Status{
+		Status: content.Status{
+			Ref:       ref,
+			Total:     desc.Size,
+			Expected:  desc.Digest,
+			StartedAt: time.Now(),
+			Offset:    desc.Size,
+		},
+	})
+	return nil
 }
 
 func (p dockerPusher) Push(ctx context.Context, desc ocispec.Descriptor) (content.Writer, error) {
@@ -287,6 +369,8 @@ func (pw *pushWriter) Commit(ctx context.Context, size int64, expected digest.Di
 	switch resp.StatusCode {
 	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
 	default:
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Fprintln(os.Stderr, string(body))
 		return errors.Errorf("unexpected status: %s", resp.Status)
 	}
 

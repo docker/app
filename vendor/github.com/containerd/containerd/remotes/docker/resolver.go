@@ -29,12 +29,26 @@ import (
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes"
+	"github.com/containerd/containerd/version"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context/ctxhttp"
 )
+
+// ResolverBlobMounter extends remotes.Resolver with support for cross repository blob mounts
+type ResolverBlobMounter interface {
+	remotes.Resolver
+	BlobMounter(ctx context.Context, ref string) (BlobMounter, error)
+}
+
+// BlobMounter mounts content from another repository
+type BlobMounter interface {
+	// MountBlob mounts a blob from another repository
+	// from must be a manifest path (namespace/repo, without the registry prefix)
+	MountBlob(ctx context.Context, d ocispec.Descriptor, from string) error
+}
 
 var (
 	// ErrNoToken is returned if a request is successful but the body does not
@@ -75,12 +89,15 @@ type ResolverOptions struct {
 
 	// Credentials provides username and secret given a host.
 	// If username is empty but a secret is given, that secret
-	// is interpretted as a long lived token.
+	// is interpreted as a long lived token.
 	// Deprecated: use Authorizer
 	Credentials func(string) (string, string, error)
 
 	// Host provides the hostname given a namespace.
 	Host func(string) (string, error)
+
+	// Headers are the HTTP request header fields sent by the resolver
+	Headers http.Header
 
 	// PlainHTTP specifies to use plain http and not https
 	PlainHTTP bool
@@ -105,18 +122,33 @@ func DefaultHost(ns string) (string, error) {
 type dockerResolver struct {
 	auth      Authorizer
 	host      func(string) (string, error)
+	headers   http.Header
 	plainHTTP bool
 	client    *http.Client
 	tracker   StatusTracker
 }
 
 // NewResolver returns a new resolver to a Docker registry
-func NewResolver(options ResolverOptions) remotes.Resolver {
+func NewResolver(options ResolverOptions) ResolverBlobMounter {
 	if options.Tracker == nil {
 		options.Tracker = NewInMemoryTracker()
 	}
 	if options.Host == nil {
 		options.Host = DefaultHost
+	}
+	if options.Headers == nil {
+		options.Headers = make(http.Header)
+	}
+	if _, ok := options.Headers["Accept"]; !ok {
+		// set headers for all the types we support for resolution.
+		options.Headers.Set("Accept", strings.Join([]string{
+			images.MediaTypeDockerSchema2Manifest,
+			images.MediaTypeDockerSchema2ManifestList,
+			ocispec.MediaTypeImageManifest,
+			ocispec.MediaTypeImageIndex, "*"}, ", "))
+	}
+	if _, ok := options.Headers["User-Agent"]; !ok {
+		options.Headers.Set("User-Agent", "containerd/"+version.Version)
 	}
 	if options.Authorizer == nil {
 		options.Authorizer = NewAuthorizer(options.Client, options.Credentials)
@@ -124,6 +156,7 @@ func NewResolver(options ResolverOptions) remotes.Resolver {
 	return &dockerResolver{
 		auth:      options.Authorizer,
 		host:      options.Host,
+		headers:   options.Headers,
 		plainHTTP: options.PlainHTTP,
 		client:    options.Client,
 		tracker:   options.Tracker,
@@ -182,12 +215,7 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 			return "", ocispec.Descriptor{}, err
 		}
 
-		// set headers for all the types we support for resolution.
-		req.Header.Set("Accept", strings.Join([]string{
-			images.MediaTypeDockerSchema2Manifest,
-			images.MediaTypeDockerSchema2ManifestList,
-			ocispec.MediaTypeImageManifest,
-			ocispec.MediaTypeImageIndex, "*"}, ", "))
+		req.Header = r.headers
 
 		log.G(ctx).Debug("resolving")
 		resp, err := fetcher.doRequestWithRetries(ctx, req, nil)
@@ -274,6 +302,30 @@ func (r *dockerResolver) Pusher(ctx context.Context, ref string) (remotes.Pusher
 	// Manifests can be pushed by digest like any other object, but the passed in
 	// reference cannot take a digest without the associated content. A tag is allowed
 	// and will be used to tag pushed manifests.
+	if refspec.Object != "" && strings.Contains(refspec.Object, "@") {
+		return nil, errors.New("cannot use digest reference for push locator")
+	}
+
+	base, err := r.base(refspec)
+	if err != nil {
+		return nil, err
+	}
+
+	return dockerPusher{
+		dockerBase: base,
+		tag:        refspec.Object,
+		tracker:    r.tracker,
+	}, nil
+}
+
+func (r *dockerResolver) BlobMounter(ctx context.Context, ref string) (BlobMounter, error) {
+	refspec, err := reference.Parse(ref)
+	if err != nil {
+		return nil, err
+	}
+
+	// The passed in for a blob mounter cannot take a digest without the associated content.
+
 	if refspec.Object != "" && strings.Contains(refspec.Object, "@") {
 		return nil, errors.New("cannot use digest reference for push locator")
 	}

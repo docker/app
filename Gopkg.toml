@@ -28,6 +28,11 @@ required = ["github.com/wadey/gocovmerge"]
   version = "v1.0.0-rc6"
 
 [[override]]
+  name = "github.com/containerd/containerd"
+  source = "github.com/simonferquel/containerd"
+  revision = "97d99161973592ddbf4b42a2073d61cc5bc46c57"
+
+[[override]]
   name = "github.com/docker/cli"
   revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
