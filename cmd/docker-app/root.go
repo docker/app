@@ -52,7 +52,6 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		initCmd(),
 		inspectCmd(dockerCli),
 		mergeCmd(dockerCli),
-		pushCmd(),
 		renderCmd(dockerCli),
 		splitCmd(),
 		validateCmd(),
@@ -60,11 +59,6 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		completionCmd(dockerCli, cmd),
 		bundleCmd(dockerCli),
 	)
-	if internal.Experimental == "on" {
-		cmd.AddCommand(
-			pullCmd(),
-		)
-	}
 }
 
 func firstOrEmpty(list []string) string {
