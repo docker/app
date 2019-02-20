@@ -1,0 +1,182 @@
+{
+	"name": "voting-app",
+	"version": "0.1.0",
+	"description": "Dogs or cats?",
+	"maintainers": [
+		{
+			"name": "user",
+			"email": "user@email.com",
+			"url": ""
+		}
+	],
+	"invocationImages": [
+		{
+			"imageType": "docker",
+			"image": "simonferquel/voting-app@sha256:90b3c6b123f1c8ad6e7e70bb2570c162c0ea5efbe952eac962b19a627dff46c4",
+			"size": 1158,
+			"platform": {},
+			"mediaType": "application/vnd.docker.distribution.manifest.v2+json"
+		}
+	],
+	"images": {
+		"db": {
+			"imageType": "docker",
+			"image": "simonferquel/voting-app@sha256:9485e89953cd50ecd51b52d0231ff76d92719678152f5f38be3899cd37a4b69b",
+			"size": 2371,
+			"platform": {},
+			"mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+			"description": "postgres:9.4",
+			"refs": null
+		},
+		"redis": {
+			"imageType": "docker",
+			"image": "simonferquel/voting-app@sha256:4d0d7aed642680e018cc40b6b19b0d8a70f9596c41822fb8b61e67338b9c789c",
+			"size": 2035,
+			"platform": {},
+			"mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+			"description": "redis:alpine",
+			"refs": null
+		},
+		"result": {
+			"imageType": "docker",
+			"image": "simonferquel/voting-app@sha256:a6123fe77d96f3e052f0aec1df8604b755015c71bd93da8535ef7a455762297d",
+			"size": 2202,
+			"platform": {},
+			"mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+			"description": "dockersamples/examplevotingapp_result:latest",
+			"refs": null
+		},
+		"visualizer": {
+			"imageType": "docker",
+			"image": "simonferquel/voting-app@sha256:54d65cbcbff52ee7d789cd285fbe68f07a46e3419c8fcded437af4c616915c85",
+			"size": 3034,
+			"platform": {},
+			"mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+			"description": "dockersamples/visualizer:latest",
+			"refs": null
+		},
+		"vote": {
+			"imageType": "docker",
+			"image": "simonferquel/voting-app@sha256:b4e60557febfed6d345a09e5dce52aeeff997b7c16a64428ccf5f3d8f3c60dde",
+			"size": 1782,
+			"platform": {},
+			"mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+			"description": "dockersamples/examplevotingapp_vote:latest",
+			"refs": null
+		},
+		"worker": {
+			"imageType": "docker",
+			"image": "simonferquel/voting-app@sha256:55753a7b7872d3e2eb47f146c53899c41dcbe259d54e24b3da730b9acbff50a1",
+			"size": 2215,
+			"platform": {},
+			"mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+			"description": "dockersamples/examplevotingapp_worker:latest",
+			"refs": null
+		}
+	},
+	"actions": {
+		"com.docker.app.inspect": {
+			"modifies": false
+		},
+		"com.docker.app.status": {
+			"modifies": false
+		}
+	},
+	"parameters": {
+		"docker.kubernetes-namespace": {
+			"type": "string",
+			"defaultValue": "",
+			"required": false,
+			"metadata": {
+				"description": "Namespace in which to deploy"
+			},
+			"destination": {
+				"path": "",
+				"env": "DOCKER_KUBERNETES_NAMESPACE"
+			}
+		},
+		"docker.orchestrator": {
+			"type": "string",
+			"defaultValue": "",
+			"allowedValues": [
+				"",
+				"swarm",
+				"kubernetes"
+			],
+			"required": false,
+			"metadata": {
+				"description": "Orchestrator on which to deploy"
+			},
+			"destination": {
+				"path": "",
+				"env": "DOCKER_STACK_ORCHESTRATOR"
+			}
+		},
+		"result.port": {
+			"type": "string",
+			"defaultValue": "8181",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param1"
+			}
+		},
+		"result.replicas": {
+			"type": "string",
+			"defaultValue": "1",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param2"
+			}
+		},
+		"visualizer.port": {
+			"type": "string",
+			"defaultValue": "8282",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param3"
+			}
+		},
+		"vote.port": {
+			"type": "string",
+			"defaultValue": "8080",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param4"
+			}
+		},
+		"vote.replicas": {
+			"type": "string",
+			"defaultValue": "1",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param5"
+			}
+		},
+		"worker.replicas": {
+			"type": "string",
+			"defaultValue": "1",
+			"required": false,
+			"metadata": {},
+			"destination": {
+				"path": "",
+				"env": "docker_param6"
+			}
+		}
+	},
+	"credentials": {
+		"docker.context": {
+			"path": "/cnab/app/context.dockercontext",
+			"env": ""
+		}
+	}
+}

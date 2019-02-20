@@ -58,6 +58,7 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		versionCmd(dockerCli),
 		completionCmd(dockerCli, cmd),
 		bundleCmd(dockerCli),
+		pushCmd(dockerCli),
 	)
 }
 
