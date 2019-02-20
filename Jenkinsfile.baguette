@@ -80,7 +80,7 @@ pipeline {
         }
         stage('Test') {
             parallel {
-                stage("Coverage") {
+                stage("Unit Coverage") {
                     environment {
                         CODECOV_TOKEN = credentials('jenkins-codecov-token')
                     }
