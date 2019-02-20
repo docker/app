@@ -41,10 +41,10 @@
 		}
 	},
 	"actions": {
-		"inspect": {
+		"com.docker.app.inspect": {
 			"Modifies": false
 		},
-		"status": {
+		"com.docker.app.status": {
 			"Modifies": false
 		}
 	},

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/claim"
+	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/pkg/errors"
@@ -43,7 +44,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 			c.Parameters = parameters
 
 			a := &action.RunCustom{
-				Action: "inspect",
+				Action: internal.Namespace + "inspect",
 				Driver: driverImpl,
 			}
 			err = a.Run(c, map[string]string{"docker.context": ""}, dockerCli.Out())
