@@ -89,8 +89,7 @@ test-e2e: build_dev_image invocation-image ## run end-to-end tests
 COV_LABEL := com.docker.app.cov-run=$(TAG)
 coverage: build_dev_image ## run tests with coverage
 	@$(call mkdir,_build)
-	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -tid $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} EXPERIMENTAL=$(EXPERIMENTAL) coverage
-	docker logs -f $(COV_CTNR_NAME)
+	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -t $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} EXPERIMENTAL=$(EXPERIMENTAL) coverage
 	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 	docker rm $(COV_CTNR_NAME)
 
