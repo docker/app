@@ -21,6 +21,7 @@ type installOptions struct {
 	kubeNamespace    string
 	stackName        string
 	sendRegistryAuth bool
+	pull             bool
 }
 
 type nameKind uint
@@ -61,6 +62,7 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringVar(&opts.kubeNamespace, "kubernetes-namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Installation name (defaults to application name)")
 	cmd.Flags().BoolVar(&opts.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
+	cmd.Flags().BoolVar(&opts.pull, "pull", false, "pull the bundle")
 
 	return cmd
 }
@@ -72,7 +74,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	}
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
 
-	bndl, err := resolveBundle(dockerCli, appname, opts.insecureRegistries)
+	bndl, err := resolveBundle(dockerCli, appname, opts.pull, opts.insecureRegistries)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,9 +14,9 @@ import (
 	"github.com/deislabs/duffle/pkg/loader"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
+	bundlestore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context/store"
-	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 )
@@ -129,7 +128,7 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.B
 	return makeBundleFromApp(dockerCli, app)
 }
 
-func resolveBundle(dockerCli command.Cli, name string, insecureRegistries []string) (*bundle.Bundle, error) {
+func resolveBundle(dockerCli command.Cli, name string, pullRef bool, insecureRegistries []string) (*bundle.Bundle, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
 	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
@@ -138,18 +137,28 @@ func resolveBundle(dockerCli command.Cli, name string, insecureRegistries []stri
 	name, kind := getAppNameKind(name)
 	switch kind {
 	case nameKindFile:
+		if pullRef {
+			return nil, errors.Errorf("%s: cannot pull when referencing a file based app", name)
+		}
 		if strings.HasSuffix(name, internal.AppExtension) {
 			return extractAndLoadAppBasedBundle(dockerCli, name)
 		}
 		return loader.NewDetectingLoader().Load(name)
 	case nameKindDir, nameKindEmpty:
+		if pullRef {
+			if kind == nameKindDir {
+				return nil, errors.Errorf("%s: cannot pull when referencing a directory based app", name)
+			}
+			// XXX perhaps getAppNameKind could do the call to findApp?
+			return nil, errors.Errorf("cannot pull when referencing a directory based app")
+		}
 		return extractAndLoadAppBasedBundle(dockerCli, name)
 	case nameKindReference:
 		ref, err := reference.ParseNormalizedNamed(name)
 		if err != nil {
 			return nil, errors.Wrap(err, name)
 		}
-		return remotes.Pull(context.Background(), reference.TagNameOnly(ref), remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...))
+		return bundlestore.LookupOrPullBundle(dockerCli, reference.TagNameOnly(ref), pullRef, insecureRegistries)
 	}
 	return nil, fmt.Errorf("could not resolve bundle %q", name)
 }

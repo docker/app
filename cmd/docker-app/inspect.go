@@ -13,6 +13,7 @@ import (
 type inspectOptions struct {
 	parametersOptions
 	registryOptions
+	pull bool
 }
 
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
@@ -27,6 +28,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.registryOptions.addFlags(cmd.Flags())
+	cmd.Flags().BoolVar(&opts.pull, "pull", false, "pull the bundle")
 	return cmd
 }
 
@@ -41,7 +43,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if err != nil {
 		return err
 	}
-	bundle, err := resolveBundle(dockerCli, appname, opts.insecureRegistries)
+	bundle, err := resolveBundle(dockerCli, appname, opts.pull, opts.insecureRegistries)
 	if err != nil {
 		return err
 	}
