@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types/metadata"
@@ -15,7 +17,6 @@ import (
 	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 )
 
 type pushOptions struct {
@@ -56,7 +57,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return err
 	}
 	if retag.shouldRetag {
-		err := retagInvocationImage(dockerCli, bndl, retag.invocationImageRef)
+		err := retagInvocationImage(dockerCli, bndl, retag.invocationImageRef.String())
 		if err != nil {
 			return err
 		}
@@ -96,12 +97,12 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	return nil
 }
 
-func retagInvocationImage(dockerCli command.Cli, bndl *bundle.Bundle, ref reference.Named) error {
-	err := dockerCli.Client().ImageTag(context.Background(), bndl.InvocationImages[0].Image, ref.String())
+func retagInvocationImage(dockerCli command.Cli, bndl *bundle.Bundle, newName string) error {
+	err := dockerCli.Client().ImageTag(context.Background(), bndl.InvocationImages[0].Image, newName)
 	if err != nil {
 		return err
 	}
-	bndl.InvocationImages[0].Image = ref.String()
+	bndl.InvocationImages[0].Image = newName
 	return nil
 }
 

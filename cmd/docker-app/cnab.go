@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/docker/cnab-to-oci/remotes"
-	"github.com/docker/distribution/reference"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,6 +17,8 @@ import (
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context/store"
+	"github.com/docker/cnab-to-oci/remotes"
+	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 )
 

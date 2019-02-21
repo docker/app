@@ -39,7 +39,7 @@ func parseRefOrDie(t *testing.T, name string) reference.Named {
 
 func TestInvocationImageRetag(t *testing.T) {
 	cases := []retagTestCase{
-		retagTestCase{
+		{
 			name:                "no-tag-aligned-names",
 			metaName:            "app",
 			metaVersion:         "0.1.0",
@@ -49,7 +49,7 @@ func TestInvocationImageRetag(t *testing.T) {
 			expectedCnabRef:     parseRefOrDie(t, "app:0.1.0"),
 			shouldRetag:         false,
 		},
-		retagTestCase{
+		{
 			name:                "tag-aligned-names-untagged-ref",
 			metaName:            "app",
 			metaVersion:         "0.1.0",
@@ -59,7 +59,7 @@ func TestInvocationImageRetag(t *testing.T) {
 			expectedCnabRef:     parseRefOrDie(t, "some-app:latest"),
 			shouldRetag:         true,
 		},
-		retagTestCase{
+		{
 			name:                "tag-aligned-names-tagged-ref",
 			metaName:            "app",
 			metaVersion:         "0.1.0",
@@ -69,7 +69,7 @@ func TestInvocationImageRetag(t *testing.T) {
 			expectedCnabRef:     parseRefOrDie(t, "some-app:test"),
 			shouldRetag:         true,
 		},
-		retagTestCase{
+		{
 			name:                "parsing-error",
 			metaName:            "app",
 			metaVersion:         "0.1.0",
@@ -77,7 +77,7 @@ func TestInvocationImageRetag(t *testing.T) {
 			tag:                 "some-App:test",
 			errorMessage:        "some-App:test: invalid reference format: repository name must be lowercase",
 		},
-		retagTestCase{
+		{
 			name:                "no-digest",
 			metaName:            "app",
 			metaVersion:         "0.1.0",

@@ -10,7 +10,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/loader"
 	"github.com/docker/app/types"
-	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 )
 
@@ -40,21 +39,6 @@ func findApp() (string, error) {
 		return "", fmt.Errorf("no application found in current directory")
 	}
 	return filepath.Join(cwd, hit), nil
-}
-
-func appNameFromRef(ref reference.Named) string {
-	parts := strings.Split(ref.Name(), "/")
-	return internal.DirNameFromAppName(parts[len(parts)-1])
-}
-
-func imageNameFromRef(ref reference.Named) string {
-	if tagged, ok := ref.(reference.Tagged); ok {
-		name := internal.DirNameFromAppName(ref.Name())
-		newRef, _ := reference.WithName(name)
-		newtaggedRef, _ := reference.WithTag(newRef, tagged.Tag())
-		return newtaggedRef.String()
-	}
-	return internal.DirNameFromAppName(ref.String())
 }
 
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.
