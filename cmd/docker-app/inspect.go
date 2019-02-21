@@ -22,41 +22,44 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Shows metadata, parameters and a summary of the compose file for a given application",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			muteDockerCli(dockerCli)
-			appname := firstOrEmpty(args)
-
-			c, err := claim.New("inspect")
-			if err != nil {
-				return err
-			}
-			driverImpl, err := prepareDriver(dockerCli)
-			if err != nil {
-				return err
-			}
-			bundle, err := resolveBundle(dockerCli, appname, opts.insecureRegistries)
-			if err != nil {
-				return err
-			}
-			c.Bundle = bundle
-
-			parameters, err := mergeBundleParameters(c.Bundle,
-				withFileParameters(opts.parametersFiles),
-				withCommandLineParameters(opts.overrides),
-			)
-			if err != nil {
-				return err
-			}
-			c.Parameters = parameters
-
-			a := &action.RunCustom{
-				Action: internal.Namespace + "inspect",
-				Driver: driverImpl,
-			}
-			err = a.Run(c, map[string]string{"docker.context": ""}, dockerCli.Out())
-			return errors.Wrap(err, "Inspect failed")
+			return runInspect(dockerCli, firstOrEmpty(args), opts)
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.registryOptions.addFlags(cmd.Flags())
 	return cmd
+}
+
+func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
+	muteDockerCli(dockerCli)
+
+	c, err := claim.New("inspect")
+	if err != nil {
+		return err
+	}
+	driverImpl, err := prepareDriver(dockerCli)
+	if err != nil {
+		return err
+	}
+	bundle, err := resolveBundle(dockerCli, appname, opts.insecureRegistries)
+	if err != nil {
+		return err
+	}
+	c.Bundle = bundle
+
+	parameters, err := mergeBundleParameters(c.Bundle,
+		withFileParameters(opts.parametersFiles),
+		withCommandLineParameters(opts.overrides),
+	)
+	if err != nil {
+		return err
+	}
+	c.Parameters = parameters
+
+	a := &action.RunCustom{
+		Action: internal.Namespace + "inspect",
+		Driver: driverImpl,
+	}
+	err = a.Run(c, map[string]string{"docker.context": ""}, dockerCli.Out())
+	return errors.Wrap(err, "Inspect failed")
 }
