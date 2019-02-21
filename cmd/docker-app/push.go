@@ -31,11 +31,7 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Push the application to a registry",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := ""
-			if len(args) > 0 {
-				name = args[0]
-			}
-			return runPush(dockerCli, name, opts)
+			return runPush(dockerCli, firstOrEmpty(args), opts)
 		},
 	}
 	flags := cmd.Flags()
