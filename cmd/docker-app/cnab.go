@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/docker/cnab-to-oci/remotes"
+	"github.com/docker/distribution/reference"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -142,8 +145,11 @@ func resolveBundle(dockerCli command.Cli, name string) (*bundle.Bundle, error) {
 	case nameKindDir, nameKindEmpty:
 		return extractAndLoadAppBasedBundle(dockerCli, name)
 	case nameKindReference:
-		// TODO: pull the bundle
-		fmt.Fprintln(dockerCli.Err(), "WARNING: pulling a CNAB is not yet supported")
+		ref, err := reference.ParseNormalizedNamed(name)
+		if err != nil {
+			return nil, errors.Wrap(err, name)
+		}
+		return remotes.Pull(context.Background(), reference.TagNameOnly(ref), remotes.CreateResolver(dockerCli.ConfigFile(), false))
 	}
 	return nil, fmt.Errorf("could not resolve bundle %q", name)
 }
