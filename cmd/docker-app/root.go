@@ -15,7 +15,6 @@ import (
 )
 
 // rootCmd represents the base command when called without any subcommands
-// FIXME(vdemeester) use command.Cli interface
 func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 	opts := cliflags.NewClientOptions()
 	var flags *pflag.FlagSet
