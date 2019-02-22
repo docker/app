@@ -7,8 +7,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	cliconfig "github.com/docker/cli/cli/config"
-	"github.com/docker/cli/cli/debug"
 	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -16,8 +14,10 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
-	opts := cliflags.NewClientOptions()
-	var flags *pflag.FlagSet
+	var (
+		opts  *cliflags.ClientOptions
+		flags *pflag.FlagSet
+	)
 
 	cmd := &cobra.Command{
 		Use:              "docker-app",
@@ -27,13 +27,11 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 		TraverseChildren: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.Common.SetDefaultOptions(flags)
-			dockerPreRun(opts)
 			return dockerCli.Initialize(opts)
 		},
 		Version: fmt.Sprintf("%s, build %s", internal.Version, internal.GitCommit),
 	}
-	cli.SetupRootCommand(cmd)
-	flags = cmd.Flags()
+	opts, flags, _ = cli.SetupRootCommand(cmd)
 	flags.BoolP("version", "v", false, "Print version information")
 	cmd.SetVersionTemplate("docker-app version {{.Version}}\n")
 	addCommands(cmd, dockerCli)
@@ -66,18 +64,6 @@ func firstOrEmpty(list []string) string {
 		return list[0]
 	}
 	return ""
-}
-
-func dockerPreRun(opts *cliflags.ClientOptions) {
-	cliflags.SetLogLevel(opts.Common.LogLevel)
-
-	if opts.ConfigDir != "" {
-		cliconfig.SetDir(opts.ConfigDir)
-	}
-
-	if opts.Common.Debug {
-		debug.Enable()
-	}
 }
 
 func muteDockerCli(dockerCli command.Cli) {
