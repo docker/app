@@ -10,8 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type inspectOptions struct {
+	parametersOptions
+	registryOptions
+}
+
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
-	var opts parametersOptions
+	var opts inspectOptions
 	cmd := &cobra.Command{
 		Use:   "inspect [<app-name>] [-s key=value...] [-f parameters-file...]",
 		Short: "Shows metadata, parameters and a summary of the compose file for a given application",
@@ -28,7 +33,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bundle, err := resolveBundle(dockerCli, appname)
+			bundle, err := resolveBundle(dockerCli, appname, opts.insecureRegistries)
 			if err != nil {
 				return err
 			}
@@ -51,6 +56,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 			return errors.Wrap(err, "Inspect failed")
 		},
 	}
-	opts.addFlags(cmd.Flags())
+	opts.parametersOptions.addFlags(cmd.Flags())
+	opts.registryOptions.addFlags(cmd.Flags())
 	return cmd
 }

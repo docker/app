@@ -28,6 +28,11 @@ required = ["github.com/wadey/gocovmerge"]
   version = "v1.0.0-rc6"
 
 [[override]]
+  name = "github.com/docker/cnab-to-oci"
+  branch = "per-registry-plainhttp"
+  source = "github.com/simonferquel/cnab-to-oci"
+
+[[override]]
   name = "github.com/containerd/containerd"
   source = "github.com/simonferquel/containerd"
   revision = "97d99161973592ddbf4b42a2073d61cc5bc46c57"

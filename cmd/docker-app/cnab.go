@@ -129,7 +129,7 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.B
 	return makeBundleFromApp(dockerCli, app)
 }
 
-func resolveBundle(dockerCli command.Cli, name string) (*bundle.Bundle, error) {
+func resolveBundle(dockerCli command.Cli, name string, insecureRegistries []string) (*bundle.Bundle, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
 	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
@@ -149,7 +149,7 @@ func resolveBundle(dockerCli command.Cli, name string) (*bundle.Bundle, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, name)
 		}
-		return remotes.Pull(context.Background(), reference.TagNameOnly(ref), remotes.CreateResolver(dockerCli.ConfigFile(), false))
+		return remotes.Pull(context.Background(), reference.TagNameOnly(ref), remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...))
 	}
 	return nil, fmt.Errorf("could not resolve bundle %q", name)
 }

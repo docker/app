@@ -20,7 +20,8 @@ import (
 )
 
 type pushOptions struct {
-	tag string
+	registry registryOptions
+	tag      string
 }
 
 func pushCmd(dockerCli command.Cli) *cobra.Command {
@@ -37,7 +38,9 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 			return runPush(dockerCli, name, opts)
 		},
 	}
-	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default is : <name>:<version> from metadata)")
+	flags := cmd.Flags()
+	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default is : <name>:<version> from metadata)")
+	opts.registry.addFlags(flags)
 	return cmd
 }
 
@@ -83,7 +86,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return err
 	}
 
-	dockerResolver := remotes.CreateResolver(dockerCli.ConfigFile(), false)
+	dockerResolver := remotes.CreateResolver(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
 	// bundle fixup
 	if err := remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, dockerResolver); err != nil {
 		return err

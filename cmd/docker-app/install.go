@@ -16,10 +16,10 @@ import (
 type installOptions struct {
 	parametersOptions
 	credentialOptions
+	registryOptions
 	orchestrator     string
 	kubeNamespace    string
 	stackName        string
-	insecure         bool
 	sendRegistryAuth bool
 }
 
@@ -56,10 +56,10 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
+	opts.registryOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVarP(&opts.orchestrator, "orchestrator", "o", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "kubernetes-namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Installation name (defaults to application name)")
-	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
 	cmd.Flags().BoolVar(&opts.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
 
 	return cmd
@@ -72,7 +72,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	}
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
 
-	bndl, err := resolveBundle(dockerCli, appname)
+	bndl, err := resolveBundle(dockerCli, appname, opts.insecureRegistries)
 	if err != nil {
 		return err
 	}

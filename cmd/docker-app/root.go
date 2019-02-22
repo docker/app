@@ -104,3 +104,11 @@ func (o *credentialOptions) addFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&o.targetContext, "target-context", "", "Context on which the application is executed")
 	flags.StringArrayVarP(&o.credentialsets, "credential-set", "c", []string{}, "Use a duffle credentialset (either a YAML file, or a credential set present in the duffle credential store)")
 }
+
+type registryOptions struct {
+	insecureRegistries []string
+}
+
+func (o *registryOptions) addFlags(flags *pflag.FlagSet) {
+	flags.StringSliceVar(&o.insecureRegistries, "insecure-registries", nil, "Use HTTP instead of HTTPS when pulling or pushing from/to those registries")
+}
