@@ -270,7 +270,7 @@
   revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
 [[projects]]
-  branch = "per-registry-plainhttp"
+  branch = "master"
   digest = "1:5907f89e02e7cb651f86f47bb07a5af0b24c816a30fa4b7b1baee2753dcb5c20"
   name = "github.com/docker/cnab-to-oci"
   packages = [
@@ -278,8 +278,7 @@
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "e80d4e727fe587bffd89c1050c75195942828907"
-  source = "github.com/simonferquel/cnab-to-oci"
+  revision = "e609e01cd71b277fc0011cb87171ac3450468109"
 
 [[projects]]
   digest = "1:26cd5aeffe3ab0eb5d0275b3e9095cf2b4f1ca79d0ad787386a7bb39ce91b75d"

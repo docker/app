@@ -29,8 +29,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cnab-to-oci"
-  branch = "per-registry-plainhttp"
-  source = "github.com/simonferquel/cnab-to-oci"
+  branch = "master"
 
 [[override]]
   name = "github.com/containerd/containerd"
