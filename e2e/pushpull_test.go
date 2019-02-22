@@ -2,9 +2,12 @@ package e2e
 
 import (
 	"fmt"
+	"math/rand"
+	"net"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/docker/app/internal"
 	"gotest.tools/assert"
@@ -14,6 +17,7 @@ import (
 )
 
 func TestPushInstall(t *testing.T) {
+	registryPort := findAvailablePort()
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 
@@ -31,8 +35,12 @@ func TestPushInstall(t *testing.T) {
 	// Solution found is: fix the port of the registry to be the same internally and externally (fixed at 5000, could use something random)
 	// run the dind container in the same network namespace: this way 127.0.0.1:5000 both resolves to the registry from the client and from dind
 
-	registry := NewContainer("registry:2", 5000)
-	registry.Start(t, "-e", "REGISTRY_VALIDATION_MANIFESTS_URLS_ALLOW=[^http]", "--expose", "2375", "-p", "5000:5000", "-p", "2375")
+	registry := NewContainer("registry:2", registryPort)
+	registry.Start(t, "-e", "REGISTRY_VALIDATION_MANIFESTS_URLS_ALLOW=[^http]",
+		"-e", fmt.Sprintf("REGISTRY_HTTP_ADDR=0.0.0.0:%d", registryPort),
+		"--expose", "2375",
+		"-p", fmt.Sprintf("%d:%d", registryPort, registryPort),
+		"-p", "2375")
 	defer registry.Stop(t)
 
 	ref := registry.GetAddress(t) + "/test/push-pull"
@@ -71,4 +79,23 @@ func TestPushInstall(t *testing.T) {
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	cmd.Command = []string{dockerCli, "service", "ls"}
 	assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
+}
+
+func findAvailablePort() int {
+	rand.Seed(time.Now().UnixNano())
+	for {
+		candidate := (rand.Int() % 2000) + 5000
+		if isPortAvailable(candidate) {
+			return candidate
+		}
+	}
+}
+
+func isPortAvailable(port int) bool {
+	l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return false
+	}
+	defer l.Close()
+	return true
 }
