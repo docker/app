@@ -43,8 +43,8 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	// we have a difficult constraint here:
 	// - the registry must be reachable from the client side (for cnab-to-oci, which does not use the docker daemon to access the registry)
 	// - the registry must be reachable from the dind daemon on the same address/port
-	// Solution found is: fix the port of the registry to be the same internally and externally (fixed at 5000, could use something random)
-	// run the dind container in the same network namespace: this way 127.0.0.1:5000 both resolves to the registry from the client and from dind
+	// Solution found is: fix the port of the registry to be the same internally and externally
+	// and run the dind container in the same network namespace: this way 127.0.0.1:<registry-port> both resolves to the registry from the client and from dind
 
 	swarm := NewContainer("docker:18.09-dind", 2375, "--insecure-registry", fmt.Sprintf("127.0.0.1:%d", registryPort))
 	swarm.Start(t, "--expose", strconv.FormatInt(int64(registryPort), 10),
