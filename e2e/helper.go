@@ -57,6 +57,11 @@ func (c *Container) Stop(t *testing.T) {
 	icmd.RunCommand("docker", "stop", c.container).Assert(t, icmd.Success)
 }
 
+// StopNoFail terminates this container
+func (c *Container) StopNoFail() {
+	icmd.RunCommand("docker", "stop", c.container)
+}
+
 // GetAddress returns the host:port this container listens on
 func (c *Container) GetAddress(t *testing.T) string {
 	if c.address != "" {
