@@ -19,6 +19,7 @@ import (
 	"github.com/docker/distribution/registry/client"
 	digest "github.com/opencontainers/go-digest"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -280,6 +281,9 @@ func PushConfigMulti(ctx context.Context, payload map[string]string, repoTag str
 	}
 	if _, ok := err.(unsupportedMediaType); ok {
 		return pushConfigLegacy(ctx, payload, pr, repo, labels)
+	}
+	if err != nil {
+		err = errors.Wrapf(err, "Unable to push to: %s/%s", pr.domain, pr.path)
 	}
 	return digest, err
 }

@@ -41,12 +41,12 @@ cross: create_bin ## cross-compile binaries (linux, darwin, windows)
 	docker build $(BUILD_ARGS) --target=cross -t $(CROSS_IMAGE_NAME)  .
 	docker create --name $(CROSS_CTNR_NAME) $(CROSS_IMAGE_NAME) noop
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
-	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
-	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe
+	#docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
+	#docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe
 	docker rm $(CROSS_CTNR_NAME)
 	@$(call chmod,+x,bin/$(BIN_NAME)-linux)
-	@$(call chmod,+x,bin/$(BIN_NAME)-darwin)
-	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
+	#@$(call chmod,+x,bin/$(BIN_NAME)-darwin)
+	#@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
 
 cli-cross: create_bin
 	docker build $(BUILD_ARGS) --target=build -t $(CLI_IMAGE_NAME)  .
