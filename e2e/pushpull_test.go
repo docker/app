@@ -38,7 +38,8 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	}
 
 	// The dind doesn't have the cnab-app-base image so we save it in order to load it later
-	icmd.RunCommand(dockerCli, "save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "-o", tmpDir.Join("cnab-app-base.tar.gz")).Assert(t, icmd.Success)
+	saveCmd := icmd.Cmd{Command: dockerCli.Command("save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "-o", tmpDir.Join("cnab-app-base.tar.gz"))}
+	icmd.RunCmd(saveCmd).Assert(t, icmd.Success)
 
 	// we have a difficult constraint here:
 	// - the registry must be reachable from the client side (for cnab-to-oci, which does not use the docker daemon to access the registry)
@@ -60,23 +61,31 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	// We  need two contexts:
 	// - one for `docker` so that it connects to the dind swarm created before
 	// - the target context for the invocation image to install within the swarm
-	cmd.Command = []string{dockerCli, "context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm"}
+	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	defer func() {
+		cmd.Command = dockerCli.Command("context", "rm", "--force", "swarm-context")
+		icmd.RunCmd(cmd)
+	}()
 
 	// When creating a context on a Windows host we cannot use
 	// the unix socket but it's needed inside the invocation image.
 	// The workaround is to create a context with an empty host.
 	// This host will default to the unix socket inside the
 	// invocation image
-	cmd.Command = []string{dockerCli, "context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm"}
+	cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	defer func() {
+		cmd.Command = dockerCli.Command("context", "rm", "--force", "swarm-target-context")
+		icmd.RunCmd(cmd)
+	}()
 
 	// Initialize the swarm
 	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")
-	cmd.Command = []string{dockerCli, "swarm", "init"}
+	cmd.Command = dockerCli.Command("swarm", "init")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	// Load the needed base cnab image into the swarm docker engine
-	cmd.Command = []string{dockerCli, "load", "-i", tmpDir.Join("cnab-app-base.tar.gz")}
+	cmd.Command = dockerCli.Command("load", "-i", tmpDir.Join("cnab-app-base.tar.gz"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	info := dindSwarmAndRegistryInfo{
@@ -93,12 +102,12 @@ func TestPushInstall(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 		ref := info.registryAddress + "/test/push-pull"
-		cmd.Command = []string{dockerApp, "push", "-t", ref, "--insecure-registries=" + info.registryAddress, filepath.Join("testdata", "push-pull", "push-pull.dockerapp")}
+		cmd.Command = dockerCli.Command("app", "push", "--tag", ref, "--insecure-registries="+info.registryAddress, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-		cmd.Command = []string{dockerApp, "install", "--insecure-registries=" + info.registryAddress, ref, "--name", t.Name()}
+		cmd.Command = dockerCli.Command("app", "install", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name())
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		cmd.Command = []string{dockerCli, "service", "ls"}
+		cmd.Command = dockerCli.Command("service", "ls")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
 	})
 }
@@ -107,22 +116,22 @@ func TestPushPullInstall(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 		ref := info.registryAddress + "/test/push-pull"
-		cmd.Command = []string{dockerApp, "push", "-t", ref, "--insecure-registries=" + info.registryAddress, filepath.Join("testdata", "push-pull", "push-pull.dockerapp")}
+		cmd.Command = dockerCli.Command("app", "push", "--tag", ref, "--insecure-registries="+info.registryAddress, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		cmd.Command = []string{dockerApp, "pull", ref, "--insecure-registries=" + info.registryAddress}
+		cmd.Command = dockerCli.Command("app", "pull", ref, "--insecure-registries="+info.registryAddress)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		// stop the registry
 		info.stopRegistry()
 
 		// install without --pull should succeed (rely on local store)
-		cmd.Command = []string{dockerApp, "install", "--insecure-registries=" + info.registryAddress, ref, "--name", t.Name()}
+		cmd.Command = dockerCli.Command("app", "install", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name())
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		cmd.Command = []string{dockerCli, "service", "ls"}
+		cmd.Command = dockerCli.Command("service", "ls")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
 
 		// install with --pull should fail (registry is stopped)
-		cmd.Command = []string{dockerApp, "install", "--pull", "--insecure-registries=" + info.registryAddress, ref, "--name", t.Name() + "2"}
+		cmd.Command = dockerCli.Command("app", "install", "--pull", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name()+"2")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1}).Combined(), "failed to resolve bundle manifest"))
 	})
 }

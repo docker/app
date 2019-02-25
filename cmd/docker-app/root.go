@@ -1,39 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 
-	"github.com/docker/app/internal"
-	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 // rootCmd represents the base command when called without any subcommands
-func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
-	var (
-		opts  *cliflags.ClientOptions
-		flags *pflag.FlagSet
-	)
-
+// FIXME(vdemeester) use command.Cli interface
+func newRootCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              "docker-app",
-		Short:            "Docker Application Packages",
-		Long:             `Build and deploy Docker Application Packages.`,
-		SilenceUsage:     true,
-		TraverseChildren: true,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			opts.Common.SetDefaultOptions(flags)
-			return dockerCli.Initialize(opts)
-		},
-		Version: fmt.Sprintf("%s, build %s", internal.Version, internal.GitCommit),
+		Use:   "app",
+		Short: "Docker Application Packages",
+		Long:  `Build and deploy Docker Application Packages.`,
 	}
-	opts, flags, _ = cli.SetupRootCommand(cmd)
-	flags.BoolP("version", "v", false, "Print version information")
-	cmd.SetVersionTemplate("docker-app version {{.Version}}\n")
 	addCommands(cmd, dockerCli)
 	return cmd
 }
@@ -66,8 +48,13 @@ func firstOrEmpty(list []string) string {
 	return ""
 }
 
-func muteDockerCli(dockerCli command.Cli) {
+func muteDockerCli(dockerCli command.Cli) func() {
+	stdout := dockerCli.Out()
+	stderr := dockerCli.Err()
 	dockerCli.Apply(command.WithCombinedStreams(ioutil.Discard))
+	return func() {
+		dockerCli.Apply(command.WithOutputStream(stdout), command.WithErrorStream(stderr))
+	}
 }
 
 type parametersOptions struct {

@@ -33,7 +33,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
-	muteDockerCli(dockerCli)
+	defer muteDockerCli(dockerCli)()
 
 	c, err := claim.New("inspect")
 	if err != nil {
