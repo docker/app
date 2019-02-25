@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/config"
 	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
@@ -16,11 +15,13 @@ import (
 	"github.com/docker/cli/cli/context/docker"
 	kubcontext "github.com/docker/cli/cli/context/kubernetes"
 	"github.com/docker/cli/cli/context/store"
+	"github.com/docker/cli/cli/debug"
 	cliflags "github.com/docker/cli/cli/flags"
 	manifeststore "github.com/docker/cli/cli/manifest/store"
 	registryclient "github.com/docker/cli/cli/registry/client"
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/cli/cli/trust"
+	"github.com/docker/cli/cli/version"
 	"github.com/docker/cli/internal/containerizedengine"
 	dopts "github.com/docker/cli/opts"
 	clitypes "github.com/docker/cli/types"
@@ -81,13 +82,8 @@ type DockerCli struct {
 	contextStore          store.Store
 	currentContext        string
 	dockerEndpoint        docker.Endpoint
+	contextStoreConfig    store.Config
 }
-
-var storeConfig = store.NewConfig(
-	func() interface{} { return &DockerContext{} },
-	store.EndpointTypeGetter(docker.DockerEndpoint, func() interface{} { return &docker.EndpointMeta{} }),
-	store.EndpointTypeGetter(kubcontext.KubernetesEndpoint, func() interface{} { return &kubcontext.EndpointMeta{} }),
-)
 
 // DefaultVersion returns api.defaultVersion or DOCKER_API_VERSION if specified.
 func (cli *DockerCli) DefaultVersion() string {
@@ -179,33 +175,65 @@ func (cli *DockerCli) RegistryClient(allowInsecure bool) registryclient.Registry
 	return registryclient.NewRegistryClient(resolver, UserAgent(), allowInsecure)
 }
 
+// InitializeOpt is the type of the functional options passed to DockerCli.Initialize
+type InitializeOpt func(dockerCli *DockerCli) error
+
+// WithInitializeClient is passed to DockerCli.Initialize by callers who wish to set a particular API Client for use by the CLI.
+func WithInitializeClient(makeClient func(dockerCli *DockerCli) (client.APIClient, error)) InitializeOpt {
+	return func(dockerCli *DockerCli) error {
+		var err error
+		dockerCli.client, err = makeClient(dockerCli)
+		return err
+	}
+}
+
 // Initialize the dockerCli runs initialization that must happen after command
 // line flags are parsed.
-func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
-	cli.configFile = cliconfig.LoadDefaultConfigFile(cli.err)
+func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...InitializeOpt) error {
 	var err error
-	cli.contextStore = store.New(cliconfig.ContextStoreDir(), storeConfig)
+
+	for _, o := range ops {
+		if err := o(cli); err != nil {
+			return err
+		}
+	}
+	cliflags.SetLogLevel(opts.Common.LogLevel)
+
+	if opts.ConfigDir != "" {
+		cliconfig.SetDir(opts.ConfigDir)
+	}
+
+	if opts.Common.Debug {
+		debug.Enable()
+	}
+
+	cli.configFile = cliconfig.LoadDefaultConfigFile(cli.err)
+	cli.contextStore = store.New(cliconfig.ContextStoreDir(), cli.contextStoreConfig)
 	cli.currentContext, err = resolveContextName(opts.Common, cli.configFile, cli.contextStore)
 	if err != nil {
 		return err
 	}
-	endpoint, err := resolveDockerEndpoint(cli.contextStore, cli.currentContext, opts.Common)
-	if err != nil {
-		return errors.Wrap(err, "unable to resolve docker endpoint")
-	}
-	cli.dockerEndpoint = endpoint
 
-	cli.client, err = newAPIClientFromEndpoint(endpoint, cli.configFile)
-	if tlsconfig.IsErrEncryptedKey(err) {
-		passRetriever := passphrase.PromptRetrieverWithInOut(cli.In(), cli.Out(), nil)
-		newClient := func(password string) (client.APIClient, error) {
-			endpoint.TLSPassword = password
-			return newAPIClientFromEndpoint(endpoint, cli.configFile)
+	if cli.client == nil {
+
+		endpoint, err := resolveDockerEndpoint(cli.contextStore, cli.currentContext, opts.Common)
+		if err != nil {
+			return errors.Wrap(err, "unable to resolve docker endpoint")
 		}
-		cli.client, err = getClientWithPassword(passRetriever, newClient)
-	}
-	if err != nil {
-		return err
+		cli.dockerEndpoint = endpoint
+
+		cli.client, err = newAPIClientFromEndpoint(endpoint, cli.configFile)
+		if tlsconfig.IsErrEncryptedKey(err) {
+			passRetriever := passphrase.PromptRetrieverWithInOut(cli.In(), cli.Out(), nil)
+			newClient := func(password string) (client.APIClient, error) {
+				endpoint.TLSPassword = password
+				return newAPIClientFromEndpoint(endpoint, cli.configFile)
+			}
+			cli.client, err = getClientWithPassword(passRetriever, newClient)
+		}
+		if err != nil {
+			return err
+		}
 	}
 	var experimentalValue string
 	// Environment variable always overrides configuration
@@ -226,7 +254,7 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 
 // NewAPIClientFromFlags creates a new APIClient from command line flags
 func NewAPIClientFromFlags(opts *cliflags.CommonOptions, configFile *configfile.ConfigFile) (client.APIClient, error) {
-	store := store.New(cliconfig.ContextStoreDir(), storeConfig)
+	store := store.New(cliconfig.ContextStoreDir(), defaultContextStoreConfig())
 	contextName, err := resolveContextName(opts, configFile, store)
 	if err != nil {
 		return nil, err
@@ -372,7 +400,7 @@ func (cli *DockerCli) StackOrchestrator(flagValue string) (Orchestrator, error) 
 	if currentContext != "" {
 		contextstore := cli.contextStore
 		if contextstore == nil {
-			contextstore = store.New(cliconfig.ContextStoreDir(), storeConfig)
+			contextstore = store.New(cliconfig.ContextStoreDir(), cli.contextStoreConfig)
 		}
 		ctxRaw, err := contextstore.GetContextMetadata(currentContext)
 		if store.IsErrContextDoesNotExist(err) {
@@ -430,6 +458,7 @@ func NewDockerCli(ops ...DockerCliOption) (*DockerCli, error) {
 		WithContentTrustFromEnv(),
 		WithContainerizedClient(containerizedengine.NewClient),
 	}
+	cli.contextStoreConfig = defaultContextStoreConfig()
 	ops = append(defaultOps, ops...)
 	if err := cli.Apply(ops...); err != nil {
 		return nil, err
@@ -465,7 +494,7 @@ func getServerHost(hosts []string, tlsOptions *tlsconfig.Options) (string, error
 
 // UserAgent returns the user agent string used for making API requests
 func UserAgent() string {
-	return "Docker-Client/" + cli.Version + " (" + runtime.GOOS + ")"
+	return "Docker-Client/" + version.Version + " (" + runtime.GOOS + ")"
 }
 
 // resolveContextName resolves the current context name with the following rules:
@@ -500,4 +529,12 @@ func resolveContextName(opts *cliflags.CommonOptions, config *configfile.ConfigF
 		return config.CurrentContext, err
 	}
 	return "", nil
+}
+
+func defaultContextStoreConfig() store.Config {
+	return store.NewConfig(
+		func() interface{} { return &DockerContext{} },
+		store.EndpointTypeGetter(docker.DockerEndpoint, func() interface{} { return &docker.EndpointMeta{} }),
+		store.EndpointTypeGetter(kubcontext.KubernetesEndpoint, func() interface{} { return &kubcontext.EndpointMeta{} }),
+	)
 }

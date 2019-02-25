@@ -17,7 +17,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Shows metadata, parameters and a summary of the compose file for a given application",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			muteDockerCli(dockerCli)
+			defer muteDockerCli(dockerCli)()
 			appname := firstOrEmpty(args)
 
 			c, err := claim.New("inspect")

@@ -31,7 +31,7 @@ func findApp() (string, error) {
 	for _, c := range content {
 		if strings.HasSuffix(c.Name(), internal.AppExtension) {
 			if hit != "" {
-				return "", fmt.Errorf("multiple applications found in current directory, specify the application name on the command line")
+				return "", fmt.Errorf("Error: multiple applications found in current directory, specify the application name on the command line")
 			}
 			hit = c.Name()
 		}

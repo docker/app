@@ -1,21 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
+	"github.com/docker/app/internal"
+	"github.com/docker/cli/cli-plugins/manager"
+	"github.com/docker/cli/cli-plugins/plugin"
 	"github.com/docker/cli/cli/command"
-	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 func main() {
-	dockerCli, err := command.NewDockerCli()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-	logrus.SetOutput(dockerCli.Err())
-	cmd := newRootCmd(dockerCli)
-	if err := cmd.Execute(); err != nil {
-		os.Exit(1)
-	}
+	plugin.Run(func(dockerCli command.Cli) *cobra.Command {
+		return newRootCmd(dockerCli)
+	}, manager.Metadata{
+		SchemaVersion: "0.1.0",
+		Vendor:        "Docker Inc.",
+		Version:       internal.Version,
+	})
 }

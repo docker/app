@@ -29,7 +29,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cli"
-  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
+  revision = "3ddb3133f5b5a74dd4e3f721ced21f4d0b9651b6"
 
 [[override]]
   name = "github.com/deislabs/duffle"

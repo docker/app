@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"runtime"
 	"testing"
@@ -28,7 +29,7 @@ func TestCallCustomStatusAction(t *testing.T) {
 		{
 			name:           "missingCustomStatusAction",
 			exitCode:       1,
-			expectedOutput: "Error: Status failed: action not defined for bundle",
+			expectedOutput: "Status failed: action not defined for bundle",
 			cnab:           "cnab-without-status",
 		},
 	}
@@ -38,9 +39,7 @@ func TestCallCustomStatusAction(t *testing.T) {
 			tmpDir := fs.NewDir(t, t.Name())
 			defer tmpDir.Remove()
 			testDir := path.Join("testdata", testCase.cnab)
-			cmd := icmd.Cmd{
-				Env: []string{fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path())},
-			}
+			cmd := icmd.Cmd{Env: append(os.Environ(), fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path()))}
 
 			// We need to explicitly set the SYSTEMROOT on windows
 			// otherwise we get the error:
@@ -50,21 +49,21 @@ func TestCallCustomStatusAction(t *testing.T) {
 				cmd.Env = append(cmd.Env, `SYSTEMROOT=C:\WINDOWS`)
 			}
 			// Build CNAB invocation image
-			cmd.Command = []string{"docker", "build", "-f", path.Join(testDir, "cnab", "build", "Dockerfile"), "-t", fmt.Sprintf("e2e/%s:v0.1.0", testCase.cnab), testDir}
+			cmd.Command = dockerCli.Command("build", "--file", path.Join(testDir, "cnab", "build", "Dockerfile"), "--tag", fmt.Sprintf("e2e/%s:v0.1.0", testCase.cnab), testDir)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-			// docker-app install
-			cmd.Command = []string{dockerApp, "install", path.Join(testDir, "bundle.json"), "--name", testCase.name}
+			// docker app install
+			cmd.Command = dockerCli.Command("app", "install", path.Join(testDir, "bundle.json"), "--name", testCase.name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-			// docker-app uninstall
+			// docker app uninstall
 			defer func() {
-				cmd.Command = []string{dockerApp, "uninstall", testCase.name}
+				cmd.Command = dockerCli.Command("app", "uninstall", testCase.name)
 				icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			}()
 
-			// docker-app status
-			cmd.Command = []string{dockerApp, "status", testCase.name}
+			// docker app status
+			cmd.Command = dockerCli.Command("app", "status", testCase.name)
 			result := icmd.RunCmd(cmd)
 			result.Assert(t, icmd.Expected{ExitCode: testCase.exitCode})
 			assert.Assert(t, is.Contains(result.Combined(), testCase.expectedOutput))

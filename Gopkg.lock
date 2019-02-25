@@ -159,7 +159,7 @@
   revision = "0377f7d767206f3a9e8881d0f02267b0d89c7a62"
 
 [[projects]]
-  digest = "1:9a4926a6de553a8f80d958a622308b86dadf199dde2602e88fe6e1943d1890e9"
+  digest = "1:a72272dfefbb22c87cda3dbefbb256741d861d2fb727210a66e0df0df6084b30"
   name = "github.com/containerd/cri"
   packages = ["pkg/util"]
   pruneopts = "NUT"
@@ -183,7 +183,7 @@
   revision = "461401dc8f19d80baa4b70178935e4501286c00b"
 
 [[projects]]
-  digest = "1:76a167b7658125360bbd52626d85031c89383c0ec6f3e4e25afd776c9a27f286"
+  digest = "1:9e2dbc126e8e5314cba3ab654b2183376dc81cb657ca8c588f86990f5da88cbc"
   name = "github.com/coreos/etcd"
   packages = ["raft/raftpb"]
   pruneopts = "NUT"
@@ -217,10 +217,12 @@
   revision = "eaa7595bd231ca353ec886708405fe4deba91968"
 
 [[projects]]
-  digest = "1:657236b6a87fbaf9e27e2029be1b4f49fc6367f61a4ac106c012576c414cbcc0"
+  digest = "1:0b5bf13e4971fc511f8ee5b4f13490ece442bcd16c079bcb372005c553fb886f"
   name = "github.com/docker/cli"
   packages = [
     "cli",
+    "cli-plugins/manager",
+    "cli-plugins/plugin",
     "cli/command",
     "cli/command/bundlefile",
     "cli/command/formatter",
@@ -245,6 +247,7 @@
     "cli/config",
     "cli/config/configfile",
     "cli/config/credentials",
+    "cli/config/types",
     "cli/connhelper",
     "cli/connhelper/ssh",
     "cli/context",
@@ -258,6 +261,7 @@
     "cli/registry/client",
     "cli/streams",
     "cli/trust",
+    "cli/version",
     "internal/containerizedengine",
     "internal/versions",
     "kubernetes",
@@ -267,25 +271,27 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
+  revision = "3ddb3133f5b5a74dd4e3f721ced21f4d0b9651b6"
 
 [[projects]]
-  digest = "1:26cd5aeffe3ab0eb5d0275b3e9095cf2b4f1ca79d0ad787386a7bb39ce91b75d"
+  digest = "1:680003750754b2a38531b5a652fb14cf8793a05ce70bc1c5cf93c735ef5d240f"
   name = "github.com/docker/compose-on-kubernetes"
   packages = [
     "api",
     "api/client/clientset/scheme",
+    "api/client/clientset/typed/compose/v1alpha3",
     "api/client/clientset/typed/compose/v1beta1",
     "api/client/clientset/typed/compose/v1beta2",
     "api/compose/clone",
     "api/compose/impersonation",
+    "api/compose/v1alpha3",
     "api/compose/v1beta1",
     "api/compose/v1beta2",
     "api/labels",
   ]
   pruneopts = "NUT"
-  revision = "55bc84aade4e505b2772623c5739b49baf0f9269"
-  version = "v0.4.18"
+  revision = "33d3550d35dc53cdf710647c38b37f3b02eec2a2"
+  version = "v0.4.19"
 
 [[projects]]
   digest = "1:1cb756deb458cb9be52d2e3fe67a19a7185b8c8453c691ba5eb0c7db00a51205"
@@ -314,7 +320,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6e16b5aee97695cb06862f865a433e510622be6a03a34ddea5be12622cafb7c5"
+  digest = "1:b1ebf6d2021d75519a0e508774eb0df1a9f25ddcef2a3a75c4e3d662fc0cd773"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -1107,7 +1113,7 @@
   source = "https://github.com/simonferquel/yaml"
 
 [[projects]]
-  digest = "1:fba52eeb003a81a7ad2eb9c92f139c43a8b0a4e8cc51c049fd03a2eb8f6894ae"
+  digest = "1:6ca4b5f65e4431699fc638bdbd9bce46d7426fd2fdba20a375295abd6427e781"
   name = "gotest.tools"
   packages = [
     "assert",
@@ -1122,8 +1128,8 @@
     "x/subtest",
   ]
   pruneopts = "NUT"
-  revision = "7c797b5133e5460410dbb22ba779bf35e6975dea"
-  version = "v2.2.0"
+  revision = "1083505acf35a0bd8a696b26837e1fb3187a7a83"
+  version = "v2.3.0"
 
 [[projects]]
   digest = "1:ef716a2116d8a040e16fbcd7fca71d3354915a94720de6af22c7a09970234296"
@@ -1276,7 +1282,7 @@
   revision = "kubernetes-1.11.1"
 
 [[projects]]
-  digest = "1:34af467590a9aa09701c1c3bea1fa6cdd5e8a8478e0baff9b8f6d4ba9518a42d"
+  digest = "1:18254705f2e912ec0142b7b36546c5d38d74e9d137c8d243985bff4d247eed81"
   name = "k8s.io/kubernetes"
   packages = ["pkg/api/v1/pod"]
   pruneopts = "NUT"
@@ -1304,6 +1310,8 @@
     "github.com/deislabs/duffle/pkg/loader",
     "github.com/deislabs/duffle/pkg/utils/crud",
     "github.com/docker/cli/cli",
+    "github.com/docker/cli/cli-plugins/manager",
+    "github.com/docker/cli/cli-plugins/plugin",
     "github.com/docker/cli/cli/command",
     "github.com/docker/cli/cli/command/stack",
     "github.com/docker/cli/cli/command/stack/options",
@@ -1316,7 +1324,6 @@
     "github.com/docker/cli/cli/context/docker",
     "github.com/docker/cli/cli/context/kubernetes",
     "github.com/docker/cli/cli/context/store",
-    "github.com/docker/cli/cli/debug",
     "github.com/docker/cli/cli/flags",
     "github.com/docker/cli/opts",
     "github.com/docker/distribution",
@@ -1342,7 +1349,6 @@
     "github.com/spf13/pflag",
     "github.com/wadey/gocovmerge",
     "github.com/xeipuuv/gojsonschema",
-    "golang.org/x/crypto/ssh/terminal",
     "gopkg.in/yaml.v2",
     "gotest.tools/assert",
     "gotest.tools/assert/cmp",

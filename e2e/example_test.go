@@ -24,7 +24,7 @@ func TestExamplesAreValid(t *testing.T) {
 		case os.IsNotExist(statErr):
 			return nil
 		default:
-			result := icmd.RunCommand(dockerApp, "validate", appPath)
+			result := icmd.RunCmd(icmd.Cmd{Command: dockerCli.Command("app", "validate", appPath)})
 			result.Assert(t, icmd.Success)
 			return filepath.SkipDir
 		}
