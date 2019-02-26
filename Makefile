@@ -13,7 +13,7 @@ ifeq ($(EXPERIMENTAL),on)
   BUILDTAGS="experimental"
 endif
 
-LDFLAGS := "-s -w \
+LDFLAGS := "\
   -X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
   -X $(PKG_NAME)/internal.Version=$(TAG)      \
   -X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL) \

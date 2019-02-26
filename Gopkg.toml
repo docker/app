@@ -29,12 +29,13 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cnab-to-oci"
-  branch = "master"
+  source = "github.com/simonferquel/cnab-to-oci"
+  branch = "event-sink"
 
 [[override]]
   name = "github.com/containerd/containerd"
   source = "github.com/simonferquel/containerd"
-  revision = "97d99161973592ddbf4b42a2073d61cc5bc46c57"
+  revision = "6339c151a1ce8453f748fdb60a56f7c944dd97a5"
 
 [[override]]
   name = "github.com/docker/cli"

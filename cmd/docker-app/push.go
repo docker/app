@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"github.com/docker/docker/pkg/term"
+	"io"
 	"io/ioutil"
+	"os"
 
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal/packager"
@@ -15,6 +19,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/registry"
+	"github.com/morikuni/aec"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -83,8 +88,23 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	}
 
 	dockerResolver := remotes.CreateResolver(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
+	var display fixupDisplay = &resumeDisplay{out: os.Stdout}
+	if term.IsTerminal(os.Stdout.Fd()) {
+		display = &interactiveDisplay{out: os.Stdout}
+	}
+	chEvent := make(chan remotes.FixupEvent)
+	displayDone := make(chan struct{})
+	go func() {
+		defer close(displayDone)
+		for ev := range chEvent {
+			display.onEvent(ev)
+		}
+	}()
 	// bundle fixup
-	if err := remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, dockerResolver); err != nil {
+	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, dockerResolver, chEvent)
+	close(chEvent)
+	<-displayDone
+	if err != nil {
 		return err
 	}
 	// push bundle manifest
@@ -141,4 +161,151 @@ func shouldRetagInvocationImage(meta metadata.AppMetadata, bndl *bundle.Bundle, 
 		invocationImageRef: expectedInvocationImageRef,
 		shouldRetag:        expectedInvocationImageRef.String() != currentInvocationImageRef.String(),
 	}, nil
+}
+
+type fixupDisplay interface {
+	onEvent(remotes.FixupEvent)
+}
+
+type logDisplay struct {
+	out io.Writer
+}
+
+func (l *logDisplay) onEvent(ev remotes.FixupEvent) {
+	switch ev.EventType {
+	case remotes.FixupEventTypeCopyImageStart:
+		fmt.Fprintf(l.out, "<Image %s>\n", ev.SourceImage)
+	case remotes.FixupEventTypeCopyImageEnd:
+		fmt.Fprintf(l.out, "</Image %s (err: %s)>\n", ev.SourceImage, ev.Error)
+	}
+}
+
+type interactiveDisplay struct {
+	out               io.Writer
+	previousLineCount int
+	images            []interactiveImageState
+}
+
+func (r *interactiveDisplay) onEvent(ev remotes.FixupEvent) {
+	out := bytes.NewBuffer(nil)
+	for i := 0; i < r.previousLineCount; i++ {
+		fmt.Fprint(out, aec.NewBuilder(aec.Up(1), aec.EraseLine(aec.EraseModes.All)).ANSI)
+	}
+	switch ev.EventType {
+	case remotes.FixupEventTypeCopyImageStart:
+		r.images = append(r.images, interactiveImageState{name: ev.SourceImage})
+	case remotes.FixupEventTypeCopyImageEnd:
+		r.images[r.imageIndex(ev.SourceImage)].done = true
+	case remotes.FixupEventTypeProgress:
+		r.images[r.imageIndex(ev.SourceImage)].onProgress(ev.Progress)
+	}
+	r.previousLineCount = 0
+	for _, s := range r.images {
+		r.previousLineCount += s.print(out)
+	}
+	r.out.Write(out.Bytes())
+}
+
+func (r *interactiveDisplay) imageIndex(name string) int {
+	for ix, state := range r.images {
+		if state.name == name {
+			return ix
+		}
+	}
+	return 0
+}
+
+type interactiveImageState struct {
+	name     string
+	progress remotes.ProgressSnapshot
+	done     bool
+}
+
+func (s *interactiveImageState) onProgress(p remotes.ProgressSnapshot) {
+	s.progress = p
+}
+
+func (s *interactiveImageState) print(out io.Writer) int {
+	if s.done {
+		fmt.Fprint(out, aec.Apply(s.name, aec.BlueF))
+	} else {
+		fmt.Fprint(out, s.name)
+	}
+	fmt.Fprint(out, "\n")
+	lineCount := 1
+
+	for _, p := range s.progress.Roots {
+		lineCount += printDescriptorProgress(out, &p, 1)
+	}
+	return lineCount
+}
+
+func printDescriptorProgress(out io.Writer, p *remotes.DescriptorProgressSnapshot, depth int) int {
+	for i := 0; i < depth; i++ {
+		fmt.Fprint(out, " ")
+	}
+	name := p.MediaType
+	if p.Platform != nil {
+		name = fmt.Sprintf("%s/%s", p.Platform.OS, p.Platform.Architecture)
+		if p.Platform.Variant != "" {
+			name += "/" + p.Platform.Variant
+		}
+	}
+	if len(p.Children) == 0 {
+		name = fmt.Sprintf("%s...: %s", p.Digest.String()[:15], p.Action)
+	}
+	doneCount := 0
+	for _, c := range p.Children {
+		if c.Done {
+			doneCount++
+		}
+	}
+	display := name
+	if len(p.Children) > 0 {
+		display = fmt.Sprintf("%s [%d/%d] (%s...)", name, doneCount, len(p.Children), p.Digest.String()[:15])
+	}
+	if p.Done {
+		display = aec.Apply(display, aec.BlueF)
+	}
+	if hasError(p) {
+		display = aec.Apply(display, aec.RedF)
+	}
+	fmt.Fprintln(out, display)
+	lineCount := 1
+	if p.Done {
+		return lineCount
+	}
+	for _, c := range p.Children {
+		lineCount += printDescriptorProgress(out, &c, depth+1)
+	}
+	return lineCount
+}
+
+func hasError(p *remotes.DescriptorProgressSnapshot) bool {
+	if p.Error != nil {
+		return true
+	}
+	for _, c := range p.Children {
+		if hasError(&c) {
+			return true
+		}
+	}
+	return false
+}
+
+type resumeDisplay struct {
+	out io.Writer
+}
+
+func (r *resumeDisplay) onEvent(ev remotes.FixupEvent) {
+	switch ev.EventType {
+	case remotes.FixupEventTypeCopyImageStart:
+		fmt.Fprintf(r.out, "Handling image %s...", ev.SourceImage)
+	case remotes.FixupEventTypeCopyImageEnd:
+		if ev.Error != nil {
+			fmt.Fprintf(r.out, "\nFailure: %s\n", ev.Error)
+		} else {
+			fmt.Fprint(r.out, " done!\n")
+		}
+	}
 }

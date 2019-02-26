@@ -22,7 +22,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path"
 	"strings"
 	"time"
@@ -369,8 +368,6 @@ func (pw *pushWriter) Commit(ctx context.Context, size int64, expected digest.Di
 	switch resp.StatusCode {
 	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
 	default:
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Fprintln(os.Stderr, string(body))
 		return errors.Errorf("unexpected status: %s", resp.Status)
 	}
 
