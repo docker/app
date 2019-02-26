@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"io/ioutil"
@@ -8,19 +8,17 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// rootCmd represents the base command when called without any subcommands
-// FIXME(vdemeester) use command.Cli interface
-func newRootCmd(dockerCli command.Cli) *cobra.Command {
+// NewRootCmd returns the base root command.
+func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "app",
 		Short: "Docker Application Packages",
 		Long:  `Build and deploy Docker Application Packages.`,
+		Use:   use,
 	}
 	addCommands(cmd, dockerCli)
 	return cmd
 }
 
-// addCommands adds all the commands from cli/command to the root command
 func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 	cmd.AddCommand(
 		installCmd(dockerCli),
