@@ -33,9 +33,21 @@ check_go_env:
 	@test $$(go list) = "$(PKG_NAME)" || \
 		(echo "Invalid Go environment - The local directory structure must match:  $(PKG_NAME)" && false)
 
-cross: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe ## cross-compile binaries (linux, darwin, windows)
+cross: cross-plugin cross-standalone ## cross-compile binaries (linux, darwin, windows)
+
+cross-plugin: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe
+
+cross-standalone: bin/${BIN_STANDALONE_NAME}-linux bin/${BIN_STANDALONE_NAME}-darwin bin/${BIN_STANDALONE_NAME}-windows.exe
 
 e2e-cross: bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-windows.exe
+
+.PHONY: bin/${BIN_STANDALONE_NAME}-windows
+bin/${BIN_STANDALONE_NAME}-%.exe bin/${BIN_STANDALONE_NAME}-%: cmd/${BIN_STANDALONE_NAME} check_go_env
+	GOOS=$* $(GO_BUILD) -o $@ ./$<
+
+.PHONY: bin/${BIN_STANDALONE_NAME}
+bin/${BIN_STANDALONE_NAME}: cmd/${BIN_STANDALONE_NAME} check_go_env
+	$(GO_BUILD) -o $@$(EXEC_EXT) ./$<
 
 .PHONY: bin/$(BIN_NAME)-e2e-windows
 bin/$(BIN_NAME)-e2e-%.exe bin/$(BIN_NAME)-e2e-%: e2e bin/$(BIN_NAME)-%

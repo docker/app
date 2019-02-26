@@ -43,10 +43,16 @@ cross: create_bin ## cross-compile binaries (linux, darwin, windows)
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe
+	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/${BIN_STANDALONE_NAME}-linux bin/${BIN_STANDALONE_NAME}-linux
+	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/${BIN_STANDALONE_NAME}-darwin bin/${BIN_STANDALONE_NAME}-darwin
+	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/${BIN_STANDALONE_NAME}-windows.exe bin/${BIN_STANDALONE_NAME}-windows.exe
 	docker rm $(CROSS_CTNR_NAME)
 	@$(call chmod,+x,bin/$(BIN_NAME)-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-darwin)
 	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
+	@$(call chmod,+x,bin/${BIN_STANDALONE_NAME}-linux)
+	@$(call chmod,+x,bin/${BIN_STANDALONE_NAME}-darwin)
+	@$(call chmod,+x,bin/${BIN_STANDALONE_NAME}-windows.exe)
 
 cli-cross: create_bin
 	docker build $(BUILD_ARGS) --target=build -t $(CLI_IMAGE_NAME)  .
@@ -71,11 +77,11 @@ e2e-cross: create_bin
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-windows.exe)
 
 tars:
-	tar czf bin/$(BIN_NAME)-linux.tar.gz -C bin $(BIN_NAME)-linux
+	tar --transform='flags=r;s|$(BIN_NAME)-linux|$(BIN_NAME)-plugin-linux|' -czf bin/$(BIN_NAME)-linux.tar.gz -C bin $(BIN_NAME)-linux ${BIN_STANDALONE_NAME}-linux
 	tar czf bin/$(BIN_NAME)-e2e-linux.tar.gz -C bin $(BIN_NAME)-e2e-linux
-	tar czf bin/$(BIN_NAME)-darwin.tar.gz -C bin $(BIN_NAME)-darwin
+	tar --transform='flags=r;s|$(BIN_NAME)-darwin|$(BIN_NAME)-plugin-darwin|' -czf bin/$(BIN_NAME)-darwin.tar.gz -C bin $(BIN_NAME)-darwin ${BIN_STANDALONE_NAME}-darwin
 	tar czf bin/$(BIN_NAME)-e2e-darwin.tar.gz -C bin $(BIN_NAME)-e2e-darwin
-	tar czf bin/$(BIN_NAME)-windows.tar.gz -C bin $(BIN_NAME)-windows.exe
+	tar --transform='flags=r;s|$(BIN_NAME)-windows|$(BIN_NAME)-plugin-windows|' -czf bin/$(BIN_NAME)-windows.tar.gz -C bin $(BIN_NAME)-windows.exe ${BIN_STANDALONE_NAME}-windows.exe
 	tar czf bin/$(BIN_NAME)-e2e-windows.tar.gz -C bin $(BIN_NAME)-e2e-windows.exe
 
 test: test-unit test-e2e ## run all tests
