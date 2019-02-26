@@ -1,26 +1,26 @@
-package main
+package commands
 
 import (
+	"fmt"
+
 	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/utils/crud"
-	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-func statusCmd(dockerCli command.Cli) *cobra.Command {
+func uninstallCmd(dockerCli command.Cli) *cobra.Command {
 	var opts credentialOptions
 
 	cmd := &cobra.Command{
-		Use:   "status <installation-name>",
-		Short: "Get the installation status. If the installation is a docker application, the status shows the stack services.",
+		Use:   "uninstall <installation-name>",
+		Short: "Uninstall an application",
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(dockerCli, args[0], opts)
+			return runUninstall(dockerCli, args[0], opts)
 		},
 	}
 	opts.addFlags(cmd.Flags())
@@ -28,7 +28,7 @@ func statusCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) error {
+func runUninstall(dockerCli command.Cli, claimName string, opts credentialOptions) error {
 	defer muteDockerCli(dockerCli)()
 	h := duffleHome()
 
@@ -50,10 +50,15 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
 		return err
 	}
-	status := &action.RunCustom{
-		Action: internal.Namespace + "status",
+	uninst := &action.Uninstall{
 		Driver: driverImpl,
 	}
-	err = status.Run(&c, creds, dockerCli.Out())
-	return errors.Wrap(err, "Status failed")
+	err = uninst.Run(&c, creds, dockerCli.Out())
+	if err == nil {
+		return claimStore.Delete(claimName)
+	}
+	if err2 := claimStore.Store(c); err2 != nil {
+		fmt.Fprintf(dockerCli.Err(), "failed to update claim: %s\n", err2)
+	}
+	return err
 }
