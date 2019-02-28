@@ -11,7 +11,6 @@ Initialize the project using `docker-app init voting-app --compose-file docker-s
 Go to `voting-app.dockerapp/` and open `metadata.yml` and fill the following fields:
 - description
 - maintainers
-- namespace
 
 ### Add variables to the compose file
 

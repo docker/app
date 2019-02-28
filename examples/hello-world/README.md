@@ -21,8 +21,6 @@ version: 0.1.0
 name: hello-world
 # A short description of the application
 description:
-# Namespace to use when pushing to a registry. This is typically your Hub username.
-#namespace: myhubusername
 # List of application maintainers with name and email for each
 maintainers:
   - name: user
@@ -41,7 +39,7 @@ Open `hello-world.dockerapp` with your favorite text editor.
 
 ### Edit metadata
 
-Edit the `description`, `namespace` and `maintainers` fields in the metadata section.
+Edit the `description` and `maintainers` fields in the metadata section.
 
 ### Add variables to the compose file
 
