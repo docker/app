@@ -51,7 +51,6 @@ It should look like this:
 version: 0.1.0
 name: hello
 description: ""
-namespace: ""
 maintainers:
 - name: yourusername
   email: ""
@@ -233,18 +232,17 @@ If you want to store additional files in the application package, such as `prod.
 You can push any application to the Hub using `docker-app push`:
 
 ``` bash
-$ docker-app push --namespace myhubuser --tag latest
+$ docker-app push --tag myhubuser/myimage:latest
 ```
 
-This command will push to the Hub an image named `myhubuser/hello.dockerapp:latest`.
+This command will push to the Hub an image named `myhubuser/myimage:latest`.
 
-If you omit the `--tag latest` argument, this command uses the application `version` defined in `metadata.yml` as the tag.
-If you omit the `--namespace myhubuser` argument, this command uses the application `namespace` defined in `metadata.yml` as the image namespace.
+If you omit the `--tag myhubuser/myimage:latest` argument, this command uses the application `version` defined in `metadata.yml` as the tag.
 
 All `docker-app` commands accept an image name as input, which means you can run on a different host:
 
 ``` bash
-$ docker-app inspect myhubuser/hello
+$ docker-app inspect myhubuser/myimage
 ```
 
 ## Next steps

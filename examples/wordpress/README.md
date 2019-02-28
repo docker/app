@@ -136,7 +136,7 @@ wordpress.dockerapp   latest              61f8cafb7762        4 minutes ago     
 
 The image can be pushed to the hub:
 ```
-$ docker push --namespace <username> wordpress
+$ docker push wordpress
 The push refers to repository [docker.io/<username>/wordpress.dockerapp]
 61f8cafb7762: Pushed
 latest: digest: sha256:91b9b526ac1e645e9c89663ff1453c2d7f68535e2dbbca6d4466d365e15ee155 size: 525
