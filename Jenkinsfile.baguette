@@ -148,6 +148,7 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+                            sh './docker-linux version'
                             sh './docker-app-e2e-linux -test.v --e2e-path=e2e'
                         }
                     }
@@ -180,6 +181,7 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
+                            sh './docker-darwin version'
                             sh './docker-app-e2e-darwin -test.v --e2e-path=e2e'
                         }
                     }
@@ -201,11 +203,12 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
+                            unstash "binaries"
+                            sh './docker-windows.exe version'
                             dir('_build') {
                                 unstash "invocation-image"
                                 bat 'docker load -i invocation-image.tar'
                             }
-                            unstash "binaries"
                             dir('examples') {
                                 unstash "examples"
                             }
