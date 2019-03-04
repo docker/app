@@ -26,13 +26,11 @@ RUN go get -d gopkg.in/mjibson/esc.v0 && \
     rm -rf /go/src/* /go/pkg/* /go/bin/*
 COPY . .
 
-# FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM dev AS cross
 ARG EXPERIMENTAL="off"
 ARG TAG="unknown"
 RUN make EXPERIMENTAL=${EXPERIMENTAL} TAG=${TAG} cross
 
-# FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker
 FROM cross AS e2e-cross
 ARG EXPERIMENTAL="off"
 ARG TAG="unknown"
