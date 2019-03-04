@@ -27,9 +27,15 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/opencontainers/runc"
   version = "v1.0.0-rc6"
 
+#[[override]]
+#  name = "github.com/docker/cli"
+#  revision = "3ddb3133f5b5a74dd4e3f721ced21f4d0b9651b6"
+
+### Waiting on PR https://github.com/docker/cli/pull/1710 to land on cli ###
 [[override]]
   name = "github.com/docker/cli"
-  revision = "3ddb3133f5b5a74dd4e3f721ced21f4d0b9651b6"
+  source = "https://github.com/ulyssessouza/cli"
+  revision="29d30ec1a05e8a285007240cc0f85864067e7344"
 
 [[override]]
   name = "github.com/deislabs/duffle"

@@ -217,7 +217,7 @@
   revision = "eaa7595bd231ca353ec886708405fe4deba91968"
 
 [[projects]]
-  digest = "1:0b5bf13e4971fc511f8ee5b4f13490ece442bcd16c079bcb372005c553fb886f"
+  digest = "1:f9f31c5fab28dc6e0d0f829774bf499fdd954d70555b051a7065c4188b76d679"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -249,6 +249,7 @@
     "cli/config/credentials",
     "cli/config/types",
     "cli/connhelper",
+    "cli/connhelper/commandconn",
     "cli/connhelper/ssh",
     "cli/context",
     "cli/context/docker",
@@ -271,7 +272,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "3ddb3133f5b5a74dd4e3f721ced21f4d0b9651b6"
+  revision = "29d30ec1a05e8a285007240cc0f85864067e7344"
+  source = "https://github.com/ulyssessouza/cli"
 
 [[projects]]
   digest = "1:680003750754b2a38531b5a652fb14cf8793a05ce70bc1c5cf93c735ef5d240f"
@@ -1321,6 +1323,7 @@
     "github.com/docker/cli/cli/compose/template",
     "github.com/docker/cli/cli/compose/types",
     "github.com/docker/cli/cli/config",
+    "github.com/docker/cli/cli/config/configfile",
     "github.com/docker/cli/cli/context/docker",
     "github.com/docker/cli/cli/context/kubernetes",
     "github.com/docker/cli/cli/context/store",

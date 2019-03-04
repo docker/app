@@ -79,6 +79,8 @@ pipeline {
             parallel {
                 stage("Unit Coverage") {
                     environment {
+                        DOCKERAPP_BINARY = '../e2e/coverage-bin'
+                        DOCKERCLI_BINARY = '../docker-linux'
                         CODECOV_TOKEN = credentials('jenkins-codecov-token')
                     }
                     agent {
