@@ -8,9 +8,6 @@ pipeline {
     options {
         skipDefaultCheckout(true)
     }
-    environment{
-        DOCKER_BUILDKIT=true
-    }
 
     stages {
         stage('Build') {
