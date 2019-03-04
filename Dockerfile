@@ -8,7 +8,7 @@ RUN apt-get install -y -q --no-install-recommends \
 
 WORKDIR /go/src/github.com/docker/cli
 
-RUN git clone https://github.com/docker/cli.git .
+RUN git clone https://github.com/docker/cli.git . && git checkout 8ddde26af67f9a76734a1676c635e48da4fe8584
 RUN make cross binary && \
  cp build/docker-linux-amd64 /usr/bin/docker
 
