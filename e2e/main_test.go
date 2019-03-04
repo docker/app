@@ -2,14 +2,17 @@ package e2e
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+
+	dockerConfigFile "github.com/docker/cli/cli/config/configfile"
 )
 
 var (
@@ -20,17 +23,13 @@ var (
 	dockerCli       dockerCliCommand
 )
 
-const config = `{
-		"cliPluginsExtraDirs": ["%s"]
-}`
-
 type dockerCliCommand struct {
 	path   string
 	config string
 }
 
 func (d dockerCliCommand) Command(args ...string) []string {
-	return append([]string{d.path, "--config", d.config}, args...)
+	return append([]string{d.path}, args...)
 }
 
 func TestMain(m *testing.M) {
@@ -55,22 +54,45 @@ func TestMain(m *testing.M) {
 	// - Create a symbolic link with the dockerApp binary to the plugin directory
 	if dockerCliPath == "" {
 		dockerCliPath = "docker"
+	} else {
+		dockerCliPath, err = filepath.Abs(dockerCliPath)
+		if err != nil {
+			panic(err)
+		}
 	}
 	configDir, err := ioutil.TempDir("", "config")
 	if err != nil {
 		panic(err.Error())
 	}
 	defer os.RemoveAll(configDir)
+
+	err = os.Setenv("DOCKER_CONFIG", configDir)
+	if err != nil {
+		panic(err.Error())
+	}
 	dockerCli = dockerCliCommand{path: dockerCliPath, config: configDir}
-	ioutil.WriteFile(filepath.Join(configDir, "config.json"), []byte(fmt.Sprintf(config, configDir)), 0644)
-	if err := os.Symlink(dockerApp, filepath.Join(configDir, "docker-app")); err != nil {
+
+	config := dockerConfigFile.ConfigFile{CLIPluginsExtraDirs: []string{configDir}}
+	configFile, err := os.Create(filepath.Join(configDir, "config.json"))
+	if err != nil {
+		panic(err.Error())
+	}
+	err = json.NewEncoder(configFile).Encode(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	dockerAppExecName := "docker-app"
+	if runtime.GOOS == "windows" {
+		dockerAppExecName += ".exe"
+	}
+	if err := os.Symlink(dockerApp, filepath.Join(configDir, dockerAppExecName)); err != nil {
 		panic(err.Error())
 	}
 
 	cmd := exec.Command(dockerApp, "app", "version")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 	hasExperimental = bytes.Contains(output, []byte("Experimental: on"))
 	i := strings.Index(string(output), "Renderers")

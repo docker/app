@@ -210,7 +210,7 @@
   revision = "eaa7595bd231ca353ec886708405fe4deba91968"
 
 [[projects]]
-  digest = "1:0b5bf13e4971fc511f8ee5b4f13490ece442bcd16c079bcb372005c553fb886f"
+  digest = "1:9398cdf8ac469acd44527b48cec760ff8801241a93597e4acd5001a03fff5a84"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -242,6 +242,7 @@
     "cli/config/credentials",
     "cli/config/types",
     "cli/connhelper",
+    "cli/connhelper/commandconn",
     "cli/connhelper/ssh",
     "cli/context",
     "cli/context/docker",
@@ -264,7 +265,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "3ddb3133f5b5a74dd4e3f721ced21f4d0b9651b6"
+  revision = "d6bfd7e5592dad85969516c131d33910fa5ebd58"
+  source = "https://github.com/chris-crone/cli"
 
 [[projects]]
   branch = "master"
@@ -1284,6 +1286,7 @@
     "github.com/docker/cli/cli/compose/template",
     "github.com/docker/cli/cli/compose/types",
     "github.com/docker/cli/cli/config",
+    "github.com/docker/cli/cli/config/configfile",
     "github.com/docker/cli/cli/context/docker",
     "github.com/docker/cli/cli/context/kubernetes",
     "github.com/docker/cli/cli/context/store",

@@ -22,6 +22,7 @@ func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *p
 	flags.StringVar(&opts.ConfigDir, "config", cliconfig.Dir(), "Location of client config files")
 	opts.Common.InstallFlags(flags)
 
+	cobra.AddTemplateFunc("add", func(a, b int) int { return a + b })
 	cobra.AddTemplateFunc("hasSubCommands", hasSubCommands)
 	cobra.AddTemplateFunc("hasManagementSubCommands", hasManagementSubCommands)
 	cobra.AddTemplateFunc("hasInvalidPlugins", hasInvalidPlugins)
@@ -29,9 +30,10 @@ func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *p
 	cobra.AddTemplateFunc("managementSubCommands", managementSubCommands)
 	cobra.AddTemplateFunc("invalidPlugins", invalidPlugins)
 	cobra.AddTemplateFunc("wrappedFlagUsages", wrappedFlagUsages)
-	cobra.AddTemplateFunc("commandVendor", commandVendor)
-	cobra.AddTemplateFunc("isFirstLevelCommand", isFirstLevelCommand) // is it an immediate sub-command of the root
+	cobra.AddTemplateFunc("vendorAndVersion", vendorAndVersion)
 	cobra.AddTemplateFunc("invalidPluginReason", invalidPluginReason)
+	cobra.AddTemplateFunc("isPlugin", isPlugin)
+	cobra.AddTemplateFunc("decoratedName", decoratedName)
 
 	rootCmd.SetUsageTemplate(usageTemplate)
 	rootCmd.SetHelpTemplate(helpTemplate)
@@ -137,7 +139,7 @@ func hasInvalidPlugins(cmd *cobra.Command) bool {
 func operationSubCommands(cmd *cobra.Command) []*cobra.Command {
 	cmds := []*cobra.Command{}
 	for _, sub := range cmd.Commands() {
-		if isPlugin(sub) && invalidPluginReason(sub) != "" {
+		if isPlugin(sub) {
 			continue
 		}
 		if sub.IsAvailableCommand() && !sub.HasSubCommands() {
@@ -155,25 +157,32 @@ func wrappedFlagUsages(cmd *cobra.Command) string {
 	return cmd.Flags().FlagUsagesWrapped(width - 1)
 }
 
-func isFirstLevelCommand(cmd *cobra.Command) bool {
-	return cmd.Parent() == cmd.Root()
+func decoratedName(cmd *cobra.Command) string {
+	decoration := " "
+	if isPlugin(cmd) {
+		decoration = "*"
+	}
+	return cmd.Name() + decoration
 }
 
-func commandVendor(cmd *cobra.Command) string {
-	width := 13
-	if v, ok := cmd.Annotations[pluginmanager.CommandAnnotationPluginVendor]; ok {
-		if len(v) > width-2 {
-			v = v[:width-3] + "…"
+func vendorAndVersion(cmd *cobra.Command) string {
+	if vendor, ok := cmd.Annotations[pluginmanager.CommandAnnotationPluginVendor]; ok && isPlugin(cmd) {
+		version := ""
+		if v, ok := cmd.Annotations[pluginmanager.CommandAnnotationPluginVersion]; ok && v != "" {
+			version = ", " + v
 		}
-		return fmt.Sprintf("%-*s", width, "("+v+")")
+		return fmt.Sprintf("(%s%s)", vendor, version)
 	}
-	return strings.Repeat(" ", width)
+	return ""
 }
 
 func managementSubCommands(cmd *cobra.Command) []*cobra.Command {
 	cmds := []*cobra.Command{}
 	for _, sub := range cmd.Commands() {
-		if isPlugin(sub) && invalidPluginReason(sub) != "" {
+		if isPlugin(sub) {
+			if invalidPluginReason(sub) == "" {
+				cmds = append(cmds, sub)
+			}
 			continue
 		}
 		if sub.IsAvailableCommand() && sub.HasSubCommands() {
@@ -230,7 +239,7 @@ Options:
 Management Commands:
 
 {{- range managementSubCommands . }}
-  {{rpad .Name .NamePadding }} {{ if isFirstLevelCommand .}}{{commandVendor .}} {{ end}}{{.Short}}
+  {{rpad (decoratedName .) (add .NamePadding 1)}}{{.Short}}{{ if isPlugin .}} {{vendorAndVersion .}}{{ end}}
 {{- end}}
 
 {{- end}}
@@ -239,7 +248,7 @@ Management Commands:
 Commands:
 
 {{- range operationSubCommands . }}
-  {{rpad .Name .NamePadding }} {{ if isFirstLevelCommand .}}{{commandVendor .}} {{ end}}{{.Short}}
+  {{rpad .Name .NamePadding }} {{.Short}}
 {{- end}}
 {{- end}}
 

@@ -103,7 +103,7 @@ maintainers:
 	testAppName := "app-test"
 	dirName := internal.DirNameFromAppName(testAppName)
 
-	cmd := icmd.Cmd{Dir: tmpDir.Path()}
+	cmd := icmd.Cmd{Dir: tmpDir.Path(), Env: os.Environ()}
 
 	cmd.Command = dockerCli.Command("app",
 		"init", testAppName,
@@ -214,7 +214,7 @@ func TestBundle(t *testing.T) {
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 	// Using a custom DOCKER_CONFIG to store contexts in a temporary directory
-	cmd := icmd.Cmd{Env: append(os.Environ(), "DOCKER_CONFIG="+tmpDir.Path())}
+	cmd := icmd.Cmd{Env: os.Environ()}
 
 	// Running a docker in docker to bundle the application
 	dind := NewContainer("docker:18.09-dind", 2375)
@@ -271,7 +271,6 @@ func TestDockerAppLifecycle(t *testing.T) {
 	cmd := icmd.Cmd{
 		Env: append(os.Environ(),
 			fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path()),
-			fmt.Sprintf("DOCKER_CONFIG=%s", tmpDir.Path()),
 			"DOCKER_TARGET_CONTEXT=swarm-target-context",
 		),
 	}
