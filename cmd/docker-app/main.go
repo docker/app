@@ -12,6 +12,7 @@ func main() {
 	dockerCli, err := command.NewDockerCli()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	logrus.SetOutput(dockerCli.Err())
 	cmd := newRootCmd(dockerCli)
