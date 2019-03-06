@@ -29,6 +29,7 @@ import (
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes"
+	"github.com/containerd/containerd/version"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -75,12 +76,15 @@ type ResolverOptions struct {
 
 	// Credentials provides username and secret given a host.
 	// If username is empty but a secret is given, that secret
-	// is interpretted as a long lived token.
+	// is interpreted as a long lived token.
 	// Deprecated: use Authorizer
 	Credentials func(string) (string, string, error)
 
 	// Host provides the hostname given a namespace.
 	Host func(string) (string, error)
+
+	// Headers are the HTTP request header fields sent by the resolver
+	Headers http.Header
 
 	// PlainHTTP specifies to use plain http and not https
 	PlainHTTP bool
@@ -92,6 +96,11 @@ type ResolverOptions struct {
 	// since the registry does not have upload tracking and the existing
 	// mechanism for getting blob upload status is expensive.
 	Tracker StatusTracker
+
+	// OriginProvider returns a slice of refspecs where the Pusher may find candidates for mounting
+	// instead of pushing from local store.
+	// When the Pusher succeeds by mounting, it returns an AlreadyExists error
+	OriginProvider func(ocispec.Descriptor) []reference.Spec
 }
 
 // DefaultHost is the default host function.
@@ -103,11 +112,13 @@ func DefaultHost(ns string) (string, error) {
 }
 
 type dockerResolver struct {
-	auth      Authorizer
-	host      func(string) (string, error)
-	plainHTTP bool
-	client    *http.Client
-	tracker   StatusTracker
+	auth           Authorizer
+	host           func(string) (string, error)
+	headers        http.Header
+	plainHTTP      bool
+	client         *http.Client
+	tracker        StatusTracker
+	originProvider func(ocispec.Descriptor) []reference.Spec
 }
 
 // NewResolver returns a new resolver to a Docker registry
@@ -118,15 +129,34 @@ func NewResolver(options ResolverOptions) remotes.Resolver {
 	if options.Host == nil {
 		options.Host = DefaultHost
 	}
+	if options.Headers == nil {
+		options.Headers = make(http.Header)
+	}
+	if _, ok := options.Headers["Accept"]; !ok {
+		// set headers for all the types we support for resolution.
+		options.Headers.Set("Accept", strings.Join([]string{
+			images.MediaTypeDockerSchema2Manifest,
+			images.MediaTypeDockerSchema2ManifestList,
+			ocispec.MediaTypeImageManifest,
+			ocispec.MediaTypeImageIndex, "*"}, ", "))
+	}
+	if _, ok := options.Headers["User-Agent"]; !ok {
+		options.Headers.Set("User-Agent", "containerd/"+version.Version)
+	}
 	if options.Authorizer == nil {
 		options.Authorizer = NewAuthorizer(options.Client, options.Credentials)
 	}
+	if options.OriginProvider == nil {
+		options.OriginProvider = func(_ ocispec.Descriptor) []reference.Spec { return nil }
+	}
 	return &dockerResolver{
-		auth:      options.Authorizer,
-		host:      options.Host,
-		plainHTTP: options.PlainHTTP,
-		client:    options.Client,
-		tracker:   options.Tracker,
+		auth:           options.Authorizer,
+		host:           options.Host,
+		headers:        options.Headers,
+		plainHTTP:      options.PlainHTTP,
+		client:         options.Client,
+		tracker:        options.Tracker,
+		originProvider: options.OriginProvider,
 	}
 }
 
@@ -172,7 +202,7 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 		urls = append(urls, fetcher.url("manifests", refspec.Object))
 	}
 
-	ctx, err = contextWithRepositoryScope(ctx, refspec, false)
+	ctx, err = contextWithRepositoryScope(ctx, refspec, false, false)
 	if err != nil {
 		return "", ocispec.Descriptor{}, err
 	}
@@ -182,12 +212,7 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 			return "", ocispec.Descriptor{}, err
 		}
 
-		// set headers for all the types we support for resolution.
-		req.Header.Set("Accept", strings.Join([]string{
-			images.MediaTypeDockerSchema2Manifest,
-			images.MediaTypeDockerSchema2ManifestList,
-			ocispec.MediaTypeImageManifest,
-			ocispec.MediaTypeImageIndex, "*"}, ", "))
+		req.Header = r.headers
 
 		log.G(ctx).Debug("resolving")
 		resp, err := fetcher.doRequestWithRetries(ctx, req, nil)
@@ -284,9 +309,10 @@ func (r *dockerResolver) Pusher(ctx context.Context, ref string) (remotes.Pusher
 	}
 
 	return dockerPusher{
-		dockerBase: base,
-		tag:        refspec.Object,
-		tracker:    r.tracker,
+		dockerBase:     base,
+		tag:            refspec.Object,
+		tracker:        r.tracker,
+		originProvider: r.originProvider,
 	}, nil
 }
 

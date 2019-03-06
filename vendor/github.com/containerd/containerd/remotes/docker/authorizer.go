@@ -81,7 +81,7 @@ func (a *dockerAuthorizer) AddResponses(ctx context.Context, responses []*http.R
 			// TODO(dmcg): Store challenge, not token
 			// Move token fetching to authorize
 			return a.setTokenAuth(ctx, host, c.parameters)
-		} else if c.scheme == basicAuth {
+		} else if c.scheme == basicAuth && a.credentials != nil {
 			// TODO: Resolve credentials on authorize
 			username, secret, err := a.credentials(host)
 			if err != nil {
@@ -131,7 +131,11 @@ func (a *dockerAuthorizer) setTokenAuth(ctx context.Context, host string, params
 		service: params["service"],
 	}
 
-	to.scopes = getTokenScopes(ctx, params)
+	to.scopes, err = getTokenScopes(ctx, params)
+	if err != nil {
+		return errors.Wrap(err, "invalid token scopes")
+	}
+
 	if len(to.scopes) == 0 {
 		return errors.Errorf("no scope specified for token auth challenge")
 	}
@@ -180,7 +184,9 @@ type postTokenResponse struct {
 
 func (a *dockerAuthorizer) fetchTokenWithOAuth(ctx context.Context, to tokenOptions) (string, error) {
 	form := url.Values{}
-	form.Set("scope", strings.Join(to.scopes, " "))
+	for _, scope := range to.scopes {
+		form.Add("scope", scope)
+	}
 	form.Set("service", to.service)
 	// TODO: Allow setting client_id
 	form.Set("client_id", "containerd-client")
@@ -194,7 +200,11 @@ func (a *dockerAuthorizer) fetchTokenWithOAuth(ctx context.Context, to tokenOpti
 		form.Set("password", to.secret)
 	}
 
-	resp, err := ctxhttp.PostForm(ctx, a.client, to.realm, form)
+	resp, err := ctxhttp.Post(
+		ctx, a.client, to.realm,
+		"application/x-www-form-urlencoded; charset=utf-8",
+		strings.NewReader(form.Encode()),
+	)
 	if err != nil {
 		return "", err
 	}
