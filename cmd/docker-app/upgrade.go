@@ -14,8 +14,9 @@ import (
 type upgradeOptions struct {
 	parametersOptions
 	credentialOptions
+	registryOptions
 	bundleOrDockerApp string
-	insecure          bool
+	pull              bool
 }
 
 func upgradeCmd(dockerCli command.Cli) *cobra.Command {
@@ -30,8 +31,9 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
+	opts.registryOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "bundle", "", "Override with new bundle or Docker App")
-	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
+	cmd.Flags().BoolVar(&opts.pull, "pull", false, "Pull the bundle")
 
 	return cmd
 }
@@ -47,7 +49,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	}
 
 	if opts.bundleOrDockerApp != "" {
-		b, err := resolveBundle(dockerCli, opts.bundleOrDockerApp)
+		b, err := resolveBundle(dockerCli, opts.bundleOrDockerApp, opts.pull, opts.insecureRegistries)
 		if err != nil {
 			return err
 		}

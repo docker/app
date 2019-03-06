@@ -1,0 +1,4 @@
+version: "3.6"
+services:
+  web:
+    image: busybox:1.30.1
