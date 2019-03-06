@@ -18,6 +18,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"sort"
 	"strings"
@@ -45,32 +46,84 @@ func repositoryScope(refspec reference.Spec, push bool) (string, error) {
 type tokenScopesKey struct{}
 
 // contextWithRepositoryScope returns a context with tokenScopesKey{} and the repository scope value.
-func contextWithRepositoryScope(ctx context.Context, refspec reference.Spec, push bool) (context.Context, error) {
+func contextWithRepositoryScope(ctx context.Context, refspec reference.Spec, push bool, combineWithExistingScopes bool) (context.Context, error) {
 	s, err := repositoryScope(refspec, push)
 	if err != nil {
 		return nil, err
 	}
-	return context.WithValue(ctx, tokenScopesKey{}, []string{s}), nil
+	scopes := []string{s}
+	if combineWithExistingScopes {
+		if existing := ctx.Value(tokenScopesKey{}); existing != nil {
+			scopes = append(existing.([]string), s)
+		}
+	}
+	return context.WithValue(ctx, tokenScopesKey{}, scopes), nil
+}
+
+type tokenScope struct {
+	resource string
+	actions  map[string]interface{}
+}
+
+func (ts tokenScope) String() string {
+	var actionSlice []string
+	for k := range ts.actions {
+		actionSlice = append(actionSlice, k)
+	}
+	sort.Strings(actionSlice)
+	return fmt.Sprintf("%s:%s", ts.resource, strings.Join(actionSlice, ","))
+}
+
+func parseTokenScope(s string) (tokenScope, error) {
+	lastSep := strings.LastIndex(s, ":")
+	if lastSep == -1 {
+		return tokenScope{}, fmt.Errorf("%q is not a valid token scope", s)
+	}
+	actions := make(map[string]interface{})
+	for _, a := range strings.Split(s[lastSep+1:], ",") {
+		actions[a] = nil
+	}
+	return tokenScope{
+		resource: s[:lastSep],
+		actions:  actions,
+	}, nil
+}
+
+// mergeTokenScope add a scope to an existing scope collection, ensuring deduplication
+func mergeTokenScope(existing map[string]tokenScope, newElem tokenScope) {
+	match, ok := existing[newElem.resource]
+	if !ok {
+		existing[newElem.resource] = newElem
+		return
+	}
+	for k := range newElem.actions {
+		match.actions[k] = nil
+	}
+	existing[newElem.resource] = match
 }
 
 // getTokenScopes returns deduplicated and sorted scopes from ctx.Value(tokenScopesKey{}) and params["scope"].
-func getTokenScopes(ctx context.Context, params map[string]string) []string {
-	var scopes []string
+func getTokenScopes(ctx context.Context, params map[string]string) ([]string, error) {
+	var rawScopes []string
 	if x := ctx.Value(tokenScopesKey{}); x != nil {
-		scopes = append(scopes, x.([]string)...)
+		rawScopes = x.([]string)
 	}
-	if scope, ok := params["scope"]; ok {
-		for _, s := range scopes {
-			// Note: this comparison is unaware of the scope grammar (https://docs.docker.com/registry/spec/auth/scope/)
-			// So, "repository:foo/bar:pull,push" != "repository:foo/bar:push,pull", although semantically they are equal.
-			if s == scope {
-				// already appended
-				goto Sort
-			}
+	if paramScopesFlat, ok := params["scope"]; ok {
+		paramScopes := strings.Split(paramScopesFlat, " ")
+		rawScopes = append(rawScopes, paramScopes...)
+	}
+	tokenScopes := map[string]tokenScope{}
+	for _, rawScope := range rawScopes {
+		parsedScope, err := parseTokenScope(rawScope)
+		if err != nil {
+			return nil, err
 		}
-		scopes = append(scopes, scope)
+		mergeTokenScope(tokenScopes, parsedScope)
 	}
-Sort:
+	var scopes []string
+	for _, s := range tokenScopes {
+		scopes = append(scopes, s.String())
+	}
 	sort.Strings(scopes)
-	return scopes
+	return scopes, nil
 }

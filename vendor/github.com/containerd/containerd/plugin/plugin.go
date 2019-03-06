@@ -42,10 +42,7 @@ var (
 
 // IsSkipPlugin returns true if the error is skipping the plugin
 func IsSkipPlugin(err error) bool {
-	if errors.Cause(err) == ErrSkipPlugin {
-		return true
-	}
-	return false
+	return errors.Cause(err) == ErrSkipPlugin
 }
 
 // Type is the type of the plugin
@@ -76,6 +73,15 @@ const (
 	ContentPlugin Type = "io.containerd.content.v1"
 	// GCPlugin implements garbage collection policy
 	GCPlugin Type = "io.containerd.gc.v1"
+)
+
+const (
+	// RuntimeLinuxV1 is the legacy linux runtime
+	RuntimeLinuxV1 = "io.containerd.runtime.v1.linux"
+	// RuntimeRuncV1 is the runc runtime that supports a single container
+	RuntimeRuncV1 = "io.containerd.runc.v1"
+	// RuntimeRuncV2 is the runc runtime that supports multiple containers per shim
+	RuntimeRuncV2 = "io.containerd.runc.v2"
 )
 
 // Registration contains information for registering a plugin
