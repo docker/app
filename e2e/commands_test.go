@@ -46,6 +46,9 @@ func TestRender(t *testing.T) {
 
 func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	return func(t *testing.T) {
+		configDir := dockerCli.createTestConfig()
+		defer os.RemoveAll(configDir)
+
 		envParameters := map[string]string{}
 		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
 		assert.NilError(t, err)
@@ -63,6 +66,9 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 }
 
 func TestRenderFormatters(t *testing.T) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
+
 	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
 	cmd := icmd.Cmd{Command: dockerCli.Command("app", "render", "--formatter", "json", appPath)}
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -74,6 +80,9 @@ func TestRenderFormatters(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
+
 	composeData := `version: "3.2"
 services:
   nginx:
@@ -149,6 +158,9 @@ maintainers:
 }
 
 func TestDetectApp(t *testing.T) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
+
 	// cwd = e2e
 	dir := fs.NewDir(t, "detect-app-binary",
 		fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")),
@@ -181,6 +193,9 @@ func TestDetectApp(t *testing.T) {
 }
 
 func TestSplitMerge(t *testing.T) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
+
 	tmpDir := fs.NewDir(t, "split_merge")
 	defer tmpDir.Remove()
 
@@ -211,6 +226,9 @@ func TestSplitMerge(t *testing.T) {
 }
 
 func TestBundle(t *testing.T) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
+
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 	// Using a custom DOCKER_CONFIG to store contexts in a temporary directory
@@ -265,6 +283,9 @@ func TestBundle(t *testing.T) {
 }
 
 func TestDockerAppLifecycle(t *testing.T) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
+
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 
@@ -289,10 +310,6 @@ func TestDockerAppLifecycle(t *testing.T) {
 	// - the target context for the invocation image to install within the swarm
 	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	defer func() {
-		cmd.Command = dockerCli.Command("context", "rm", "--force", "swarm-context")
-		icmd.RunCmd(cmd)
-	}()
 
 	// When creating a context on a Windows host we cannot use
 	// the unix socket but it's needed inside the invocation image.
@@ -301,10 +318,6 @@ func TestDockerAppLifecycle(t *testing.T) {
 	// invocation image
 	cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	defer func() {
-		cmd.Command = dockerCli.Command("context", "rm", "--force", "swarm-target-context")
-		icmd.RunCmd(cmd)
-	}()
 
 	// Initialize the swarm
 	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")
