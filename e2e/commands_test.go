@@ -56,7 +56,7 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		}
 		result := icmd.RunCmd(icmd.Cmd{
 			Command: args,
-			Env:     env,
+			Env:     append(os.Environ(), env...),
 		}).Assert(t, icmd.Success)
 		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
 	}
