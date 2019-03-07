@@ -7,7 +7,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
+	"github.com/containerd/containerd/platforms"
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types/metadata"
@@ -88,7 +90,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	}
 
 	resolverConfig := remotes.NewResolverConfigFromDockerConfigFile(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
-	var display fixupDisplay = &resumeDisplay{out: os.Stdout}
+	var display fixupDisplay = &plainDisplay{out: os.Stdout}
 	if term.IsTerminal(os.Stdout.Fd()) {
 		display = &interactiveDisplay{out: os.Stdout}
 	}
@@ -219,15 +221,10 @@ func (s *interactiveImageState) print(out io.Writer) int {
 }
 
 func printDescriptorProgress(out io.Writer, p *remotes.DescriptorProgressSnapshot, depth int) int {
-	for i := 0; i < depth; i++ {
-		fmt.Fprint(out, " ")
-	}
+	fmt.Fprint(out, strings.Repeat(" ", depth))
 	name := p.MediaType
 	if p.Platform != nil {
-		name = fmt.Sprintf("%s/%s", p.Platform.OS, p.Platform.Architecture)
-		if p.Platform.Variant != "" {
-			name += "/" + p.Platform.Variant
-		}
+		name = platforms.Format(*p.Platform)
 	}
 	if len(p.Children) == 0 {
 		name = fmt.Sprintf("%s...: %s", p.Digest.String()[:15], p.Action)
@@ -271,11 +268,11 @@ func hasError(p *remotes.DescriptorProgressSnapshot) bool {
 	return false
 }
 
-type resumeDisplay struct {
+type plainDisplay struct {
 	out io.Writer
 }
 
-func (r *resumeDisplay) onEvent(ev remotes.FixupEvent) {
+func (r *plainDisplay) onEvent(ev remotes.FixupEvent) {
 	switch ev.EventType {
 	case remotes.FixupEventTypeCopyImageStart:
 		fmt.Fprintf(r.out, "Handling image %s...", ev.SourceImage)

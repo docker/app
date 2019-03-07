@@ -149,7 +149,6 @@ func resolveBundle(dockerCli command.Cli, name string, pullRef bool, insecureReg
 			if kind == nameKindDir {
 				return nil, errors.Errorf("%s: cannot pull when referencing a directory based app", name)
 			}
-			// XXX perhaps getAppNameKind could do the call to findApp?
 			return nil, errors.Errorf("cannot pull when referencing a directory based app")
 		}
 		return extractAndLoadAppBasedBundle(dockerCli, name)
