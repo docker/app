@@ -19,7 +19,12 @@ func TestInvokePluginFromCLI(t *testing.T) {
 	// docker app --help prints docker-app help
 	cmd.Command = dockerCli.Command("app", "--help")
 	usage := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
-	golden.Assert(t, usage, "plugin-usage.golden")
+
+	goldenFile := "plugin-usage.golden"
+	if hasExperimental {
+		goldenFile = "plugin-usage-experimental.golden"
+	}
+	golden.Assert(t, usage, goldenFile)
 
 	// docker info should print app version and short description
 	cmd.Command = dockerCli.Command("info")
