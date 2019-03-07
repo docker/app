@@ -40,7 +40,7 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default is : <name>:<version> from metadata)")
+	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default: <name>:<version> from metadata)")
 	opts.registry.addFlags(flags)
 	return cmd
 }

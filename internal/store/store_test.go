@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	//"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
 	"gotest.tools/assert"
 )
