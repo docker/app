@@ -36,6 +36,8 @@ func TestCallCustomStatusAction(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			configDir := dockerCli.createTestConfig()
+			defer os.RemoveAll(configDir)
 			tmpDir := fs.NewDir(t, t.Name())
 			defer tmpDir.Remove()
 			testDir := path.Join("testdata", testCase.cnab)

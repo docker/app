@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"os"
 	"regexp"
 	"testing"
 
@@ -10,6 +11,8 @@ import (
 )
 
 func TestInvokePluginFromCLI(t *testing.T) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
 	// docker --help should list app as a top command
 	cmd := icmd.Cmd{Command: dockerCli.Command("--help")}
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
