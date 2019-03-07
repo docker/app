@@ -62,37 +62,37 @@ func TestMain(m *testing.M) {
 	}
 	configDir, err := ioutil.TempDir("", "config")
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	defer os.RemoveAll(configDir)
 
 	err = os.Setenv("DOCKER_CONFIG", configDir)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	dockerCli = dockerCliCommand{path: dockerCliPath, config: configDir}
 
 	config := dockerConfigFile.ConfigFile{CLIPluginsExtraDirs: []string{configDir}}
 	configFile, err := os.Create(filepath.Join(configDir, "config.json"))
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	err = json.NewEncoder(configFile).Encode(config)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	dockerAppExecName := "docker-app"
 	if runtime.GOOS == "windows" {
 		dockerAppExecName += ".exe"
 	}
 	if err := os.Symlink(dockerApp, filepath.Join(configDir, dockerAppExecName)); err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 
 	cmd := exec.Command(dockerApp, "app", "version")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	hasExperimental = bytes.Contains(output, []byte("Experimental: on"))
 	i := strings.Index(string(output), "Renderers")
