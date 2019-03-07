@@ -188,10 +188,11 @@ Removing network hello_default
 
 Pre-built binaries are available on [GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and macOS.
 Each tarball contains two binaries:
-- `docker-app-plugin-{linux|macos|windows}` which is docker-app as a [docker cli plugin](https://github.com/docker/cli/issues/1534) 
-- `docker-app-standalone-{linux|macos|windows}` which is docker-app as a standalone utility 
+- `docker-app-plugin-{linux|darwin|windows.exe}` which is docker-app as a [docker cli plugin](https://github.com/docker/cli/issues/1534). **Note**: This requires a pre-release version of the 
+Docker CLI 
+- `docker-app-standalone-{linux|darwin|windows.exe}` which is docker-app as a standalone utility
 
-To use `docker-app` plugin, just type `docker app` instead of `docker-app` and all the examples will work the same way:
+To use the `docker-app` plugin, just type `docker app` instead of `docker-app` and all the examples will work the same way:
 ```bash
 $ docker app version
 Version:      v0.8
@@ -247,9 +248,6 @@ To install `docker-app` as a docker cli plugin:
 New-Item -ItemType Directory -Path ~/.docker/cli-plugins -ErrorAction SilentlyContinue
 cp docker-app-plugin-windows.exe ~/.docker/cli-plugins/docker-app.exe 
 ```
-
-
-**Note:** To use Application Packages as images (i.e.: `save`, `push`, or `install` when package is not present locally) on Windows, one must be in Linux container mode.
 
 ## Single file or directory representation
 
