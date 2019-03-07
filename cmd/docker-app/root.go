@@ -95,5 +95,5 @@ type registryOptions struct {
 }
 
 func (o *registryOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringSliceVar(&o.insecureRegistries, "insecure-registries", nil, "Use HTTP instead of HTTPS when pulling or pushing from/to those registries")
+	flags.StringSliceVar(&o.insecureRegistries, "insecure-registries", nil, "Use HTTP instead of HTTPS when pulling from/pushing to those registries")
 }
