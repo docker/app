@@ -25,6 +25,9 @@ type dindSwarmAndRegistryInfo struct {
 }
 
 func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInfo)) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
+
 	registryPort := findAvailablePort()
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
@@ -32,7 +35,6 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	cmd := icmd.Cmd{
 		Env: append(os.Environ(),
 			fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path()),
-			fmt.Sprintf("DOCKER_CONFIG=%s", tmpDir.Path()),
 			"DOCKER_TARGET_CONTEXT=swarm-target-context",
 		),
 	}
@@ -63,10 +65,6 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	// - the target context for the invocation image to install within the swarm
 	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	defer func() {
-		cmd.Command = dockerCli.Command("context", "rm", "--force", "swarm-context")
-		icmd.RunCmd(cmd)
-	}()
 
 	// When creating a context on a Windows host we cannot use
 	// the unix socket but it's needed inside the invocation image.
@@ -75,10 +73,6 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	// invocation image
 	cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	defer func() {
-		cmd.Command = dockerCli.Command("context", "rm", "--force", "swarm-target-context")
-		icmd.RunCmd(cmd)
-	}()
 
 	// Initialize the swarm
 	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")

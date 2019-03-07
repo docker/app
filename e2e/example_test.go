@@ -11,6 +11,9 @@ import (
 )
 
 func TestExamplesAreValid(t *testing.T) {
+	configDir := dockerCli.createTestConfig()
+	defer os.RemoveAll(configDir)
+
 	err := filepath.Walk("../examples", func(p string, info os.FileInfo, err error) error {
 		appPath := filepath.Join(p, filepath.Base(p)+".dockerapp")
 		_, statErr := os.Stat(appPath)
