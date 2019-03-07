@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -46,6 +45,9 @@ func TestRender(t *testing.T) {
 
 func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	return func(t *testing.T) {
+		cmd, cleanup := dockerCli.createTestCmd()
+		defer cleanup()
+
 		envParameters := map[string]string{}
 		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
 		assert.NilError(t, err)
@@ -54,17 +56,19 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		for k, v := range envParameters {
 			args = append(args, "--set", fmt.Sprintf("%s=%s", k, v))
 		}
-		result := icmd.RunCmd(icmd.Cmd{
-			Command: args,
-			Env:     append(os.Environ(), env...),
-		}).Assert(t, icmd.Success)
+		cmd.Command = args
+		cmd.Env = append(cmd.Env, env...)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
 	}
 }
 
 func TestRenderFormatters(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
 	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
-	cmd := icmd.Cmd{Command: dockerCli.Command("app", "render", "--formatter", "json", appPath)}
+	cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 
@@ -74,6 +78,9 @@ func TestRenderFormatters(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
 	composeData := `version: "3.2"
 services:
   nginx:
@@ -103,8 +110,7 @@ maintainers:
 	testAppName := "app-test"
 	dirName := internal.DirNameFromAppName(testAppName)
 
-	cmd := icmd.Cmd{Dir: tmpDir.Path(), Env: os.Environ()}
-
+	cmd.Dir = tmpDir.Path()
 	cmd.Command = dockerCli.Command("app",
 		"init", testAppName,
 		"--compose-file", tmpDir.Join(internal.ComposeFileName),
@@ -149,6 +155,9 @@ maintainers:
 }
 
 func TestDetectApp(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
 	// cwd = e2e
 	dir := fs.NewDir(t, "detect-app-binary",
 		fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")),
@@ -158,33 +167,35 @@ func TestDetectApp(t *testing.T) {
 		),
 	)
 	defer dir.Remove()
-	icmd.RunCmd(icmd.Cmd{
-		Command: dockerCli.Command("app", "inspect"),
-		Dir:     dir.Path(),
-	}).Assert(t, icmd.Success)
-	icmd.RunCmd(icmd.Cmd{
-		Command: dockerCli.Command("app", "inspect"),
-		Dir:     dir.Join("attachments.dockerapp"),
-	}).Assert(t, icmd.Success)
-	icmd.RunCmd(icmd.Cmd{
-		Command: dockerCli.Command("app", "inspect", "."),
-		Dir:     dir.Join("attachments.dockerapp"),
-	}).Assert(t, icmd.Success)
-	result := icmd.RunCmd(icmd.Cmd{
-		Command: dockerCli.Command("app", "inspect"),
-		Dir:     dir.Join("render"),
-	})
-	result.Assert(t, icmd.Expected{
+
+	cmd.Command = dockerCli.Command("app", "inspect")
+	cmd.Dir = dir.Path()
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Command = dockerCli.Command("app", "inspect")
+	cmd.Dir = dir.Join("attachments.dockerapp")
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Command = dockerCli.Command("app", "inspect", ".")
+	cmd.Dir = dir.Join("attachments.dockerapp")
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Command = dockerCli.Command("app", "inspect")
+	cmd.Dir = dir.Join("render")
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
 		Err:      "Error: multiple applications found in current directory, specify the application name on the command line",
 	})
 }
 
 func TestSplitMerge(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
 	tmpDir := fs.NewDir(t, "split_merge")
 	defer tmpDir.Remove()
 
-	cmd := icmd.Cmd{Command: dockerCli.Command("app", "merge", "testdata/render/envvariables/my.dockerapp", "--output", tmpDir.Join("remerged.dockerapp"))}
+	cmd.Command = dockerCli.Command("app", "merge", "testdata/render/envvariables/my.dockerapp", "--output", tmpDir.Join("remerged.dockerapp"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	cmd.Dir = tmpDir.Path()
@@ -211,10 +222,11 @@ func TestSplitMerge(t *testing.T) {
 }
 
 func TestBundle(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
-	// Using a custom DOCKER_CONFIG to store contexts in a temporary directory
-	cmd := icmd.Cmd{Env: os.Environ()}
 
 	// Running a docker in docker to bundle the application
 	dind := NewContainer("docker:18.09-dind", 2375)
@@ -265,15 +277,14 @@ func TestBundle(t *testing.T) {
 }
 
 func TestDockerAppLifecycle(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 
-	cmd := icmd.Cmd{
-		Env: append(os.Environ(),
-			fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path()),
-			"DOCKER_TARGET_CONTEXT=swarm-target-context",
-		),
-	}
+	cmd.Env = append(cmd.Env, "DUFFLE_HOME="+tmpDir.Path())
+	cmd.Env = append(cmd.Env, "DOCKER_TARGET_CONTEXT=swarm-target-context")
 
 	// Running a swarm using docker in docker to install the application
 	// and run the invocation image
@@ -289,10 +300,6 @@ func TestDockerAppLifecycle(t *testing.T) {
 	// - the target context for the invocation image to install within the swarm
 	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	defer func() {
-		cmd.Command = dockerCli.Command("context", "rm", "--force", "swarm-context")
-		icmd.RunCmd(cmd)
-	}()
 
 	// When creating a context on a Windows host we cannot use
 	// the unix socket but it's needed inside the invocation image.
@@ -301,10 +308,6 @@ func TestDockerAppLifecycle(t *testing.T) {
 	// invocation image
 	cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	defer func() {
-		cmd.Command = dockerCli.Command("context", "rm", "--force", "swarm-target-context")
-		icmd.RunCmd(cmd)
-	}()
 
 	// Initialize the swarm
 	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")

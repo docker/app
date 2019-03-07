@@ -10,8 +10,10 @@ import (
 )
 
 func TestInvokePluginFromCLI(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
 	// docker --help should list app as a top command
-	cmd := icmd.Cmd{Command: dockerCli.Command("--help")}
+	cmd.Command = dockerCli.Command("--help")
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		Out: "app*        Docker Application Packages (Docker Inc.,",
 	})

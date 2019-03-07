@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"fmt"
-	"os"
 	"path"
 	"runtime"
 	"testing"
@@ -36,10 +35,13 @@ func TestCallCustomStatusAction(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			cmd, cleanup := dockerCli.createTestCmd()
+			defer cleanup()
+
 			tmpDir := fs.NewDir(t, t.Name())
 			defer tmpDir.Remove()
 			testDir := path.Join("testdata", testCase.cnab)
-			cmd := icmd.Cmd{Env: append(os.Environ(), fmt.Sprintf("DUFFLE_HOME=%s", tmpDir.Path()))}
+			cmd.Env = append(cmd.Env, "DUFFLE_HOME="+tmpDir.Path())
 
 			// We need to explicitly set the SYSTEMROOT on windows
 			// otherwise we get the error:

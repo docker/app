@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	dockerConfigFile "github.com/docker/cli/cli/config/configfile"
+	"gotest.tools/icmd"
 )
 
 var (
@@ -24,8 +25,29 @@ var (
 )
 
 type dockerCliCommand struct {
-	path   string
-	config string
+	path         string
+	cliPluginDir string
+}
+
+func (d dockerCliCommand) createTestCmd() (icmd.Cmd, func()) {
+	configDir, err := ioutil.TempDir("", "config")
+	if err != nil {
+		panic(err)
+	}
+	config := dockerConfigFile.ConfigFile{CLIPluginsExtraDirs: []string{d.cliPluginDir}}
+	configFile, err := os.Create(filepath.Join(configDir, "config.json"))
+	if err != nil {
+		panic(err)
+	}
+	err = json.NewEncoder(configFile).Encode(config)
+	if err != nil {
+		panic(err)
+	}
+	cleanup := func() {
+		os.RemoveAll(configDir)
+	}
+	env := append(os.Environ(), "DOCKER_CONFIG="+configDir)
+	return icmd.Cmd{Env: env}, cleanup
 }
 
 func (d dockerCliCommand) Command(args ...string) []string {
@@ -49,9 +71,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	// Prepare docker cli to call the docker-app plugin binary:
-	// - Create a config dir with a custom config file
-	// - Create a symbolic link with the dockerApp binary to the plugin directory
 	if dockerCliPath == "" {
 		dockerCliPath = "docker"
 	} else {
@@ -60,34 +79,16 @@ func TestMain(m *testing.M) {
 			panic(err)
 		}
 	}
-	configDir, err := ioutil.TempDir("", "config")
+	// Prepare docker cli to call the docker-app plugin binary:
+	// - Create a symbolic link with the dockerApp binary to the plugin directory
+	cliPluginDir, err := ioutil.TempDir("", "configContent")
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(configDir)
+	defer os.RemoveAll(cliPluginDir)
+	createDockerAppSymLink(dockerApp, cliPluginDir)
 
-	err = os.Setenv("DOCKER_CONFIG", configDir)
-	if err != nil {
-		panic(err)
-	}
-	dockerCli = dockerCliCommand{path: dockerCliPath, config: configDir}
-
-	config := dockerConfigFile.ConfigFile{CLIPluginsExtraDirs: []string{configDir}}
-	configFile, err := os.Create(filepath.Join(configDir, "config.json"))
-	if err != nil {
-		panic(err)
-	}
-	err = json.NewEncoder(configFile).Encode(config)
-	if err != nil {
-		panic(err)
-	}
-	dockerAppExecName := "docker-app"
-	if runtime.GOOS == "windows" {
-		dockerAppExecName += ".exe"
-	}
-	if err := os.Symlink(dockerApp, filepath.Join(configDir, dockerAppExecName)); err != nil {
-		panic(err)
-	}
+	dockerCli = dockerCliCommand{path: dockerCliPath, cliPluginDir: cliPluginDir}
 
 	cmd := exec.Command(dockerApp, "app", "version")
 	output, err := cmd.CombinedOutput()
@@ -98,4 +99,14 @@ func TestMain(m *testing.M) {
 	i := strings.Index(string(output), "Renderers")
 	renderers = string(output)[i+10:]
 	os.Exit(m.Run())
+}
+
+func createDockerAppSymLink(dockerApp, configDir string) {
+	dockerAppExecName := "docker-app"
+	if runtime.GOOS == "windows" {
+		dockerAppExecName += ".exe"
+	}
+	if err := os.Symlink(dockerApp, filepath.Join(configDir, dockerAppExecName)); err != nil {
+		panic(err)
+	}
 }
