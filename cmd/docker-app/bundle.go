@@ -70,11 +70,8 @@ func makeBundle(dockerCli command.Cli, appName string) (*bundle.Bundle, error) {
 
 func makeBundleFromApp(dockerCli command.Cli, app *types.App) (*bundle.Bundle, error) {
 	meta := app.Metadata()
-	invocationImageName, err := makeImageName(meta)
+	invocationImageName, err := makeInvocationImageName(meta)
 	if err != nil {
-		return nil, err
-	}
-	if _, err := makeImageName(meta); err != nil {
 		return nil, err
 	}
 
@@ -98,8 +95,12 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App) (*bundle.Bundle, e
 	return packager.ToCNAB(app, invocationImageName)
 }
 
-func makeImageName(meta metadata.AppMetadata) (string, error) {
-	name := fmt.Sprintf("%s:%s-invoc", meta.Name, meta.Version)
+func makeInvocationImageName(meta metadata.AppMetadata) (string, error) {
+	return makeCNABImageName(meta, "-invoc")
+}
+
+func makeCNABImageName(meta metadata.AppMetadata, suffix string) (string, error) {
+	name := fmt.Sprintf("%s:%s%s", meta.Name, meta.Version, suffix)
 	if _, err := reference.ParseNormalizedNamed(name); err != nil {
 		return "", errors.Wrapf(err, "image name %q is invalid, please check name and version fields", name)
 	}

@@ -8,7 +8,7 @@ import (
 
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/credentials"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/cli/cli/config/types"
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/pkg/errors"
 )
@@ -44,6 +44,11 @@ func ContextStoreDir() string {
 // SetDir sets the directory the configuration file is stored in
 func SetDir(dir string) {
 	configDir = dir
+}
+
+// Path returns the path to a file relative to the config dir
+func Path(p ...string) string {
+	return filepath.Join(append([]string{Dir()}, p...)...)
 }
 
 // LegacyLoadFromReader is a convenience function that creates a ConfigFile object from

@@ -27,7 +27,7 @@ func TestMakeInvocationImage(t *testing.T) {
 	}
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			actual, err := makeImageName(c.meta)
+			actual, err := makeInvocationImageName(c.meta)
 			if c.err != "" {
 				assert.ErrorContains(t, err, c.err)
 				assert.Equal(t, actual, "", "On "+c.meta.Name)

@@ -100,7 +100,7 @@ const (
 	// readdir calls to this directory do not follow to lower layers.
 	whiteoutOpaqueDir = whiteoutMetaPrefix + ".opq"
 
-	paxSchilyXattr = "SCHILY.xattrs."
+	paxSchilyXattr = "SCHILY.xattr."
 )
 
 // Apply applies a tar stream of an OCI style diff tar.
@@ -194,7 +194,7 @@ func applyNaive(ctx context.Context, root string, tr *tar.Reader, options ApplyO
 				parentPath = filepath.Dir(path)
 			}
 			if _, err := os.Lstat(parentPath); err != nil && os.IsNotExist(err) {
-				err = mkdirAll(parentPath, 0700)
+				err = mkdirAll(parentPath, 0755)
 				if err != nil {
 					return 0, err
 				}
@@ -295,7 +295,7 @@ func applyNaive(ctx context.Context, root string, tr *tar.Reader, options ApplyO
 			linkBasename := filepath.Base(hdr.Linkname)
 			srcHdr = aufsHardlinks[linkBasename]
 			if srcHdr == nil {
-				return 0, fmt.Errorf("Invalid aufs hardlink")
+				return 0, fmt.Errorf("invalid aufs hardlink")
 			}
 			p, err := fs.RootPath(aufsTempdir, linkBasename)
 			if err != nil {

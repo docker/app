@@ -50,7 +50,7 @@ func (r dockerFetcher) Fetch(ctx context.Context, desc ocispec.Descriptor) (io.R
 		return nil, err
 	}
 
-	ctx, err = contextWithRepositoryScope(ctx, r.refspec, false)
+	ctx, err = contextWithRepositoryScope(ctx, r.refspec, false, false)
 	if err != nil {
 		return nil, err
 	}

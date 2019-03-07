@@ -28,8 +28,17 @@ required = ["github.com/wadey/gocovmerge"]
   version = "v1.0.0-rc6"
 
 [[override]]
+  name = "github.com/docker/cnab-to-oci"
+  branch = "master"
+
+[[override]]
+  name = "github.com/containerd/containerd"
+  source = "github.com/simonferquel/containerd"
+  revision = "a89234684e5884e51ba195bdb16b1c6952d17f11"
+
+[[override]]
   name = "github.com/docker/cli"
-  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
+  revision = "06b837a7d7e1115f3d2aa65c47765e25d4bf845b"
 
 [[override]]
   name = "github.com/deislabs/duffle"
@@ -57,7 +66,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/distribution"
-  revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
+  revision = "0d3efadf0154c2b8a4e7b6621fff9809655cc580"
 
 [[override]]
   name = "github.com/docker/swarmkit"
