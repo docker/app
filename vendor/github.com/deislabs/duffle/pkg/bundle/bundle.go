@@ -59,18 +59,19 @@ func (b Bundle) WriteTo(w io.Writer) (int64, error) {
 
 // LocationRef specifies a location within the invocation package
 type LocationRef struct {
-	Path  string `json:"path" mapstructure:"path"`
-	Field string `json:"field" mapstructure:"field"`
+	Path      string `json:"path" mapstructure:"path"`
+	Field     string `json:"field" mapstructure:"field"`
+	MediaType string `json:"mediaType" mapstructure:"mediaType"`
 }
 
 // BaseImage contains fields shared across image types
 type BaseImage struct {
-	ImageType string `json:"imageType" mapstructure:"imageType"`
-	Image     string `json:"image" mapstructure:"image"`
-	Digest    string `json:"digest,omitempty" mapstructure:"digest"`
-	Size      uint64 `json:"size,omitempty" mapstructure:"size"`
-	Platform  string `json:"platform,omitempty" mapstructure:"platform"`
-	MediaType string `json:"mediaType,omitempty" mapstructure:"mediaType"`
+	ImageType string        `json:"imageType" mapstructure:"imageType"`
+	Image     string        `json:"image" mapstructure:"image"`
+	Digest    string        `json:"digest,omitempty" mapstructure:"digest"`
+	Size      uint64        `json:"size,omitempty" mapstructure:"size"`
+	Platform  ImagePlatform `json:"platform,omitempty" mapstructure:"platform"`
+	MediaType string        `json:"mediaType,omitempty" mapstructure:"mediaType"`
 }
 
 // ImagePlatform indicates what type of platform an image is built for
@@ -115,7 +116,7 @@ type Action struct {
 	// Modifies indicates whether this action modifies the release.
 	//
 	// If it is possible that an action modify a release, this must be set to true.
-	Modifies bool
+	Modifies bool `json:"modifies" mapstructure:"modifies"`
 }
 
 // ValuesOrDefaults returns parameter values or the default parameter values
@@ -141,6 +142,10 @@ func ValuesOrDefaults(vals map[string]interface{}, b *Bundle) (map[string]interf
 func (b Bundle) Validate() error {
 	if len(b.InvocationImages) == 0 {
 		return errors.New("at least one invocation image must be defined in the bundle")
+	}
+
+	if b.Version == "latest" {
+		return errors.New("'latest' is not a valid tag option")
 	}
 
 	for _, img := range b.InvocationImages {

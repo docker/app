@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/docker/cli/cli/context/docker"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -18,6 +19,8 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/pkg/errors"
 )
 
@@ -76,13 +79,27 @@ func duffleHome() home.Home {
 }
 
 // prepareDriver prepares a driver per the user's request.
-func prepareDriver(dockerCli command.Cli) (driver.Driver, error) {
+func prepareDriver(dockerCli command.Cli, bindLocalSocket bool) (driver.Driver, error) {
 	driverImpl, err := driver.Lookup("docker")
 	if err != nil {
 		return driverImpl, err
 	}
 	if d, ok := driverImpl.(*driver.DockerDriver); ok {
 		d.SetDockerCli(dockerCli)
+		if bindLocalSocket {
+			d.AddConfigurationOptions(func(config *container.Config, hostConfig *container.HostConfig) error {
+				config.User = "0:0"
+				mounts := []mount.Mount{
+					{
+						Type:   mount.TypeBind,
+						Source: "/var/run/docker.sock",
+						Target: "/var/run/docker.sock",
+					},
+				}
+				hostConfig.Mounts = mounts
+				return nil
+			})
+		}
 	}
 
 	// Load any driver-specific config out of the environment.
@@ -160,4 +177,31 @@ func resolveBundle(dockerCli command.Cli, name string, pullRef bool, insecureReg
 		return bundlestore.LookupOrPullBundle(dockerCli, reference.TagNameOnly(ref), pullRef, insecureRegistries)
 	}
 	return nil, fmt.Errorf("could not resolve bundle %q", name)
+}
+
+func requiresBindMount(targetContextName string, targetOrchestrator string, dockerCli command.Cli) (bool, error){
+	if targetOrchestrator == "kubernetes"{
+		return false, nil
+	}
+	ctxMeta, err := dockerCli.ContextStore().GetContextMetadata(targetContextName)
+	if err != nil{
+		return false, err
+	}
+	dockerCtx, err := command.GetDockerContext(ctxMeta)
+	if err != nil{
+		return false, err
+	}
+	if dockerCtx.StackOrchestrator == command.OrchestratorKubernetes{
+		return false, nil
+	}
+	dockerEndpoint, err := docker.EndpointFromContext(ctxMeta)
+	if err != nil{
+		return false, err
+	}
+	host := dockerEndpoint.Host
+	switch host{
+	case "", "unix:///var/run/docker.sock", "npipe:////./pipe/docker_engine":
+		return true, nil
+	}
+	return false, nil
 }

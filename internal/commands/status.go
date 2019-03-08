@@ -38,8 +38,15 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 		return err
 	}
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-
-	driverImpl, err := prepareDriver(dockerCli)
+	var specifiedOrchestrator string
+	if rawOrchestrator, ok := c.Parameters["docker.orchestrator"]; ok {
+		specifiedOrchestrator = rawOrchestrator.(string)
+	}
+	doBindMounts, err := requiresBindMount(targetContext, specifiedOrchestrator, dockerCli)
+	if err != nil {
+		return err
+	}
+	driverImpl, err := prepareDriver(dockerCli, doBindMounts)
 	if err != nil {
 		return err
 	}

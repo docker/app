@@ -192,8 +192,8 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e2033d363ec4e251ae535f558c51269c78c05bcb0e1eded55ea1800ff58d86ef"
+  branch = "custom-container-config"
+  digest = "1:816f960810aa945a47b7413a18ee58395f6c35822144f60e9f213b91102d4dce"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
@@ -207,7 +207,8 @@
     "pkg/utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "eaa7595bd231ca353ec886708405fe4deba91968"
+  revision = "e88822286634aa64ba644dfce4f420b39761c4dd"
+  source = "github.com/simonferquel/duffle"
 
 [[projects]]
   digest = "1:9398cdf8ac469acd44527b48cec760ff8801241a93597e4acd5001a03fff5a84"

@@ -39,7 +39,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if err != nil {
 		return err
 	}
-	driverImpl, err := prepareDriver(dockerCli)
+	driverImpl, err := prepareDriver(dockerCli, false)
 	if err != nil {
 		return err
 	}
