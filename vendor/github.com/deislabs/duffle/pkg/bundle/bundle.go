@@ -145,7 +145,7 @@ func (b Bundle) Validate() error {
 	}
 
 	if b.Version == "latest" {
-		return errors.New("'latest' is not a valid tag option")
+		return errors.New("'latest' is not a valid bundle version")
 	}
 
 	for _, img := range b.InvocationImages {

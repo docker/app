@@ -276,7 +276,15 @@ func TestBundle(t *testing.T) {
 	assert.Assert(t, fs.Equal(tmpDir.Join("simple.dockerapp"), manifest))
 }
 
-func TestDockerAppLifecycle(t *testing.T) {
+func TestDockerAppLifecycleWithBindMounts(t *testing.T) {
+	testDockerAppLifecycle(t, true)
+}
+
+func TestDockerAppLifecycleWithoutBindMounts(t *testing.T) {
+	testDockerAppLifecycle(t, false)
+}
+
+func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
 
@@ -301,13 +309,18 @@ func TestDockerAppLifecycle(t *testing.T) {
 	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	// When creating a context on a Windows host we cannot use
-	// the unix socket but it's needed inside the invocation image.
-	// The workaround is to create a context with an empty host.
-	// This host will default to the unix socket inside the
-	// invocation image
-	cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	if useBindMount {
+		// When creating a context on a Windows host we cannot use
+		// the unix socket but it's needed inside the invocation image.
+		// The workaround is to create a context with an empty host.
+		// This host will default to the unix socket inside the
+		// invocation image
+		cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	} else {
+		cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetPrivateAddress(t)), "--default-stack-orchestrator", "swarm")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	}
 
 	// Initialize the swarm
 	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")

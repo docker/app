@@ -44,8 +44,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/deislabs/duffle"
-  source = "github.com/simonferquel/duffle"
-  branch = "custom-container-config"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
