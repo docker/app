@@ -31,7 +31,7 @@ services:
       - 5678:5678
 ```
 
-With `docker-app` installed let's create an Application Package based on this Compose file:
+With `docker-app` [installed](#installation) let's create an Application Package based on this Compose file:
 
 ```bash
 $ docker-app init --single-file hello
@@ -187,31 +187,67 @@ Removing network hello_default
 ## Installation
 
 Pre-built binaries are available on [GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and macOS.
+Each tarball contains two binaries:
+- `docker-app-plugin-{linux|darwin|windows.exe}` which is docker-app as a [docker cli plugin](https://github.com/docker/cli/issues/1534). **Note**: This requires a pre-release version of the 
+Docker CLI 
+- `docker-app-standalone-{linux|darwin|windows.exe}` which is docker-app as a standalone utility
+
+To use the `docker-app` plugin, just type `docker app` instead of `docker-app` and all the examples will work the same way:
+```bash
+$ docker app version
+Version:      v0.8
+Git commit:   XXX
+Built:        Wed Feb 27 12:37:06 2019
+OS/Arch:      darwin/amd64
+Experimental: off
+Renderers:    none
+
+$ docker-app version
+Version:      v0.8
+Git commit:   XXX
+Built:        Wed Feb 27 12:37:06 2019
+OS/Arch:      darwin/amd64
+Experimental: off
+Renderers:    none
+```
 
 ### Linux or macOS
 
+Download your OS tarball:
 ```bash
 export OSTYPE="$(uname | tr A-Z a-z)"
 curl -fsSL --output "/tmp/docker-app-${OSTYPE}.tar.gz" "https://github.com/docker/app/releases/download/v0.6.0/docker-app-${OSTYPE}.tar.gz"
 tar xf "/tmp/docker-app-${OSTYPE}.tar.gz" -C /tmp/
-install -b "/tmp/docker-app-${OSTYPE}" /usr/local/bin/docker-app
+```
+
+To install `docker-app` as a standalone:
+```bash
+install -b "/tmp/docker-app-standalone-${OSTYPE}" /usr/local/bin/docker-app
+```
+
+To install `docker-app` as a docker cli plugin:
+```bash
+mkdir -p ~/.docker/cli-plugins && cp "/tmp/docker-app-plugin-${OSTYPE}" ~/.docker/cli-plugins/docker-app
 ```
 
 ### Windows
+
+Download the Windows tarball:
 ```powershell
-function Expand-Tar($tarFile, $dest) {
-
-    if (-not (Get-Command Expand-7Zip -ErrorAction Ignore)) {
-        Install-Package -Scope CurrentUser -Force 7Zip4PowerShell > $null
-    }
-
-    Expand-7Zip $tarFile $dest
-}
-Invoke-WebRequest -Uri https://github.com/docker/app/releases/download/v0.6.0/docker-app-windows.tar.gz
-Expand-Tar docker-app-windows.tar.gz docker-app-windows.exe
+Invoke-WebRequest -Uri https://github.com/docker/app/releases/download/v0.6.0/docker-app-windows.tar.gz -OutFile docker-app.tar.gz -UseBasicParsing
+tar xf "docker-app.tar.gz"
 ```
 
-**Note:** To use Application Packages as images (i.e.: `save`, `push`, or `install` when package is not present locally) on Windows, one must be in Linux container mode.
+To install `docker-app` as a standalone, copy it somewhere in your path:
+```powershell
+cp docker-app-plugin-windows.exe PATH/docker-app.exe
+```
+
+To install `docker-app` as a docker cli plugin:
+```powershell
+New-Item -ItemType Directory -Path ~/.docker/cli-plugins -ErrorAction SilentlyContinue
+cp docker-app-plugin-windows.exe ~/.docker/cli-plugins/docker-app.exe 
+```
 
 ## Single file or directory representation
 

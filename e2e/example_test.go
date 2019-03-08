@@ -11,6 +11,9 @@ import (
 )
 
 func TestExamplesAreValid(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
 	err := filepath.Walk("../examples", func(p string, info os.FileInfo, err error) error {
 		appPath := filepath.Join(p, filepath.Base(p)+".dockerapp")
 		_, statErr := os.Stat(appPath)
@@ -24,8 +27,8 @@ func TestExamplesAreValid(t *testing.T) {
 		case os.IsNotExist(statErr):
 			return nil
 		default:
-			result := icmd.RunCommand(dockerApp, "validate", appPath)
-			result.Assert(t, icmd.Success)
+			cmd.Command = dockerCli.Command("app", "validate", appPath)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			return filepath.SkipDir
 		}
 	})

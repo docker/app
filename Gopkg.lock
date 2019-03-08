@@ -176,7 +176,7 @@
   revision = "461401dc8f19d80baa4b70178935e4501286c00b"
 
 [[projects]]
-  digest = "1:76a167b7658125360bbd52626d85031c89383c0ec6f3e4e25afd776c9a27f286"
+  digest = "1:9e2dbc126e8e5314cba3ab654b2183376dc81cb657ca8c588f86990f5da88cbc"
   name = "github.com/coreos/etcd"
   packages = ["raft/raftpb"]
   pruneopts = "NUT"
@@ -210,11 +210,12 @@
   revision = "eaa7595bd231ca353ec886708405fe4deba91968"
 
 [[projects]]
-  digest = "1:835103dce2493c1d69db6374052729fef1716ec30eb0e2050d868ca531f7cccf"
+  digest = "1:9398cdf8ac469acd44527b48cec760ff8801241a93597e4acd5001a03fff5a84"
   name = "github.com/docker/cli"
   packages = [
     "cli",
     "cli-plugins/manager",
+    "cli-plugins/plugin",
     "cli/command",
     "cli/command/bundlefile",
     "cli/command/formatter",
@@ -241,6 +242,7 @@
     "cli/config/credentials",
     "cli/config/types",
     "cli/connhelper",
+    "cli/connhelper/commandconn",
     "cli/connhelper/ssh",
     "cli/context",
     "cli/context/docker",
@@ -263,7 +265,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "06b837a7d7e1115f3d2aa65c47765e25d4bf845b"
+  revision = "d6bfd7e5592dad85969516c131d33910fa5ebd58"
+  source = "https://github.com/chris-crone/cli"
 
 [[projects]]
   branch = "master"
@@ -322,7 +325,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4f55cc4abd8ca6cafba0028f9b8848334210a62dd5beea880a3bc4f635dba093"
+  digest = "1:f6a479179001d036487879645957a865d6692d6c634a562b62561eecff892640"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -1074,7 +1077,7 @@
   source = "https://github.com/simonferquel/yaml"
 
 [[projects]]
-  digest = "1:fba52eeb003a81a7ad2eb9c92f139c43a8b0a4e8cc51c049fd03a2eb8f6894ae"
+  digest = "1:8eed93b935c1abf503719923397fce5258a94a7834f35323e41c5c61b9e7bfe6"
   name = "gotest.tools"
   packages = [
     "assert",
@@ -1243,7 +1246,7 @@
   revision = "kubernetes-1.11.1"
 
 [[projects]]
-  digest = "1:34af467590a9aa09701c1c3bea1fa6cdd5e8a8478e0baff9b8f6d4ba9518a42d"
+  digest = "1:18254705f2e912ec0142b7b36546c5d38d74e9d137c8d243985bff4d247eed81"
   name = "k8s.io/kubernetes"
   packages = ["pkg/api/v1/pod"]
   pruneopts = "NUT"
@@ -1262,6 +1265,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
+    "github.com/containerd/containerd/platforms",
     "github.com/deislabs/duffle/pkg/action",
     "github.com/deislabs/duffle/pkg/bundle",
     "github.com/deislabs/duffle/pkg/claim",
@@ -1271,6 +1275,8 @@
     "github.com/deislabs/duffle/pkg/loader",
     "github.com/deislabs/duffle/pkg/utils/crud",
     "github.com/docker/cli/cli",
+    "github.com/docker/cli/cli-plugins/manager",
+    "github.com/docker/cli/cli-plugins/plugin",
     "github.com/docker/cli/cli/command",
     "github.com/docker/cli/cli/command/stack",
     "github.com/docker/cli/cli/command/stack/options",
@@ -1280,6 +1286,7 @@
     "github.com/docker/cli/cli/compose/template",
     "github.com/docker/cli/cli/compose/types",
     "github.com/docker/cli/cli/config",
+    "github.com/docker/cli/cli/config/configfile",
     "github.com/docker/cli/cli/context/docker",
     "github.com/docker/cli/cli/context/kubernetes",
     "github.com/docker/cli/cli/context/store",

@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"fmt"
@@ -39,7 +39,7 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOptions) error {
-	muteDockerCli(dockerCli)
+	defer muteDockerCli(dockerCli)()
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
 	h := duffleHome()
 	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(h.Claims(), "json"))

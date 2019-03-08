@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"fmt"
@@ -68,7 +68,7 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
-	muteDockerCli(dockerCli)
+	defer muteDockerCli(dockerCli)()
 	if opts.sendRegistryAuth {
 		return errors.New("with-registry-auth is not supported at the moment")
 	}

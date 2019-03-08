@@ -3,7 +3,7 @@
 # This script is a proxy that injects the required test flags and strips out test output
 # It allows us to use a coverage-enabled binary for e2e tests
 
-BUILD_DIR=${BASH_SOURCE%/*}/../_build
+BUILD_DIR=${GOPATH}/src/github.com/docker/app/_build
 
 $BUILD_DIR/docker-app.cov \
     -test.coverprofile=$BUILD_DIR/cov/$(uuidgen).out \

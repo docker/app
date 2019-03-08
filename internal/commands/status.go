@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"github.com/deislabs/duffle/pkg/action"
@@ -29,7 +29,7 @@ func statusCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) error {
-	muteDockerCli(dockerCli)
+	defer muteDockerCli(dockerCli)()
 	h := duffleHome()
 
 	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(h.Claims(), "json"))
