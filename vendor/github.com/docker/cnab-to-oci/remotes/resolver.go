@@ -2,6 +2,9 @@ package remotes
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
+	"net/http"
 
 	containerdreference "github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes"
@@ -15,7 +18,9 @@ import (
 type multiRegistryResolver struct {
 	plainHTTP           remotes.Resolver
 	secure              remotes.Resolver
+	skipTLS             remotes.Resolver
 	plainHTTPRegistries map[string]struct{}
+	skipTLSRegistries   map[string]struct{}
 }
 
 func (r *multiRegistryResolver) resolveImplementation(image string) (remotes.Resolver, error) {
@@ -29,6 +34,9 @@ func (r *multiRegistryResolver) resolveImplementation(image string) (remotes.Res
 	}
 	if _, plainHTTP := r.plainHTTPRegistries[repoInfo.Index.Name]; plainHTTP {
 		return r.plainHTTP, nil
+	}
+	if _, skipTLS := r.skipTLSRegistries[repoInfo.Index.Name]; skipTLS {
+		return r.skipTLS, nil
 	}
 	return r.secure, nil
 }
@@ -73,6 +81,28 @@ func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) (
 		return a.Username, a.Password, nil
 	})
 
+	clientSkipTLS := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	skipTLSAuthorizer := docker.NewAuthorizer(clientSkipTLS, func(hostName string) (string, string, error) {
+		if hostName == registry.DefaultV2Registry.Host {
+			hostName = registry.IndexServer
+		}
+		a, err := cfg.GetAuthConfig(hostName)
+		if err != nil {
+			return "", "", err
+		}
+		if a.IdentityToken != "" {
+			return "", a.IdentityToken, nil
+		}
+		return a.Username, a.Password, nil
+	})
+
 	originProvider := &originProviderWrapper{}
 
 	result := &multiRegistryResolver{
@@ -86,11 +116,25 @@ func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) (
 			PlainHTTP:      false,
 			OriginProvider: originProvider.resolveSource,
 		}),
+		skipTLS: docker.NewResolver(docker.ResolverOptions{
+			Authorizer:     skipTLSAuthorizer,
+			PlainHTTP:      false,
+			OriginProvider: originProvider.resolveSource,
+			Client:         clientSkipTLS,
+		}),
 		plainHTTPRegistries: make(map[string]struct{}),
+		skipTLSRegistries:   make(map[string]struct{}),
 	}
 
 	for _, r := range plainHTTPRegistries {
-		result.plainHTTPRegistries[r] = struct{}{}
+		pingURL := fmt.Sprintf("https://%s/v2/", r)
+		resp, err := clientSkipTLS.Get(pingURL)
+		if err == nil {
+			resp.Body.Close()
+			result.skipTLSRegistries[r] = struct{}{}
+		} else {
+			result.plainHTTPRegistries[r] = struct{}{}
+		}
 	}
 
 	return result, originProvider
