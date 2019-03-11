@@ -24,8 +24,9 @@ ifeq ($(OS),Windows_NT)
   EXEC_EXT := .exe
 endif
 
-GO_BUILD := CGO_ENABLED=0 go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
-GO_TEST := CGO_ENABLED=0 go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
+STATIC_FLAGS= CGO_ENABLED=0
+GO_BUILD = $(STATIC_FLAGS) go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
+GO_TEST = $(STATIC_FLAGS) go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 
 all: bin/$(BIN_NAME) test
 
@@ -40,6 +41,10 @@ cross-plugin: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windo
 cross-standalone: bin/${BIN_STANDALONE_NAME}-linux bin/${BIN_STANDALONE_NAME}-darwin bin/${BIN_STANDALONE_NAME}-windows.exe
 
 e2e-cross: bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-windows.exe
+
+.PHONY: dynamic
+dynamic: STATIC_FLAGS :=
+dynamic: bin/$(BIN_NAME)
 
 .PHONY: bin/${BIN_STANDALONE_NAME}-windows
 bin/${BIN_STANDALONE_NAME}-%.exe bin/${BIN_STANDALONE_NAME}-%: cmd/${BIN_STANDALONE_NAME} check_go_env
