@@ -265,7 +265,7 @@ If you want to store additional files in the application package, such as `prod.
 
 ## Sharing your application on the Hub
 
-You can push any application to the Hub using `docker-app push`:
+You can push any application to the Hub or any other registry using `docker-app push`:
 
 ``` bash
 $ docker-app push --tag myhubuser/myimage:latest
@@ -273,13 +273,15 @@ $ docker-app push --tag myhubuser/myimage:latest
 
 This command will push to the Hub an image named `myhubuser/myimage:latest`.
 
-If you omit the `--tag myhubuser/myimage:latest` argument, this command uses the application `version` defined in `metadata.yml` as the tag.
+If you omit the `--tag myhubuser/myimage:latest` argument, this command uses the application `name` and `version` defined in `metadata.yml` to produce the tag `<app name>:<app version>`.
 
 All `docker-app` commands accept an image name as input, which means you can run on a different host:
 
 ``` bash
 $ docker-app inspect myhubuser/myimage
 ```
+
+The first time a command is executed against a given image name, the bundle is pulled from the registry, and put in the local bundle store. You can pre-populate this store by running `docker-app pull myhubuser/myimage:latest`. All commands manipulating a package also accept a `--pull` flag to force pulling the bundle from the registry, even if it is present in the local store. This can be usefull when you are repeatedly pushing a bundle on the same tag.
 
 ## Next steps
 
