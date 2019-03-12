@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/context"
 	"gotest.tools/assert"
 )
 
@@ -16,34 +15,38 @@ func TestRequiresBindMount(t *testing.T) {
 		name               string
 		targetContextName  string
 		targetOrchestrator string
-		expectedResult     bool
+		expectedRequired   bool
+		expectedEndpoint   string
 		expectedError      string
 	}{
 		{
 			name:               "kubernetes-orchestrator",
 			targetContextName:  "target-context",
 			targetOrchestrator: "kubernetes",
-			expectedResult:     false,
+			expectedRequired:   false,
+			expectedEndpoint:   "",
 			expectedError:      "",
 		},
 		{
 			name:               "no-context",
 			targetContextName:  "",
 			targetOrchestrator: "swarm",
-			expectedResult:     true,
+			expectedRequired:   true,
+			expectedEndpoint:   "/var/run/docker.sock",
 			expectedError:      "",
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			result, err := requiresBindMount(testCase.targetContextName, testCase.targetOrchestrator, dockerCli)
+			result, err := requiredBindMount(testCase.targetContextName, testCase.targetOrchestrator, dockerCli)
 			if testCase.expectedError == "" {
 				assert.NilError(t, err)
 			} else {
 				assert.Error(t, err, testCase.expectedError)
 			}
-			assert.Equal(t, testCase.expectedResult, result)
+			assert.Equal(t, testCase.expectedRequired, result.required)
+			assert.Equal(t, testCase.expectedEndpoint, result.endpoint)
 		})
 	}
 }
@@ -78,8 +81,42 @@ func TestIsDockerHostLocal(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			dockerEndpoint := context.EndpointMetaBase{Host: testCase.host}
-			assert.Equal(t, testCase.expected, isDockerHostLocal(dockerEndpoint))
+			assert.Equal(t, testCase.expected, isDockerHostLocal(testCase.host))
+		})
+	}
+}
+
+func TestSocketPath(t *testing.T) {
+	testCases := []struct {
+		name     string
+		host     string
+		expected string
+	}{
+		{
+			name:     "unixSocket",
+			host:     "unix:///my/socket.sock",
+			expected: "/my/socket.sock",
+		},
+		{
+			name:     "namedPipe",
+			host:     "npipe:////./docker",
+			expected: "/var/run/docker.sock",
+		},
+		{
+			name:     "emptyHost",
+			host:     "",
+			expected: "/var/run/docker.sock",
+		},
+		{
+			name:     "tcpHost",
+			host:     "tcp://my/tcp/endpoint",
+			expected: "/var/run/docker.sock",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			assert.Equal(t, testCase.expected, socketPath(testCase.host))
 		})
 	}
 }

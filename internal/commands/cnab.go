@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/driver"
 	"github.com/deislabs/duffle/pkg/duffle/home"
@@ -16,7 +17,6 @@ import (
 	"github.com/docker/app/internal/packager"
 	bundlestore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/context"
 	"github.com/docker/cli/cli/context/docker"
 	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/distribution/reference"
@@ -24,6 +24,13 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/pkg/errors"
 )
+
+type bindMount struct {
+	required bool
+	endpoint string
+}
+
+const defaultSocketPath string = "/var/run/docker.sock"
 
 func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
 	creds := map[string]string{}
@@ -80,21 +87,21 @@ func duffleHome() home.Home {
 }
 
 // prepareDriver prepares a driver per the user's request.
-func prepareDriver(dockerCli command.Cli, bindLocalSocket bool) (driver.Driver, error) {
+func prepareDriver(dockerCli command.Cli, bindMount bindMount) (driver.Driver, error) {
 	driverImpl, err := driver.Lookup("docker")
 	if err != nil {
 		return driverImpl, err
 	}
 	if d, ok := driverImpl.(*driver.DockerDriver); ok {
 		d.SetDockerCli(dockerCli)
-		if bindLocalSocket {
+		if bindMount.required {
 			d.AddConfigurationOptions(func(config *container.Config, hostConfig *container.HostConfig) error {
 				config.User = "0:0"
 				mounts := []mount.Mount{
 					{
 						Type:   mount.TypeBind,
-						Source: "/var/run/docker.sock",
-						Target: "/var/run/docker.sock",
+						Source: bindMount.endpoint,
+						Target: bindMount.endpoint,
 					},
 				}
 				hostConfig.Mounts = mounts
@@ -180,36 +187,53 @@ func resolveBundle(dockerCli command.Cli, name string, pullRef bool, insecureReg
 	return nil, fmt.Errorf("could not resolve bundle %q", name)
 }
 
-func requiresBindMount(targetContextName string, targetOrchestrator string, dockerCli command.Cli) (bool, error) {
+func requiredClaimBindMount(c claim.Claim, targetContextName string, dockerCli command.Cli) (bindMount, error) {
+	var specifiedOrchestrator string
+	if rawOrchestrator, ok := c.Parameters["docker.orchestrator"]; ok {
+		specifiedOrchestrator = rawOrchestrator.(string)
+	}
+
+	return requiredBindMount(targetContextName, specifiedOrchestrator, dockerCli)
+}
+
+func requiredBindMount(targetContextName string, targetOrchestrator string, dockerCli command.Cli) (bindMount, error) {
 	if targetOrchestrator == "kubernetes" {
-		return false, nil
+		return bindMount{}, nil
 	}
 
 	// TODO:smarter handling of default context required
 	if targetContextName == "" {
-		return true, nil
+		return bindMount{true, defaultSocketPath}, nil
 	}
 
 	ctxMeta, err := dockerCli.ContextStore().GetContextMetadata(targetContextName)
 	if err != nil {
-		return false, err
+		return bindMount{}, err
 	}
 	dockerCtx, err := command.GetDockerContext(ctxMeta)
 	if err != nil {
-		return false, err
+		return bindMount{}, err
 	}
 	if dockerCtx.StackOrchestrator == command.OrchestratorKubernetes {
-		return false, nil
+		return bindMount{}, nil
 	}
 	dockerEndpoint, err := docker.EndpointFromContext(ctxMeta)
 	if err != nil {
-		return false, err
+		return bindMount{}, err
 	}
 
-	return isDockerHostLocal(dockerEndpoint), nil
+	host := dockerEndpoint.Host
+	return bindMount{isDockerHostLocal(host), socketPath(host)}, nil
 }
 
-func isDockerHostLocal(dockerEndpoint context.EndpointMetaBase) bool {
-	host := dockerEndpoint.Host
-	return host == "" || host == "unix:///var/run/docker.sock" || host == "npipe:////./pipe/docker_engine"
+func socketPath(host string) string {
+	if strings.HasPrefix(host, "unix://") {
+		return strings.TrimPrefix(host, "unix://")
+	}
+
+	return defaultSocketPath
+}
+
+func isDockerHostLocal(host string) bool {
+	return host == "" || strings.HasPrefix(host, "unix://") || strings.HasPrefix(host, "npipe://")
 }

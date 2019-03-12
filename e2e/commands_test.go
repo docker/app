@@ -276,19 +276,21 @@ func TestBundle(t *testing.T) {
 	assert.Assert(t, fs.Equal(tmpDir.Join("simple.dockerapp"), manifest))
 }
 
-func TestDockerAppLifecycleWithBindMounts(t *testing.T) {
-	testDockerAppLifecycle(t, true)
-}
-
-func TestDockerAppLifecycleWithoutBindMounts(t *testing.T) {
-	testDockerAppLifecycle(t, false)
+func TestDockerAppLifecycle(t *testing.T) {
+	t.Run("withBindMounts", func(t *testing.T) {
+		testDockerAppLifecycle(t, true)
+	})
+	t.Run("withoutBindMounts", func(t *testing.T) {
+		testDockerAppLifecycle(t, false)
+	})
 }
 
 func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
+	appName := strings.Replace(t.Name(), "/", "_", 1)
 
-	tmpDir := fs.NewDir(t, t.Name())
+	tmpDir := fs.NewDir(t, appName)
 	defer tmpDir.Remove()
 
 	cmd.Env = append(cmd.Env, "DUFFLE_HOME="+tmpDir.Path())
@@ -309,18 +311,18 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	if useBindMount {
-		// When creating a context on a Windows host we cannot use
-		// the unix socket but it's needed inside the invocation image.
-		// The workaround is to create a context with an empty host.
-		// This host will default to the unix socket inside the
-		// invocation image
-		cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", "host=", "--default-stack-orchestrator", "swarm")
-		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	} else {
-		cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetPrivateAddress(t)), "--default-stack-orchestrator", "swarm")
-		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	// When creating a context on a Windows host we cannot use
+	// the unix socket but it's needed inside the invocation image.
+	// The workaround is to create a context with an empty host.
+	// This host will default to the unix socket inside the
+	// invocation image
+	host := "host="
+	if !useBindMount {
+		host += fmt.Sprintf("tcp://%s", swarm.GetPrivateAddress(t))
 	}
+
+	cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", host, "--default-stack-orchestrator", "swarm")
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	// Initialize the swarm
 	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")
@@ -332,47 +334,47 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	// Install a Docker Application Package
-	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--name", t.Name())
+	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--name", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
-			fmt.Sprintf("Creating network %s_back", t.Name()),
-			fmt.Sprintf("Creating network %s_front", t.Name()),
-			fmt.Sprintf("Creating service %s_db", t.Name()),
-			fmt.Sprintf("Creating service %s_api", t.Name()),
-			fmt.Sprintf("Creating service %s_web", t.Name()),
+			fmt.Sprintf("Creating network %s_back", appName),
+			fmt.Sprintf("Creating network %s_front", appName),
+			fmt.Sprintf("Creating service %s_db", appName),
+			fmt.Sprintf("Creating service %s_api", appName),
+			fmt.Sprintf("Creating service %s_web", appName),
 		})
 
 	// Query the application status
-	cmd.Command = dockerCli.Command("app", "status", t.Name())
+	cmd.Command = dockerCli.Command("app", "status", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
-			fmt.Sprintf("[[:alnum:]]+        %s_db    replicated          [0-1]/1                 postgres:9.3", t.Name()),
-			fmt.Sprintf(`[[:alnum:]]+        %s_web   replicated          [0-1]/1                 nginx:latest        \*:8082->80/tcp`, t.Name()),
-			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", t.Name()),
+			fmt.Sprintf("[[:alnum:]]+        %s_db    replicated          [0-1]/1                 postgres:9.3", appName),
+			fmt.Sprintf(`[[:alnum:]]+        %s_web   replicated          [0-1]/1                 nginx:latest        \*:8082->80/tcp`, appName),
+			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", appName),
 		})
 
 	// Upgrade the application, changing the port
-	cmd.Command = dockerCli.Command("app", "upgrade", t.Name(), "--set", "web_port=8081")
+	cmd.Command = dockerCli.Command("app", "upgrade", appName, "--set", "web_port=8081")
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
-			fmt.Sprintf("Updating service %s_db", t.Name()),
-			fmt.Sprintf("Updating service %s_api", t.Name()),
-			fmt.Sprintf("Updating service %s_web", t.Name()),
+			fmt.Sprintf("Updating service %s_db", appName),
+			fmt.Sprintf("Updating service %s_api", appName),
+			fmt.Sprintf("Updating service %s_web", appName),
 		})
 
 	// Query the application status again, the port should have change
-	cmd.Command = dockerCli.Command("app", "status", t.Name())
+	cmd.Command = dockerCli.Command("app", "status", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "8081"})
 
 	// Uninstall the application
-	cmd.Command = dockerCli.Command("app", "uninstall", t.Name())
+	cmd.Command = dockerCli.Command("app", "uninstall", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
-			fmt.Sprintf("Removing service %s_api", t.Name()),
-			fmt.Sprintf("Removing service %s_db", t.Name()),
-			fmt.Sprintf("Removing service %s_web", t.Name()),
-			fmt.Sprintf("Removing network %s_front", t.Name()),
-			fmt.Sprintf("Removing network %s_back", t.Name()),
+			fmt.Sprintf("Removing service %s_api", appName),
+			fmt.Sprintf("Removing service %s_db", appName),
+			fmt.Sprintf("Removing service %s_web", appName),
+			fmt.Sprintf("Removing network %s_front", appName),
+			fmt.Sprintf("Removing network %s_back", appName),
 		})
 }
 

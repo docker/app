@@ -73,7 +73,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return errors.New("with-registry-auth is not supported at the moment")
 	}
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	doBindMount, err := requiresBindMount(targetContext, opts.orchestrator, dockerCli)
+	bind, err := requiredBindMount(targetContext, opts.orchestrator, dockerCli)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err
 	}
 
-	driverImpl, err := prepareDriver(dockerCli, doBindMount)
+	driverImpl, err := prepareDriver(dockerCli, bind)
 	if err != nil {
 		return err
 	}
