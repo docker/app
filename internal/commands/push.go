@@ -48,7 +48,7 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
-	muteDockerCli(dockerCli)
+	defer muteDockerCli(dockerCli)()
 	app, err := packager.Extract(name)
 	if err != nil {
 		return err
