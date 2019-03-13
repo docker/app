@@ -17,11 +17,11 @@ type installOptions struct {
 	parametersOptions
 	credentialOptions
 	registryOptions
+	pullOptions
 	orchestrator     string
 	kubeNamespace    string
 	stackName        string
 	sendRegistryAuth bool
-	pull             bool
 }
 
 type nameKind uint
@@ -58,11 +58,11 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
 	opts.registryOptions.addFlags(cmd.Flags())
+	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVarP(&opts.orchestrator, "orchestrator", "o", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "kubernetes-namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Installation name (defaults to application name)")
 	cmd.Flags().BoolVar(&opts.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
-	cmd.Flags().BoolVar(&opts.pull, "pull", false, "Pull the bundle")
 
 	return cmd
 }

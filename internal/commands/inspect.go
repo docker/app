@@ -13,7 +13,7 @@ import (
 type inspectOptions struct {
 	parametersOptions
 	registryOptions
-	pull bool
+	pullOptions
 }
 
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
@@ -28,7 +28,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.registryOptions.addFlags(cmd.Flags())
-	cmd.Flags().BoolVar(&opts.pull, "pull", false, "Pull the bundle")
+	opts.pullOptions.addFlags(cmd.Flags())
 	return cmd
 }
 
