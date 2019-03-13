@@ -20,7 +20,7 @@ pipeline {
                         dir('src/github.com/docker/app') {
                             checkout scm
                             sh 'make -f docker.Makefile lint'
-                            sh 'make -f docker.Makefile vendor'
+                            sh 'make -f docker.Makefile check-vendor'
                         }
                     }
                     post {
