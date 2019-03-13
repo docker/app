@@ -108,8 +108,8 @@ lint: ## run linter(s)
 	docker build -t $(LINT_IMAGE_NAME) -f Dockerfile.lint .
 	docker run --rm $(LINT_IMAGE_NAME) make lint
 
-vendor: build_dev_image
-	$(info Vendoring...)
+check-vendor: build_dev_image
+	$(info Check Vendoring...)
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"
 
 specification/bindata.go: specification/schemas/*.json build_dev_image
@@ -137,4 +137,4 @@ push-invocation-image:
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
+.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage gradle-test shell build_dev_image tars check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
