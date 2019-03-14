@@ -88,7 +88,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:2c2488904f99f47fc2ea9d8ee263fe4e3a58d357672658e12fd739e61a806ad4"
+  digest = "1:b316701242f59ece427954f8611800f05b2b545d837a65d0ed0c3dd6d3b829b3"
   name = "github.com/containerd/containerd"
   packages = [
     ".",
@@ -143,7 +143,7 @@
     "version",
   ]
   pruneopts = "NUT"
-  revision = "a89234684e5884e51ba195bdb16b1c6952d17f11"
+  revision = "6530636c92c836d8ab2d8b710c79ccdd6c43350e"
   source = "github.com/simonferquel/containerd"
 
 [[projects]]

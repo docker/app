@@ -34,7 +34,7 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "github.com/containerd/containerd"
   source = "github.com/simonferquel/containerd"
-  revision = "a89234684e5884e51ba195bdb16b1c6952d17f11"
+  revision = "6530636c92c836d8ab2d8b710c79ccdd6c43350e"
 
 ### Waiting on PR https://github.com/docker/cli/pull/1718 and https://github.com/docker/cli/pull/1690 to land on cli ###
 [[override]]
