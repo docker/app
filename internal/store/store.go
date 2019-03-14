@@ -33,7 +33,6 @@ func storePath(ref reference.Named) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	storeDir := filepath.Join(baseDir, filepath.FromSlash(name))
 
 	// We rely here on _ not being valid in a name meaning there can be no clashes due to nesting of repositories.

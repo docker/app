@@ -33,6 +33,8 @@ type bindMount struct {
 const defaultSocketPath string = "/var/run/docker.sock"
 
 func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
+	// docker desktop contexts require some rewriting for being used within a container
+	contextStore = dockerDesktopAwareStore{Store: contextStore}
 	creds := map[string]string{}
 	for _, file := range namedCredentialsets {
 		if _, err := os.Stat(file); err != nil {
