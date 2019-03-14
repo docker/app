@@ -110,7 +110,13 @@ lint: ## run linter(s)
 
 vendor: build_dev_image
 	$(info Update Vendoring...)
-	docker run --rm -v "$(CURDIR)":/go/src/github.com/docker/app/ $(DEV_IMAGE_NAME) make vendor
+	rm -rf ./vendor
+	docker rm -f docker-app-vendoring || echo ""
+	docker create --name docker-app-vendoring -v docker-app-vendor-cache://dep-cache -e DEPCACHEDIR=//dep-cache $(DEV_IMAGE_NAME) sh -c "rm -rf ./vendor && make vendor"
+	docker start -i -a docker-app-vendoring
+	docker cp docker-app-vendoring:/go/src/github.com/docker/app/vendor .
+	docker cp docker-app-vendoring:/go/src/github.com/docker/app/Gopkg.lock .
+	docker rm -f docker-app-vendoring
 	$(warning You may need to reset permissions on vendor/*)
 
 check-vendor: build_dev_image
