@@ -111,7 +111,7 @@ lint: ## run linter(s)
 vendor: build_dev_image
 	$(info Update Vendoring...)
 	rm -rf ./vendor
-	docker rm -f docker-app-vendoring || echo ""
+	docker rm -f docker-app-vendoring || true
 	docker create --name docker-app-vendoring -v docker-app-vendor-cache://dep-cache -e DEPCACHEDIR=//dep-cache $(DEV_IMAGE_NAME) sh -c "rm -rf ./vendor && make vendor"
 	docker start -i -a docker-app-vendoring
 	docker cp docker-app-vendoring:/go/src/github.com/docker/app/vendor .
@@ -120,8 +120,10 @@ vendor: build_dev_image
 	$(warning You may need to reset permissions on vendor/*)
 
 clean-vendor-cache:
-	docker rm -f docker-app-vendoring || echo ""
-	docker volume rm -f docker-app-vendor-cachecheck-vendor: build_dev_image
+	docker rm -f docker-app-vendoring || true
+	docker volume rm -f docker-app-vendor-cache
+	
+check-vendor: build_dev_image
 	$(info Check Vendoring...)
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"
 
