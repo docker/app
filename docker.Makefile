@@ -119,7 +119,9 @@ vendor: build_dev_image
 	docker rm -f docker-app-vendoring
 	$(warning You may need to reset permissions on vendor/*)
 
-check-vendor: build_dev_image
+clean-vendor-cache:
+	docker rm -f docker-app-vendoring || echo ""
+	docker volume rm -f docker-app-vendor-cachecheck-vendor: build_dev_image
 	$(info Check Vendoring...)
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"
 
