@@ -2,7 +2,7 @@ properties([buildDiscarder(logRotator(numToKeepStr: '20'))])
 
 pipeline {
     agent {
-        label 'team-local && pipeline'
+        label 'ubuntu-1804'
     }
 
     options {
@@ -14,7 +14,7 @@ pipeline {
             parallel {
                 stage('Binaries'){
                     agent {
-                        label 'team-local && linux'
+                        label 'ubuntu-1804'
                     }
                     steps  {
                         dir('src/github.com/docker/app') {
@@ -51,7 +51,7 @@ pipeline {
                 }
                 stage('Invocation image'){
                     agent {
-                        label 'team-local && linux'
+                        label 'ubuntu-1804'
                     }
                     steps {
                         dir('src/github.com/docker/app') {
@@ -84,7 +84,7 @@ pipeline {
                         CODECOV_TOKEN = credentials('jenkins-codecov-token')
                     }
                     agent {
-                        label 'team-local && linux'
+                        label 'ubuntu-1804'
                     }
                     steps {
                         dir('src/github.com/docker/app') {
@@ -108,7 +108,7 @@ pipeline {
                 }
                 stage("Gradle test") {
                     agent {
-                        label 'team-local && linux'
+                        label 'ubuntu-1804'
                     }
                     steps {
                         dir('src/github.com/docker/app') {
@@ -127,7 +127,7 @@ pipeline {
                 }
                 stage("Test Linux") {
                     agent {
-                        label 'team-local && linux'
+                        label 'ubuntu-1804'
                     }
                     environment {
                         DOCKERAPP_BINARY = '../docker-app-linux'
@@ -231,7 +231,7 @@ pipeline {
                 buildingTag()
             }
             agent {
-                label 'team-local && linux'
+                label 'ubuntu-1804'
             }
             environment {
                 DOCKERHUB_CREDS=credentials('dockerhub-dockerdsgcibot')
