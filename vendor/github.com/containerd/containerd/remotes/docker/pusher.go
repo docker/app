@@ -57,7 +57,7 @@ func findMatchingOrigins(targetRef reference.Spec, origins []reference.Spec) []r
 }
 
 func (p dockerPusher) Push(ctx context.Context, desc ocispec.Descriptor) (content.Writer, error) {
-	ctx, err := contextWithRepositoryScope(ctx, p.refspec, true, false)
+	ctx, err := contextWithRepositoryScope(ctx, p.refspec, true)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,8 @@ func (p dockerPusher) Push(ctx context.Context, desc ocispec.Descriptor) (conten
 	} else {
 		mountCandidates := findMatchingOrigins(p.refspec, p.originProvider(desc))
 		for _, mountCandidate := range mountCandidates {
-			ctx, err := contextWithRepositoryScope(ctx, mountCandidate, false, true)
+			// this is important that ctx get shadowed here. We need to rollback to the previous context when we try the next candidate
+			ctx, err := contextWithRepositoryScope(ctx, mountCandidate, false)
 			if err != nil {
 				// try next candidate
 				continue

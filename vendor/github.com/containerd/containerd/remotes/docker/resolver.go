@@ -202,7 +202,7 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 		urls = append(urls, fetcher.url("manifests", refspec.Object))
 	}
 
-	ctx, err = contextWithRepositoryScope(ctx, refspec, false, false)
+	ctx, err = contextWithRepositoryScope(ctx, refspec, false)
 	if err != nil {
 		return "", ocispec.Descriptor{}, err
 	}
