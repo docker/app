@@ -55,7 +55,19 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		}
 		c.Bundle = b
 	}
-	driverImpl, err := prepareDriver(dockerCli)
+	c.Parameters, err = mergeBundleParameters(c.Bundle,
+		withFileParameters(opts.parametersFiles),
+		withCommandLineParameters(opts.overrides),
+	)
+	if err != nil {
+		return err
+	}
+
+	bind, err := requiredClaimBindMount(c, targetContext, dockerCli)
+	if err != nil {
+		return err
+	}
+	driverImpl, err := prepareDriver(dockerCli, bind)
 	if err != nil {
 		return err
 	}
@@ -66,15 +78,6 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
 		return err
 	}
-
-	c.Parameters, err = mergeBundleParameters(c.Bundle,
-		withFileParameters(opts.parametersFiles),
-		withCommandLineParameters(opts.overrides),
-	)
-	if err != nil {
-		return err
-	}
-
 	u := &action.Upgrade{
 		Driver: driverImpl,
 	}

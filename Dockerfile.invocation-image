@@ -15,7 +15,8 @@ RUN make EXPERIMENTAL=${EXPERIMENTAL} bin/cnab-run
 
  # local cnab invocation image
 FROM alpine:${ALPINE_VERSION} as invocation
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates && adduser -S cnab
+USER cnab
 COPY --from=build /go/src/github.com/docker/app/bin/cnab-run /cnab/app/run
 WORKDIR /cnab/app
 CMD /cnab/app/run

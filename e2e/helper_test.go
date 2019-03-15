@@ -97,3 +97,13 @@ func (c *Container) GetAddress(t *testing.T) string {
 	c.address = fmt.Sprintf("127.0.0.1:%v", strings.Trim(strings.Split(result.Stdout(), ":")[1], " \r\n"))
 	return c.address
 }
+
+// GetPrivateAddress returns the host:port this container listens on
+func (c *Container) GetPrivateAddress(t *testing.T) string {
+	container := c.parentContainer
+	if container == "" {
+		container = c.container
+	}
+	result := icmd.RunCommand(dockerCli.path, "inspect", container, "-f", "{{.NetworkSettings.IPAddress}}").Assert(t, icmd.Success)
+	return fmt.Sprintf("%s:%d", strings.TrimSpace(result.Stdout()), c.privatePort)
+}

@@ -38,8 +38,11 @@ func runUninstall(dockerCli command.Cli, claimName string, opts credentialOption
 		return err
 	}
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-
-	driverImpl, err := prepareDriver(dockerCli)
+	bind, err := requiredClaimBindMount(c, targetContext, dockerCli)
+	if err != nil {
+		return err
+	}
+	driverImpl, err := prepareDriver(dockerCli, bind)
 	if err != nil {
 		return err
 	}

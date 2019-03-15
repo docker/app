@@ -193,7 +193,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e2033d363ec4e251ae535f558c51269c78c05bcb0e1eded55ea1800ff58d86ef"
+  digest = "1:a01a9bad5f150007f3dbbb300511db51601a0cdda97ee09e60022d0ff7e083bb"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
@@ -207,7 +207,7 @@
     "pkg/utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "eaa7595bd231ca353ec886708405fe4deba91968"
+  revision = "f52e8da354c8c720190f1b2956fd32704e052bf2"
 
 [[projects]]
   digest = "1:9398cdf8ac469acd44527b48cec760ff8801241a93597e4acd5001a03fff5a84"
@@ -1295,6 +1295,8 @@
     "github.com/docker/cnab-to-oci/remotes",
     "github.com/docker/distribution/reference",
     "github.com/docker/docker/api/types",
+    "github.com/docker/docker/api/types/container",
+    "github.com/docker/docker/api/types/mount",
     "github.com/docker/docker/pkg/archive",
     "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/pkg/term",

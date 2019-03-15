@@ -17,35 +17,39 @@
 	"invocationImages": [
 		{
 			"imageType": "docker",
-			"image": "simple:1.1.0-beta1-invoc"
+			"image": "simple:1.1.0-beta1-invoc",
+			"platform": {}
 		}
 	],
 	"images": {
 		"api": {
 			"imageType": "docker",
 			"image": "python:3.6",
+			"platform": {},
 			"description": "python:3.6",
 			"refs": null
 		},
 		"db": {
 			"imageType": "docker",
 			"image": "postgres:9.3",
+			"platform": {},
 			"description": "postgres:9.3",
 			"refs": null
 		},
 		"web": {
 			"imageType": "docker",
 			"image": "nginx:latest",
+			"platform": {},
 			"description": "nginx:latest",
 			"refs": null
 		}
 	},
 	"actions": {
 		"com.docker.app.inspect": {
-			"Modifies": false
+			"modifies": false
 		},
 		"com.docker.app.status": {
-			"Modifies": false
+			"modifies": false
 		}
 	},
 	"parameters": {

@@ -14,7 +14,6 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
@@ -26,8 +25,9 @@ import (
 type DockerDriver struct {
 	config map[string]string
 	// If true, this will not actually run Docker
-	Simulate  bool
-	dockerCli command.Cli
+	Simulate                   bool
+	dockerCli                  command.Cli
+	dockerConfigurationOptions []DockerConfigurationOption
 }
 
 // Run executes the Docker driver
@@ -38,6 +38,11 @@ func (d *DockerDriver) Run(op *Operation) error {
 // Handles indicates that the Docker driver supports "docker" and "oci"
 func (d *DockerDriver) Handles(dt string) bool {
 	return dt == ImageTypeDocker || dt == ImageTypeOCI
+}
+
+// AddConfigurationOptions adds configuration callbacks to the driver
+func (d *DockerDriver) AddConfigurationOptions(opts ...DockerConfigurationOption) {
+	d.dockerConfigurationOptions = append(d.dockerConfigurationOptions, opts...)
 }
 
 // Config returns the Docker driver configuration options
@@ -127,13 +132,6 @@ func (d *DockerDriver) exec(op *Operation) error {
 		env = append(env, fmt.Sprintf("%s=%v", k, v))
 	}
 
-	mounts := []mount.Mount{
-		{
-			Type:   mount.TypeBind,
-			Source: "/var/run/docker.sock",
-			Target: "/var/run/docker.sock",
-		},
-	}
 	cfg := &container.Config{
 		Image:        op.Image,
 		Env:          env,
@@ -142,7 +140,13 @@ func (d *DockerDriver) exec(op *Operation) error {
 		AttachStdout: true,
 	}
 
-	hostCfg := &container.HostConfig{Mounts: mounts, AutoRemove: true}
+	hostCfg := &container.HostConfig{AutoRemove: true}
+
+	for _, opt := range d.dockerConfigurationOptions {
+		if err := opt(cfg, hostCfg); err != nil {
+			return err
+		}
+	}
 
 	resp, err := cli.Client().ContainerCreate(ctx, cfg, hostCfg, nil, "")
 	switch {
@@ -234,3 +238,6 @@ func generateTar(files map[string]string) (io.Reader, error) {
 	}()
 	return r, nil
 }
+
+// DockerConfigurationOption is an option used to customize docker driver container and host config
+type DockerConfigurationOption func(*container.Config, *container.HostConfig) error
