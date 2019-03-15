@@ -44,6 +44,48 @@ services:
 	assert.Assert(t, fs.Equal(dir.Join(appName), manifest))
 }
 
+func TestInitFromComposeFileWithFlattenedParams(t *testing.T) {
+	composeData := `
+version: '3.0'
+services:
+  service1:
+    image: image1
+    ports:
+      - ${ports.service1:-9001}
+
+  service2:
+    image: image2
+    ports:
+      - ${ports.service2:-9002}
+`
+	inputDir := fs.NewDir(t, "app_input_",
+		fs.WithFile(internal.ComposeFileName, composeData),
+	)
+	defer inputDir.Remove()
+
+	appName := "my.dockerapp"
+	dir := fs.NewDir(t, "app_",
+		fs.WithDir(appName),
+	)
+	defer dir.Remove()
+
+	err := initFromComposeFile(dir.Join(appName), inputDir.Join(internal.ComposeFileName))
+	assert.NilError(t, err)
+
+	const expectedParameters = `ports:
+  service1: 9001
+  service2: 9002
+`
+	manifest := fs.Expected(
+		t,
+		fs.WithMode(0755),
+		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
+		fs.WithFile(internal.ParametersFileName, expectedParameters, fs.WithMode(0644)),
+	)
+
+	assert.Assert(t, fs.Equal(dir.Join(appName), manifest))
+}
+
 func TestInitFromInvalidComposeFile(t *testing.T) {
 	err := initFromComposeFile("my.dockerapp", "doesnotexist")
 	assert.ErrorContains(t, err, "failed to read")
