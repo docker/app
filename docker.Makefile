@@ -110,10 +110,12 @@ lint: ## run linter(s)
 
 vendor: build_dev_image
 	$(info Update Vendoring...)
-	rm -rf ./vendor
 	docker rm -f docker-app-vendoring || true
-	docker create --name docker-app-vendoring -v docker-app-vendor-cache://dep-cache -e DEPCACHEDIR=//dep-cache $(DEV_IMAGE_NAME) sh -c "rm -rf ./vendor && make vendor"
-	docker start -i -a docker-app-vendoring
+	# git bash, mingw and msys by default rewrite args that seems to be linux paths and try to expand that to a meaningful windows path
+	# we don't want that to happen when mounting paths referring to files located in the container. Thus we use the double "//" prefix that works
+	# both on windows, linux and macos
+	docker run -it --name docker-app-vendoring -v docker-app-vendor-cache://dep-cache -e DEPCACHEDIR=//dep-cache $(DEV_IMAGE_NAME) sh -c "rm -rf ./vendor && make vendor DEP_ARGS=\"$(DEP_ARGS)\""	
+	rm -rf ./vendor
 	docker cp docker-app-vendoring:/go/src/github.com/docker/app/vendor .
 	docker cp docker-app-vendoring:/go/src/github.com/docker/app/Gopkg.lock .
 	docker rm -f docker-app-vendoring
