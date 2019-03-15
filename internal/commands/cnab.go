@@ -195,20 +195,22 @@ func requiredClaimBindMount(c claim.Claim, targetContextName string, dockerCli c
 		specifiedOrchestrator = rawOrchestrator.(string)
 	}
 
-	return requiredBindMount(targetContextName, specifiedOrchestrator, dockerCli)
+	return requiredBindMount(targetContextName, specifiedOrchestrator, dockerCli.ContextStore())
 }
 
-func requiredBindMount(targetContextName string, targetOrchestrator string, dockerCli command.Cli) (bindMount, error) {
+func requiredBindMount(targetContextName string, targetOrchestrator string, s store.Store) (bindMount, error) {
 	if targetOrchestrator == "kubernetes" {
 		return bindMount{}, nil
 	}
 
-	// TODO:smarter handling of default context required
 	if targetContextName == "" {
-		return bindMount{true, defaultSocketPath}, nil
+		targetContextName = "default"
 	}
 
-	ctxMeta, err := dockerCli.ContextStore().GetContextMetadata(targetContextName)
+	// in case of docker desktop, we want to rewrite the context in cases where it targets the local swarm or Kubernetes
+	s = &dockerDesktopAwareStore{Store: s}
+
+	ctxMeta, err := s.GetContextMetadata(targetContextName)
 	if err != nil {
 		return bindMount{}, err
 	}

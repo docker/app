@@ -4,12 +4,14 @@ import (
 	"testing"
 
 	"github.com/docker/cli/cli/command"
+	cliflags "github.com/docker/cli/cli/flags"
 	"gotest.tools/assert"
 )
 
 func TestRequiresBindMount(t *testing.T) {
 	dockerCli, err := command.NewDockerCli()
 	assert.NilError(t, err)
+	dockerCli.Initialize(cliflags.NewClientOptions())
 
 	testCases := []struct {
 		name               string
@@ -39,7 +41,7 @@ func TestRequiresBindMount(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			result, err := requiredBindMount(testCase.targetContextName, testCase.targetOrchestrator, dockerCli)
+			result, err := requiredBindMount(testCase.targetContextName, testCase.targetOrchestrator, dockerCli.ContextStore())
 			if testCase.expectedError == "" {
 				assert.NilError(t, err)
 			} else {
