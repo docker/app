@@ -88,7 +88,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:2c2488904f99f47fc2ea9d8ee263fe4e3a58d357672658e12fd739e61a806ad4"
+  digest = "1:7b09e241728ee947f7a7ff9069c292693e076063657b23f9c00bf290c25ed1a8"
   name = "github.com/containerd/containerd"
   packages = [
     ".",
@@ -121,6 +121,7 @@
     "images",
     "images/archive",
     "images/oci",
+    "labels",
     "leases",
     "leases/proxy",
     "log",
@@ -143,7 +144,7 @@
     "version",
   ]
   pruneopts = "NUT"
-  revision = "a89234684e5884e51ba195bdb16b1c6952d17f11"
+  revision = "42c3614d58767e96c1752977fed94d0b140a0173"
   source = "github.com/simonferquel/containerd"
 
 [[projects]]
@@ -277,7 +278,7 @@
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "5837f64021eeedde734cfa783fde86b2e956fc04"
+  revision = "164ad208c9bdd396f53bb48326aed914e13f882e"
 
 [[projects]]
   digest = "1:680003750754b2a38531b5a652fb14cf8793a05ce70bc1c5cf93c735ef5d240f"
@@ -943,14 +944,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5420733d35e5e562fffc7c5b99660f3587af042b5420f19b17fe0426e6a5259d"
+  digest = "1:50aeabe186087f314dd3cd64e1f460a4090886f34338caad1ec80090faa74458"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "NUT"
-  revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
+  revision = "fead79001313d15903fb4605b4a1b781532cd93e"
 
 [[projects]]
   digest = "1:e33513a825fcd765e97b5de639a2f7547542d1a8245df0cef18e1fd390b778a9"
