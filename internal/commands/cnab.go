@@ -35,41 +35,57 @@ type bindMount struct {
 
 const defaultSocketPath string = "/var/run/docker.sock"
 
-func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
-	// docker desktop contexts require some rewriting for being used within a container
-	contextStore = dockerDesktopAwareStore{Store: contextStore}
-	creds := map[string]string{}
+func addNamedCredentialSets(creds map[string]string, namedCredentialsets []string) error {
 	for _, file := range namedCredentialsets {
 		if _, err := os.Stat(file); err != nil {
 			file = filepath.Join(duffleHome().Credentials(), file+".yaml")
 		}
 		c, err := credentials.Load(file)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		values, err := c.Resolve()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		for k, v := range values {
 			if _, ok := creds[k]; ok {
-				return nil, fmt.Errorf("ambiguous credential resolution: %q is present in multiple credential sets", k)
+				return fmt.Errorf("ambiguous credential resolution: %q is present in multiple credential sets", k)
 			}
 			creds[k] = v
 		}
 	}
+	return nil
+}
+
+func addDockerCredentials(creds map[string]string, contextName string, contextStore store.Store) error {
 	if contextName != "" {
 		data, err := ioutil.ReadAll(store.Export(contextName, contextStore))
 		if err != nil {
-			return nil, err
+			return err
 		}
 		creds[internal.CredentialDockerContextName] = string(data)
 	}
+	return nil
+}
+
+func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
+	// docker desktop contexts require some rewriting for being used within a container
+	contextStore = dockerDesktopAwareStore{Store: contextStore}
+	creds := map[string]string{}
+	if err := addNamedCredentialSets(creds, namedCredentialsets); err != nil {
+		return nil, err
+	}
+	if err := addDockerCredentials(creds, contextName, contextStore); err != nil {
+		return nil, err
+	}
+
 	_, requiresDockerContext := b.Credentials[internal.CredentialDockerContextName]
 	_, hasDockerContext := creds[internal.CredentialDockerContextName]
 	if requiresDockerContext && !hasDockerContext {
 		return nil, errors.New("no target context specified. Use --target-context= or DOCKER_TARGET_CONTEXT= to define it")
 	}
+
 	return creds, nil
 }
 
