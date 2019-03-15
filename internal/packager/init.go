@@ -17,6 +17,7 @@ import (
 	"github.com/docker/app/loader"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
+	"github.com/docker/app/types/parameters"
 	composeloader "github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/opts"
@@ -136,13 +137,13 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err := checkComposeFileVersion(cfgMap); err != nil {
 		return err
 	}
-	parameters := make(map[string]string)
+	params := make(map[string]string)
 	envs, err := opts.ParseEnvFile(filepath.Join(filepath.Dir(composeFile), ".env"))
 	if err == nil {
 		for _, v := range envs {
 			kv := strings.SplitN(v, "=", 2)
 			if len(kv) == 2 {
-				parameters[kv[0]] = kv[1]
+				params[kv[0]] = kv[1]
 			}
 		}
 	}
@@ -152,16 +153,21 @@ func initFromComposeFile(name string, composeFile string) error {
 	}
 	needsFilling := false
 	for k, v := range vars {
-		if _, ok := parameters[k]; !ok {
+		if _, ok := params[k]; !ok {
 			if v != "" {
-				parameters[k] = v
+				params[k] = v
 			} else {
-				parameters[k] = "FILL ME"
+				params[k] = "FILL ME"
 				needsFilling = true
 			}
 		}
 	}
-	parametersYAML, err := yaml.Marshal(parameters)
+
+	expandedParams, err := parameters.FromFlatten(params)
+	if err != nil {
+		return errors.Wrap(err, "failed to expand parameters")
+	}
+	parametersYAML, err := yaml.Marshal(expandedParams)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal parameters")
 	}
