@@ -107,7 +107,7 @@ clean: ## clean build artifacts
 
 vendor: ## update vendoring
 	$(call rmdir,vendor)
-	dep ensure -v
+	dep ensure -v $(DEP_ARGS)
 
 specification/bindata.go: specification/schemas/*.json
 	go generate github.com/docker/app/specification
