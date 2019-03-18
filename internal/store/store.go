@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func storeBaseDir() string {
+func storeBaseDir() (string, error) {
 	return config.Path("app-bundle-store")
 }
 func storePath(ref reference.Named) (string, error) {
@@ -29,8 +29,12 @@ func storePath(ref reference.Named) (string, error) {
 	// when parsing the ref) then there will be errors when we try
 	// to use this as a path later.
 	name = strings.Replace(name, ":", "_", 1)
+	baseDir, err := storeBaseDir()
+	if err != nil {
+		return "", err
+	}
 
-	storeDir := filepath.Join(storeBaseDir(), filepath.FromSlash(name))
+	storeDir := filepath.Join(baseDir, filepath.FromSlash(name))
 
 	// We rely here on _ not being valid in a name meaning there can be no clashes due to nesting of repositories.
 	switch t := ref.(type) {

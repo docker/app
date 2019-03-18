@@ -36,11 +36,9 @@ required = ["github.com/wadey/gocovmerge"]
   source = "github.com/simonferquel/containerd"
   revision = "42c3614d58767e96c1752977fed94d0b140a0173"
 
-### Waiting on PR https://github.com/docker/cli/pull/1718 and https://github.com/docker/cli/pull/1690 to land on cli ###
 [[override]]
   name = "github.com/docker/cli"
-  source = "https://github.com/chris-crone/cli"
-  revision="d6bfd7e5592dad85969516c131d33910fa5ebd58"
+  branch = "master"
 
 [[override]]
   name = "github.com/deislabs/duffle"

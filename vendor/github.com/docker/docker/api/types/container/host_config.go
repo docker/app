@@ -334,7 +334,7 @@ type Resources struct {
 	MemorySwap           int64           // Total memory usage (memory + swap); set `-1` to enable unlimited swap
 	MemorySwappiness     *int64          // Tuning container memory swappiness behaviour
 	OomKillDisable       *bool           // Whether to disable OOM Killer or not
-	PidsLimit            int64           // Setting pids limit for a container
+	PidsLimit            *int64          // Setting PIDs limit for a container; Set `0` or `-1` for unlimited, or `null` to not change.
 	Ulimits              []*units.Ulimit // List of ulimits to be set in the container
 
 	// Applicable to Windows
@@ -370,9 +370,10 @@ type HostConfig struct {
 	// Applicable to UNIX platforms
 	CapAdd          strslice.StrSlice // List of kernel capabilities to add to the container
 	CapDrop         strslice.StrSlice // List of kernel capabilities to remove from the container
-	DNS             []string          `json:"Dns"`        // List of DNS server to lookup
-	DNSOptions      []string          `json:"DnsOptions"` // List of DNSOption to look for
-	DNSSearch       []string          `json:"DnsSearch"`  // List of DNSSearch to look for
+	Capabilities    []string          `json:"Capabilities"` // List of kernel capabilities to be available for container (this overrides the default set)
+	DNS             []string          `json:"Dns"`          // List of DNS server to lookup
+	DNSOptions      []string          `json:"DnsOptions"`   // List of DNSOption to look for
+	DNSSearch       []string          `json:"DnsSearch"`    // List of DNSSearch to look for
 	ExtraHosts      []string          // List of extra hosts
 	GroupAdd        []string          // List of additional groups that the container process will run as
 	IpcMode         IpcMode           // IPC namespace to use for the container

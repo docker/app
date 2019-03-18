@@ -54,14 +54,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7da1a26e347165227c79dfb10b90b3b5dedb6cbae50e88cdb81f5b6259b5b951"
-  name = "github.com/Nvveen/Gotty"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
-
-[[projects]]
-  branch = "master"
   digest = "1:47ea4fbe2ab4aeb9808502c51e657041c2e49b36b83fc1c1a349135cdf16342f"
   name = "github.com/agl/ed25519"
   packages = [
@@ -211,7 +203,8 @@
   revision = "f52e8da354c8c720190f1b2956fd32704e052bf2"
 
 [[projects]]
-  digest = "1:9398cdf8ac469acd44527b48cec760ff8801241a93597e4acd5001a03fff5a84"
+  branch = "master"
+  digest = "1:7750163df6814095faf40e35117f705d55ab446f167e03e9a27fcd8e99b23a5d"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -266,8 +259,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "d6bfd7e5592dad85969516c131d33910fa5ebd58"
-  source = "https://github.com/chris-crone/cli"
+  revision = "80918147ff32b0bf2a424d9133a45bab670793ff"
 
 [[projects]]
   branch = "master"
@@ -326,7 +318,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f6a479179001d036487879645957a865d6692d6c634a562b62561eecff892640"
+  digest = "1:fb666727113e2fe21de28491263a0459a85ca71427c869b8683e90a23da8dd7f"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -368,7 +360,7 @@
     "registry/resumable",
   ]
   pruneopts = "NUT"
-  revision = "5ec31380a5d3ea92fc68e53cd1fc96f11ac02e6e"
+  revision = "38005cfc12fb6bdcff359c25e8fe05f2944b0d49"
 
 [[projects]]
   digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"

@@ -17,7 +17,8 @@ func parseRefOrDie(t *testing.T, ref string) reference.Named {
 
 func TestStorePath(t *testing.T) {
 	testSha := "2957c6606cc94099f7dfe0011b5c8daf4a605ed6124d4eee773bab1e05a8ce87"
-	basedir := storeBaseDir()
+	basedir, err := storeBaseDir()
+	assert.NilError(t, err)
 	for _, tc := range []struct {
 		Name            string
 		Ref             reference.Named

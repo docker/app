@@ -10,11 +10,42 @@ import (
 	"github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/connhelper"
-	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
+
+// PersistentPreRunE must be called by any plugin command (or
+// subcommand) which uses the cobra `PersistentPreRun*` hook. Plugins
+// which do not make use of `PersistentPreRun*` do not need to call
+// this (although it remains safe to do so). Plugins are recommended
+// to use `PersistenPreRunE` to enable the error to be
+// returned. Should not be called outside of a command's
+// PersistentPreRunE hook and must not be run unless Run has been
+// called.
+var PersistentPreRunE func(*cobra.Command, []string) error
+
+func runPlugin(dockerCli *command.DockerCli, plugin *cobra.Command, meta manager.Metadata) error {
+	tcmd := newPluginCommand(dockerCli, plugin, meta)
+
+	var persistentPreRunOnce sync.Once
+	PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
+		var err error
+		persistentPreRunOnce.Do(func() {
+			var opts []command.InitializeOpt
+			if os.Getenv("DOCKER_CLI_PLUGIN_USE_DIAL_STDIO") != "" {
+				opts = append(opts, withPluginClientConn(plugin.Name()))
+			}
+			err = tcmd.Initialize(opts...)
+		})
+		return err
+	}
+
+	cmd, _, err := tcmd.HandleGlobalFlags()
+	if err != nil {
+		return err
+	}
+	return cmd.Execute()
+}
 
 // Run is the top-level entry point to the CLI plugin framework. It should be called from your plugin's `main()` function.
 func Run(makeCmd func(command.Cli) *cobra.Command, meta manager.Metadata) {
@@ -26,9 +57,7 @@ func Run(makeCmd func(command.Cli) *cobra.Command, meta manager.Metadata) {
 
 	plugin := makeCmd(dockerCli)
 
-	cmd := newPluginCommand(dockerCli, plugin, meta)
-
-	if err := cmd.Execute(); err != nil {
+	if err := runPlugin(dockerCli, plugin, meta); err != nil {
 		if sterr, ok := err.(cli.StatusError); ok {
 			if sterr.Status != "" {
 				fmt.Fprintln(dockerCli.Err(), sterr.Status)
@@ -43,40 +72,6 @@ func Run(makeCmd func(command.Cli) *cobra.Command, meta manager.Metadata) {
 		fmt.Fprintln(dockerCli.Err(), err)
 		os.Exit(1)
 	}
-}
-
-// options encapsulates the ClientOptions and FlagSet constructed by
-// `newPluginCommand` such that they can be finalized by our
-// `PersistentPreRunE`. This is necessary because otherwise a plugin's
-// own use of that hook will shadow anything we add to the top-level
-// command meaning the CLI is never Initialized.
-var options struct {
-	name         string
-	init, prerun sync.Once
-	opts         *cliflags.ClientOptions
-	flags        *pflag.FlagSet
-	dockerCli    *command.DockerCli
-}
-
-// PersistentPreRunE must be called by any plugin command (or
-// subcommand) which uses the cobra `PersistentPreRun*` hook. Plugins
-// which do not make use of `PersistentPreRun*` do not need to call
-// this (although it remains safe to do so). Plugins are recommended
-// to use `PersistenPreRunE` to enable the error to be
-// returned. Should not be called outside of a commands
-// PersistentPreRunE hook and must not be run unless Run has been
-// called.
-func PersistentPreRunE(cmd *cobra.Command, args []string) error {
-	var err error
-	options.prerun.Do(func() {
-		if options.opts == nil || options.flags == nil || options.dockerCli == nil {
-			panic("PersistentPreRunE called without Run successfully called first")
-		}
-		// flags must be the original top-level command flags, not cmd.Flags()
-		options.opts.Common.SetDefaultOptions(options.flags)
-		err = options.dockerCli.Initialize(options.opts, withPluginClientConn(options.name))
-	})
-	return err
 }
 
 func withPluginClientConn(name string) command.InitializeOpt {
@@ -111,7 +106,7 @@ func withPluginClientConn(name string) command.InitializeOpt {
 	})
 }
 
-func newPluginCommand(dockerCli *command.DockerCli, plugin *cobra.Command, meta manager.Metadata) *cobra.Command {
+func newPluginCommand(dockerCli *command.DockerCli, plugin *cobra.Command, meta manager.Metadata) *cli.TopLevelCommand {
 	name := plugin.Name()
 	fullname := manager.NamePrefix + name
 
@@ -120,8 +115,8 @@ func newPluginCommand(dockerCli *command.DockerCli, plugin *cobra.Command, meta 
 		Short:                 fullname + " is a Docker CLI plugin",
 		SilenceUsage:          true,
 		SilenceErrors:         true,
-		TraverseChildren:      true,
 		PersistentPreRunE:     PersistentPreRunE,
+		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
 	}
 	opts, flags := cli.SetupPluginRootCommand(cmd)
@@ -135,13 +130,7 @@ func newPluginCommand(dockerCli *command.DockerCli, plugin *cobra.Command, meta 
 
 	cli.DisableFlagsInUseLine(cmd)
 
-	options.init.Do(func() {
-		options.name = name
-		options.opts = opts
-		options.flags = flags
-		options.dockerCli = dockerCli
-	})
-	return cmd
+	return cli.NewTopLevelCommand(cmd, dockerCli, opts, flags)
 }
 
 func newMetadataSubcommand(plugin *cobra.Command, meta manager.Metadata) *cobra.Command {
@@ -151,7 +140,9 @@ func newMetadataSubcommand(plugin *cobra.Command, meta manager.Metadata) *cobra.
 	cmd := &cobra.Command{
 		Use:    manager.MetadataSubcommandName,
 		Hidden: true,
-		// Suppress the global/parent PersistentPreRunE, which needlessly initializes the client and tries to connect to the daemon.
+		// Suppress the global/parent PersistentPreRunE, which
+		// needlessly initializes the client and tries to
+		// connect to the daemon.
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			enc := json.NewEncoder(os.Stdout)
