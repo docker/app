@@ -6,7 +6,7 @@ E2E_NAME := $(BIN_NAME)-e2e
 # Enable experimental features. "on" or "off"
 EXPERIMENTAL := off
 
-ALPINE_VERSION=3.8
+ALPINE_VERSION=3.9.2
 
 # Failing to resolve sh.exe to a full path denotes a windows vanilla shell.
 # Although 'simple' commands are still exec'ed, 'complex' ones are batch'ed instead of sh'ed.
