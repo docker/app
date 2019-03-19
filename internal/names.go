@@ -24,6 +24,13 @@ const (
 
 	// Namespace is the reverse DNS namespace used with labels and CNAB custom actions.
 	Namespace = "com.docker.app."
+
+	// DockerStackOrchestratorEnvVar is the environment variable set by the CNAB runtime to select
+	// the stack orchestrator.
+	DockerStackOrchestratorEnvVar = "DOCKER_STACK_ORCHESTRATOR"
+	// DockerKubernetesNamespaceEnvVar is the environment variable set by the CNAB runtime to select
+	// the kubernetes namespace.
+	DockerKubernetesNamespaceEnvVar = "DOCKER_KUBERNETES_NAMESPACE"
 )
 
 var (

@@ -21,7 +21,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			},
 			DefaultValue: "",
 			Destination: &bundle.Location{
-				EnvironmentVariable: "DOCKER_STACK_ORCHESTRATOR",
+				EnvironmentVariable: internal.DockerStackOrchestratorEnvVar,
 			},
 			Metadata: &bundle.ParameterMetadata{
 				Description: "Orchestrator on which to deploy",
@@ -30,7 +30,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		"docker.kubernetes-namespace": {
 			DataType: "string",
 			Destination: &bundle.Location{
-				EnvironmentVariable: "DOCKER_KUBERNETES_NAMESPACE",
+				EnvironmentVariable: internal.DockerKubernetesNamespaceEnvVar,
 			},
 			Metadata: &bundle.ParameterMetadata{
 				Description: "Namespace in which to deploy",

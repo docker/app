@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
 	"github.com/docker/cli/cli/command"
@@ -34,7 +35,7 @@ func installAction(instanceName string) error {
 	}
 	defer app.Cleanup()
 
-	orchestratorRaw := os.Getenv(envVarOchestrator)
+	orchestratorRaw := os.Getenv(internal.DockerStackOrchestratorEnvVar)
 	orchestrator, err := cli.StackOrchestrator(orchestratorRaw)
 	if err != nil {
 		return err
@@ -62,7 +63,7 @@ func installAction(instanceName string) error {
 func getFlagset(orchestrator command.Orchestrator) *pflag.FlagSet {
 	result := pflag.NewFlagSet("", pflag.ContinueOnError)
 	if orchestrator == command.OrchestratorKubernetes {
-		result.String("namespace", os.Getenv("DOCKER_KUBERNETES_NAMESPACE"), "")
+		result.String("namespace", os.Getenv(internal.DockerKubernetesNamespaceEnvVar), "")
 	}
 	return result
 }

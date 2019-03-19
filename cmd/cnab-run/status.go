@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command/stack"
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/opts"
@@ -14,7 +15,7 @@ func statusAction(instanceName string) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to restore docker context")
 	}
-	orchestratorRaw := os.Getenv(envVarOchestrator)
+	orchestratorRaw := os.Getenv(internal.DockerStackOrchestratorEnvVar)
 	orchestrator, err := cli.StackOrchestrator(orchestratorRaw)
 	if err != nil {
 		return err
