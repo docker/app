@@ -11,7 +11,18 @@ import (
 
 func main() {
 	plugin.Run(func(dockerCli command.Cli) *cobra.Command {
-		return app.NewRootCmd("app", dockerCli)
+		cmd := app.NewRootCmd("app", dockerCli)
+		originalPreRun := cmd.PersistentPreRunE
+		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+			if err := plugin.PersistentPreRunE(cmd, args); err != nil {
+				return err
+			}
+			if originalPreRun != nil {
+				return originalPreRun(cmd, args)
+			}
+			return nil
+		}
+		return cmd
 	}, manager.Metadata{
 		SchemaVersion: "0.1.0",
 		Vendor:        "Docker Inc.",
