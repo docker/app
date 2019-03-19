@@ -5,78 +5,60 @@
 	"maintainers": [
 		{
 			"name": "John Developer",
-			"email": "john.dev@acmecorp.cool",
-			"url": ""
+			"email": "john.dev@acmecorp.cool"
 		},
 		{
 			"name": "Jane Developer",
-			"email": "jane.dev@acmecorp.cool",
-			"url": ""
+			"email": "jane.dev@acmecorp.cool"
 		}
 	],
 	"invocationImages": [
 		{
 			"imageType": "docker",
-			"image": "simple:1.1.0-beta1-invoc",
-			"platform": {}
+			"image": "simple:1.1.0-beta1-invoc"
 		}
 	],
 	"images": {
 		"api": {
 			"imageType": "docker",
 			"image": "python:3.6",
-			"platform": {},
-			"description": "python:3.6",
-			"refs": null
+			"description": "python:3.6"
 		},
 		"db": {
 			"imageType": "docker",
 			"image": "postgres:9.3",
-			"platform": {},
-			"description": "postgres:9.3",
-			"refs": null
+			"description": "postgres:9.3"
 		},
 		"web": {
 			"imageType": "docker",
 			"image": "nginx:latest",
-			"platform": {},
-			"description": "nginx:latest",
-			"refs": null
+			"description": "nginx:latest"
 		}
 	},
 	"actions": {
 		"com.docker.app.inspect": {
-			"modifies": false,
 			"stateless": true
 		},
 		"com.docker.app.render": {
-			"modifies": false,
 			"stateless": true
 		},
-		"com.docker.app.status": {
-			"modifies": false
-		}
+		"com.docker.app.status": {}
 	},
 	"parameters": {
 		"api_host": {
 			"type": "string",
 			"defaultValue": "coolapp.com",
-			"required": false,
-			"metadata": {},
 			"destination": {
-				"path": "",
 				"env": "docker_param1"
 			}
 		},
 		"com.docker.app.kubernetes-namespace": {
 			"type": "string",
 			"defaultValue": "",
-			"required": false,
 			"metadata": {
 				"description": "Namespace in which to deploy"
 			},
 			"destination": {
-				"path": "",
 				"env": "DOCKER_KUBERNETES_NAMESPACE"
 			},
 			"apply-to": [
@@ -94,12 +76,10 @@
 				"swarm",
 				"kubernetes"
 			],
-			"required": false,
 			"metadata": {
 				"description": "Orchestrator on which to deploy"
 			},
 			"destination": {
-				"path": "",
 				"env": "DOCKER_STACK_ORCHESTRATOR"
 			},
 			"apply-to": [
@@ -116,12 +96,10 @@
 				"yaml",
 				"json"
 			],
-			"required": false,
 			"metadata": {
 				"description": "Output format for the render command"
 			},
 			"destination": {
-				"path": "",
 				"env": "DOCKER_RENDER_FORMAT"
 			},
 			"apply-to": [
@@ -131,28 +109,21 @@
 		"static_subdir": {
 			"type": "string",
 			"defaultValue": "data/static",
-			"required": false,
-			"metadata": {},
 			"destination": {
-				"path": "",
 				"env": "docker_param2"
 			}
 		},
 		"web_port": {
 			"type": "string",
 			"defaultValue": "8082",
-			"required": false,
-			"metadata": {},
 			"destination": {
-				"path": "",
 				"env": "docker_param3"
 			}
 		}
 	},
 	"credentials": {
 		"docker.context": {
-			"path": "/cnab/app/context.dockercontext",
-			"env": ""
+			"path": "/cnab/app/context.dockercontext"
 		}
 	}
 }
