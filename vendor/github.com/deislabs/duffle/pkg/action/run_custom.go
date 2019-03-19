@@ -43,7 +43,7 @@ func (i *RunCustom) Run(c *claim.Claim, creds credentials.Set, w io.Writer) erro
 		return err
 	}
 
-	op, err := opFromClaim(i.Action, c, invocImage, creds, w)
+	op, err := opFromClaim(i.Action, actionDef.Stateless, c, invocImage, creds, w)
 	if err != nil {
 		return err
 	}

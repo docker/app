@@ -20,11 +20,14 @@ type Set map[string]string
 //
 // This matches the credentials required by the bundle to the credentials present
 // in the credentialset, and then expands them per the definition in the Bundle.
-func (s Set) Expand(b *bundle.Bundle) (env, files map[string]string, err error) {
+func (s Set) Expand(b *bundle.Bundle, stateless bool) (env, files map[string]string, err error) {
 	env, files = map[string]string{}, map[string]string{}
 	for name, val := range b.Credentials {
 		src, ok := s[name]
 		if !ok {
+			if stateless {
+				continue
+			}
 			err = fmt.Errorf("credential %q is missing from the user-supplied credentials", name)
 			return
 		}

@@ -20,7 +20,7 @@ func (i *Status) Run(c *claim.Claim, creds credentials.Set, w io.Writer) error {
 		return err
 	}
 
-	op, err := opFromClaim(claim.ActionStatus, c, invocImage, creds, w)
+	op, err := opFromClaim(claim.ActionStatus, notStateless, c, invocImage, creds, w)
 	if err != nil {
 		return err
 	}

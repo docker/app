@@ -23,7 +23,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Destination: &bundle.Location{
 				EnvironmentVariable: "DOCKER_STACK_ORCHESTRATOR",
 			},
-			Metadata: bundle.ParameterMetadata{
+			Metadata: &bundle.ParameterMetadata{
 				Description: "Orchestrator on which to deploy",
 			},
 		},
@@ -32,7 +32,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Destination: &bundle.Location{
 				EnvironmentVariable: "DOCKER_KUBERNETES_NAMESPACE",
 			},
-			Metadata: bundle.ParameterMetadata{
+			Metadata: &bundle.ParameterMetadata{
 				Description: "Namespace in which to deploy",
 			},
 			DefaultValue: "",

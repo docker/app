@@ -13,6 +13,9 @@ import (
 	"github.com/deislabs/duffle/pkg/driver"
 )
 
+// notStateless is there just to make callers of opFromClaims more readable
+const notStateless = false
+
 // Action describes one of the primary actions that can be executed in CNAB.
 //
 // The actions are:
@@ -48,8 +51,20 @@ func getImageMap(b *bundle.Bundle) ([]byte, error) {
 	return json.Marshal(imgs)
 }
 
-func opFromClaim(action string, c *claim.Claim, ii bundle.InvocationImage, creds credentials.Set, w io.Writer) (*driver.Operation, error) {
-	env, files, err := creds.Expand(c.Bundle)
+func appliesToAction(action string, parameter bundle.ParameterDefinition) bool {
+	if len(parameter.ApplyTo) == 0 {
+		return true
+	}
+	for _, act := range parameter.ApplyTo {
+		if action == act {
+			return true
+		}
+	}
+	return false
+}
+
+func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.InvocationImage, creds credentials.Set, w io.Writer) (*driver.Operation, error) {
+	env, files, err := creds.Expand(c.Bundle, stateless)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +79,9 @@ func opFromClaim(action string, c *claim.Claim, ii bundle.InvocationImage, creds
 	for k, param := range c.Bundle.Parameters {
 		rawval, ok := c.Parameters[k]
 		if !ok {
+			if param.Required && appliesToAction(action, param) {
+				return nil, fmt.Errorf("missing required parameter %q for action %q", k, action)
+			}
 			continue
 		}
 		value := fmt.Sprintf("%v", rawval)
