@@ -46,7 +46,8 @@
 	},
 	"actions": {
 		"com.docker.app.inspect": {
-			"modifies": false
+			"modifies": false,
+			"stateless": true
 		},
 		"com.docker.app.status": {
 			"modifies": false

@@ -62,6 +62,6 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 		Action: internal.Namespace + "inspect",
 		Driver: driverImpl,
 	}
-	err = a.Run(c, map[string]string{"docker.context": ""}, dockerCli.Out())
+	err = a.Run(c, nil, dockerCli.Out())
 	return errors.Wrap(err, "Inspect failed")
 }

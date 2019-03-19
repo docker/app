@@ -81,7 +81,8 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Parameters:  parameters,
 		Actions: map[string]bundle.Action{
 			internal.Namespace + "inspect": {
-				Modifies: false,
+				Modifies:  false,
+				Stateless: true,
 			},
 			internal.Namespace + "status": {
 				Modifies: false,
