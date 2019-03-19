@@ -7,7 +7,7 @@ import (
 	"github.com/docker/app/internal/packager"
 )
 
-func inspect() error {
+func inspectAction(instanceName string) error {
 	app, err := packager.Extract("")
 	// todo: merge additional compose file
 	if err != nil {

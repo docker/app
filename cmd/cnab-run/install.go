@@ -22,7 +22,7 @@ const (
 	imageMapFilePath = "/cnab/app/image-map.json"
 )
 
-func install(instanceName string) error {
+func installAction(instanceName string) error {
 	cli, err := setupDockerContext()
 	if err != nil {
 		return errors.Wrap(err, "unable to restore docker context")

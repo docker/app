@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func uninstall(instanceName string) error {
+func uninstallAction(instanceName string) error {
 	cli, err := setupDockerContext()
 	if err != nil {
 		return errors.Wrap(err, "unable to restore docker context")

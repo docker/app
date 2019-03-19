@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func status(instanceName string) error {
+func statusAction(instanceName string) error {
 	cli, err := setupDockerContext()
 	if err != nil {
 		return errors.Wrap(err, "unable to restore docker context")
