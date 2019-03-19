@@ -74,7 +74,13 @@
 			"destination": {
 				"path": "",
 				"env": "DOCKER_KUBERNETES_NAMESPACE"
-			}
+			},
+			"apply-to": [
+				"install",
+				"upgrade",
+				"uninstall",
+				"com.docker.app.status"
+			]
 		},
 		"com.docker.app.orchestrator": {
 			"type": "string",
@@ -91,7 +97,13 @@
 			"destination": {
 				"path": "",
 				"env": "DOCKER_STACK_ORCHESTRATOR"
-			}
+			},
+			"apply-to": [
+				"install",
+				"upgrade",
+				"uninstall",
+				"com.docker.app.status"
+			]
 		},
 		"static_subdir": {
 			"type": "string",

@@ -26,6 +26,12 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Metadata: &bundle.ParameterMetadata{
 				Description: "Orchestrator on which to deploy",
 			},
+			ApplyTo: []string{
+				"install",
+				"upgrade",
+				"uninstall",
+				internal.Namespace + "status",
+			},
 		},
 		internal.Namespace + "kubernetes-namespace": {
 			DataType:     "string",
@@ -36,6 +42,13 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Metadata: &bundle.ParameterMetadata{
 				Description: "Namespace in which to deploy",
 			},
+			ApplyTo: []string{
+				"install",
+				"upgrade",
+				"uninstall",
+				internal.Namespace + "status",
+			},
+		},
 		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
