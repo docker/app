@@ -49,6 +49,22 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				internal.Namespace + "status",
 			},
 		},
+		internal.Namespace + "render-format": {
+			DataType: "string",
+			AllowedValues: []interface{}{
+				"yaml",
+				"json",
+			},
+			DefaultValue: "yaml",
+			Destination: &bundle.Location{
+				EnvironmentVariable: internal.DockerRenderFormatEnvVar,
+			},
+			Metadata: &bundle.ParameterMetadata{
+				Description: "Output format for the render command",
+			},
+			ApplyTo: []string{
+				internal.Namespace + "render",
+			},
 		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
@@ -94,6 +110,10 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Parameters:  parameters,
 		Actions: map[string]bundle.Action{
 			internal.Namespace + "inspect": {
+				Modifies:  false,
+				Stateless: true,
+			},
+			internal.Namespace + "render": {
 				Modifies:  false,
 				Stateless: true,
 			},

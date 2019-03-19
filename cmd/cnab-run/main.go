@@ -17,6 +17,7 @@ var (
 		"uninstall":                    uninstallAction,
 		internal.Namespace + "status":  statusAction,
 		internal.Namespace + "inspect": inspectAction,
+		internal.Namespace + "render":  renderAction,
 	}
 )
 

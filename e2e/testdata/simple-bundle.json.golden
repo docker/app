@@ -49,6 +49,10 @@
 			"modifies": false,
 			"stateless": true
 		},
+		"com.docker.app.render": {
+			"modifies": false,
+			"stateless": true
+		},
 		"com.docker.app.status": {
 			"modifies": false
 		}
@@ -103,6 +107,25 @@
 				"upgrade",
 				"uninstall",
 				"com.docker.app.status"
+			]
+		},
+		"com.docker.app.render-format": {
+			"type": "string",
+			"defaultValue": "yaml",
+			"allowedValues": [
+				"yaml",
+				"json"
+			],
+			"required": false,
+			"metadata": {
+				"description": "Output format for the render command"
+			},
+			"destination": {
+				"path": "",
+				"env": "DOCKER_RENDER_FORMAT"
+			},
+			"apply-to": [
+				"com.docker.app.render"
 			]
 		},
 		"static_subdir": {
