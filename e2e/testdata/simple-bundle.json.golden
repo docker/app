@@ -64,7 +64,7 @@
 				"env": "docker_param1"
 			}
 		},
-		"docker.kubernetes-namespace": {
+		"com.docker.app.kubernetes-namespace": {
 			"type": "string",
 			"defaultValue": "",
 			"required": false,
@@ -76,7 +76,7 @@
 				"env": "DOCKER_KUBERNETES_NAMESPACE"
 			}
 		},
-		"docker.orchestrator": {
+		"com.docker.app.orchestrator": {
 			"type": "string",
 			"defaultValue": "",
 			"allowedValues": [

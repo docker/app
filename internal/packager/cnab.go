@@ -12,7 +12,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 	mapping := ExtractCNABParameterMapping(app.Parameters())
 	flatParameters := app.Parameters().Flatten()
 	parameters := map[string]bundle.ParameterDefinition{
-		"docker.orchestrator": {
+		internal.Namespace + "orchestrator": {
 			DataType: "string",
 			AllowedValues: []interface{}{
 				"",
@@ -27,15 +27,15 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				Description: "Orchestrator on which to deploy",
 			},
 		},
-		"docker.kubernetes-namespace": {
-			DataType: "string",
+		internal.Namespace + "kubernetes-namespace": {
+			DataType:     "string",
+			DefaultValue: "",
 			Destination: &bundle.Location{
 				EnvironmentVariable: internal.DockerKubernetesNamespaceEnvVar,
 			},
 			Metadata: &bundle.ParameterMetadata{
 				Description: "Namespace in which to deploy",
 			},
-			DefaultValue: "",
 		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
