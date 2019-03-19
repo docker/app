@@ -102,7 +102,9 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), bndl, opts.credentialsets)
+	creds, err := prepareCredentialSet(bndl,
+		addNamedCredentialSets(opts.credentialsets),
+		addDockerCredentials(targetContext, dockerCli.ContextStore()))
 	if err != nil {
 		return err
 	}

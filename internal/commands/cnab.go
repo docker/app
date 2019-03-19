@@ -35,49 +35,54 @@ type bindMount struct {
 
 const defaultSocketPath string = "/var/run/docker.sock"
 
-func addNamedCredentialSets(creds map[string]string, namedCredentialsets []string) error {
-	for _, file := range namedCredentialsets {
-		if _, err := os.Stat(file); err != nil {
-			file = filepath.Join(duffleHome().Credentials(), file+".yaml")
-		}
-		c, err := credentials.Load(file)
-		if err != nil {
-			return err
-		}
-		values, err := c.Resolve()
-		if err != nil {
-			return err
-		}
-		for k, v := range values {
-			if _, ok := creds[k]; ok {
-				return fmt.Errorf("ambiguous credential resolution: %q is present in multiple credential sets", k)
+type credentialSetOpt func(b *bundle.Bundle, creds map[string]string) error
+
+func addNamedCredentialSets(namedCredentialsets []string) credentialSetOpt {
+	return func(_ *bundle.Bundle, creds map[string]string) error {
+		for _, file := range namedCredentialsets {
+			if _, err := os.Stat(file); err != nil {
+				file = filepath.Join(duffleHome().Credentials(), file+".yaml")
 			}
-			creds[k] = v
+			c, err := credentials.Load(file)
+			if err != nil {
+				return err
+			}
+			values, err := c.Resolve()
+			if err != nil {
+				return err
+			}
+			for k, v := range values {
+				if _, ok := creds[k]; ok {
+					return fmt.Errorf("ambiguous credential resolution: %q is present in multiple credential sets", k)
+				}
+				creds[k] = v
+			}
 		}
+		return nil
 	}
-	return nil
 }
 
-func addDockerCredentials(creds map[string]string, contextName string, contextStore store.Store) error {
-	if contextName != "" {
-		data, err := ioutil.ReadAll(store.Export(contextName, contextStore))
-		if err != nil {
-			return err
-		}
-		creds[internal.CredentialDockerContextName] = string(data)
-	}
-	return nil
-}
-
-func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
+func addDockerCredentials(contextName string, contextStore store.Store) credentialSetOpt {
 	// docker desktop contexts require some rewriting for being used within a container
 	contextStore = dockerDesktopAwareStore{Store: contextStore}
-	creds := map[string]string{}
-	if err := addNamedCredentialSets(creds, namedCredentialsets); err != nil {
-		return nil, err
+	return func(_ *bundle.Bundle, creds map[string]string) error {
+		if contextName != "" {
+			data, err := ioutil.ReadAll(store.Export(contextName, contextStore))
+			if err != nil {
+				return err
+			}
+			creds[internal.CredentialDockerContextName] = string(data)
+		}
+		return nil
 	}
-	if err := addDockerCredentials(creds, contextName, contextStore); err != nil {
-		return nil, err
+}
+
+func prepareCredentialSet(b *bundle.Bundle, opts ...credentialSetOpt) (map[string]string, error) {
+	creds := map[string]string{}
+	for _, op := range opts {
+		if err := op(b, creds); err != nil {
+			return nil, err
+		}
 	}
 
 	_, requiresDockerContext := b.Credentials[internal.CredentialDockerContextName]

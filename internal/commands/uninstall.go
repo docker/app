@@ -46,7 +46,9 @@ func runUninstall(dockerCli command.Cli, claimName string, opts credentialOption
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), c.Bundle, opts.credentialsets)
+	creds, err := prepareCredentialSet(c.Bundle,
+		addNamedCredentialSets(opts.credentialsets),
+		addDockerCredentials(targetContext, dockerCli.ContextStore()))
 	if err != nil {
 		return err
 	}
