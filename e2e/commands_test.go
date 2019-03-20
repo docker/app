@@ -18,7 +18,13 @@ import (
 	"gotest.tools/skip"
 )
 
+// Skipping experimental e2e test on rendering with templates, as it needs now to set
+// the DOCKERAPP_RENDERERS environment variable inside the invocation image,
+// and the only way to do it is to add a new parameter to the bundle.json.
+// This test should be unskipped or removed as soon as the templates are
+// not experimental anymore, or are removed.
 func TestRenderTemplates(t *testing.T) {
+	t.Skip("renderer templates tests")
 	skip.If(t, !hasExperimental, "experimental mode needed for this test")
 	appsPath := filepath.Join("testdata", "templates")
 	apps, err := ioutil.ReadDir(appsPath)
