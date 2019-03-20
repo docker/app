@@ -16,11 +16,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: $memory
+          memory: ${memory}
     healthcheck:
       test: ["/ping", "debug"]
       interval: 2m
-      timeout: $timeout
+      timeout: ${timeout}
   monitor:
     image: busybox:latest
     command: monitor --source ${app.name}-${app.version} $$dollar
