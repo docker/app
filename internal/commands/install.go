@@ -73,7 +73,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return errors.New("with-registry-auth is not supported at the moment")
 	}
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	bind, err := requiredBindMount(targetContext, opts.orchestrator, dockerCli)
+	bind, err := requiredBindMount(targetContext, opts.orchestrator, dockerCli.ContextStore())
 	if err != nil {
 		return err
 	}
