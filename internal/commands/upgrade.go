@@ -17,7 +17,6 @@ type upgradeOptions struct {
 	registryOptions
 	pullOptions
 	bundleOrDockerApp string
-	sendRegistryAuth  bool
 }
 
 func upgradeCmd(dockerCli command.Cli) *cobra.Command {
@@ -35,7 +34,6 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 	opts.registryOptions.addFlags(cmd.Flags())
 	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "bundle", "", "Override with new bundle or Docker App")
-	cmd.Flags().BoolVar(&opts.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
 
 	return cmd
 }
@@ -77,7 +75,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	creds, err := prepareCredentialSet(c.Bundle,
 		addNamedCredentialSets(opts.credentialsets),
 		addDockerCredentials(targetContext, dockerCli.ContextStore()),
-		addRegistryCredentials(c.Parameters, dockerCli))
+		addRegistryCredentials(opts.sendRegistryAuth, dockerCli))
 	if err != nil {
 		return err
 	}

@@ -81,26 +81,14 @@ func addDockerCredentials(contextName string, contextStore store.Store) credenti
 	}
 }
 
-func shouldPopulateRegistryCreds(parameterValues map[string]interface{}) bool {
-	v, ok := parameterValues[internal.ParameterShareRegistryCredsName]
-	if !ok {
-		return false
-	}
-	result, ok := v.(bool)
-	if !ok {
-		return false
-	}
-	return result
-}
-
-func addRegistryCredentials(parameterValues map[string]interface{}, dockerCli command.Cli) credentialSetOpt {
+func addRegistryCredentials(shouldPopulate bool, dockerCli command.Cli) credentialSetOpt {
 	return func(b *bundle.Bundle, creds map[string]string) error {
 		if _, ok := b.Credentials[internal.CredentialRegistryName]; !ok {
 			return nil
 		}
 
 		registryCreds := map[string]types.AuthConfig{}
-		if shouldPopulateRegistryCreds(parameterValues) {
+		if shouldPopulate {
 			for _, img := range b.Images {
 				named, err := reference.ParseNormalizedNamed(img.Image)
 				if err != nil {

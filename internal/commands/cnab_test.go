@@ -212,9 +212,6 @@ func TestShareRegistryCreds(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			params := map[string]interface{}{
-				internal.ParameterShareRegistryCredsName: c.shareCreds,
-			}
 			creds, err := prepareCredentialSet(
 				&bundle.Bundle{
 					Credentials: map[string]bundle.Location{internal.CredentialRegistryName: {}},
@@ -222,7 +219,7 @@ func TestShareRegistryCreds(t *testing.T) {
 				},
 				addNamedCredentialSets(nil),
 				addDockerCredentials("", nil),
-				addRegistryCredentials(params, &registryConfigMock{configFile: &configfile.ConfigFile{
+				addRegistryCredentials(c.shareCreds, &registryConfigMock{configFile: &configfile.ConfigFile{
 					AuthConfigs: c.stored,
 				}}))
 			assert.NilError(t, err)
