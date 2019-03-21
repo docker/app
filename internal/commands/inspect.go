@@ -1,9 +1,10 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -30,9 +31,13 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
-	a, c, err := prepareCustomAction("inspect", dockerCli, appname, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
+	defer muteDockerCli(dockerCli)()
+	a, c, errBuf, err := prepareCustomAction("inspect", dockerCli, appname, nil, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
 	if err != nil {
 		return err
 	}
-	return errors.Wrap(a.Run(c, nil, dockerCli.Out()), "Inspect failed")
+	if err := a.Run(c, nil, nil); err != nil {
+		return fmt.Errorf("inspect failed: %s", errBuf)
+	}
+	return nil
 }

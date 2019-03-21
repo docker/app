@@ -98,7 +98,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err
 	}
 
-	driverImpl, err := prepareDriver(dockerCli, bind)
+	driverImpl, errBuf, err := prepareDriver(dockerCli, bind, nil)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	// so any installation needs a clean uninstallation.
 	err2 := claimStore.Store(*c)
 	if err != nil {
-		return fmt.Errorf("install failed: %v", err)
+		return fmt.Errorf("install failed: %s", errBuf)
 	}
 	return err2
 }

@@ -67,7 +67,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err != nil {
 		return err
 	}
-	driverImpl, err := prepareDriver(dockerCli, bind)
+	driverImpl, errBuf, err := prepareDriver(dockerCli, bind, nil)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	err = u.Run(&c, creds, dockerCli.Out())
 	err2 := claimStore.Store(c)
 	if err != nil {
-		return fmt.Errorf("upgrade failed: %v", err)
+		return fmt.Errorf("upgrade failed: %s", errBuf)
 	}
 	return err2
 }

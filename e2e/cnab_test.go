@@ -28,7 +28,7 @@ func TestCallCustomStatusAction(t *testing.T) {
 		{
 			name:           "missingCustomStatusAction",
 			exitCode:       1,
-			expectedOutput: "Status failed: action not defined for bundle",
+			expectedOutput: "status failed: action not defined for bundle",
 			cnab:           "cnab-without-status",
 		},
 	}

@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -90,13 +92,18 @@ func duffleHome() home.Home {
 }
 
 // prepareDriver prepares a driver per the user's request.
-func prepareDriver(dockerCli command.Cli, bindMount bindMount) (driver.Driver, error) {
+func prepareDriver(dockerCli command.Cli, bindMount bindMount, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
 	driverImpl, err := driver.Lookup("docker")
 	if err != nil {
-		return driverImpl, err
+		return driverImpl, nil, err
 	}
+	errBuf := bytes.NewBuffer(nil)
 	if d, ok := driverImpl.(*driver.DockerDriver); ok {
 		d.SetDockerCli(dockerCli)
+		if stdout != nil {
+			d.SetContainerOut(stdout)
+		}
+		d.SetContainerErr(errBuf)
 		if bindMount.required {
 			d.AddConfigurationOptions(func(config *container.Config, hostConfig *container.HostConfig) error {
 				config.User = "0:0"
@@ -122,7 +129,7 @@ func prepareDriver(dockerCli command.Cli, bindMount bindMount) (driver.Driver, e
 		configurable.SetConfig(driverCfg)
 	}
 
-	return driverImpl, err
+	return driverImpl, errBuf, err
 }
 
 func getAppNameKind(name string) (string, nameKind) {
@@ -243,21 +250,20 @@ func isDockerHostLocal(host string) bool {
 	return host == "" || strings.HasPrefix(host, "unix://") || strings.HasPrefix(host, "npipe://")
 }
 
-func prepareCustomAction(actionName string, dockerCli command.Cli, appname string,
-	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *claim.Claim, error) {
-	defer muteDockerCli(dockerCli)()
+func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
+	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *claim.Claim, *bytes.Buffer, error) {
 
 	c, err := claim.New(actionName)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	driverImpl, err := prepareDriver(dockerCli, bindMount{})
+	driverImpl, errBuf, err := prepareDriver(dockerCli, bindMount{}, stdout)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	bundle, err := resolveBundle(dockerCli, appname, pullOpts.pull, registryOpts.insecureRegistries)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	c.Bundle = bundle
 
@@ -266,7 +272,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 		withCommandLineParameters(paramsOpts.overrides),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	c.Parameters = parameters
 
@@ -274,5 +280,5 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 		Action: internal.Namespace + actionName,
 		Driver: driverImpl,
 	}
-	return a, c, nil
+	return a, c, errBuf, nil
 }

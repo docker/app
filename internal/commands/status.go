@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
@@ -8,7 +10,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +43,7 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 	if err != nil {
 		return err
 	}
-	driverImpl, err := prepareDriver(dockerCli, bind)
+	driverImpl, errBuf, err := prepareDriver(dockerCli, bind, nil)
 	if err != nil {
 		return err
 	}
@@ -57,6 +58,8 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 		Action: internal.Namespace + "status",
 		Driver: driverImpl,
 	}
-	err = status.Run(&c, creds, dockerCli.Out())
-	return errors.Wrap(err, "Status failed")
+	if err := status.Run(&c, creds, dockerCli.Out()); err != nil {
+		return fmt.Errorf("status failed: %s\n%s", err, errBuf)
+	}
+	return nil
 }
