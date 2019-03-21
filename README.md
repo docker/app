@@ -157,7 +157,7 @@ CNAB specifies three actions which `docker-app` provides as commands:
 **Note**: These commands need a Docker Context so that `docker-app` knows which endpoint and orchestrator to target.
 
 ```console
-$ docker context create swarm --description "swarm context" --default-stack-orchestrator=swarm --docker=host=unix:///var/run/docker.sock
+$ docker context create swarm --description "swarm context" --default-stack-orchestrator=swarm --docker-host=unix:///var/run/docker.sock
 swarm
 Successfully created context "swarm"
 
