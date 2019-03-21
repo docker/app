@@ -1,9 +1,6 @@
 package commands
 
 import (
-	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/claim"
-	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/pkg/errors"
@@ -33,35 +30,9 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
-	defer muteDockerCli(dockerCli)()
-
-	c, err := claim.New("inspect")
+	a, c, err := prepareCustomAction("inspect", dockerCli, appname, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
 	if err != nil {
 		return err
 	}
-	driverImpl, err := prepareDriver(dockerCli, bindMount{})
-	if err != nil {
-		return err
-	}
-	bundle, err := resolveBundle(dockerCli, appname, opts.pull, opts.insecureRegistries)
-	if err != nil {
-		return err
-	}
-	c.Bundle = bundle
-
-	parameters, err := mergeBundleParameters(c.Bundle,
-		withFileParameters(opts.parametersFiles),
-		withCommandLineParameters(opts.overrides),
-	)
-	if err != nil {
-		return err
-	}
-	c.Parameters = parameters
-
-	a := &action.RunCustom{
-		Action: internal.Namespace + "inspect",
-		Driver: driverImpl,
-	}
-	err = a.Run(c, nil, dockerCli.Out())
-	return errors.Wrap(err, "Inspect failed")
+	return errors.Wrap(a.Run(c, nil, dockerCli.Out()), "Inspect failed")
 }

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
@@ -240,4 +241,38 @@ func socketPath(host string) string {
 
 func isDockerHostLocal(host string) bool {
 	return host == "" || strings.HasPrefix(host, "unix://") || strings.HasPrefix(host, "npipe://")
+}
+
+func prepareCustomAction(actionName string, dockerCli command.Cli, appname string,
+	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *claim.Claim, error) {
+	defer muteDockerCli(dockerCli)()
+
+	c, err := claim.New(actionName)
+	if err != nil {
+		return nil, nil, err
+	}
+	driverImpl, err := prepareDriver(dockerCli, bindMount{})
+	if err != nil {
+		return nil, nil, err
+	}
+	bundle, err := resolveBundle(dockerCli, appname, pullOpts.pull, registryOpts.insecureRegistries)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.Bundle = bundle
+
+	parameters, err := mergeBundleParameters(c.Bundle,
+		withFileParameters(paramsOpts.parametersFiles),
+		withCommandLineParameters(paramsOpts.overrides),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.Parameters = parameters
+
+	a := &action.RunCustom{
+		Action: internal.Namespace + actionName,
+		Driver: driverImpl,
+	}
+	return a, c, nil
 }
