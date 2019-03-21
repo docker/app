@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/docker/app/internal"
 	"gotest.tools/assert"
 	"gotest.tools/assert/cmp"
@@ -105,16 +106,16 @@ func TestMergeBundleParameters(t *testing.T) {
 				},
 			},
 		}
-		actual, err := mergeBundleParameters(bundle,
+		c := &claim.Claim{Bundle: bundle}
+		err := mergeBundleParameters(c,
 			first,
 			second,
 		)
-
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
 			"param": "second",
 		}
-		assert.Assert(t, cmp.DeepEqual(actual, expected))
+		assert.Assert(t, cmp.DeepEqual(c.Parameters, expected))
 	})
 
 	t.Run("Default values", func(t *testing.T) {
@@ -126,13 +127,13 @@ func TestMergeBundleParameters(t *testing.T) {
 				},
 			},
 		}
-		actual, err := mergeBundleParameters(bundle)
-
+		c := &claim.Claim{Bundle: bundle}
+		err := mergeBundleParameters(c)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
 			"param": "default",
 		}
-		assert.Assert(t, cmp.DeepEqual(actual, expected))
+		assert.Assert(t, cmp.DeepEqual(c.Parameters, expected))
 	})
 
 	t.Run("Converting values", func(t *testing.T) {
@@ -148,14 +149,13 @@ func TestMergeBundleParameters(t *testing.T) {
 				},
 			},
 		}
-
-		actual, err := mergeBundleParameters(bundle, withIntValue)
-
+		c := &claim.Claim{Bundle: bundle}
+		err := mergeBundleParameters(c, withIntValue)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
 			"param": 1,
 		}
-		assert.Assert(t, cmp.DeepEqual(actual, expected))
+		assert.Assert(t, cmp.DeepEqual(c.Parameters, expected))
 	})
 
 	t.Run("Default values", func(t *testing.T) {
@@ -167,13 +167,13 @@ func TestMergeBundleParameters(t *testing.T) {
 				},
 			},
 		}
-		actual, err := mergeBundleParameters(bundle)
-
+		c := &claim.Claim{Bundle: bundle}
+		err := mergeBundleParameters(c)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
 			"param": "default",
 		}
-		assert.Assert(t, cmp.DeepEqual(actual, expected))
+		assert.Assert(t, cmp.DeepEqual(c.Parameters, expected))
 	})
 
 	t.Run("Undefined parameter is rejected", func(t *testing.T) {
@@ -184,7 +184,8 @@ func TestMergeBundleParameters(t *testing.T) {
 		bundle := &bundle.Bundle{
 			Parameters: map[string]bundle.ParameterDefinition{},
 		}
-		_, err := mergeBundleParameters(bundle, withUndefined)
+		c := &claim.Claim{Bundle: bundle}
+		err := mergeBundleParameters(c, withUndefined)
 		assert.ErrorContains(t, err, "is not defined in the bundle")
 	})
 
@@ -200,7 +201,8 @@ func TestMergeBundleParameters(t *testing.T) {
 				},
 			},
 		}
-		_, err := mergeBundleParameters(bundle, withIntValue)
+		c := &claim.Claim{Bundle: bundle}
+		err := mergeBundleParameters(c, withIntValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})
 
@@ -217,7 +219,8 @@ func TestMergeBundleParameters(t *testing.T) {
 				},
 			},
 		}
-		_, err := mergeBundleParameters(bundle, withIntValue)
+		c := &claim.Claim{Bundle: bundle}
+		err := mergeBundleParameters(c, withIntValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})
 }

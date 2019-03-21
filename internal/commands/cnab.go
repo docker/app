@@ -324,14 +324,12 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	}
 	c.Bundle = bundle
 
-	parameters, err := mergeBundleParameters(c.Bundle,
+	if err := mergeBundleParameters(c,
 		withFileParameters(paramsOpts.parametersFiles),
 		withCommandLineParameters(paramsOpts.overrides),
-	)
-	if err != nil {
+	); err != nil {
 		return nil, nil, nil, err
 	}
-	c.Parameters = parameters
 
 	a := &action.RunCustom{
 		Action: actionName,

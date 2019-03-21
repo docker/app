@@ -55,12 +55,11 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		}
 		c.Bundle = b
 	}
-	c.Parameters, err = mergeBundleParameters(c.Bundle,
+	if err := mergeBundleParameters(&c,
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
 		withSendRegistryAuth(opts.sendRegistryAuth),
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 

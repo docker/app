@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types/parameters"
 	cliopts "github.com/docker/cli/opts"
@@ -60,18 +61,20 @@ func withOrchestratorParameters(orchestrator string, kubeNamespace string) param
 	}
 }
 
-func mergeBundleParameters(bndl *bundle.Bundle, ops ...parameterOperation) (map[string]interface{}, error) {
+func mergeBundleParameters(c *claim.Claim, ops ...parameterOperation) error {
+	bndl := c.Bundle
 	userParams := map[string]string{}
 	for _, op := range ops {
 		if err := op(bndl, userParams); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	convertedParams, err := matchParametersDefinition(userParams, bndl.Parameters)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return bundle.ValuesOrDefaults(convertedParams, bndl)
+	c.Parameters, err = bundle.ValuesOrDefaults(convertedParams, bndl)
+	return err
 }
 
 func matchParametersDefinition(parameterValues map[string]string, parameterDefinitions map[string]bundle.ParameterDefinition) (map[string]interface{}, error) {

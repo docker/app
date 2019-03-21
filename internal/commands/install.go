@@ -98,13 +98,12 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	}
 	c.Bundle = bndl
 
-	c.Parameters, err = mergeBundleParameters(bndl,
+	if err := mergeBundleParameters(c,
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
 		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
 		withSendRegistryAuth(opts.sendRegistryAuth),
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 	creds, err := prepareCredentialSet(bndl,
