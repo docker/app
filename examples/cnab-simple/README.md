@@ -44,7 +44,7 @@ $ docker-app status hello
 Upgrade the installation, demonstrating setting parameters:
 
 ```console
-$ docker-app upgrade--set port=9876 --set text="hello DockerCon EU"
+$ docker-app upgrade --set port=9876 --set text="hello DockerCon EU" hello
 ```
 
 Uninstall the application installation:
