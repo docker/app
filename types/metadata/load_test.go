@@ -20,8 +20,8 @@ func TestAllFields(t *testing.T) {
 		Description: "something about this application",
 		Maintainers: []Maintainer{
 			{
-				Name:  "bob",
-				Email: "bob@aol.com",
+				Name:  "dev",
+				Email: "dev@example.com",
 			},
 		},
 	}

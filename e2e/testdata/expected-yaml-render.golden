@@ -6,8 +6,8 @@ services:
       back: null
       front:
         aliases:
-        - corp.app.api.com
-        - coolapp.com
+        - api.example.com
+        - example.com
   db:
     image: postgres:9.3
     networks:

@@ -109,10 +109,10 @@ name: app-test
 description: my cool app
 # List of application maintainers with name and email for each
 maintainers:
-  - name: bob
+  - name: dev1
     email: 
-  - name: joe
-    email: joe@joe.com
+  - name: dev2
+    email: dev2@example.com
 `
 	envData := "# some comment\nNGINX_DRY_RUN=-t"
 	tmpDir := fs.NewDir(t, "app_input",
@@ -129,8 +129,8 @@ maintainers:
 		"init", testAppName,
 		"--compose-file", tmpDir.Join(internal.ComposeFileName),
 		"--description", "my cool app",
-		"--maintainer", "bob",
-		"--maintainer", "joe:joe@joe.com")
+		"--maintainer", "dev1",
+		"--maintainer", "dev2:dev2@example.com")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	manifest := fs.Expected(
@@ -148,23 +148,23 @@ maintainers:
 
 	// test single-file init
 	cmd.Command = dockerCli.Command("app",
-		"init", "tac",
+		"init", "myapp",
 		"--compose-file", tmpDir.Join(internal.ComposeFileName),
-		"--description", "my cool app",
-		"--maintainer", "bob",
-		"--maintainer", "joe:joe@joe.com",
+		"--description", "some description",
+		"--maintainer", "dev1",
+		"--maintainer", "dev2:dev2@example.com",
 		"--single-file",
 	)
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	appData, err := ioutil.ReadFile(tmpDir.Join("tac.dockerapp"))
+	appData, err := ioutil.ReadFile(tmpDir.Join("myapp.dockerapp"))
 	assert.NilError(t, err)
 	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
 	// Check various commands work on single-file app package
-	cmd.Command = dockerCli.Command("app", "inspect", "tac")
+	cmd.Command = dockerCli.Command("app", "inspect", "myapp")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	cmd.Command = dockerCli.Command("app", "render", "tac")
+	cmd.Command = dockerCli.Command("app", "render", "myapp")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 

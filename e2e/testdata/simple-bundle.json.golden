@@ -5,11 +5,11 @@
 	"maintainers": [
 		{
 			"name": "John Developer",
-			"email": "john.dev@acmecorp.cool"
+			"email": "john.dev@example.com"
 		},
 		{
 			"name": "Jane Developer",
-			"email": "jane.dev@acmecorp.cool"
+			"email": "jane.dev@example.com"
 		}
 	],
 	"invocationImages": [
@@ -47,7 +47,7 @@
 	"parameters": {
 		"api_host": {
 			"type": "string",
-			"defaultValue": "coolapp.com",
+			"defaultValue": "example.com",
 			"destination": {
 				"env": "docker_param1"
 			}

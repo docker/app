@@ -6,7 +6,7 @@ services:
       back:
       front:
         aliases:
-          - corp.app.api.com
+          - api.example.com
           - ${api_host}
   web:
     image: nginx:latest

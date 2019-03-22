@@ -139,7 +139,7 @@ func TestWriteMetadataFile(t *testing.T) {
 	tmpdir := fs.NewDir(t, appName)
 	defer tmpdir.Remove()
 
-	err := writeMetadataFile(appName, tmpdir.Path(), "", []string{"bearclaw:bearclaw"})
+	err := writeMetadataFile(appName, tmpdir.Path(), "", []string{"dev:dev@example.com"})
 	assert.NilError(t, err)
 
 	data := `# Version of the application
@@ -150,8 +150,8 @@ name: writemetadata_test
 description: 
 # List of application maintainers with name and email for each
 maintainers:
-  - name: bearclaw
-    email: bearclaw
+  - name: dev
+    email: dev@example.com
 `
 
 	manifest := fs.Expected(t,
