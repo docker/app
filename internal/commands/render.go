@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -43,16 +42,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 
 func runRender(dockerCli command.Cli, appname string, opts renderOptions) error {
 	defer muteDockerCli(dockerCli)()
-	outBuf := bytes.NewBuffer(nil)
-	a, c, errBuf, err := prepareCustomAction("render", dockerCli, appname, outBuf, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
-	if err != nil {
-		return err
-	}
-	c.Parameters[internal.Namespace+"render-format"] = opts.formatDriver
 
-	if err := a.Run(c, nil, nil); err != nil {
-		return fmt.Errorf("render failed: %s", errBuf)
-	}
 	var w io.Writer = os.Stdout
 	if opts.renderOutput != "-" {
 		f, err := os.Create(opts.renderOutput)
@@ -62,6 +52,15 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		defer f.Close()
 		w = f
 	}
-	fmt.Fprintf(w, outBuf.String())
+
+	a, c, errBuf, err := prepareCustomAction("render", dockerCli, appname, w, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
+	if err != nil {
+		return err
+	}
+	c.Parameters[internal.Namespace+"render-format"] = opts.formatDriver
+
+	if err := a.Run(c, nil, nil); err != nil {
+		return fmt.Errorf("render failed: %s", errBuf)
+	}
 	return nil
 }
