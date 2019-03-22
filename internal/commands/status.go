@@ -47,6 +47,11 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 	if err != nil {
 		return err
 	}
+	if err := mergeBundleParameters(&c,
+		withSendRegistryAuth(opts.sendRegistryAuth),
+	); err != nil {
+		return err
+	}
 	creds, err := prepareCredentialSet(c.Bundle,
 		addNamedCredentialSets(opts.credentialsets),
 		addDockerCredentials(targetContext, dockerCli.ContextStore()),
