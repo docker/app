@@ -63,35 +63,37 @@ func withOrchestratorParameters(orchestrator string, kubeNamespace string) param
 
 func mergeBundleParameters(c *claim.Claim, ops ...parameterOperation) error {
 	bndl := c.Bundle
+	if c.Parameters == nil {
+		c.Parameters = make(map[string]interface{})
+	}
 	userParams := map[string]string{}
 	for _, op := range ops {
 		if err := op(bndl, userParams); err != nil {
 			return err
 		}
 	}
-	convertedParams, err := matchParametersDefinition(userParams, bndl.Parameters)
-	if err != nil {
+	if err := matchAndMergeParametersDefinition(c.Parameters, userParams, bndl.Parameters); err != nil {
 		return err
 	}
-	c.Parameters, err = bundle.ValuesOrDefaults(convertedParams, bndl)
+	var err error
+	c.Parameters, err = bundle.ValuesOrDefaults(c.Parameters, bndl)
 	return err
 }
 
-func matchParametersDefinition(parameterValues map[string]string, parameterDefinitions map[string]bundle.ParameterDefinition) (map[string]interface{}, error) {
-	finalValues := map[string]interface{}{}
+func matchAndMergeParametersDefinition(currentValues map[string]interface{}, parameterValues map[string]string, parameterDefinitions map[string]bundle.ParameterDefinition) error {
 	for k, v := range parameterValues {
 		definition, ok := parameterDefinitions[k]
 		if !ok {
-			return nil, fmt.Errorf("parameter %q is not defined in the bundle", k)
+			return fmt.Errorf("parameter %q is not defined in the bundle", k)
 		}
 		value, err := definition.ConvertValue(v)
 		if err != nil {
-			return nil, errors.Wrapf(err, "invalid value for parameter %q", k)
+			return errors.Wrapf(err, "invalid value for parameter %q", k)
 		}
 		if err := definition.ValidateParameterValue(value); err != nil {
-			return nil, errors.Wrapf(err, "invalid value for parameter %q", k)
+			return errors.Wrapf(err, "invalid value for parameter %q", k)
 		}
-		finalValues[k] = value
+		currentValues[k] = value
 	}
-	return finalValues, nil
+	return nil
 }
