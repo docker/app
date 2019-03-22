@@ -77,6 +77,18 @@ func (o *credentialOptions) addFlags(flags *pflag.FlagSet) {
 	flags.BoolVar(&o.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
 }
 
+func (o *credentialOptions) SetDefaultTargetContext(dockerCli command.Cli) {
+	o.targetContext = getTargetContext(o.targetContext, dockerCli.CurrentContext())
+}
+
+func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli) []credentialSetOpt {
+	return []credentialSetOpt{
+		addNamedCredentialSets(o.credentialsets),
+		addDockerCredentials(o.targetContext, dockerCli.ContextStore()),
+		addRegistryCredentials(o.sendRegistryAuth, dockerCli),
+	}
+}
+
 type registryOptions struct {
 	insecureRegistries []string
 }

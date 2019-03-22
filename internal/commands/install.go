@@ -66,8 +66,8 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 
 func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
 	defer muteDockerCli(dockerCli)()
-	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	bind, err := requiredBindMount(targetContext, opts.orchestrator, dockerCli.ContextStore())
+	opts.SetDefaultTargetContext(dockerCli)
+	bind, err := requiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())
 	if err != nil {
 		return err
 	}
@@ -106,10 +106,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	); err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(bndl,
-		addNamedCredentialSets(opts.credentialsets),
-		addDockerCredentials(targetContext, dockerCli.ContextStore()),
-		addRegistryCredentials(opts.sendRegistryAuth, dockerCli))
+	creds, err := prepareCredentialSet(bndl, opts.CredentialSetOpts(dockerCli)...)
 	if err != nil {
 		return err
 	}

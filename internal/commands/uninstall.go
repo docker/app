@@ -37,8 +37,8 @@ func runUninstall(dockerCli command.Cli, claimName string, opts credentialOption
 	if err != nil {
 		return err
 	}
-	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	bind, err := requiredClaimBindMount(c, targetContext, dockerCli)
+	opts.SetDefaultTargetContext(dockerCli)
+	bind, err := requiredClaimBindMount(c, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
@@ -46,10 +46,7 @@ func runUninstall(dockerCli command.Cli, claimName string, opts credentialOption
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(c.Bundle,
-		addNamedCredentialSets(opts.credentialsets),
-		addDockerCredentials(targetContext, dockerCli.ContextStore()),
-		addRegistryCredentials(opts.sendRegistryAuth, dockerCli))
+	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli)...)
 	if err != nil {
 		return err
 	}
