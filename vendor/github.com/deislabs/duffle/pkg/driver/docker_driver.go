@@ -23,11 +23,11 @@ import (
 
 // DockerDriver is capable of running Docker invocation images using Docker itself.
 type DockerDriver struct {
-	config map[string]string
-	// If true, this will not actually run Docker
-	Simulate                   bool
+	config                     map[string]string
 	dockerCli                  command.Cli
 	dockerConfigurationOptions []DockerConfigurationOption
+	containerOut               io.Writer
+	containerErr               io.Writer
 }
 
 // Run executes the Docker driver
@@ -48,6 +48,7 @@ func (d *DockerDriver) AddConfigurationOptions(opts ...DockerConfigurationOption
 // Config returns the Docker driver configuration options
 func (d *DockerDriver) Config() map[string]string {
 	return map[string]string{
+		"SIMULATE":            "If enabled (0|1), this will actually prevent Docker from running",
 		"VERBOSE":             "Increase verbosity. true, false are supported values",
 		"PULL_ALWAYS":         "Always pull image, even if locally available (0|1)",
 		"DOCKER_DRIVER_QUIET": "Make the Docker driver quiet (only print container stdout/stderr)",
@@ -62,6 +63,16 @@ func (d *DockerDriver) SetConfig(settings map[string]string) {
 // SetDockerCli makes the driver use an already initialized cli
 func (d *DockerDriver) SetDockerCli(dockerCli command.Cli) {
 	d.dockerCli = dockerCli
+}
+
+// SetContainerOut sets the container output stream
+func (d *DockerDriver) SetContainerOut(w io.Writer) {
+	d.containerOut = w
+}
+
+// SetContainerErr sets the container error stream
+func (d *DockerDriver) SetContainerErr(w io.Writer) {
+	d.containerErr = w
 }
 
 func pullImage(ctx context.Context, cli command.Cli, image string) error {
@@ -119,7 +130,7 @@ func (d *DockerDriver) exec(op *Operation) error {
 		return err
 	}
 
-	if d.Simulate {
+	if d.config["SIMULATE"] == "1" {
 		return nil
 	}
 	if d.config["PULL_ALWAYS"] == "1" {
@@ -185,10 +196,20 @@ func (d *DockerDriver) exec(op *Operation) error {
 	if err != nil {
 		return fmt.Errorf("unable to retrieve logs: %v", err)
 	}
+	var (
+		stdout io.Writer = os.Stdout
+		stderr io.Writer = os.Stderr
+	)
+	if d.containerOut != nil {
+		stdout = d.containerOut
+	}
+	if d.containerErr != nil {
+		stderr = d.containerErr
+	}
 	go func() {
 		defer attach.Close()
 		for {
-			_, err := stdcopy.StdCopy(os.Stdout, os.Stderr, attach.Reader)
+			_, err := stdcopy.StdCopy(stdout, stderr, attach.Reader)
 			if err != nil {
 				break
 			}

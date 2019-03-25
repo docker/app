@@ -12,7 +12,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 	mapping := ExtractCNABParameterMapping(app.Parameters())
 	flatParameters := app.Parameters().Flatten()
 	parameters := map[string]bundle.ParameterDefinition{
-		"docker.orchestrator": {
+		internal.Namespace + "orchestrator": {
 			DataType: "string",
 			AllowedValues: []interface{}{
 				"",
@@ -21,21 +21,50 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			},
 			DefaultValue: "",
 			Destination: &bundle.Location{
-				EnvironmentVariable: "DOCKER_STACK_ORCHESTRATOR",
+				EnvironmentVariable: internal.DockerStackOrchestratorEnvVar,
 			},
-			Metadata: bundle.ParameterMetadata{
+			Metadata: &bundle.ParameterMetadata{
 				Description: "Orchestrator on which to deploy",
 			},
-		},
-		"docker.kubernetes-namespace": {
-			DataType: "string",
-			Destination: &bundle.Location{
-				EnvironmentVariable: "DOCKER_KUBERNETES_NAMESPACE",
+			ApplyTo: []string{
+				"install",
+				"upgrade",
+				"uninstall",
+				internal.Namespace + "status",
 			},
-			Metadata: bundle.ParameterMetadata{
+		},
+		internal.Namespace + "kubernetes-namespace": {
+			DataType:     "string",
+			DefaultValue: "",
+			Destination: &bundle.Location{
+				EnvironmentVariable: internal.DockerKubernetesNamespaceEnvVar,
+			},
+			Metadata: &bundle.ParameterMetadata{
 				Description: "Namespace in which to deploy",
 			},
-			DefaultValue: "",
+			ApplyTo: []string{
+				"install",
+				"upgrade",
+				"uninstall",
+				internal.Namespace + "status",
+			},
+		},
+		internal.Namespace + "render-format": {
+			DataType: "string",
+			AllowedValues: []interface{}{
+				"yaml",
+				"json",
+			},
+			DefaultValue: "yaml",
+			Destination: &bundle.Location{
+				EnvironmentVariable: internal.DockerRenderFormatEnvVar,
+			},
+			Metadata: &bundle.ParameterMetadata{
+				Description: "Output format for the render command",
+			},
+			ApplyTo: []string{
+				internal.Namespace + "render",
+			},
 		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
@@ -81,7 +110,12 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Parameters:  parameters,
 		Actions: map[string]bundle.Action{
 			internal.Namespace + "inspect": {
-				Modifies: false,
+				Modifies:  false,
+				Stateless: true,
+			},
+			internal.Namespace + "render": {
+				Modifies:  false,
+				Stateless: true,
 			},
 			internal.Namespace + "status": {
 				Modifies: false,

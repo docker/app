@@ -42,7 +42,7 @@ func runUninstall(dockerCli command.Cli, claimName string, opts credentialOption
 	if err != nil {
 		return err
 	}
-	driverImpl, err := prepareDriver(dockerCli, bind)
+	driverImpl, errBuf, err := prepareDriver(dockerCli, bind, nil)
 	if err != nil {
 		return err
 	}
@@ -63,5 +63,5 @@ func runUninstall(dockerCli command.Cli, claimName string, opts credentialOption
 	if err2 := claimStore.Store(c); err2 != nil {
 		fmt.Fprintf(dockerCli.Err(), "failed to update claim: %s\n", err2)
 	}
-	return err
+	return fmt.Errorf("uninstall failed: %s", errBuf)
 }

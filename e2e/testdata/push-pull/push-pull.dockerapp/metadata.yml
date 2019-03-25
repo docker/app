@@ -3,6 +3,6 @@ name: push-pull
 description: "new fancy webapp with microservices"
 maintainers:
   - name: John Developer
-    email: john.dev@acmecorp.cool
+    email: john.dev@example.com
   - name: Jane Developer
-    email: jane.dev@acmecorp.cool
+    email: jane.dev@example.com

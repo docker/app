@@ -18,7 +18,13 @@ import (
 	"gotest.tools/skip"
 )
 
+// Skipping experimental e2e test on rendering with templates, as it needs now to set
+// the DOCKERAPP_RENDERERS environment variable inside the invocation image,
+// and the only way to do it is to add a new parameter to the bundle.json.
+// This test should be unskipped or removed as soon as the templates are
+// not experimental anymore, or are removed.
 func TestRenderTemplates(t *testing.T) {
+	t.Skip("renderer templates tests")
 	skip.If(t, !hasExperimental, "experimental mode needed for this test")
 	appsPath := filepath.Join("testdata", "templates")
 	apps, err := ioutil.ReadDir(appsPath)
@@ -47,6 +53,8 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	return func(t *testing.T) {
 		cmd, cleanup := dockerCli.createTestCmd()
 		defer cleanup()
+		dir := fs.NewDir(t, "")
+		defer dir.Remove()
 
 		envParameters := map[string]string{}
 		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
@@ -58,8 +66,14 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		}
 		cmd.Command = args
 		cmd.Env = append(cmd.Env, env...)
+		// Check rendering to stdout
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
+		// Checks rendering to a file
+		cmd.Command = append(cmd.Command, "--output="+dir.Join("actual.yaml"))
+		result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), readFile(t, dir.Join("actual.yaml"))), "rendering mismatch")
 	}
 }
 
@@ -95,10 +109,10 @@ name: app-test
 description: my cool app
 # List of application maintainers with name and email for each
 maintainers:
-  - name: bob
+  - name: dev1
     email: 
-  - name: joe
-    email: joe@joe.com
+  - name: dev2
+    email: dev2@example.com
 `
 	envData := "# some comment\nNGINX_DRY_RUN=-t"
 	tmpDir := fs.NewDir(t, "app_input",
@@ -115,8 +129,8 @@ maintainers:
 		"init", testAppName,
 		"--compose-file", tmpDir.Join(internal.ComposeFileName),
 		"--description", "my cool app",
-		"--maintainer", "bob",
-		"--maintainer", "joe:joe@joe.com")
+		"--maintainer", "dev1",
+		"--maintainer", "dev2:dev2@example.com")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	manifest := fs.Expected(
@@ -134,23 +148,23 @@ maintainers:
 
 	// test single-file init
 	cmd.Command = dockerCli.Command("app",
-		"init", "tac",
+		"init", "myapp",
 		"--compose-file", tmpDir.Join(internal.ComposeFileName),
-		"--description", "my cool app",
-		"--maintainer", "bob",
-		"--maintainer", "joe:joe@joe.com",
+		"--description", "some description",
+		"--maintainer", "dev1",
+		"--maintainer", "dev2:dev2@example.com",
 		"--single-file",
 	)
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	appData, err := ioutil.ReadFile(tmpDir.Join("tac.dockerapp"))
+	appData, err := ioutil.ReadFile(tmpDir.Join("myapp.dockerapp"))
 	assert.NilError(t, err)
 	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
 	// Check various commands work on single-file app package
-	cmd.Command = dockerCli.Command("app", "inspect", "tac")
+	cmd.Command = dockerCli.Command("app", "inspect", "myapp")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	cmd.Command = dockerCli.Command("app", "render", "tac")
+	cmd.Command = dockerCli.Command("app", "render", "myapp")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 

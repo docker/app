@@ -1,8 +1,8 @@
-foo 0.1.0
+myapp 0.1.0
 
-Maintained by: foo <foo@bar.com>
+Maintained by: dev <dev@example.com>
 
-this is sparta !
+some description
 
 Service (1) Replicas Ports     Image
 ----------- -------- -----     -----

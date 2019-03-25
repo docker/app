@@ -22,8 +22,8 @@
         "back": null,
         "front": {
           "aliases": [
-            "corp.app.api.com",
-            "coolapp.com"
+            "api.example.com",
+            "example.com"
           ]
         }
       }

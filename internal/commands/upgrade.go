@@ -15,8 +15,8 @@ type upgradeOptions struct {
 	parametersOptions
 	credentialOptions
 	registryOptions
+	pullOptions
 	bundleOrDockerApp string
-	pull              bool
 }
 
 func upgradeCmd(dockerCli command.Cli) *cobra.Command {
@@ -32,8 +32,8 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
 	opts.registryOptions.addFlags(cmd.Flags())
+	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "bundle", "", "Override with new bundle or Docker App")
-	cmd.Flags().BoolVar(&opts.pull, "pull", false, "Pull the bundle")
 
 	return cmd
 }
@@ -67,7 +67,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err != nil {
 		return err
 	}
-	driverImpl, err := prepareDriver(dockerCli, bind)
+	driverImpl, errBuf, err := prepareDriver(dockerCli, bind, nil)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	err = u.Run(&c, creds, dockerCli.Out())
 	err2 := claimStore.Store(c)
 	if err != nil {
-		return fmt.Errorf("upgrade failed: %v", err)
+		return fmt.Errorf("upgrade failed: %s", errBuf)
 	}
 	return err2
 }

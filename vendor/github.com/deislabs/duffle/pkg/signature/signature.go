@@ -3,9 +3,10 @@ package signature
 import (
 	"bytes"
 	"crypto"
-	"encoding/json"
 	"errors"
 	"io"
+
+	"github.com/docker/go/canonical/json"
 
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
@@ -129,7 +130,7 @@ func (s *Signer) prepareSign(b *bundle.Bundle) (*packet.PrivateKey, []byte, erro
 
 	// We want a canonical representation of a serialized bundle, which is why we
 	// take the object.
-	data, err := json.MarshalIndent(b, "", "  ")
+	data, err := json.MarshalCanonical(b)
 	if err != nil {
 		return pk, res, err
 	}

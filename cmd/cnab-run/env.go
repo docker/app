@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	envVarOchestrator = "DOCKER_STACK_ORCHESTRATOR"
 	fileDockerContext = "/cnab/app/context.dockercontext"
 )
 

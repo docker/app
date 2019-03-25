@@ -1,0 +1,120 @@
+{
+  "name": "packing",
+  "version": "0.1.0",
+  "description": "hello",
+  "maintainers": [
+    {
+      "name": "dev1",
+      "email": "dev1@example.com"
+    },
+    {
+      "name": "dev2",
+      "email": "dev2@example.com"
+    }
+  ],
+  "invocationImages": [
+    {
+      "imageType": "docker",
+      "image": "test-image"
+    }
+  ],
+  "images": {
+    "app-watcher": {
+      "imageType": "docker",
+      "image": "watcher",
+      "description": "watcher"
+    },
+    "debug": {
+      "imageType": "docker",
+      "image": "busybox:latest",
+      "description": "busybox:latest"
+    },
+    "front": {
+      "imageType": "docker",
+      "image": "nginx",
+      "description": "nginx"
+    },
+    "monitor": {
+      "imageType": "docker",
+      "image": "busybox:latest",
+      "description": "busybox:latest"
+    }
+  },
+  "actions": {
+    "com.docker.app.inspect": {
+      "stateless": true
+    },
+    "com.docker.app.render": {
+      "stateless": true
+    },
+    "com.docker.app.status": {}
+  },
+  "parameters": {
+    "com.docker.app.kubernetes-namespace": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Namespace in which to deploy"
+      },
+      "destination": {
+        "env": "DOCKER_KUBERNETES_NAMESPACE"
+      },
+      "apply-to": [
+        "install",
+        "upgrade",
+        "uninstall",
+        "com.docker.app.status"
+      ]
+    },
+    "com.docker.app.orchestrator": {
+      "type": "string",
+      "defaultValue": "",
+      "allowedValues": [
+        "",
+        "swarm",
+        "kubernetes"
+      ],
+      "metadata": {
+        "description": "Orchestrator on which to deploy"
+      },
+      "destination": {
+        "env": "DOCKER_STACK_ORCHESTRATOR"
+      },
+      "apply-to": [
+        "install",
+        "upgrade",
+        "uninstall",
+        "com.docker.app.status"
+      ]
+    },
+    "com.docker.app.render-format": {
+      "type": "string",
+      "defaultValue": "yaml",
+      "allowedValues": [
+        "yaml",
+        "json"
+      ],
+      "metadata": {
+        "description": "Output format for the render command"
+      },
+      "destination": {
+        "env": "DOCKER_RENDER_FORMAT"
+      },
+      "apply-to": [
+        "com.docker.app.render"
+      ]
+    },
+    "watcher.cmd": {
+      "type": "string",
+      "defaultValue": "foo",
+      "destination": {
+        "env": "docker_param1"
+      }
+    }
+  },
+  "credentials": {
+    "docker.context": {
+      "path": "/cnab/app/context.dockercontext"
+    }
+  }
+}

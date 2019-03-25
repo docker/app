@@ -1,3 +1,0 @@
-web_port: '8082'
-api_host: coolapp.com
-static_subdir: data/static

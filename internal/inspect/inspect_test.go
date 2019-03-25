@@ -22,28 +22,28 @@ func TestInspect(t *testing.T) {
 			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
-name: foo`),
+name: myapp`),
 			fs.WithFile(internal.ParametersFileName, ``),
 		),
 		fs.WithDir("no-description",
 			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
-name: foo
+name: myapp
 maintainers:
-  - name: foo
-    email: "foo@bar.com"`),
+  - name: dev
+    email: "dev@example.com"`),
 			fs.WithFile(internal.ParametersFileName, ""),
 		),
 		fs.WithDir("no-parameters",
 			fs.WithFile(internal.ComposeFileName, composeYAML),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
-name: foo
+name: myapp
 maintainers:
-  - name: foo
-    email: "foo@bar.com"
-description: "this is sparta !"`),
+  - name: dev
+    email: "dev@example.com"
+description: "some description"`),
 			fs.WithFile(internal.ParametersFileName, ""),
 		),
 		fs.WithDir("overridden",
@@ -58,7 +58,7 @@ services:
 `),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
-name: foo
+name: myapp
 `),
 			fs.WithFile(internal.ParametersFileName, ""),
 		),
@@ -83,11 +83,11 @@ secrets:
 `),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
-name: foo
+name: myapp
 maintainers:
-  - name: foo
-    email: "foo@bar.com"
-description: "this is sparta !"`),
+  - name: dev
+    email: "dev@example.com"
+description: "some description"`),
 			fs.WithFile(internal.ParametersFileName, `
 port: 8080
 text: hello`),

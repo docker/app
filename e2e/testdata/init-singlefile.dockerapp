@@ -2,15 +2,15 @@
 # Version of the application
 version: 0.1.0
 # Name of the application
-name: tac
+name: myapp
 # A short description of the application
-description: my cool app
+description: some description
 # List of application maintainers with name and email for each
 maintainers:
-  - name: bob
+  - name: dev1
     email: 
-  - name: joe
-    email: joe@joe.com
+  - name: dev2
+    email: dev2@example.com
 
 ---
 # This section contains the Compose file that describes your application services.

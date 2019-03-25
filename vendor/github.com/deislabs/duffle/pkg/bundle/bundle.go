@@ -1,13 +1,14 @@
 package bundle
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/docker/go/canonical/json"
 )
 
 // Bundle is a CNAB metadata document
@@ -15,11 +16,11 @@ type Bundle struct {
 	Name             string                         `json:"name" mapstructure:"name"`
 	Version          string                         `json:"version" mapstructure:"version"`
 	Description      string                         `json:"description" mapstructure:"description"`
-	Keywords         []string                       `json:"keywords,omitempty" mapstructure:"keywords,omitempty"`
-	Maintainers      []Maintainer                   `json:"maintainers,omitempty" mapstructure:"maintainers,omitempty"`
+	Keywords         []string                       `json:"keywords,omitempty" mapstructure:"keywords"`
+	Maintainers      []Maintainer                   `json:"maintainers,omitempty" mapstructure:"maintainers"`
 	InvocationImages []InvocationImage              `json:"invocationImages" mapstructure:"invocationImages"`
 	Images           map[string]Image               `json:"images" mapstructure:"images"`
-	Actions          map[string]Action              `json:"actions,omitempty" mapstructure:"actions,omitempty"`
+	Actions          map[string]Action              `json:"actions,omitempty" mapstructure:"actions"`
 	Parameters       map[string]ParameterDefinition `json:"parameters" mapstructure:"parameters"`
 	Credentials      map[string]Location            `json:"credentials" mapstructure:"credentials"`
 }
@@ -40,7 +41,7 @@ func ParseReader(r io.Reader) (Bundle, error) {
 // WriteFile serializes the bundle and writes it to a file as JSON.
 func (b Bundle) WriteFile(dest string, mode os.FileMode) error {
 	// FIXME: The marshal here should exactly match the Marshal in the signature code.
-	d, err := json.MarshalIndent(b, "", "    ")
+	d, err := json.MarshalCanonical(b)
 	if err != nil {
 		return err
 	}
@@ -49,7 +50,7 @@ func (b Bundle) WriteFile(dest string, mode os.FileMode) error {
 
 // WriteTo writes unsigned JSON to an io.Writer using the standard formatting.
 func (b Bundle) WriteTo(w io.Writer) (int64, error) {
-	d, err := json.MarshalIndent(b, "", "    ")
+	d, err := json.MarshalCanonical(b)
 	if err != nil {
 		return 0, err
 	}
@@ -66,12 +67,12 @@ type LocationRef struct {
 
 // BaseImage contains fields shared across image types
 type BaseImage struct {
-	ImageType string        `json:"imageType" mapstructure:"imageType"`
-	Image     string        `json:"image" mapstructure:"image"`
-	Digest    string        `json:"digest,omitempty" mapstructure:"digest"`
-	Size      uint64        `json:"size,omitempty" mapstructure:"size"`
-	Platform  ImagePlatform `json:"platform,omitempty" mapstructure:"platform"`
-	MediaType string        `json:"mediaType,omitempty" mapstructure:"mediaType"`
+	ImageType string         `json:"imageType" mapstructure:"imageType"`
+	Image     string         `json:"image" mapstructure:"image"`
+	Digest    string         `json:"digest,omitempty" mapstructure:"digest"`
+	Size      uint64         `json:"size,omitempty" mapstructure:"size"`
+	Platform  *ImagePlatform `json:"platform,omitempty" mapstructure:"platform"`
+	MediaType string         `json:"mediaType,omitempty" mapstructure:"mediaType"`
 }
 
 // ImagePlatform indicates what type of platform an image is built for
@@ -82,14 +83,13 @@ type ImagePlatform struct {
 
 // Image describes a container image in the bundle
 type Image struct {
-	BaseImage
-	Description string        `json:"description" mapstructure:"description"` //TODO: change? see where it's being used? change to description?
-	Refs        []LocationRef `json:"refs" mapstructure:"refs"`
+	BaseImage   `mapstructure:",squash"`
+	Description string `json:"description" mapstructure:"description"` //TODO: change? see where it's being used? change to description?
 }
 
 // InvocationImage contains the image type and location for the installation of a bundle
 type InvocationImage struct {
-	BaseImage
+	BaseImage `mapstructure:",squash"`
 }
 
 // Location provides the location where a value should be written in
@@ -97,8 +97,8 @@ type InvocationImage struct {
 //
 // A location may be either a file (by path) or an environment variable.
 type Location struct {
-	Path                string `json:"path" mapstructure:"path"`
-	EnvironmentVariable string `json:"env" mapstructure:"env"`
+	Path                string `json:"path,omitempty" mapstructure:"path"`
+	EnvironmentVariable string `json:"env,omitempty" mapstructure:"env"`
 }
 
 // Maintainer describes a code maintainer of a bundle
@@ -106,9 +106,9 @@ type Maintainer struct {
 	// Name is a user name or organization name
 	Name string `json:"name" mapstructure:"name"`
 	// Email is an optional email address to contact the named maintainer
-	Email string `json:"email" mapstructure:"email"`
+	Email string `json:"email,omitempty" mapstructure:"email"`
 	// Url is an optional URL to an address for the named maintainer
-	URL string `json:"url" mapstructure:"url"`
+	URL string `json:"url,omitempty" mapstructure:"url"`
 }
 
 // Action describes a custom (non-core) action.
@@ -116,7 +116,11 @@ type Action struct {
 	// Modifies indicates whether this action modifies the release.
 	//
 	// If it is possible that an action modify a release, this must be set to true.
-	Modifies bool `json:"modifies" mapstructure:"modifies"`
+	Modifies bool `json:"modifies,omitempty" mapstructure:"modifies"`
+	// Stateless indicates that the action is purely informational, that credentials are not required, and that the runtime should not keep track of its invocation
+	Stateless bool `json:"stateless,omitempty" mapstructure:"stateless"`
+	// Description describes the action as a user-readable string
+	Description string `json:"description,omitempty" mapstructure:"description"`
 }
 
 // ValuesOrDefaults returns parameter values or the default parameter values

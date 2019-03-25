@@ -1,8 +1,7 @@
 version: 0.1.0
 name: myapp
-description: ""
 maintainers:
-  - name: bearclaw
-    email: bearclaw@bearclaw.com
-  - name: bob
-    email: bob@bob.com
+  - name: dev1
+    email: dev1@example.com
+  - name: dev2
+    email: dev2@example.com
