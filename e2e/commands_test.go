@@ -260,7 +260,7 @@ func TestBundle(t *testing.T) {
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	// Bundle the docker application package to a CNAB bundle, using the build-context.
-	cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--out", tmpDir.Join("bundle.json"))
+	cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--output", tmpDir.Join("bundle.json"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	// Check the resulting CNAB bundle.json

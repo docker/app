@@ -4,7 +4,7 @@ Usage:	docker app COMMAND
 Build and deploy Docker Application Packages.
 
 Commands:
-  bundle      Create a CNAB invocation image and bundle.json for the application.
+  bundle      Create a CNAB invocation image and bundle.json for the application
   completion  Generates completion scripts for the specified shell (bash or zsh)
   init        Start building a Docker application
   inspect     Shows metadata, parameters and a summary of the compose file for a given application
