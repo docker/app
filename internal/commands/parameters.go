@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/app/internal"
 	"github.com/docker/app/types/parameters"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/pkg/errors"
@@ -36,11 +37,11 @@ func withCommandLineParameters(overrides []string) parameterOperation {
 
 func withOrchestratorParameters(orchestrator string, kubeNamespace string) parameterOperation {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
-		if _, ok := bndl.Parameters["docker.orchestrator"]; ok {
-			params["docker.orchestrator"] = orchestrator
+		if _, ok := bndl.Parameters[internal.Namespace+"orchestrator"]; ok {
+			params[internal.Namespace+"orchestrator"] = orchestrator
 		}
-		if _, ok := bndl.Parameters["docker.kubernetes-namespace"]; ok {
-			params["docker.kubernetes-namespace"] = kubeNamespace
+		if _, ok := bndl.Parameters[internal.Namespace+"kubernetes-namespace"]; ok {
+			params[internal.Namespace+"kubernetes-namespace"] = kubeNamespace
 		}
 		return nil
 	}

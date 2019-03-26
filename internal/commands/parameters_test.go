@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/app/internal"
 	"gotest.tools/assert"
 	"gotest.tools/assert/cmp"
 	"gotest.tools/fs"
@@ -57,12 +58,12 @@ func TestWithOrchestratorParameters(t *testing.T) {
 		{
 			name: "Bundle with orchestrator params",
 			parameters: map[string]bundle.ParameterDefinition{
-				"docker.orchestrator":         {},
-				"docker.kubernetes-namespace": {},
+				internal.Namespace + "orchestrator":         {},
+				internal.Namespace + "kubernetes-namespace": {},
 			},
 			expected: map[string]string{
-				"docker.orchestrator":         "kubernetes",
-				"docker.kubernetes-namespace": "my-namespace",
+				internal.Namespace + "orchestrator":         "kubernetes",
+				internal.Namespace + "kubernetes-namespace": "my-namespace",
 			},
 		},
 		{
