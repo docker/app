@@ -12,7 +12,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 	mapping := ExtractCNABParameterMapping(app.Parameters())
 	flatParameters := app.Parameters().Flatten()
 	parameters := map[string]bundle.ParameterDefinition{
-		internal.Namespace + "orchestrator": {
+		internal.ParameterOrchestratorName: {
 			DataType: "string",
 			AllowedValues: []interface{}{
 				"",
@@ -33,7 +33,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				internal.ActionStatusName,
 			},
 		},
-		internal.Namespace + "kubernetes-namespace": {
+		internal.ParameterKubernetesNamespaceName: {
 			DataType:     "string",
 			DefaultValue: "",
 			Destination: &bundle.Location{
@@ -49,7 +49,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				internal.ActionStatusName,
 			},
 		},
-		internal.Namespace + "render-format": {
+		internal.ParameterRenderFormatName: {
 			DataType: "string",
 			AllowedValues: []interface{}{
 				"yaml",

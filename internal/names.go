@@ -37,6 +37,13 @@ const (
 	// CredentialDockerContextPath is the path to the credential containing a Docker context
 	CredentialDockerContextPath = "/cnab/app/context.dockercontext"
 
+	// ParameterOrchestratorName is the name of the parameter containing the orchestrator
+	ParameterOrchestratorName = Namespace + "orchestrator"
+	// ParameterKubernetesNamespaceName is the name of the parameter containing the kubernetes namespace
+	ParameterKubernetesNamespaceName = Namespace + "kubernetes-namespace"
+	// ParameterRenderFormatName is the name of the parameter containing the kubernetes namespace
+	ParameterRenderFormatName = Namespace + "render-format"
+
 	// DockerStackOrchestratorEnvVar is the environment variable set by the CNAB runtime to select
 	// the stack orchestrator.
 	DockerStackOrchestratorEnvVar = "DOCKER_STACK_ORCHESTRATOR"

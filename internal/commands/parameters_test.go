@@ -58,12 +58,12 @@ func TestWithOrchestratorParameters(t *testing.T) {
 		{
 			name: "Bundle with orchestrator params",
 			parameters: map[string]bundle.ParameterDefinition{
-				internal.Namespace + "orchestrator":         {},
-				internal.Namespace + "kubernetes-namespace": {},
+				internal.ParameterOrchestratorName:        {},
+				internal.ParameterKubernetesNamespaceName: {},
 			},
 			expected: map[string]string{
-				internal.Namespace + "orchestrator":         "kubernetes",
-				internal.Namespace + "kubernetes-namespace": "my-namespace",
+				internal.ParameterOrchestratorName:        "kubernetes",
+				internal.ParameterKubernetesNamespaceName: "my-namespace",
 			},
 		},
 		{

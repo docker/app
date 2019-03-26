@@ -199,7 +199,7 @@ func resolveBundle(dockerCli command.Cli, name string, pullRef bool, insecureReg
 
 func requiredClaimBindMount(c claim.Claim, targetContextName string, dockerCli command.Cli) (bindMount, error) {
 	var specifiedOrchestrator string
-	if rawOrchestrator, ok := c.Parameters[internal.Namespace+"orchestrator"]; ok {
+	if rawOrchestrator, ok := c.Parameters[internal.ParameterOrchestratorName]; ok {
 		specifiedOrchestrator = rawOrchestrator.(string)
 	}
 

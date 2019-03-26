@@ -57,7 +57,7 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 	if err != nil {
 		return err
 	}
-	c.Parameters[internal.Namespace+"render-format"] = opts.formatDriver
+	c.Parameters[internal.ParameterRenderFormatName] = opts.formatDriver
 
 	if err := a.Run(c, nil, nil); err != nil {
 		return fmt.Errorf("render failed: %s", errBuf)

@@ -37,11 +37,11 @@ func withCommandLineParameters(overrides []string) parameterOperation {
 
 func withOrchestratorParameters(orchestrator string, kubeNamespace string) parameterOperation {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
-		if _, ok := bndl.Parameters[internal.Namespace+"orchestrator"]; ok {
-			params[internal.Namespace+"orchestrator"] = orchestrator
+		if _, ok := bndl.Parameters[internal.ParameterOrchestratorName]; ok {
+			params[internal.ParameterOrchestratorName] = orchestrator
 		}
-		if _, ok := bndl.Parameters[internal.Namespace+"kubernetes-namespace"]; ok {
-			params[internal.Namespace+"kubernetes-namespace"] = kubeNamespace
+		if _, ok := bndl.Parameters[internal.ParameterKubernetesNamespaceName]; ok {
+			params[internal.ParameterKubernetesNamespaceName] = kubeNamespace
 		}
 		return nil
 	}
