@@ -34,6 +34,8 @@ const (
 
 	// CredentialDockerContextName is the name of the credential containing a Docker context
 	CredentialDockerContextName = "docker.context"
+	// CredentialDockerContextPath is the path to the credential containing a Docker context
+	CredentialDockerContextPath = "/cnab/app/context.dockercontext"
 
 	// DockerStackOrchestratorEnvVar is the environment variable set by the CNAB runtime to select
 	// the stack orchestrator.

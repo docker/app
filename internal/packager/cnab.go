@@ -92,7 +92,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 	return &bundle.Bundle{
 		Credentials: map[string]bundle.Location{
 			internal.CredentialDockerContextName: {
-				Path: "/cnab/app/context.dockercontext",
+				Path: internal.CredentialDockerContextPath,
 			},
 		},
 		Description: app.Metadata().Description,

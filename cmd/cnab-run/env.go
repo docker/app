@@ -3,16 +3,13 @@ package main
 import (
 	"os"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command"
 	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/context/docker"
 	kubcontext "github.com/docker/cli/cli/context/kubernetes"
 	contextstore "github.com/docker/cli/cli/context/store"
 	cliflags "github.com/docker/cli/cli/flags"
-)
-
-const (
-	fileDockerContext = "/cnab/app/context.dockercontext"
 )
 
 var storeConfig = contextstore.NewConfig(
@@ -23,7 +20,7 @@ var storeConfig = contextstore.NewConfig(
 
 func setupDockerContext() (command.Cli, error) {
 	s := contextstore.New(cliconfig.ContextStoreDir(), storeConfig)
-	f, err := os.Open(fileDockerContext)
+	f, err := os.Open(internal.CredentialDockerContextPath)
 	if err != nil {
 		return nil, err
 	}
