@@ -23,7 +23,9 @@ import (
 
 // DockerDriver is capable of running Docker invocation images using Docker itself.
 type DockerDriver struct {
-	config                     map[string]string
+	config map[string]string
+	// If true, this will not actually run Docker
+	Simulate                   bool
 	dockerCli                  command.Cli
 	dockerConfigurationOptions []DockerConfigurationOption
 	containerOut               io.Writer
@@ -48,7 +50,6 @@ func (d *DockerDriver) AddConfigurationOptions(opts ...DockerConfigurationOption
 // Config returns the Docker driver configuration options
 func (d *DockerDriver) Config() map[string]string {
 	return map[string]string{
-		"SIMULATE":            "If enabled (0|1), this will actually prevent Docker from running",
 		"VERBOSE":             "Increase verbosity. true, false are supported values",
 		"PULL_ALWAYS":         "Always pull image, even if locally available (0|1)",
 		"DOCKER_DRIVER_QUIET": "Make the Docker driver quiet (only print container stdout/stderr)",
@@ -130,7 +131,7 @@ func (d *DockerDriver) exec(op *Operation) error {
 		return err
 	}
 
-	if d.config["SIMULATE"] == "1" {
+	if d.Simulate {
 		return nil
 	}
 	if d.config["PULL_ALWAYS"] == "1" {

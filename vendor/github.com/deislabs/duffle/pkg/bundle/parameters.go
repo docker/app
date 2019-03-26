@@ -19,7 +19,7 @@ type ParameterDefinition struct {
 	MaxLength     *int               `json:"maxLength,omitempty" mapstructure:"maxLength"`
 	Metadata      *ParameterMetadata `json:"metadata,omitempty" mapstructure:"metadata"`
 	Destination   *Location          `json:"destination,omitemtpty" mapstructure:"destination"`
-	ApplyTo       []string           `json:"apply-to,omitempty" mapstructure:"apply-to"`
+	ApplyTo       []string           `json:"apply-to,omitempty" mapstructure:"apply-to,omitempty"`
 }
 
 // ParameterMetadata contains metadata for a parameter definition.

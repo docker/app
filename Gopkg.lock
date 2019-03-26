@@ -185,8 +185,8 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "docker-app"
-  digest = "1:c6e443a4a4546e6ac0f9cd66950c0b72f81e7264c2efe22105f1b91ba698b140"
+  branch = "master"
+  digest = "1:febc1228ba56c84bd86890d697a3718b60566ecb23c93a02cb254b41ed1df2d2"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
@@ -200,8 +200,7 @@
     "pkg/utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "94d4d0da028b12511053c55171e76a3931ad34af"
-  source = "github.com/silvin-lubecki/duffle"
+  revision = "6b123e9e54a2b7131bf320270c8803a1fe97d3b5"
 
 [[projects]]
   branch = "master"
