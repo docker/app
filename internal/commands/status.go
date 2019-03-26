@@ -55,7 +55,7 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 		return err
 	}
 	status := &action.RunCustom{
-		Action: internal.Namespace + "status",
+		Action: internal.ActionStatusName,
 		Driver: driverImpl,
 	}
 	if err := status.Run(&c, creds, dockerCli.Out()); err != nil {

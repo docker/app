@@ -30,7 +30,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				"install",
 				"upgrade",
 				"uninstall",
-				internal.Namespace + "status",
+				internal.ActionStatusName,
 			},
 		},
 		internal.Namespace + "kubernetes-namespace": {
@@ -46,7 +46,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				"install",
 				"upgrade",
 				"uninstall",
-				internal.Namespace + "status",
+				internal.ActionStatusName,
 			},
 		},
 		internal.Namespace + "render-format": {
@@ -63,7 +63,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				Description: "Output format for the render command",
 			},
 			ApplyTo: []string{
-				internal.Namespace + "render",
+				internal.ActionRenderName,
 			},
 		},
 	}
@@ -109,15 +109,15 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Version:     app.Metadata().Version,
 		Parameters:  parameters,
 		Actions: map[string]bundle.Action{
-			internal.Namespace + "inspect": {
+			internal.ActionInspectName: {
 				Modifies:  false,
 				Stateless: true,
 			},
-			internal.Namespace + "render": {
+			internal.ActionRenderName: {
 				Modifies:  false,
 				Stateless: true,
 			},
-			internal.Namespace + "status": {
+			internal.ActionStatusName: {
 				Modifies: false,
 			},
 		},

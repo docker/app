@@ -253,7 +253,7 @@ func isDockerHostLocal(host string) bool {
 func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
 	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *claim.Claim, *bytes.Buffer, error) {
 
-	c, err := claim.New(actionName)
+	c, err := claim.New("custom-action")
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -277,7 +277,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	c.Parameters = parameters
 
 	a := &action.RunCustom{
-		Action: internal.Namespace + actionName,
+		Action: actionName,
 		Driver: driverImpl,
 	}
 	return a, c, errBuf, nil

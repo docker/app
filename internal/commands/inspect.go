@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -32,7 +33,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 
 func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
 	defer muteDockerCli(dockerCli)()
-	a, c, errBuf, err := prepareCustomAction("inspect", dockerCli, appname, nil, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
+	a, c, errBuf, err := prepareCustomAction(internal.ActionInspectName, dockerCli, appname, nil, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
 	if err != nil {
 		return err
 	}

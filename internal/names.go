@@ -25,6 +25,13 @@ const (
 	// Namespace is the reverse DNS namespace used with labels and CNAB custom actions.
 	Namespace = "com.docker.app."
 
+	// ActionStatusName is the name of the custom "status" action
+	ActionStatusName = Namespace + "status"
+	// ActionInspectName is the name of the custom "inspect" action
+	ActionInspectName = Namespace + "inspect"
+	// ActionRenderName is the name of the custom "render" action
+	ActionRenderName = Namespace + "render"
+
 	// DockerStackOrchestratorEnvVar is the environment variable set by the CNAB runtime to select
 	// the stack orchestrator.
 	DockerStackOrchestratorEnvVar = "DOCKER_STACK_ORCHESTRATOR"
