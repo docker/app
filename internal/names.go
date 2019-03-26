@@ -32,6 +32,9 @@ const (
 	// ActionRenderName is the name of the custom "render" action
 	ActionRenderName = Namespace + "render"
 
+	// CredentialDockerContextName is the name of the credential containing a Docker context
+	CredentialDockerContextName = "docker.context"
+
 	// DockerStackOrchestratorEnvVar is the environment variable set by the CNAB runtime to select
 	// the stack orchestrator.
 	DockerStackOrchestratorEnvVar = "DOCKER_STACK_ORCHESTRATOR"

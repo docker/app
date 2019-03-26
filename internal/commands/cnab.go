@@ -63,10 +63,10 @@ func prepareCredentialSet(contextName string, contextStore store.Store, b *bundl
 		if err != nil {
 			return nil, err
 		}
-		creds["docker.context"] = string(data)
+		creds[internal.CredentialDockerContextName] = string(data)
 	}
-	_, requiresDockerContext := b.Credentials["docker.context"]
-	_, hasDockerContext := creds["docker.context"]
+	_, requiresDockerContext := b.Credentials[internal.CredentialDockerContextName]
+	_, hasDockerContext := creds[internal.CredentialDockerContextName]
 	if requiresDockerContext && !hasDockerContext {
 		return nil, errors.New("no target context specified. Use --target-context= or DOCKER_TARGET_CONTEXT= to define it")
 	}
