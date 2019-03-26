@@ -39,10 +39,10 @@ type bindMount struct {
 
 const defaultSocketPath string = "/var/run/docker.sock"
 
-type credentialSetOpt func(b *bundle.Bundle, creds map[string]string) error
+type credentialSetOpt func(b *bundle.Bundle, creds credentials.Set) error
 
 func addNamedCredentialSets(namedCredentialsets []string) credentialSetOpt {
-	return func(_ *bundle.Bundle, creds map[string]string) error {
+	return func(_ *bundle.Bundle, creds credentials.Set) error {
 		for _, file := range namedCredentialsets {
 			if _, err := os.Stat(file); err != nil {
 				file = filepath.Join(duffleHome().Credentials(), file+".yaml")
@@ -69,7 +69,7 @@ func addNamedCredentialSets(namedCredentialsets []string) credentialSetOpt {
 func addDockerCredentials(contextName string, contextStore store.Store) credentialSetOpt {
 	// docker desktop contexts require some rewriting for being used within a container
 	contextStore = dockerDesktopAwareStore{Store: contextStore}
-	return func(_ *bundle.Bundle, creds map[string]string) error {
+	return func(_ *bundle.Bundle, creds credentials.Set) error {
 		if contextName != "" {
 			data, err := ioutil.ReadAll(store.Export(contextName, contextStore))
 			if err != nil {
@@ -82,7 +82,7 @@ func addDockerCredentials(contextName string, contextStore store.Store) credenti
 }
 
 func addRegistryCredentials(shouldPopulate bool, dockerCli command.Cli) credentialSetOpt {
-	return func(b *bundle.Bundle, creds map[string]string) error {
+	return func(b *bundle.Bundle, creds credentials.Set) error {
 		if _, ok := b.Credentials[internal.CredentialRegistryName]; !ok {
 			return nil
 		}
