@@ -11,9 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-type parameterOperation func(bndl *bundle.Bundle, params map[string]string) error
+type mergeBundleOpt func(bndl *bundle.Bundle, params map[string]string) error
 
-func withFileParameters(parametersFiles []string) parameterOperation {
+func withFileParameters(parametersFiles []string) mergeBundleOpt {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
 		p, err := parameters.LoadFiles(parametersFiles)
 		if err != nil {
@@ -26,7 +26,7 @@ func withFileParameters(parametersFiles []string) parameterOperation {
 	}
 }
 
-func withCommandLineParameters(overrides []string) parameterOperation {
+func withCommandLineParameters(overrides []string) mergeBundleOpt {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
 		d := cliopts.ConvertKVStringsToMap(overrides)
 		for k, v := range d {
@@ -36,7 +36,7 @@ func withCommandLineParameters(overrides []string) parameterOperation {
 	}
 }
 
-func withSendRegistryAuth(sendRegistryAuth bool) parameterOperation {
+func withSendRegistryAuth(sendRegistryAuth bool) mergeBundleOpt {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
 		if _, ok := bndl.Parameters[internal.ParameterShareRegistryCredsName]; ok {
 			val := "false"
@@ -49,7 +49,7 @@ func withSendRegistryAuth(sendRegistryAuth bool) parameterOperation {
 	}
 }
 
-func withOrchestratorParameters(orchestrator string, kubeNamespace string) parameterOperation {
+func withOrchestratorParameters(orchestrator string, kubeNamespace string) mergeBundleOpt {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
 		if _, ok := bndl.Parameters[internal.ParameterOrchestratorName]; ok {
 			params[internal.ParameterOrchestratorName] = orchestrator
@@ -61,7 +61,7 @@ func withOrchestratorParameters(orchestrator string, kubeNamespace string) param
 	}
 }
 
-func mergeBundleParameters(c *claim.Claim, ops ...parameterOperation) error {
+func mergeBundleParameters(c *claim.Claim, ops ...mergeBundleOpt) error {
 	bndl := c.Bundle
 	if c.Parameters == nil {
 		c.Parameters = make(map[string]interface{})
