@@ -185,8 +185,8 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:febc1228ba56c84bd86890d697a3718b60566ecb23c93a02cb254b41ed1df2d2"
+  branch = "set-merge"
+  digest = "1:830f704402fef0cb416e9aca81e23792db372e8f873a595730b79f60726f9367"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
@@ -200,7 +200,8 @@
     "pkg/utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "6b123e9e54a2b7131bf320270c8803a1fe97d3b5"
+  revision = "24f0b11ca284f01e76908e96870fa4a1f979ce10"
+  source = "github.com/ijc/duffle"
 
 [[projects]]
   branch = "master"
@@ -1280,6 +1281,7 @@
     "github.com/docker/cli/cli/compose/types",
     "github.com/docker/cli/cli/config",
     "github.com/docker/cli/cli/config/configfile",
+    "github.com/docker/cli/cli/config/types",
     "github.com/docker/cli/cli/context",
     "github.com/docker/cli/cli/context/docker",
     "github.com/docker/cli/cli/context/kubernetes",

@@ -55,11 +55,8 @@ func addNamedCredentialSets(namedCredentialsets []string) credentialSetOpt {
 			if err != nil {
 				return err
 			}
-			for k, v := range values {
-				if _, ok := creds[k]; ok {
-					return fmt.Errorf("ambiguous credential resolution: %q is present in multiple credential sets", k)
-				}
-				creds[k] = v
+			if err := creds.Merge(values); err != nil {
+				return err
 			}
 		}
 		return nil

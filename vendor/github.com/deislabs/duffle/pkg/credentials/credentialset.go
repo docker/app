@@ -41,6 +41,20 @@ func (s Set) Expand(b *bundle.Bundle, stateless bool) (env, files map[string]str
 	return
 }
 
+// Merge merges a second Set into the base.
+//
+// Duplicate credential names are not allow and will result in an
+// error, this is the case even if the values are identical.
+func (s Set) Merge(s2 Set) error {
+	for k, v := range s2 {
+		if _, ok := s[k]; ok {
+			return fmt.Errorf("ambiguous credential resolution: %q is already present in base credential sets, cannot merge", k)
+		}
+		s[k] = v
+	}
+	return nil
+}
+
 // CredentialSet represents a collection of credentials
 type CredentialSet struct {
 	// Name is the name of the credentialset.

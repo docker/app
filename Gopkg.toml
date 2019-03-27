@@ -40,9 +40,11 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/docker/cli"
   branch = "master"
 
+# Waiting for https://github.com/deislabs/duffle/pull/682 to be merged
 [[override]]
   name = "github.com/deislabs/duffle"
-  branch = "master"
+  source = "github.com/ijc/duffle"
+  branch = "set-merge"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
