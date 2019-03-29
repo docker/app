@@ -66,13 +66,27 @@ func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
 }
 
 type credentialOptions struct {
-	targetContext  string
-	credentialsets []string
+	targetContext    string
+	credentialsets   []string
+	sendRegistryAuth bool
 }
 
 func (o *credentialOptions) addFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&o.targetContext, "target-context", "", "Context on which the application is executed")
 	flags.StringArrayVarP(&o.credentialsets, "credential-set", "c", []string{}, "Use a duffle credentialset (either a YAML file, or a credential set present in the duffle credential store)")
+	flags.BoolVar(&o.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
+}
+
+func (o *credentialOptions) SetDefaultTargetContext(dockerCli command.Cli) {
+	o.targetContext = getTargetContext(o.targetContext, dockerCli.CurrentContext())
+}
+
+func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli) []credentialSetOpt {
+	return []credentialSetOpt{
+		addNamedCredentialSets(o.credentialsets),
+		addDockerCredentials(o.targetContext, dockerCli.ContextStore()),
+		addRegistryCredentials(o.sendRegistryAuth, dockerCli),
+	}
 }
 
 type registryOptions struct {

@@ -12,7 +12,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 	mapping := ExtractCNABParameterMapping(app.Parameters())
 	flatParameters := app.Parameters().Flatten()
 	parameters := map[string]bundle.ParameterDefinition{
-		internal.Namespace + "orchestrator": {
+		internal.ParameterOrchestratorName: {
 			DataType: "string",
 			AllowedValues: []interface{}{
 				"",
@@ -30,10 +30,10 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				"install",
 				"upgrade",
 				"uninstall",
-				internal.Namespace + "status",
+				internal.ActionStatusName,
 			},
 		},
-		internal.Namespace + "kubernetes-namespace": {
+		internal.ParameterKubernetesNamespaceName: {
 			DataType:     "string",
 			DefaultValue: "",
 			Destination: &bundle.Location{
@@ -46,10 +46,10 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				"install",
 				"upgrade",
 				"uninstall",
-				internal.Namespace + "status",
+				internal.ActionStatusName,
 			},
 		},
-		internal.Namespace + "render-format": {
+		internal.ParameterRenderFormatName: {
 			DataType: "string",
 			AllowedValues: []interface{}{
 				"yaml",
@@ -63,8 +63,18 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				Description: "Output format for the render command",
 			},
 			ApplyTo: []string{
-				internal.Namespace + "render",
+				internal.ActionRenderName,
 			},
+		},
+		internal.ParameterShareRegistryCredsName: {
+			DataType: "bool",
+			Destination: &bundle.Location{
+				EnvironmentVariable: "DOCKER_SHARE_REGISTRY_CREDS",
+			},
+			Metadata: &bundle.ParameterMetadata{
+				Description: "Share registry credentials with the invocation image",
+			},
+			DefaultValue: false,
 		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
@@ -91,8 +101,11 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 
 	return &bundle.Bundle{
 		Credentials: map[string]bundle.Location{
-			"docker.context": {
-				Path: "/cnab/app/context.dockercontext",
+			internal.CredentialDockerContextName: {
+				Path: internal.CredentialDockerContextPath,
+			},
+			internal.CredentialRegistryName: {
+				Path: internal.CredentialRegistryPath,
 			},
 		},
 		Description: app.Metadata().Description,
@@ -109,15 +122,15 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Version:     app.Metadata().Version,
 		Parameters:  parameters,
 		Actions: map[string]bundle.Action{
-			internal.Namespace + "inspect": {
+			internal.ActionInspectName: {
 				Modifies:  false,
 				Stateless: true,
 			},
-			internal.Namespace + "render": {
+			internal.ActionRenderName: {
 				Modifies:  false,
 				Stateless: true,
 			},
-			internal.Namespace + "status": {
+			internal.ActionStatusName: {
 				Modifies: false,
 			},
 		},

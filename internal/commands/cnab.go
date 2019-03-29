@@ -2,6 +2,8 @@ package commands
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,8 +25,10 @@ import (
 	"github.com/docker/cli/cli/context/docker"
 	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 )
 
@@ -35,41 +39,91 @@ type bindMount struct {
 
 const defaultSocketPath string = "/var/run/docker.sock"
 
-func prepareCredentialSet(contextName string, contextStore store.Store, b *bundle.Bundle, namedCredentialsets []string) (map[string]string, error) {
+type credentialSetOpt func(b *bundle.Bundle, creds credentials.Set) error
+
+func addNamedCredentialSets(namedCredentialsets []string) credentialSetOpt {
+	return func(_ *bundle.Bundle, creds credentials.Set) error {
+		for _, file := range namedCredentialsets {
+			if _, err := os.Stat(file); err != nil {
+				file = filepath.Join(duffleHome().Credentials(), file+".yaml")
+			}
+			c, err := credentials.Load(file)
+			if err != nil {
+				return err
+			}
+			values, err := c.Resolve()
+			if err != nil {
+				return err
+			}
+			if err := creds.Merge(values); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func addDockerCredentials(contextName string, contextStore store.Store) credentialSetOpt {
 	// docker desktop contexts require some rewriting for being used within a container
 	contextStore = dockerDesktopAwareStore{Store: contextStore}
-	creds := map[string]string{}
-	for _, file := range namedCredentialsets {
-		if _, err := os.Stat(file); err != nil {
-			file = filepath.Join(duffleHome().Credentials(), file+".yaml")
-		}
-		c, err := credentials.Load(file)
-		if err != nil {
-			return nil, err
-		}
-		values, err := c.Resolve()
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range values {
-			if _, ok := creds[k]; ok {
-				return nil, fmt.Errorf("ambiguous credential resolution: %q is present in multiple credential sets", k)
+	return func(_ *bundle.Bundle, creds credentials.Set) error {
+		if contextName != "" {
+			data, err := ioutil.ReadAll(store.Export(contextName, contextStore))
+			if err != nil {
+				return err
 			}
-			creds[k] = v
+			creds[internal.CredentialDockerContextName] = string(data)
 		}
+		return nil
 	}
-	if contextName != "" {
-		data, err := ioutil.ReadAll(store.Export(contextName, contextStore))
+}
+
+func addRegistryCredentials(shouldPopulate bool, dockerCli command.Cli) credentialSetOpt {
+	return func(b *bundle.Bundle, creds credentials.Set) error {
+		if _, ok := b.Credentials[internal.CredentialRegistryName]; !ok {
+			return nil
+		}
+
+		registryCreds := map[string]types.AuthConfig{}
+		if shouldPopulate {
+			for _, img := range b.Images {
+				named, err := reference.ParseNormalizedNamed(img.Image)
+				if err != nil {
+					return err
+				}
+				info, err := registry.ParseRepositoryInfo(named)
+				if err != nil {
+					return err
+				}
+				key := registry.GetAuthConfigKey(info.Index)
+				if _, ok := registryCreds[key]; !ok {
+					registryCreds[key] = command.ResolveAuthConfig(context.Background(), dockerCli, info.Index)
+				}
+			}
+		}
+		registryCredsJSON, err := json.Marshal(registryCreds)
 		if err != nil {
+			return err
+		}
+		creds[internal.CredentialRegistryName] = string(registryCredsJSON)
+		return nil
+	}
+}
+
+func prepareCredentialSet(b *bundle.Bundle, opts ...credentialSetOpt) (map[string]string, error) {
+	creds := map[string]string{}
+	for _, op := range opts {
+		if err := op(b, creds); err != nil {
 			return nil, err
 		}
-		creds["docker.context"] = string(data)
 	}
-	_, requiresDockerContext := b.Credentials["docker.context"]
-	_, hasDockerContext := creds["docker.context"]
+
+	_, requiresDockerContext := b.Credentials[internal.CredentialDockerContextName]
+	_, hasDockerContext := creds[internal.CredentialDockerContextName]
 	if requiresDockerContext && !hasDockerContext {
 		return nil, errors.New("no target context specified. Use --target-context= or DOCKER_TARGET_CONTEXT= to define it")
 	}
+
 	return creds, nil
 }
 
@@ -199,7 +253,7 @@ func resolveBundle(dockerCli command.Cli, name string, pullRef bool, insecureReg
 
 func requiredClaimBindMount(c claim.Claim, targetContextName string, dockerCli command.Cli) (bindMount, error) {
 	var specifiedOrchestrator string
-	if rawOrchestrator, ok := c.Parameters["docker.orchestrator"]; ok {
+	if rawOrchestrator, ok := c.Parameters[internal.ParameterOrchestratorName]; ok {
 		specifiedOrchestrator = rawOrchestrator.(string)
 	}
 
@@ -253,7 +307,7 @@ func isDockerHostLocal(host string) bool {
 func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
 	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *claim.Claim, *bytes.Buffer, error) {
 
-	c, err := claim.New(actionName)
+	c, err := claim.New("custom-action")
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -267,17 +321,15 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	}
 	c.Bundle = bundle
 
-	parameters, err := mergeBundleParameters(c.Bundle,
+	if err := mergeBundleParameters(c,
 		withFileParameters(paramsOpts.parametersFiles),
 		withCommandLineParameters(paramsOpts.overrides),
-	)
-	if err != nil {
+	); err != nil {
 		return nil, nil, nil, err
 	}
-	c.Parameters = parameters
 
 	a := &action.RunCustom{
-		Action: internal.Namespace + actionName,
+		Action: actionName,
 		Driver: driverImpl,
 	}
 	return a, c, errBuf, nil

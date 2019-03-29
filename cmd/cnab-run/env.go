@@ -1,18 +1,17 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
 
+	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command"
 	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/context/docker"
 	kubcontext "github.com/docker/cli/cli/context/kubernetes"
 	contextstore "github.com/docker/cli/cli/context/store"
 	cliflags "github.com/docker/cli/cli/flags"
-)
-
-const (
-	fileDockerContext = "/cnab/app/context.dockercontext"
 )
 
 var storeConfig = contextstore.NewConfig(
@@ -23,7 +22,7 @@ var storeConfig = contextstore.NewConfig(
 
 func setupDockerContext() (command.Cli, error) {
 	s := contextstore.New(cliconfig.ContextStoreDir(), storeConfig)
-	f, err := os.Open(fileDockerContext)
+	f, err := os.Open(internal.CredentialDockerContextPath)
 	if err != nil {
 		return nil, err
 	}
@@ -35,9 +34,23 @@ func setupDockerContext() (command.Cli, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cli, cli.Initialize(&cliflags.ClientOptions{
+	if err := cli.Initialize(&cliflags.ClientOptions{
 		Common: &cliflags.CommonOptions{
 			Context: "cnab",
 		},
-	})
+	}); err != nil {
+		return nil, err
+	}
+	authConfigsJSON, err := ioutil.ReadFile(internal.CredentialRegistryPath)
+	if err != nil {
+		return nil, err
+	}
+
+	configFile := cli.ConfigFile()
+
+	if err := json.Unmarshal(authConfigsJSON, &configFile.AuthConfigs); err != nil {
+		return nil, err
+	}
+
+	return cli, nil
 }

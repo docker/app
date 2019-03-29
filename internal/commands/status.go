@@ -38,8 +38,8 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 	if err != nil {
 		return err
 	}
-	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	bind, err := requiredClaimBindMount(c, targetContext, dockerCli)
+	opts.SetDefaultTargetContext(dockerCli)
+	bind, err := requiredClaimBindMount(c, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,12 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), c.Bundle, opts.credentialsets)
+	if err := mergeBundleParameters(&c,
+		withSendRegistryAuth(opts.sendRegistryAuth),
+	); err != nil {
+		return err
+	}
+	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli)...)
 	if err != nil {
 		return err
 	}
@@ -55,7 +60,7 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 		return err
 	}
 	status := &action.RunCustom{
-		Action: internal.Namespace + "status",
+		Action: internal.ActionStatusName,
 		Driver: driverImpl,
 	}
 	if err := status.Run(&c, creds, dockerCli.Out()); err != nil {

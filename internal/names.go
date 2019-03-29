@@ -25,6 +25,31 @@ const (
 	// Namespace is the reverse DNS namespace used with labels and CNAB custom actions.
 	Namespace = "com.docker.app."
 
+	// ActionStatusName is the name of the custom "status" action
+	ActionStatusName = Namespace + "status"
+	// ActionInspectName is the name of the custom "inspect" action
+	ActionInspectName = Namespace + "inspect"
+	// ActionRenderName is the name of the custom "render" action
+	ActionRenderName = Namespace + "render"
+
+	// CredentialDockerContextName is the name of the credential containing a Docker context
+	CredentialDockerContextName = "docker.context"
+	// CredentialDockerContextPath is the path to the credential containing a Docker context
+	CredentialDockerContextPath = "/cnab/app/context.dockercontext"
+	// CredentialRegistryName is the name of the credential containing registry credentials
+	CredentialRegistryName = Namespace + "registry-creds"
+	// CredentialRegistryPath is the name to the credential containing registry credentials
+	CredentialRegistryPath = "/cnab/app/registry-creds.json"
+
+	// ParameterOrchestratorName is the name of the parameter containing the orchestrator
+	ParameterOrchestratorName = Namespace + "orchestrator"
+	// ParameterKubernetesNamespaceName is the name of the parameter containing the kubernetes namespace
+	ParameterKubernetesNamespaceName = Namespace + "kubernetes-namespace"
+	// ParameterRenderFormatName is the name of the parameter containing the kubernetes namespace
+	ParameterRenderFormatName = Namespace + "render-format"
+	// ParameterShareRegistryCredsName is the name of the parameter which indicates if credentials should be shared
+	ParameterShareRegistryCredsName = Namespace + "share-registry-creds"
+
 	// DockerStackOrchestratorEnvVar is the environment variable set by the CNAB runtime to select
 	// the stack orchestrator.
 	DockerStackOrchestratorEnvVar = "DOCKER_STACK_ORCHESTRATOR"

@@ -53,11 +53,11 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		w = f
 	}
 
-	a, c, errBuf, err := prepareCustomAction("render", dockerCli, appname, w, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
+	a, c, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
 	if err != nil {
 		return err
 	}
-	c.Parameters[internal.Namespace+"render-format"] = opts.formatDriver
+	c.Parameters[internal.ParameterRenderFormatName] = opts.formatDriver
 
 	if err := a.Run(c, nil, nil); err != nil {
 		return fmt.Errorf("render failed: %s", errBuf)

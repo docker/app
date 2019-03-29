@@ -9,7 +9,6 @@ import (
 	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -18,10 +17,9 @@ type installOptions struct {
 	credentialOptions
 	registryOptions
 	pullOptions
-	orchestrator     string
-	kubeNamespace    string
-	stackName        string
-	sendRegistryAuth bool
+	orchestrator  string
+	kubeNamespace string
+	stackName     string
 }
 
 type nameKind uint
@@ -62,18 +60,14 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.orchestrator, "orchestrator", "o", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "kubernetes-namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Installation name (defaults to application name)")
-	cmd.Flags().BoolVar(&opts.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
 
 	return cmd
 }
 
 func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
 	defer muteDockerCli(dockerCli)()
-	if opts.sendRegistryAuth {
-		return errors.New("with-registry-auth is not supported at the moment")
-	}
-	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	bind, err := requiredBindMount(targetContext, opts.orchestrator, dockerCli.ContextStore())
+	opts.SetDefaultTargetContext(dockerCli)
+	bind, err := requiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())
 	if err != nil {
 		return err
 	}
@@ -102,22 +96,21 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), bndl, opts.credentialsets)
+	c.Bundle = bndl
+
+	if err := mergeBundleParameters(c,
+		withFileParameters(opts.parametersFiles),
+		withCommandLineParameters(opts.overrides),
+		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
+		withSendRegistryAuth(opts.sendRegistryAuth),
+	); err != nil {
+		return err
+	}
+	creds, err := prepareCredentialSet(bndl, opts.CredentialSetOpts(dockerCli)...)
 	if err != nil {
 		return err
 	}
 	if err := credentials.Validate(creds, bndl.Credentials); err != nil {
-		return err
-	}
-
-	c.Bundle = bndl
-
-	c.Parameters, err = mergeBundleParameters(bndl,
-		withFileParameters(opts.parametersFiles),
-		withCommandLineParameters(opts.overrides),
-		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
-	)
-	if err != nil {
 		return err
 	}
 

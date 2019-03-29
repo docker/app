@@ -1,9 +1,14 @@
 package commands
 
 import (
+	"encoding/json"
 	"testing"
 
+	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config/configfile"
+	"github.com/docker/cli/cli/config/types"
 	cliflags "github.com/docker/cli/cli/flags"
 	"gotest.tools/assert"
 )
@@ -119,6 +124,108 @@ func TestSocketPath(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			assert.Equal(t, testCase.expected, socketPath(testCase.host))
+		})
+	}
+}
+
+type registryConfigMock struct {
+	command.Cli
+	configFile *configfile.ConfigFile
+}
+
+func (r *registryConfigMock) ConfigFile() *configfile.ConfigFile {
+	return r.configFile
+}
+
+func TestShareRegistryCreds(t *testing.T) {
+	cases := []struct {
+		name       string
+		shareCreds bool
+		stored     map[string]types.AuthConfig
+		expected   map[string]types.AuthConfig
+		images     map[string]bundle.Image
+	}{
+		{
+			name:       "no-share",
+			shareCreds: false,
+			stored: map[string]types.AuthConfig{
+				"my-registry.com": {
+					Username: "test",
+					Password: "test",
+				},
+			},
+			expected: map[string]types.AuthConfig{},
+			images: map[string]bundle.Image{
+				"component1": {
+					BaseImage: bundle.BaseImage{
+						Image: "my-registry.com/ns/repo:tag",
+					},
+				},
+			},
+		},
+		{
+			name:       "share",
+			shareCreds: true,
+			stored: map[string]types.AuthConfig{
+				"my-registry.com": {
+					Username: "test",
+					Password: "test",
+				},
+				"my-registry2.com": {
+					Username: "test",
+					Password: "test",
+				},
+			},
+			expected: map[string]types.AuthConfig{
+				"my-registry.com": {
+					Username: "test",
+					Password: "test",
+				}},
+			images: map[string]bundle.Image{
+				"component1": {
+					BaseImage: bundle.BaseImage{
+						Image: "my-registry.com/ns/repo:tag",
+					},
+				},
+			},
+		},
+		{
+			name:       "share-missing",
+			shareCreds: true,
+			stored: map[string]types.AuthConfig{
+				"my-registry2.com": {
+					Username: "test",
+					Password: "test",
+				},
+			},
+			expected: map[string]types.AuthConfig{
+				"my-registry.com": {}},
+			images: map[string]bundle.Image{
+				"component1": {
+					BaseImage: bundle.BaseImage{
+						Image: "my-registry.com/ns/repo:tag",
+					},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			creds, err := prepareCredentialSet(
+				&bundle.Bundle{
+					Credentials: map[string]bundle.Location{internal.CredentialRegistryName: {}},
+					Images:      c.images,
+				},
+				addNamedCredentialSets(nil),
+				addDockerCredentials("", nil),
+				addRegistryCredentials(c.shareCreds, &registryConfigMock{configFile: &configfile.ConfigFile{
+					AuthConfigs: c.stored,
+				}}))
+			assert.NilError(t, err)
+			var result map[string]types.AuthConfig
+			assert.NilError(t, json.Unmarshal([]byte(creds[internal.CredentialRegistryName]), &result))
+			assert.DeepEqual(t, c.expected, result)
 		})
 	}
 }

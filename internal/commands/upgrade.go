@@ -40,7 +40,7 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 
 func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOptions) error {
 	defer muteDockerCli(dockerCli)()
-	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
+	opts.SetDefaultTargetContext(dockerCli)
 	h := duffleHome()
 	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(h.Claims(), "json"))
 	c, err := claimStore.Read(installationName)
@@ -55,15 +55,15 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		}
 		c.Bundle = b
 	}
-	c.Parameters, err = mergeBundleParameters(c.Bundle,
+	if err := mergeBundleParameters(&c,
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
-	)
-	if err != nil {
+		withSendRegistryAuth(opts.sendRegistryAuth),
+	); err != nil {
 		return err
 	}
 
-	bind, err := requiredClaimBindMount(c, targetContext, dockerCli)
+	bind, err := requiredClaimBindMount(c, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(targetContext, dockerCli.ContextStore(), c.Bundle, opts.credentialsets)
+	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli)...)
 	if err != nil {
 		return err
 	}

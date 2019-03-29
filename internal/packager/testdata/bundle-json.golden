@@ -104,6 +104,16 @@
         "com.docker.app.render"
       ]
     },
+    "com.docker.app.share-registry-creds": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Share registry credentials with the invocation image"
+      },
+      "destination": {
+        "env": "DOCKER_SHARE_REGISTRY_CREDS"
+      }
+    },
     "watcher.cmd": {
       "type": "string",
       "defaultValue": "foo",
@@ -113,6 +123,9 @@
     }
   },
   "credentials": {
+    "com.docker.app.registry-creds": {
+      "path": "/cnab/app/registry-creds.json"
+    },
     "docker.context": {
       "path": "/cnab/app/context.dockercontext"
     }
