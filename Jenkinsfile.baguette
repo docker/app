@@ -101,6 +101,7 @@ pipeline {
                     }
                     post {
                         always {
+                            sh 'sed -i -E -e \'s,"github.com/docker/app([^"]*)","docker-app\\1",g\' src/github.com/docker/app/_build/test-results/*.xml'
                             archiveArtifacts 'src/github.com/docker/app/_build/test-results/*.xml'
                             junit 'src/github.com/docker/app/_build/test-results/*.xml'
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage'
