@@ -77,7 +77,7 @@ pipeline {
         }
         stage('Test') {
             parallel {
-                stage("Unit Coverage") {
+                stage("Coverage") {
                     environment {
                         DOCKERAPP_BINARY = '../e2e/coverage-bin'
                         DOCKERCLI_BINARY = '../docker-linux'
