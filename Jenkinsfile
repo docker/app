@@ -185,11 +185,13 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
-                            sh './docker-app-e2e-linux --e2e-path=e2e'
+                            sh './gotestsum-linux --format short-verbose --junitfile e2e-linux.xml --raw-command -- ./test2json-linux -t -p docker-app/e2e-linux ./docker-app-e2e-linux -test.v --e2e-path=e2e'
                         }
                     }
                     post {
                         always {
+                            archiveArtifacts 'src/github.com/docker/app/e2e-linux.xml'
+                            junit 'src/github.com/docker/app/e2e-linux.xml'
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
                             deleteDir()
                         }

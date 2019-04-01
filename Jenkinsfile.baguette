@@ -151,11 +151,13 @@ pipeline {
                                 unstash "e2e"
                             }
                             sh './docker-linux version'
-                            sh './docker-app-e2e-linux -test.v --e2e-path=e2e'
+                            sh './gotestsum-linux --format short-verbose --junitfile e2e-linux.xml --raw-command -- ./test2json-linux -t -p docker-app/e2e-linux ./docker-app-e2e-linux -test.v --e2e-path=e2e'
                         }
                     }
                     post {
                         always {
+                            archiveArtifacts 'src/github.com/docker/app/e2e-linux.xml'
+                            junit 'src/github.com/docker/app/e2e-linux.xml'
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
                             deleteDir()
                         }
@@ -184,11 +186,13 @@ pipeline {
                                 unstash "e2e"
                             }
                             sh './docker-darwin version'
-                            sh './docker-app-e2e-darwin -test.v --e2e-path=e2e'
+                            sh './gotestsum-darwin --format short-verbose --junitfile e2e-darwin.xml --raw-command -- ./test2json-darwin -t -p docker-app/e2e-darwin ./docker-app-e2e-darwin -test.v --e2e-path=e2e'
                         }
                     }
                     post {
                         always {
+                            archiveArtifacts 'src/github.com/docker/app/e2e-darwin.xml'
+                            junit 'src/github.com/docker/app/e2e-darwin.xml'
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
                             deleteDir()
                         }
@@ -217,11 +221,13 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
-                            bat 'docker-app-e2e-windows.exe -test.v --e2e-path=e2e'
+                            bat 'gotestsum-windows.exe --format short-verbose --junitfile e2e-windows.xml --raw-command -- test2json-windows.exe -t -p docker-app/e2e-windows docker-app-e2e-windows.exe -test.v --e2e-path=e2e'
                         }
                     }
                     post {
                         always {
+                            archiveArtifacts 'src/github.com/docker/app/e2e-windows.xml'
+                            junit 'src/github.com/docker/app/e2e-windows.xml'
                             bat 'docker rmi docker/cnab-app-base:%BUILD_TAG%'
                             deleteDir()
                         }

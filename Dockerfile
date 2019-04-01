@@ -30,6 +30,11 @@ RUN mkdir $GOPATH/src/gotest.tools && \
     GO111MODULE=on GOOS=darwin  go build -o /usr/local/bin/gotestsum-darwin      gotest.tools/gotestsum && \
     GO111MODULE=on GOOS=windows go build -o /usr/local/bin/gotestsum-windows.exe gotest.tools/gotestsum && \
     ln -s gotestsum-linux /usr/local/bin/gotestsum
+# Source for cmd/test2json is part of the Go distribution and is
+# therefore available in the base image.
+RUN GOOS=linux   go build -o /usr/local/bin/test2json-linux       cmd/test2json && \
+    GOOS=darwin  go build -o /usr/local/bin/test2json-darwin      cmd/test2json && \
+    GOOS=windows go build -o /usr/local/bin/test2json-windows.exe cmd/test2json
 RUN go get -d gopkg.in/mjibson/esc.v0 && \
     cd /go/src/github.com/mjibson/esc && \
     go build -v -o /usr/bin/esc . && \

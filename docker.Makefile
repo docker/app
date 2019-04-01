@@ -71,10 +71,19 @@ e2e-cross: create_bin
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-linux
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-windows.exe bin/$(BIN_NAME)-e2e-windows.exe
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-linux bin/gotestsum-linux
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-darwin bin/gotestsum-darwin
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-windows.exe bin/gotestsum-windows.exe
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-linux bin/test2json-linux
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-darwin bin/test2json-darwin
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-windows.exe bin/test2json-windows.exe
 	docker rm $(E2E_CROSS_CTNR_NAME)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-darwin)
-	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-windows.exe)
+	@$(call chmod,+x,bin/gotestsum-linux)
+	@$(call chmod,+x,bin/gotestsum-darwin)
+	@$(call chmod,+x,bin/test2json-linux)
+	@$(call chmod,+x,bin/test2json-darwin)
 
 tars:
 	tar --transform='flags=r;s|$(BIN_NAME)-linux|$(BIN_NAME)-plugin-linux|' -czf bin/$(BIN_NAME)-linux.tar.gz -C bin $(BIN_NAME)-linux ${BIN_STANDALONE_NAME}-linux
