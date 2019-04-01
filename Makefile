@@ -24,9 +24,11 @@ ifeq ($(OS),Windows_NT)
   EXEC_EXT := .exe
 endif
 
+TEST_RESULTS_DIR = _build/test-results
 STATIC_FLAGS= CGO_ENABLED=0
 GO_BUILD = $(STATIC_FLAGS) go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 GO_TEST = $(STATIC_FLAGS) go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
+GO_TESTSUM = $(STATIC_FLAGS) gotestsum --junitfile $(TEST_RESULTS_DIR)/$(1) -- -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 
 all: bin/$(BIN_NAME) test
 
@@ -79,7 +81,8 @@ test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 
 test-unit: ## run unit tests
 	@echo "Running unit tests..."
-	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
+	@$(call mkdir,$(TEST_RESULTS_DIR))
+	$(call GO_TESTSUM,unit.xml) $(shell go list ./... | grep -vE '/e2e')
 
 coverage-bin:
 	CGO_ENABLED=0 go test -tags="$(BUILDTAGS) testrunmain" -ldflags=$(LDFLAGS) -coverpkg="./..." -c -o _build/$(BIN_NAME).cov ./cmd/docker-app
@@ -87,7 +90,8 @@ coverage-bin:
 coverage-test-unit:
 	@echo "Running unit tests (coverage)..."
 	@$(call mkdir,_build/cov)
-	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
+	@$(call mkdir,$(TEST_RESULTS_DIR))
+	$(call GO_TESTSUM,unit-coverage.xml) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
 
 coverage-test-e2e: coverage-bin
 	@echo "Running e2e tests (coverage)..."

@@ -87,7 +87,8 @@ tars:
 test: test-unit test-e2e ## run all tests
 
 test-unit: build_dev_image ## run unit tests
-	docker run --rm $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) test-unit
+	@$(call mkdir,_build/test-results)
+	docker run --rm -v $(CURDIR)/_build/test-results:/test-results $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) test-unit
 
 test-e2e: build_dev_image invocation-image ## run end-to-end tests
 	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) bin/$(BIN_NAME) test-e2e
@@ -97,6 +98,7 @@ coverage: build_dev_image ## run tests with coverage
 	@$(call mkdir,_build)
 	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -t $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} EXPERIMENTAL=$(EXPERIMENTAL) coverage
 	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
+	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/test-results/ ./_build/test-results
 	docker rm $(COV_CTNR_NAME)
 
 gradle-test:
@@ -124,7 +126,7 @@ vendor: build_dev_image
 clean-vendor-cache:
 	docker rm -f docker-app-vendoring || true
 	docker volume rm -f docker-app-vendor-cache
-	
+
 check-vendor: build_dev_image
 	$(info Check Vendoring...)
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"

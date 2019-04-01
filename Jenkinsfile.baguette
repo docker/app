@@ -101,6 +101,8 @@ pipeline {
                     }
                     post {
                         always {
+                            archiveArtifacts 'src/github.com/docker/app/_build/test-results/*.xml'
+                            junit 'src/github.com/docker/app/_build/test-results/*.xml'
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage'
                             deleteDir()
                         }
