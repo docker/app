@@ -77,7 +77,8 @@ lint: ## run linter(s)
 
 test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."
-	$(GO_TEST) -v ./e2e/
+	@$(call mkdir,$(TEST_RESULTS_DIR))
+	$(call GO_TESTSUM,e2e.xml) -v ./e2e/
 
 test-unit: ## run unit tests
 	@echo "Running unit tests..."
@@ -96,7 +97,8 @@ coverage-test-unit:
 coverage-test-e2e: coverage-bin
 	@echo "Running e2e tests (coverage)..."
 	@$(call mkdir,_build/cov)
-	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
+	@$(call mkdir,$(TEST_RESULTS_DIR))
+	DOCKERAPP_BINARY=../e2e/coverage-bin $(call GO_TESTSUM,e2e-coverage.xml) -v ./e2e
 
 coverage: coverage-test-unit coverage-test-e2e ## run tests with coverage
 	go install ./vendor/github.com/wadey/gocovmerge/
