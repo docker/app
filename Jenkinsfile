@@ -144,12 +144,16 @@ pipeline {
                                 sh 'docker load -i coverage-experimental-invocation-image.tar'
                             }
                             ansiColor('xterm') {
-                                sh 'make EXPERIMENTAL=on -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage'
+                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage'
                             }
                         }
                     }
                     post {
                         always {
+                            sh 'sed -i -E -e \'s,"github.com/docker/app","unit/experimental",g; s,"github.com/docker/app/([^"]*)","unit/experimental/\\1",g\' src/github.com/docker/app/_build/test-results/experimental-unit-coverage.xml'
+                            sh 'sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/experimental",g\' src/github.com/docker/app/_build/test-results/experimental-e2e-coverage.xml'
+                            archiveArtifacts 'src/github.com/docker/app/_build/test-results/*.xml'
+                            junit 'src/github.com/docker/app/_build/test-results/*.xml'
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage-experimental'
                             deleteDir()
                         }
