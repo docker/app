@@ -180,7 +180,9 @@ _complete dockerapp 2>/dev/null
 func runCompletionZsh(out io.Writer, rootCmd *cobra.Command) error {
 	fmt.Fprint(out, zshHead)
 	buf := new(bytes.Buffer)
-	rootCmd.GenBashCompletion(buf)
+	if err := rootCmd.GenBashCompletion(buf); err != nil {
+		return err
+	}
 	fmt.Fprint(out, buf.String())
 	fmt.Fprint(out, zshTail)
 	return nil

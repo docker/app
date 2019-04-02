@@ -3,20 +3,25 @@ linters:
   disable-all: true
   enable:
     - deadcode
+    - errcheck
     - gocyclo
     - gofmt
     - goimports
     - golint
     - gosimple
+    - govet
     - ineffassign
     - interfacer
     - lll
     - misspell
     - nakedret
+    - staticcheck
+    - structcheck
+    - typecheck
     - unconvert
     - unparam
     - unused
-    - vet
+    - varcheck
 linters-settings:
   gocyclo:
     min-complexity: 16

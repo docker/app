@@ -183,7 +183,8 @@ func (r *interactiveDisplay) onEvent(ev remotes.FixupEvent) {
 	for _, s := range r.images {
 		r.previousLineCount += s.print(out)
 	}
-	r.out.Write(out.Bytes())
+	// nolint because there is nothing much we can do with an error to write to our output.
+	r.out.Write(out.Bytes()) //nolint:errcheck
 }
 
 func (r *interactiveDisplay) imageIndex(name string) int {

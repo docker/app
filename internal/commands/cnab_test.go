@@ -16,7 +16,8 @@ import (
 func TestRequiresBindMount(t *testing.T) {
 	dockerCli, err := command.NewDockerCli()
 	assert.NilError(t, err)
-	dockerCli.Initialize(cliflags.NewClientOptions())
+	err = dockerCli.Initialize(cliflags.NewClientOptions())
+	assert.NilError(t, err)
 
 	testCases := []struct {
 		name               string

@@ -49,9 +49,10 @@ func firstOrEmpty(list []string) string {
 func muteDockerCli(dockerCli command.Cli) func() {
 	stdout := dockerCli.Out()
 	stderr := dockerCli.Err()
-	dockerCli.Apply(command.WithCombinedStreams(ioutil.Discard))
+	// nolint because WithCombinedStreams cannot error
+	dockerCli.Apply(command.WithCombinedStreams(ioutil.Discard)) //nolint:errcheck
 	return func() {
-		dockerCli.Apply(command.WithOutputStream(stdout), command.WithErrorStream(stderr))
+		dockerCli.Apply(command.WithOutputStream(stdout), command.WithErrorStream(stderr)) //nolint:errcheck
 	}
 }
 
