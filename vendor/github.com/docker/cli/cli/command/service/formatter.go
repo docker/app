@@ -10,6 +10,7 @@ import (
 	"github.com/docker/cli/cli/command/inspect"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	mounttypes "github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/pkg/stringid"
@@ -95,6 +96,11 @@ ContainerSpec:
 {{- if .ContainerUser }}
  User: {{ .ContainerUser }}
 {{- end }}
+{{- if .ContainerSysCtls }}
+SysCtls:
+{{- range $k, $v := .ContainerSysCtls }}
+ {{ $k }}{{if $v }}: {{ $v }}{{ end }}
+{{- end }}{{ end }}
 {{- if .ContainerMounts }}
 Mounts:
 {{- end }}
@@ -146,6 +152,18 @@ Ports:
   TargetPort = {{ $port.TargetPort }}
   PublishMode = {{ $port.PublishMode }}
 {{- end }} {{ end -}}
+{{- if .Healthcheck }}
+ Healthcheck:
+  Interval = {{ .Healthcheck.Interval }}
+  Retries = {{ .Healthcheck.Retries }}
+  StartPeriod =	{{ .Healthcheck.StartPeriod }}
+  Timeout =	{{ .Healthcheck.Timeout }}
+  {{- if .Healthcheck.Test }}
+  Tests:
+	{{- range $test := .Healthcheck.Test }}
+	 Test = {{ $test }}
+  {{- end }} {{ end -}}
+{{- end }}
 `
 
 // NewFormat returns a Format for rendering using a Context
@@ -225,6 +243,10 @@ func (ctx *serviceInspectContext) Configs() []*swarm.ConfigReference {
 
 func (ctx *serviceInspectContext) Secrets() []*swarm.SecretReference {
 	return ctx.Service.Spec.TaskTemplate.ContainerSpec.Secrets
+}
+
+func (ctx *serviceInspectContext) Healthcheck() *container.HealthConfig {
+	return ctx.Service.Spec.TaskTemplate.ContainerSpec.Healthcheck
 }
 
 func (ctx *serviceInspectContext) IsModeGlobal() bool {
@@ -396,6 +418,14 @@ func (ctx *serviceInspectContext) ContainerInit() bool {
 
 func (ctx *serviceInspectContext) ContainerMounts() []mounttypes.Mount {
 	return ctx.Service.Spec.TaskTemplate.ContainerSpec.Mounts
+}
+
+func (ctx *serviceInspectContext) ContainerSysCtls() map[string]string {
+	return ctx.Service.Spec.TaskTemplate.ContainerSpec.Sysctls
+}
+
+func (ctx *serviceInspectContext) HasContainerSysCtls() bool {
+	return len(ctx.Service.Spec.TaskTemplate.ContainerSpec.Sysctls) > 0
 }
 
 func (ctx *serviceInspectContext) HasResources() bool {
