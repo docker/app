@@ -123,7 +123,8 @@ pipeline {
                     }
                     post {
                         always {
-                            sh 'sed -i -E -e \'s,"github.com/docker/app([^"]*)","docker-app\\1",g\' src/github.com/docker/app/_build/test-results/*.xml'
+                            sh 'sed -i -E -e \'s,"github.com/docker/app","unit/basic",g; s,"github.com/docker/app/([^"]*)","unit/basic/\\1",g\' src/github.com/docker/app/_build/test-results/unit-coverage.xml'
+                            sh 'sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/basic",g\' src/github.com/docker/app/_build/test-results/e2e-coverage.xml'
                             archiveArtifacts 'src/github.com/docker/app/_build/test-results/*.xml'
                             junit 'src/github.com/docker/app/_build/test-results/*.xml'
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage'
@@ -198,7 +199,7 @@ pipeline {
                                 unstash "e2e"
                             }
                             ansiColor('xterm') {
-                                sh './gotestsum-linux --format short-verbose --junitfile e2e-linux.xml --raw-command -- ./test2json-linux -t -p docker-app/e2e-linux ./docker-app-e2e-linux -test.v --e2e-path=e2e'
+                                sh './gotestsum-linux --format short-verbose --junitfile e2e-linux.xml --raw-command -- ./test2json-linux -t -p e2e/linux ./docker-app-e2e-linux -test.v --e2e-path=e2e'
                             }
                         }
                     }
