@@ -24,7 +24,6 @@ var UnsupportedProperties = []string{
 	"restart",
 	"security_opt",
 	"shm_size",
-	"sysctls",
 	"ulimits",
 	"userns_mode",
 }
@@ -200,7 +199,7 @@ type ServiceConfig struct {
 	StdinOpen       bool                             `mapstructure:"stdin_open" yaml:"stdin_open,omitempty" json:"stdin_open,omitempty"`
 	StopGracePeriod *Duration                        `mapstructure:"stop_grace_period" yaml:"stop_grace_period,omitempty" json:"stop_grace_period,omitempty"`
 	StopSignal      string                           `mapstructure:"stop_signal" yaml:"stop_signal,omitempty" json:"stop_signal,omitempty"`
-	Sysctls         StringList                       `yaml:",omitempty" json:"sysctls,omitempty"`
+	Sysctls         Mapping                          `yaml:",omitempty" json:"sysctls,omitempty"`
 	Tmpfs           StringList                       `yaml:",omitempty" json:"tmpfs,omitempty"`
 	Tty             bool                             `mapstructure:"tty" yaml:"tty,omitempty" json:"tty,omitempty"`
 	Ulimits         map[string]*UlimitsConfig        `yaml:",omitempty" json:"ulimits,omitempty"`
@@ -239,6 +238,12 @@ type StringOrNumberList []string
 // For the key with an empty value (`key=`), the mapped value is set to a pointer to `""`.
 // For the key without value (`key`), the mapped value is set to nil.
 type MappingWithEquals map[string]*string
+
+// Mapping is a mapping type that can be converted from a list of
+// key[=value] strings.
+// For the key with an empty value (`key=`), or key without value (`key`), the
+// mapped value is set to an empty string `""`.
+type Mapping map[string]string
 
 // Labels is a mapping type for labels
 type Labels map[string]string
@@ -503,11 +508,12 @@ type CredentialSpecConfig struct {
 
 // FileObjectConfig is a config type for a file used by a service
 type FileObjectConfig struct {
-	Name     string                 `yaml:",omitempty" json:"name,omitempty"`
-	File     string                 `yaml:",omitempty" json:"file,omitempty"`
-	External External               `yaml:",omitempty" json:"external,omitempty"`
-	Labels   Labels                 `yaml:",omitempty" json:"labels,omitempty"`
-	Extras   map[string]interface{} `yaml:",inline" json:"-"`
+	Name           string                 `yaml:",omitempty" json:"name,omitempty"`
+	File           string                 `yaml:",omitempty" json:"file,omitempty"`
+	External       External               `yaml:",omitempty" json:"external,omitempty"`
+	Labels         Labels                 `yaml:",omitempty" json:"labels,omitempty"`
+	Extras         map[string]interface{} `yaml:",inline" json:"-"`
+	TemplateDriver string                 `mapstructure:"template_driver" yaml:"template_driver,omitempty" json:"template_driver,omitempty"`
 }
 
 // SecretConfig for a secret
