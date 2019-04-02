@@ -21,8 +21,10 @@ pipeline {
                             script {
                                 try {
                                     checkout scm
-                                    sh 'make -f docker.Makefile lint'
-                                    sh 'make -f docker.Makefile cli-cross cross e2e-cross tars'
+                                    ansiColor('xterm') {
+                                        sh 'make -f docker.Makefile lint'
+                                        sh 'make -f docker.Makefile cli-cross cross e2e-cross tars'
+                                    }
                                     dir('bin') {
                                         stash name: 'binaries'
                                     }
@@ -56,8 +58,10 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make -f docker.Makefile save-invocation-image'
-                            sh 'make -f docker.Makefile save-invocation-image-tag INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage OUTPUT=coverage-invocation-image.tar'
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile save-invocation-image'
+                                sh 'make -f docker.Makefile save-invocation-image-tag INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage OUTPUT=coverage-invocation-image.tar'
+                            }
                             dir('_build') {
                                 stash name: 'invocation-image', includes: 'invocation-image.tar'
                                 stash name: 'coverage-invocation-image', includes: 'coverage-invocation-image.tar'
@@ -93,7 +97,9 @@ pipeline {
                                 unstash "coverage-invocation-image"
                                 sh 'docker load -i coverage-invocation-image.tar'
                             }
-                            sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage'
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage'
+                            }
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
                             sh 'curl -s https://codecov.io/bash | bash -s - -f _build/ci-cov/all.out -K'
@@ -119,7 +125,9 @@ pipeline {
                             dir("bin") {
                                 unstash "binaries"
                             }
-                            sh 'make -f docker.Makefile gradle-test'
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile gradle-test'
+                            }
                         }
                     }
                     post {
@@ -254,7 +262,9 @@ pipeline {
                         unstash "invocation-image"
                         sh 'docker load -i invocation-image.tar'
                     }
-                    sh 'make -f docker.Makefile push-invocation-image'
+                    ansiColor('xterm') {
+                        sh 'make -f docker.Makefile push-invocation-image'
+                    }
                 }
                 unstash 'artifacts'
                 echo "Releasing $TAG_NAME"

@@ -19,8 +19,10 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make -f docker.Makefile lint'
-                            sh 'make -f docker.Makefile check-vendor'
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile lint'
+                                sh 'make -f docker.Makefile check-vendor'
+                            }
                         }
                     }
                     post {
@@ -38,7 +40,9 @@ pipeline {
                             script {
                                 try {
                                     checkout scm
-                                    sh 'make -f docker.Makefile cli-cross cross e2e-cross tars'
+                                    ansiColor('xterm') {
+                                        sh 'make -f docker.Makefile cli-cross cross e2e-cross tars'
+                                    }
                                     dir('bin') {
                                         stash name: 'binaries'
                                     }
@@ -72,9 +76,11 @@ pipeline {
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
-                            sh 'make -f docker.Makefile save-invocation-image'
-                            sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage OUTPUT=coverage-invocation-image.tar save-invocation-image-tag'
-                            sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage-experimental OUTPUT=coverage-experimental-invocation-image.tar save-invocation-image-tag'
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile save-invocation-image'
+                                sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage OUTPUT=coverage-invocation-image.tar save-invocation-image-tag'
+                                sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage-experimental OUTPUT=coverage-experimental-invocation-image.tar save-invocation-image-tag'
+                            }
                             dir('_build') {
                                 stash name: 'invocation-image', includes: 'invocation-image.tar'
                                 stash name: 'coverage-invocation-image', includes: 'coverage-invocation-image.tar'
@@ -108,7 +114,9 @@ pipeline {
                                 unstash "coverage-invocation-image"
                                 sh 'docker load -i coverage-invocation-image.tar'
                             }
-                            sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage'
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage'
+                            }
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
                         }
@@ -134,7 +142,9 @@ pipeline {
                                 unstash "coverage-experimental-invocation-image"
                                 sh 'docker load -i coverage-experimental-invocation-image.tar'
                             }
-                            sh 'make EXPERIMENTAL=on -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage'
+                            ansiColor('xterm') {
+                                sh 'make EXPERIMENTAL=on -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage'
+                            }
                         }
                     }
                     post {
@@ -154,7 +164,9 @@ pipeline {
                             dir("bin") {
                                 unstash "binaries"
                             }
-                            sh 'make -f docker.Makefile gradle-test'
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile gradle-test'
+                            }
                         }
                     }
                     post {
@@ -185,7 +197,9 @@ pipeline {
                             dir('e2e'){
                                 unstash "e2e"
                             }
-                            sh './gotestsum-linux --format short-verbose --junitfile e2e-linux.xml --raw-command -- ./test2json-linux -t -p docker-app/e2e-linux ./docker-app-e2e-linux -test.v --e2e-path=e2e'
+                            ansiColor('xterm') {
+                                sh './gotestsum-linux --format short-verbose --junitfile e2e-linux.xml --raw-command -- ./test2json-linux -t -p docker-app/e2e-linux ./docker-app-e2e-linux -test.v --e2e-path=e2e'
+                            }
                         }
                     }
                     post {
