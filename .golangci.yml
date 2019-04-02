@@ -1,0 +1,24 @@
+linters:
+  enable-all: false
+  disable-all: true
+  enable:
+    - deadcode
+    - gocyclo
+    - gofmt
+    - goimports
+    - golint
+    - gosimple
+    - ineffassign
+    - interfacer
+    - lll
+    - misspell
+    - nakedret
+    - unconvert
+    - unparam
+    - unused
+    - vet
+linters-settings:
+  gocyclo:
+    min-complexity: 16
+  lll:
+    line-length: 200

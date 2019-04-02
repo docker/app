@@ -28,7 +28,10 @@ func TestEval(t *testing.T) {
 	testEval(t, "${foo?foo:bar}", env, "foo")
 }
 
-func testProcess(t *testing.T, input, output, parameters, error string) {
+// The nolint is because `parameters` is always the same, but it is
+// preferable to keep the definition in the caller since it
+// corresponds to `input` and `output`.
+func testProcess(t *testing.T, input, output, parameters, error string) { //nolint:unparam
 	ps := make(map[interface{}]interface{})
 	err := yaml.Unmarshal([]byte(parameters), ps)
 	assert.NilError(t, err)
@@ -144,7 +147,7 @@ ab:
 		"eval loop detected")
 }
 
-func testProcessWithOrder(t *testing.T, input, output, error string) {
+func testProcessWithOrder(t *testing.T, input, output string) {
 	parameters := make(map[string]interface{})
 
 	res, err := ProcessWithOrder(input, parameters)
@@ -164,7 +167,7 @@ func TestProcessWithOrder(t *testing.T) {
 `, `parent:
   bb: true
   aa: false
-`, "")
+`)
 
 	// Test ordering is preserved at the top level
 	testProcessWithOrder(t,
@@ -176,5 +179,5 @@ aaa:
   nested: true
 aaa:
   nested: false
-`, "")
+`)
 }
