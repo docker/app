@@ -123,10 +123,12 @@ pipeline {
                     }
                     post {
                         always {
-                            sh 'sed -i -E -e \'s,"github.com/docker/app","unit/basic",g; s,"github.com/docker/app/([^"]*)","unit/basic/\\1",g\' src/github.com/docker/app/_build/test-results/unit-coverage.xml'
-                            sh 'sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/basic",g\' src/github.com/docker/app/_build/test-results/e2e-coverage.xml'
-                            archiveArtifacts 'src/github.com/docker/app/_build/test-results/*.xml'
-                            junit 'src/github.com/docker/app/_build/test-results/*.xml'
+                            dir('src/github.com/docker/app/_build/test-results') {
+                                sh '[ ! -e unit-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app","unit/basic",g; s,"github.com/docker/app/([^"]*)","unit/basic/\\1",g\' unit-coverage.xml'
+                                sh '[ ! -e e2e-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/basic",g\' e2e-coverage.xml'
+                                archiveArtifacts '*.xml'
+                                junit '*.xml'
+                            }
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage'
                             deleteDir()
                         }
@@ -150,10 +152,12 @@ pipeline {
                     }
                     post {
                         always {
-                            sh 'sed -i -E -e \'s,"github.com/docker/app","unit/experimental",g; s,"github.com/docker/app/([^"]*)","unit/experimental/\\1",g\' src/github.com/docker/app/_build/test-results/experimental-unit-coverage.xml'
-                            sh 'sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/experimental",g\' src/github.com/docker/app/_build/test-results/experimental-e2e-coverage.xml'
-                            archiveArtifacts 'src/github.com/docker/app/_build/test-results/*.xml'
-                            junit 'src/github.com/docker/app/_build/test-results/*.xml'
+                            dir('src/github.com/docker/app/_build/test-results') {
+                                sh '[ ! -e experimental-unit-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app","unit/experimental",g; s,"github.com/docker/app/([^"]*)","unit/experimental/\\1",g\' experimental-unit-coverage.xml'
+                                sh '[ ! -e experimental-e2e-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/experimental",g\' experimental-e2e-coverage.xml'
+                                archiveArtifacts '*.xml'
+                                junit '*.xml'
+                            }
                             sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage-experimental'
                             deleteDir()
                         }
