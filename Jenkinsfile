@@ -115,7 +115,8 @@ pipeline {
                                 sh 'docker load -i coverage-invocation-image.tar'
                             }
                             ansiColor('xterm') {
-                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage'
+                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage-run || true'
+                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage-results'
                             }
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
@@ -146,7 +147,8 @@ pipeline {
                                 sh 'docker load -i coverage-experimental-invocation-image.tar'
                             }
                             ansiColor('xterm') {
-                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage'
+                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage-run || true'
+                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage-results'
                             }
                         }
                     }

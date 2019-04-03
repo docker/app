@@ -103,12 +103,15 @@ test-e2e: build_dev_image invocation-image ## run end-to-end tests
 	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
-coverage: build_dev_image ## run tests with coverage
+coverage-run: build_dev_image ## run tests with coverage
 	@$(call mkdir,_build)
 	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -t $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} EXPERIMENTAL=$(EXPERIMENTAL) TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) coverage
+coverage-results:
 	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/test-results/ ./_build/test-results
 	docker rm $(COV_CTNR_NAME)
+# coverage is split in two like this so that CI can extract the results even on failure (which will be detected via the junit) using the individual steps, but for end users running we want the overall failure.
+coverage: coverage-run coverage-results
 
 gradle-test:
 	tar cf - Dockerfile.gradle bin/docker-app-linux integrations/gradle | docker build -t $(GRADLE_IMAGE_NAME) -f Dockerfile.gradle -
@@ -165,4 +168,4 @@ push-invocation-image:
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage gradle-test shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
+.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage coverage-run coverage-results gradle-test shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
