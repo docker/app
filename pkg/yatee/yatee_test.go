@@ -28,10 +28,7 @@ func TestEval(t *testing.T) {
 	testEval(t, "${foo?foo:bar}", env, "foo")
 }
 
-// The nolint is because `parameters` is always the same, but it is
-// preferable to keep the definition in the caller since it
-// corresponds to `input` and `output`.
-func testProcess(t *testing.T, input, output, parameters, error string) { //nolint:unparam
+func testProcess(t *testing.T, input, output, parameters, error string) { //nolint:unparam // `parameters` defined near `input` and `output`.
 	ps := make(map[interface{}]interface{})
 	err := yaml.Unmarshal([]byte(parameters), ps)
 	assert.NilError(t, err)
