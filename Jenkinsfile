@@ -9,6 +9,10 @@ pipeline {
         skipDefaultCheckout(true)
     }
 
+    environment {
+        TAG = "${env.BUILD_TAG}"
+    }
+
     stages {
         stage('Build') {
             parallel {
@@ -78,8 +82,8 @@ pipeline {
                             checkout scm
                             ansiColor('xterm') {
                                 sh 'make -f docker.Makefile save-invocation-image'
-                                sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage OUTPUT=coverage-invocation-image.tar save-invocation-image-tag'
-                                sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage-experimental OUTPUT=coverage-experimental-invocation-image.tar save-invocation-image-tag'
+                                sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$TAG-coverage OUTPUT=coverage-invocation-image.tar save-invocation-image-tag'
+                                sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$TAG-coverage-experimental OUTPUT=coverage-experimental-invocation-image.tar save-invocation-image-tag'
                             }
                             dir('_build') {
                                 stash name: 'invocation-image', includes: 'invocation-image.tar'
@@ -91,9 +95,9 @@ pipeline {
                     post {
                         always {
                             dir('src/github.com/docker/app') {
-                                sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
-                                sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage'
-                                sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage-experimental'
+                                sh 'docker rmi docker/cnab-app-base:$TAG'
+                                sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
+                                sh 'docker rmi docker/cnab-app-base:$TAG-coverage-experimental'
                             }
                             deleteDir()
                         }
@@ -115,8 +119,8 @@ pipeline {
                                 sh 'docker load -i coverage-invocation-image.tar'
                             }
                             ansiColor('xterm') {
-                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage-run || true'
-                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage-results'
+                                sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-run || true'
+                                sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-results'
                             }
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
@@ -130,7 +134,7 @@ pipeline {
                                 archiveArtifacts '*.xml'
                                 junit '*.xml'
                             }
-                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage'
+                            sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
                             deleteDir()
                         }
                     }
@@ -147,8 +151,8 @@ pipeline {
                                 sh 'docker load -i coverage-experimental-invocation-image.tar'
                             }
                             ansiColor('xterm') {
-                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage-run || true'
-                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage-experimental coverage-results'
+                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile TAG=$TAG-coverage-experimental coverage-run || true'
+                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile TAG=$TAG-coverage-experimental coverage-results'
                             }
                         }
                     }
@@ -160,7 +164,7 @@ pipeline {
                                 archiveArtifacts '*.xml'
                                 junit '*.xml'
                             }
-                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage-experimental'
+                            sh 'docker rmi docker/cnab-app-base:$TAG-coverage-experimental'
                             deleteDir()
                         }
                     }
@@ -217,7 +221,7 @@ pipeline {
                         always {
                             archiveArtifacts 'src/github.com/docker/app/e2e-linux.xml'
                             junit 'src/github.com/docker/app/e2e-linux.xml'
-                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
+                            sh 'docker rmi docker/cnab-app-base:$TAG'
                             deleteDir()
                         }
                     }

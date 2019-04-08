@@ -34,5 +34,9 @@ ifeq ($(BUILD_TAG),)
   BUILD_TAG := $(shell git describe --always --dirty --abbrev=10 2> $(NULL))
 endif
 ifeq ($(TAG),)
-  TAG := $(BUILD_TAG)
+  ifeq ($(TAG_NAME),)
+    TAG := $(BUILD_TAG)
+  else
+    TAG := $(TAG_NAME)
+  endif
 endif

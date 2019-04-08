@@ -9,6 +9,11 @@ pipeline {
         skipDefaultCheckout(true)
     }
 
+    environment {
+        TAG = tag()
+        BUILD_TAG = tag()
+    }
+
     stages {
         stage('Build') {
             parallel {
@@ -39,7 +44,7 @@ pipeline {
                                     }
                                     archiveArtifacts 'bin/*.tar.gz'
                                 } finally {
-                                    def clean_images = /docker image ls --format="{{.Repository}}:{{.Tag}}" '*$BUILD_TAG*' | xargs docker image rm -f/
+                                    def clean_images = /docker image ls --format="{{.Repository}}:{{.Tag}}" '*$TAG*' | xargs docker image rm -f/
                                     sh clean_images
                                 }
                             }
@@ -60,7 +65,7 @@ pipeline {
                             checkout scm
                             ansiColor('xterm') {
                                 sh 'make -f docker.Makefile save-invocation-image'
-                                sh 'make -f docker.Makefile save-invocation-image-tag INVOCATION_IMAGE_TAG=$BUILD_TAG-coverage OUTPUT=coverage-invocation-image.tar'
+                                sh 'make -f docker.Makefile save-invocation-image-tag INVOCATION_IMAGE_TAG=$TAG-coverage OUTPUT=coverage-invocation-image.tar'
                             }
                             dir('_build') {
                                 stash name: 'invocation-image', includes: 'invocation-image.tar'
@@ -71,8 +76,8 @@ pipeline {
                     }
                     post {
                         always {
-                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
-                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage'
+                            sh 'docker rmi docker/cnab-app-base:$TAG'
+                            sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
                             deleteDir()
                         }
                     }
@@ -98,8 +103,8 @@ pipeline {
                                 sh 'docker load -i coverage-invocation-image.tar'
                             }
                             ansiColor('xterm') {
-                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage-run || true'
-                                sh 'make -f docker.Makefile BUILD_TAG=$BUILD_TAG-coverage coverage-results'
+                                sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-run || true'
+                                sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-results'
                             }
                             archiveArtifacts '_build/ci-cov/all.out'
                             archiveArtifacts '_build/ci-cov/coverage.html'
@@ -114,7 +119,7 @@ pipeline {
                                 archiveArtifacts '*.xml'
                                 junit '*.xml'
                             }
-                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG-coverage'
+                            sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
                             deleteDir()
                         }
                     }
@@ -170,7 +175,7 @@ pipeline {
                         always {
                             archiveArtifacts 'src/github.com/docker/app/e2e-linux.xml'
                             junit 'src/github.com/docker/app/e2e-linux.xml'
-                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
+                            sh 'docker rmi docker/cnab-app-base:$TAG'
                             deleteDir()
                         }
                     }
@@ -205,7 +210,7 @@ pipeline {
                         always {
                             archiveArtifacts 'src/github.com/docker/app/e2e-darwin.xml'
                             junit 'src/github.com/docker/app/e2e-darwin.xml'
-                            sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
+                            sh 'docker rmi docker/cnab-app-base:$TAG'
                             deleteDir()
                         }
                     }
@@ -240,7 +245,7 @@ pipeline {
                         always {
                             archiveArtifacts 'src/github.com/docker/app/e2e-windows.xml'
                             junit 'src/github.com/docker/app/e2e-windows.xml'
-                            bat 'docker rmi docker/cnab-app-base:%BUILD_TAG%'
+                            bat 'docker rmi docker/cnab-app-base:%TAG%'
                             deleteDir()
                         }
                     }
@@ -273,12 +278,12 @@ pipeline {
                 unstash 'artifacts'
                 echo "Releasing $TAG_NAME"
                 dir('bin') {
-                    release('docker/app-cnab')
+                    release('docker/app')
                 }
             }
             post {
                 always {
-                    sh 'docker rmi docker/cnab-app-base:$BUILD_TAG'
+                    sh 'docker rmi docker/cnab-app-base:$TAG'
                     deleteDir()
                 }
             }
@@ -294,5 +299,13 @@ def release(repo) {
         def release = readJSON text: reply
         url = release.upload_url.replace('{?name,label}', '')
         sh("for f in * ; do curl -sf -H \"Authorization: token $GITHUB_TOKEN\" -H \"Accept: application/json\" -H \"Content-type: application/octet-stream\" -X POST --data-binary \"@\${f}\" $url?name=\${f}; done")
+    }
+}
+
+def tag() {
+    if (env.TAG_NAME != null) {
+        return env.TAG_NAME 
+    } else {
+        return env.BUILD_TAG
     }
 }
