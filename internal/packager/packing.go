@@ -14,10 +14,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-var dockerFile = `FROM docker/cnab-app-base:` + internal.Version + `
-COPY . .`
+const (
+	// CNABBaseImageName is the name of the base invocation image.
+	CNABBaseImageName = "docker/cnab-app-base"
 
-const dockerIgnore = "Dockerfile"
+	dockerIgnore = "Dockerfile"
+)
+
+var dockerFile = `FROM ` + CNABBaseImageName + `:` + internal.Version + `
+COPY . .`
 
 func tarAdd(tarout *tar.Writer, path, file string) error {
 	payload, err := ioutil.ReadFile(file)

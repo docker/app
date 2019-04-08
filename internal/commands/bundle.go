@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
@@ -90,6 +91,11 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App) (*bundle.Bundle, e
 	defer buildResp.Body.Close()
 
 	if err := jsonmessage.DisplayJSONMessagesStream(buildResp.Body, ioutil.Discard, 0, false, func(jsonmessage.JSONMessage) {}); err != nil {
+		// If the invocation image can't be found we will get an error of the form:
+		// manifest for docker/cnab-app-base:v0.6.0-202-gbaf0b246c7 not found
+		if err.Error() == fmt.Sprintf("manifest for %s:%s not found", packager.CNABBaseImageName, internal.Version) {
+			return nil, fmt.Errorf("unable to resolve Docker App base image: %s:%s", packager.CNABBaseImageName, internal.Version)
+		}
 		return nil, err
 	}
 	return packager.ToCNAB(app, invocationImageName)
