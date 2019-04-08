@@ -21,6 +21,20 @@ ENV PATH=${PATH}:/go/src/github.com/docker/app/bin/
 ARG DEP_VERSION=v0.5.0
 RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
     chmod +x /usr/bin/dep
+ARG GOTESTSUM_VERSION=v0.3.4
+RUN mkdir $GOPATH/src/gotest.tools && \
+    git clone -q https://github.com/gotestyourself/gotestsum $GOPATH/src/gotest.tools/gotestsum && \
+    cd $GOPATH/src/gotest.tools/gotestsum && \
+    git -C $GOPATH/src/gotest.tools/gotestsum checkout -q $GOTESTSUM_VERSION && \
+    GO111MODULE=on GOOS=linux   go build -o /usr/local/bin/gotestsum-linux       gotest.tools/gotestsum && \
+    GO111MODULE=on GOOS=darwin  go build -o /usr/local/bin/gotestsum-darwin      gotest.tools/gotestsum && \
+    GO111MODULE=on GOOS=windows go build -o /usr/local/bin/gotestsum-windows.exe gotest.tools/gotestsum && \
+    ln -s gotestsum-linux /usr/local/bin/gotestsum
+# Source for cmd/test2json is part of the Go distribution and is
+# therefore available in the base image.
+RUN GOOS=linux   go build -o /usr/local/bin/test2json-linux       cmd/test2json && \
+    GOOS=darwin  go build -o /usr/local/bin/test2json-darwin      cmd/test2json && \
+    GOOS=windows go build -o /usr/local/bin/test2json-windows.exe cmd/test2json
 RUN go get -d gopkg.in/mjibson/esc.v0 && \
     cd /go/src/github.com/mjibson/esc && \
     go build -v -o /usr/bin/esc . && \

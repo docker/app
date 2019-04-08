@@ -128,7 +128,7 @@ func extract(expr string) (string, error) {
 	return expr[0:i], nil
 }
 
-func tokenize(expr string) ([]string, error) {
+func tokenize(expr string) []string {
 	var tokens []string
 	p := 0
 	for p < len(expr) {
@@ -145,7 +145,7 @@ func tokenize(expr string) ([]string, error) {
 			p++
 		}
 	}
-	return tokens, nil
+	return tokens
 }
 
 func evalValue(comps []string, i int) (int64, int, error) {
@@ -199,10 +199,7 @@ func evalSub(comps []string, i int) (int64, int, error) {
 
 // resolves an arithmetic expression
 func evalExpr(expr string) (int64, error) {
-	comps, err := tokenize(expr)
-	if err != nil {
-		return 0, err
-	}
+	comps := tokenize(expr)
 	v, _, err := evalSub(comps, 0)
 	return v, err
 }

@@ -24,9 +24,11 @@ ifeq ($(OS),Windows_NT)
   EXEC_EXT := .exe
 endif
 
+TEST_RESULTS_DIR = _build/test-results
 STATIC_FLAGS= CGO_ENABLED=0
 GO_BUILD = $(STATIC_FLAGS) go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 GO_TEST = $(STATIC_FLAGS) go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
+GO_TESTSUM = $(STATIC_FLAGS) gotestsum --junitfile $(TEST_RESULTS_DIR)/$(TEST_RESULTS_PREFIX)$(1) -- -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 
 all: bin/$(BIN_NAME) test
 
@@ -71,15 +73,17 @@ test: test-unit test-e2e ## run all tests
 
 lint: ## run linter(s)
 	@echo "Linting..."
-	@gometalinter --config=gometalinter.json ./...
+	@golangci-lint run ./...
 
 test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."
-	$(GO_TEST) -v ./e2e/
+	@$(call mkdir,$(TEST_RESULTS_DIR))
+	$(call GO_TESTSUM,e2e.xml) -v ./e2e/
 
 test-unit: ## run unit tests
 	@echo "Running unit tests..."
-	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
+	@$(call mkdir,$(TEST_RESULTS_DIR))
+	$(call GO_TESTSUM,unit.xml) $(shell go list ./... | grep -vE '/e2e')
 
 coverage-bin:
 	CGO_ENABLED=0 go test -tags="$(BUILDTAGS) testrunmain" -ldflags=$(LDFLAGS) -coverpkg="./..." -c -o _build/$(BIN_NAME).cov ./cmd/docker-app
@@ -87,12 +91,14 @@ coverage-bin:
 coverage-test-unit:
 	@echo "Running unit tests (coverage)..."
 	@$(call mkdir,_build/cov)
-	$(GO_TEST) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
+	@$(call mkdir,$(TEST_RESULTS_DIR))
+	$(call GO_TESTSUM,unit-coverage.xml) -cover -test.coverprofile=_build/cov/unit.out $(shell go list ./... | grep -vE '/e2e')
 
 coverage-test-e2e: coverage-bin
 	@echo "Running e2e tests (coverage)..."
 	@$(call mkdir,_build/cov)
-	DOCKERAPP_BINARY=../e2e/coverage-bin $(GO_TEST) -v ./e2e
+	@$(call mkdir,$(TEST_RESULTS_DIR))
+	DOCKERAPP_BINARY=../e2e/coverage-bin $(call GO_TESTSUM,e2e-coverage.xml) -v ./e2e
 
 coverage: coverage-test-unit coverage-test-e2e ## run tests with coverage
 	go install ./vendor/github.com/wadey/gocovmerge/

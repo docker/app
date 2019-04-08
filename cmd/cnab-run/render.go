@@ -39,7 +39,7 @@ func renderAction(instanceName string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf(res)
+	fmt.Print(res)
 
 	return nil
 }

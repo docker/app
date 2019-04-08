@@ -71,10 +71,19 @@ e2e-cross: create_bin
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-linux
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin
 	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-windows.exe bin/$(BIN_NAME)-e2e-windows.exe
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-linux bin/gotestsum-linux
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-darwin bin/gotestsum-darwin
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-windows.exe bin/gotestsum-windows.exe
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-linux bin/test2json-linux
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-darwin bin/test2json-darwin
+	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-windows.exe bin/test2json-windows.exe
 	docker rm $(E2E_CROSS_CTNR_NAME)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-darwin)
-	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-windows.exe)
+	@$(call chmod,+x,bin/gotestsum-linux)
+	@$(call chmod,+x,bin/gotestsum-darwin)
+	@$(call chmod,+x,bin/test2json-linux)
+	@$(call chmod,+x,bin/test2json-darwin)
 
 tars:
 	tar --transform='flags=r;s|$(BIN_NAME)-linux|$(BIN_NAME)-plugin-linux|' -czf bin/$(BIN_NAME)-linux.tar.gz -C bin $(BIN_NAME)-linux ${BIN_STANDALONE_NAME}-linux
@@ -87,17 +96,22 @@ tars:
 test: test-unit test-e2e ## run all tests
 
 test-unit: build_dev_image ## run unit tests
-	docker run --rm $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) test-unit
+	@$(call mkdir,_build/test-results)
+	docker run --rm -v $(CURDIR)/_build/test-results:/test-results $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) test-unit
 
 test-e2e: build_dev_image invocation-image ## run end-to-end tests
-	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) bin/$(BIN_NAME) test-e2e
+	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
-coverage: build_dev_image ## run tests with coverage
+coverage-run: build_dev_image ## run tests with coverage
 	@$(call mkdir,_build)
-	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -t $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} EXPERIMENTAL=$(EXPERIMENTAL) coverage
+	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -t $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} EXPERIMENTAL=$(EXPERIMENTAL) TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) coverage
+coverage-results:
 	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
+	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/test-results/ ./_build/test-results
 	docker rm $(COV_CTNR_NAME)
+# coverage is split in two like this so that CI can extract the results even on failure (which will be detected via the junit) using the individual steps, but for end users running we want the overall failure.
+coverage: coverage-run coverage-results
 
 gradle-test:
 	tar cf - Dockerfile.gradle bin/docker-app-linux integrations/gradle | docker build -t $(GRADLE_IMAGE_NAME) -f Dockerfile.gradle -
@@ -124,7 +138,7 @@ vendor: build_dev_image
 clean-vendor-cache:
 	docker rm -f docker-app-vendoring || true
 	docker volume rm -f docker-app-vendor-cache
-	
+
 check-vendor: build_dev_image
 	$(info Check Vendoring...)
 	docker run --rm $(DEV_IMAGE_NAME) sh -c "make vendor && hack/check-git-diff vendor"
@@ -154,4 +168,4 @@ push-invocation-image:
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage gradle-test shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
+.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage coverage-run coverage-results gradle-test shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
