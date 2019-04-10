@@ -193,8 +193,8 @@
   revision = "1a73873b84025123a0f8fe84086e59493e051302"
 
 [[projects]]
-  branch = "jc"
-  digest = "1:b61ea51ca50d8938a3182f9bc4cddeedfc60da3182ac891051bffe11ff9cf42a"
+  branch = "master"
+  digest = "1:f6638ee6e1e6cccfdbdfa9a78b19323e1ac9e94528b79626f92cc2becc0765df"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
@@ -205,8 +205,7 @@
     "pkg/utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "c9552e31eaf28be625d01b6d81225078e90dafb7"
-  source = "github.com/silvin-lubecki/duffle"
+  revision = "1847f2f7127f13f62c1377f936cba522e8947dfb"
 
 [[projects]]
   branch = "19.03"
@@ -549,12 +548,12 @@
   version = "v0.5.1"
 
 [[projects]]
-  digest = "1:aaa38889f11896ee3644d77e17dc7764cc47f5f3d3b488268df2af2b52541c5f"
+  branch = "master"
+  digest = "1:540beef439752cdfa8b640253dd8b3e1b5ec7223052d8e56d35a62bb8b1aa94c"
   name = "github.com/imdario/mergo"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "7c29201646fa3de8506f701213473dd407f19646"
-  version = "v0.3.7"
+  revision = "5ef87b449ca75fbed1bc3765b749ca8f73f1fa69"
 
 [[projects]]
   digest = "1:406338ad39ab2e37b7f4452906442a3dbf0eb3379dd1f06aafb5c07e769a5fbb"
@@ -1063,7 +1062,7 @@
     "storage/v1beta1",
   ]
   pruneopts = "NUT"
-  revision = "kubernetes-1.14.0"
+  revision = "kubernetes-1.14.1"
 
 [[projects]]
   digest = "1:c65ab070987ab9e19c944c68d622f0cd1ef40aad50a057988cb53bad049a89cf"
@@ -1110,7 +1109,7 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "NUT"
-  revision = "kubernetes-1.14.0"
+  revision = "kubernetes-1.14.1"
 
 [[projects]]
   digest = "1:6a6eba5d7837902a5faa28da8051a0f8768d7b592d076acd2eb1a227a7ec0478"
@@ -1183,7 +1182,7 @@
     "util/retry",
   ]
   pruneopts = "NUT"
-  revision = "kubernetes-1.14.0"
+  revision = "kubernetes-1.14.1"
 
 [[projects]]
   digest = "1:c263611800c3a97991dbcf9d3bc4de390f6224aaa8ca0a7226a9d734f65a416a"
@@ -1198,7 +1197,7 @@
   name = "k8s.io/kubernetes"
   packages = ["pkg/api/v1/pod"]
   pruneopts = "NUT"
-  revision = "v1.14.0"
+  revision = "v1.14.1"
 
 [[projects]]
   branch = "master"

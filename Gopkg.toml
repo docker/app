@@ -40,11 +40,9 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/docker/cli"
   branch = "19.03"
 
-# Waiting for https://github.com/deislabs/duffle/pull/682 to be merged
 [[override]]
   name = "github.com/deislabs/duffle"
-  source = "github.com/silvin-lubecki/duffle"
-  branch = "jc"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
@@ -80,19 +78,24 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "k8s.io/kubernetes"
-  revision = "v1.14.0"
+  revision = "v1.14.1"
 
 [[override]]
   name = "k8s.io/api"
-  revision = "kubernetes-1.14.0"
+  revision = "kubernetes-1.14.1"
 
 [[override]]
   name = "k8s.io/apimachinery"
-  revision = "kubernetes-1.14.0"
+  revision = "kubernetes-1.14.1"
+
+# Overriding imdario/mergo since https://github.com/imdario/mergo/pull/112 is required
+[[override]]
+  name = "github.com/imdario/mergo"
+  branch = "master"
 
 [[override]]
   name = "k8s.io/client-go"
-  revision = "kubernetes-1.14.0"
+  revision = "kubernetes-1.14.1"
 
 # This is using a fork waiting for go-yaml/yaml#375 to be merged
 # This PR allows to set a max decoded value, thus not being exposed to yaml bombs

@@ -10,7 +10,7 @@ import (
 
 	"github.com/docker/cli/cli/config/configfile"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"

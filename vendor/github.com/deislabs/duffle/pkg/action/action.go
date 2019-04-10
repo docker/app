@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
+
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/driver"
@@ -26,7 +27,7 @@ const stateful = false
 // - status
 type Action interface {
 	// Run an action, and record the status in the given claim
-	Run(*claim.Claim, credentials.Set) error
+	Run(*claim.Claim, credentials.Set, io.Writer) error
 }
 
 func selectInvocationImage(d driver.Driver, c *claim.Claim) (bundle.InvocationImage, error) {

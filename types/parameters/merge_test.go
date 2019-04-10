@@ -1,7 +1,6 @@
 package parameters
 
 import (
-	"fmt"
 	"testing"
 
 	"gotest.tools/assert"
@@ -16,7 +15,7 @@ func TestMergeSliceError(t *testing.T) {
 		"baz": []int{1},
 	}
 	_, err := Merge(m1, m2)
-	assert.Check(t, is.ErrorContains(err, "cannot append two slice with different type"))
+	assert.Check(t, is.ErrorContains(err, "cannot override two slices with different type"))
 }
 
 func TestMerge(t *testing.T) {
@@ -43,15 +42,12 @@ func TestMerge(t *testing.T) {
 	assert.NilError(t, err)
 	parameters, err := Merge(m1, m2, m3)
 	assert.NilError(t, err)
-	fmt.Println(parameters)
 	assert.Check(t, is.DeepEqual(parameters.Flatten(), map[string]string{
 		"foo":      "bar",
 		"bar.baz":  "boz",
 		"bar.port": "10",
 		"bar.foo":  "toto",
-		"baz.0":    "a",
-		"baz.1":    "b",
-		"baz.2":    "c",
+		"baz.0":    "c",
 		"banana":   "monkey",
 	}))
 }
