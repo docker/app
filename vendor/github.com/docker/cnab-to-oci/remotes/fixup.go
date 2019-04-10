@@ -1,16 +1,22 @@
 package remotes
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"sync"
 
 	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/distribution/reference"
+	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -23,12 +29,14 @@ func noopEventCallback(FixupEvent) {}
 
 // fixupConfig defines the input required for a Fixup operation
 type fixupConfig struct {
-	bundle            *bundle.Bundle
-	targetRef         reference.Named
-	eventCallback     func(FixupEvent)
-	maxConcurrentJobs int
-	jobsBufferLength  int
-	resolverConfig    ResolverConfig
+	bundle                        *bundle.Bundle
+	targetRef                     reference.Named
+	eventCallback                 func(FixupEvent)
+	maxConcurrentJobs             int
+	jobsBufferLength              int
+	resolverConfig                ResolverConfig
+	invocationImagePlatformFilter platforms.Matcher
+	componentImagePlatformFilter  platforms.Matcher
 }
 
 func (cfg *fixupConfig) complete() error {
@@ -36,6 +44,48 @@ func (cfg *fixupConfig) complete() error {
 		return errors.New("resolver and originProviderWrapper are required, please use a complete ResolverConfig")
 	}
 	return nil
+}
+
+// WithInvocationImagePlatforms use filters platforms for an invocation image
+func WithInvocationImagePlatforms(supportedPlatforms []string) FixupOption {
+	return func(cfg *fixupConfig) error {
+		if len(supportedPlatforms) == 0 {
+			return nil
+		}
+		plats, err := toPlatforms(supportedPlatforms)
+		if err != nil {
+			return err
+		}
+		cfg.invocationImagePlatformFilter = platforms.Any(plats...)
+		return nil
+	}
+}
+
+// WithComponentImagePlatforms use filters platforms for an invocation image
+func WithComponentImagePlatforms(supportedPlatforms []string) FixupOption {
+	return func(cfg *fixupConfig) error {
+		if len(supportedPlatforms) == 0 {
+			return nil
+		}
+		plats, err := toPlatforms(supportedPlatforms)
+		if err != nil {
+			return err
+		}
+		cfg.componentImagePlatformFilter = platforms.Any(plats...)
+		return nil
+	}
+}
+
+func toPlatforms(supportedPlatforms []string) ([]ocischemav1.Platform, error) {
+	result := make([]ocischemav1.Platform, len(supportedPlatforms))
+	for ix, p := range supportedPlatforms {
+		plat, err := platforms.Parse(p)
+		if err != nil {
+			return nil, err
+		}
+		result[ix] = plat
+	}
+	return result, nil
 }
 
 // WithEventCallback specifies a callback to execute for each Fixup event
@@ -123,11 +173,11 @@ func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, res
 	if len(b.InvocationImages) != 1 {
 		return fmt.Errorf("only one invocation image supported for bundle %q", ref)
 	}
-	if b.InvocationImages[0].BaseImage, err = fixupImage(ctx, b.InvocationImages[0].BaseImage, cfg, events); err != nil {
+	if b.InvocationImages[0].BaseImage, err = fixupImage(ctx, b.InvocationImages[0].BaseImage, cfg, events, cfg.invocationImagePlatformFilter); err != nil {
 		return err
 	}
 	for name, original := range b.Images {
-		if original.BaseImage, err = fixupImage(ctx, original.BaseImage, cfg, events); err != nil {
+		if original.BaseImage, err = fixupImage(ctx, original.BaseImage, cfg, events, cfg.componentImagePlatformFilter); err != nil {
 			return err
 		}
 		b.Images[name] = original
@@ -135,7 +185,7 @@ func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, res
 	return nil
 }
 
-func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig, events chan<- FixupEvent) (_ bundle.BaseImage, retErr error) {
+func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig, events chan<- FixupEvent, platformFilter platforms.Matcher) (_ bundle.BaseImage, retErr error) {
 	progress := &progress{}
 	originalSource := baseImage.Image
 	notifyEvent := func(eventType FixupEventType, message string, err error) {
@@ -154,34 +204,39 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 		}
 	}()
 	notifyEvent(FixupEventTypeCopyImageStart, "", nil)
-	repoOnly, imageRef, descriptor, err := fixupBaseImage(ctx, &baseImage, cfg.targetRef, cfg.resolverConfig.Resolver)
+	fixupInfo, err := fixupBaseImage(ctx, &baseImage, cfg.targetRef, cfg.resolverConfig.Resolver)
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
-	if imageRef.Name() == cfg.targetRef.Name() {
-		notifyEvent(FixupEventTypeCopyImageEnd, "Nothing to do: image reference is already present in repository"+repoOnly.String(), nil)
+
+	if fixupInfo.sourceRef.Name() == fixupInfo.targetRepo.Name() {
+		notifyEvent(FixupEventTypeCopyImageEnd, "Nothing to do: image reference is already present in repository"+fixupInfo.targetRepo.String(), nil)
 		return baseImage, nil
 	}
-	sourceRepoOnly, err := reference.ParseNormalizedNamed(imageRef.Name())
+	sourceRepoOnly, err := reference.ParseNormalizedNamed(fixupInfo.sourceRef.Name())
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
-	sourceFetcher, err := cfg.resolverConfig.Resolver.Fetcher(ctx, sourceRepoOnly.Name())
+	f, err := cfg.resolverConfig.Resolver.Fetcher(ctx, sourceRepoOnly.Name())
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
-	if err := setFromImageReference(cfg.resolverConfig.OriginProviderWrapper, imageRef); err != nil {
+	sourceFetcher := newSourceFetcherWithLocalData(f)
+	if err := fixupPlatforms(ctx, &baseImage, &fixupInfo, sourceFetcher, platformFilter); err != nil {
+		return bundle.BaseImage{}, err
+	}
+	if err := setFromImageReference(cfg.resolverConfig.OriginProviderWrapper, fixupInfo.sourceRef); err != nil {
 		return bundle.BaseImage{}, err
 	}
 
 	// Prepare the copier
-	copier, err := newDescriptorCopier(ctx, cfg.resolverConfig.Resolver, sourceFetcher, repoOnly.String(), notifyEvent)
+	copier, err := newDescriptorCopier(ctx, cfg.resolverConfig.Resolver, sourceFetcher, fixupInfo.targetRepo.String(), notifyEvent)
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
 	descriptorContentHandler := &descriptorContentHandler{
 		descriptorCopier: copier,
-		targetRepo:       repoOnly.String(),
+		targetRepo:       fixupInfo.targetRepo.String(),
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	scheduler := newErrgroupScheduler(ctx, cfg.maxConcurrentJobs, cfg.jobsBufferLength)
@@ -190,7 +245,7 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 		scheduler.drain()
 	}()
 	walker := newManifestWalker(notifyEvent, scheduler, progress, descriptorContentHandler)
-	walkerDep := walker.walk(scheduler.ctx(), descriptor, nil)
+	walkerDep := walker.walk(scheduler.ctx(), fixupInfo.resolvedDescriptor, nil)
 	if err = walkerDep.wait(); err != nil {
 		return bundle.BaseImage{}, err
 	}
@@ -198,38 +253,126 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	return baseImage, nil
 }
 
+func fixupPlatforms(ctx context.Context, baseImage *bundle.BaseImage, fixupInfo *imageFixupInfo, sourceFetcher sourceFetcherAdder, filter platforms.Matcher) error {
+	if filter == nil ||
+		(fixupInfo.resolvedDescriptor.MediaType != ocischemav1.MediaTypeImageIndex && fixupInfo.resolvedDescriptor.MediaType != images.MediaTypeDockerSchema2ManifestList) {
+		// no platform filter if platform is empty, or if the descriptor is not an OCI Index / Docker Manifest list
+		return nil
+	}
+
+	reader, err := sourceFetcher.Fetch(ctx, fixupInfo.resolvedDescriptor)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	manifestBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	var manifestList typelessManifestList
+	if err := json.Unmarshal(manifestBytes, &manifestList); err != nil {
+		return err
+	}
+	var validManifests []typelessDescriptor
+	for _, d := range manifestList.Manifests {
+		if d.Platform != nil && filter.Match(*d.Platform) {
+			validManifests = append(validManifests, d)
+		}
+	}
+	if len(validManifests) == 0 {
+		return fmt.Errorf("no descriptor matching the platform filter found in %q", fixupInfo.sourceRef)
+	}
+	manifestList.Manifests = validManifests
+	manifestBytes, err = json.Marshal(&manifestList)
+	if err != nil {
+		return err
+	}
+	d := sourceFetcher.Add(manifestBytes)
+	descriptor := fixupInfo.resolvedDescriptor
+	descriptor.Digest = d
+	descriptor.Size = int64(len(manifestBytes))
+	fixupInfo.resolvedDescriptor = descriptor
+	newRef, err := reference.WithDigest(fixupInfo.targetRepo, d)
+	if err != nil {
+		return err
+	}
+	baseImage.Image = newRef.String()
+	return nil
+}
+
+type sourceFetcherAdder interface {
+	remotes.Fetcher
+	Add(data []byte) digest.Digest
+}
+
+type sourceFetcherWithLocalData struct {
+	inner     remotes.Fetcher
+	localData map[digest.Digest][]byte
+}
+
+func newSourceFetcherWithLocalData(inner remotes.Fetcher) *sourceFetcherWithLocalData {
+	return &sourceFetcherWithLocalData{
+		inner:     inner,
+		localData: make(map[digest.Digest][]byte),
+	}
+}
+
+func (s *sourceFetcherWithLocalData) Add(data []byte) digest.Digest {
+	d := digest.FromBytes(data)
+	s.localData[d] = data
+	return d
+}
+
+func (s *sourceFetcherWithLocalData) Fetch(ctx context.Context, desc ocischemav1.Descriptor) (io.ReadCloser, error) {
+	if v, ok := s.localData[desc.Digest]; ok {
+		return ioutil.NopCloser(bytes.NewReader(v)), nil
+	}
+	return s.inner.Fetch(ctx, desc)
+}
+
+type imageFixupInfo struct {
+	targetRepo         reference.Named
+	sourceRef          reference.Named
+	resolvedDescriptor ocischemav1.Descriptor
+}
+
 func fixupBaseImage(ctx context.Context,
 	baseImage *bundle.BaseImage,
-	ref reference.Named, //nolint: interfacer
-	resolver remotes.Resolver) (reference.Named, reference.Named, ocischemav1.Descriptor, error) {
+	targetRef reference.Named, //nolint: interfacer
+	resolver remotes.Resolver) (imageFixupInfo, error) {
 	err := checkBaseImage(baseImage)
 	if err != nil {
-		err := fmt.Errorf("invalid image %q: %s", ref, err)
-		return nil, nil, ocischemav1.Descriptor{}, err
+		err := fmt.Errorf("invalid image %q: %s", baseImage.Image, err)
+		return imageFixupInfo{}, err
 	}
-	repoOnly, err := reference.ParseNormalizedNamed(ref.Name())
+	targetRepoOnly, err := reference.ParseNormalizedNamed(targetRef.Name())
 	if err != nil {
-		return nil, nil, ocischemav1.Descriptor{}, err
+		return imageFixupInfo{}, err
 	}
-	imageRef, err := reference.ParseNormalizedNamed(baseImage.Image)
+	sourceImageRef, err := reference.ParseNormalizedNamed(baseImage.Image)
 	if err != nil {
-		err = fmt.Errorf("%q is not a valid image reference for %q", baseImage.Image, ref)
-		return nil, nil, ocischemav1.Descriptor{}, err
+		err = fmt.Errorf("%q is not a valid image reference for %q", baseImage.Image, targetRef)
+		return imageFixupInfo{}, err
 	}
-	imageRef = reference.TagNameOnly(imageRef)
-	_, descriptor, err := resolver.Resolve(ctx, imageRef.String())
+	sourceImageRef = reference.TagNameOnly(sourceImageRef)
+	_, descriptor, err := resolver.Resolve(ctx, sourceImageRef.String())
 	if err != nil {
-		err = fmt.Errorf("failed to resolve %q, push the image to the registry before pushing the bundle: %s", imageRef, err)
-		return nil, nil, ocischemav1.Descriptor{}, err
+		err = fmt.Errorf("failed to resolve %q, push the image to the registry before pushing the bundle: %s", sourceImageRef, err)
+		return imageFixupInfo{}, err
 	}
-	digested, err := reference.WithDigest(repoOnly, descriptor.Digest)
+	digested, err := reference.WithDigest(targetRepoOnly, descriptor.Digest)
 	if err != nil {
-		return nil, nil, ocischemav1.Descriptor{}, err
+		return imageFixupInfo{}, err
 	}
 	baseImage.Image = reference.FamiliarString(digested)
 	baseImage.MediaType = descriptor.MediaType
 	baseImage.Size = uint64(descriptor.Size)
-	return repoOnly, imageRef, descriptor, nil
+	return imageFixupInfo{
+		resolvedDescriptor: descriptor,
+		sourceRef:          sourceImageRef,
+		targetRepo:         targetRepoOnly,
+	}, nil
 }
 
 func checkBaseImage(baseImage *bundle.BaseImage) error {

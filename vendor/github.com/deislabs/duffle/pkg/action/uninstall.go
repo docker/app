@@ -20,7 +20,7 @@ func (u *Uninstall) Run(c *claim.Claim, creds credentials.Set, w io.Writer) erro
 		return err
 	}
 
-	op, err := opFromClaim(claim.ActionUninstall, notStateless, c, invocImage, creds, w)
+	op, err := opFromClaim(claim.ActionUninstall, stateful, c, invocImage, creds, w)
 	if err != nil {
 		return err
 	}

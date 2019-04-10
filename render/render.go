@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/renderer"
 	"github.com/docker/app/internal/slices"

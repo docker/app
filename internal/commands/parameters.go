@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types/parameters"

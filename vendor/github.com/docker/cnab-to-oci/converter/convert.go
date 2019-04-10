@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/containerd/containerd/images"
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -18,7 +18,7 @@ const ( // General values
 	CNABVersion = "v1.0.0-WD"
 
 	// OCIIndexSchemaVersion is the currently supported OCI index schema's version
-	OCIIndexSchemaVersion = 1
+	OCIIndexSchemaVersion = 2
 )
 
 // Type aliases to clarify to which annotation the values belong
@@ -43,11 +43,15 @@ const ( // Top Level annotations and values
 	CNABRuntimeVersionAnnotation = "io.cnab.runtime_version"
 	// CNABKeywordsAnnotation is the top level annotation specifying a list of keywords
 	CNABKeywordsAnnotation = "io.cnab.keywords"
+	// ArtifactTypeAnnotation is the top level annotation specifying the type of the artifact in the registry
+	ArtifactTypeAnnotation = "org.opencontainers.artifactType"
+	// ArtifactTypeValue is the value of ArtifactTypeAnnotion for CNAB bundles
+	ArtifactTypeValue = "application/vnd.cnab.manifest.v1"
 )
 
 const ( // Descriptor level annotations and values
 	// CNABDescriptorTypeAnnotation is a descriptor-level annotation specifying the type of reference image (currently invocation or component)
-	CNABDescriptorTypeAnnotation = "io.cnab.type"
+	CNABDescriptorTypeAnnotation = "io.cnab.manifest.type"
 	// CNABDescriptorTypeInvocation is the CNABDescriptorTypeAnnotation value for invocation images
 	CNABDescriptorTypeInvocation cnabDescriptorTypeValue = "invocation"
 	// CNABDescriptorTypeComponent is the CNABDescriptorTypeAnnotation value for component images
@@ -56,10 +60,10 @@ const ( // Descriptor level annotations and values
 	CNABDescriptorTypeConfig cnabDescriptorTypeValue = "config"
 
 	// CNABDescriptorComponentNameAnnotation is a decriptor-level annotation specifying the component name
-	CNABDescriptorComponentNameAnnotation = "io.cnab.component_name"
+	CNABDescriptorComponentNameAnnotation = "io.cnab.component.name"
 
 	// CNABDescriptorOriginalNameAnnotation is a decriptor-level annotation specifying the original image name
-	CNABDescriptorOriginalNameAnnotation = "io.cnab.original_name"
+	CNABDescriptorOriginalNameAnnotation = "io.cnab.component.original_name"
 )
 
 // GetBundleConfigManifestDescriptor returns the CNAB runtime config manifest descriptor from a OCI index
@@ -116,6 +120,7 @@ func makeAnnotations(b *bundle.Bundle) (map[string]string, error) {
 		ocischemav1.AnnotationVersion:     b.Version,
 		ocischemav1.AnnotationDescription: b.Description,
 		DockerTypeAnnotation:              DockerTypeApp,
+		ArtifactTypeAnnotation:            ArtifactTypeValue,
 	}
 	if b.Maintainers != nil {
 		maintainers, err := json.Marshal(b.Maintainers)

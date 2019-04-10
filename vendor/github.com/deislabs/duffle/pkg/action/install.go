@@ -20,7 +20,7 @@ func (i *Install) Run(c *claim.Claim, creds credentials.Set, w io.Writer) error 
 		return err
 	}
 
-	op, err := opFromClaim(claim.ActionInstall, notStateless, c, invocImage, creds, w)
+	op, err := opFromClaim(claim.ActionInstall, stateful, c, invocImage, creds, w)
 	if err != nil {
 		return err
 	}
