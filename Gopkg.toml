@@ -38,7 +38,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cli"
-  branch = "master"
+  branch = "19.03"
 
 # Waiting for https://github.com/deislabs/duffle/pull/682 to be merged
 [[override]]

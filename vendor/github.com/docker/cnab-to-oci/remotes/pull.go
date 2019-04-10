@@ -11,7 +11,6 @@ import (
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cli/opts"
 	"github.com/docker/cnab-to-oci/converter"
-	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/client/auth"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -69,8 +68,8 @@ func getConfig(ctx context.Context, ref opts.NamedOption, resolver remotes.Resol
 	if err != nil {
 		return converter.BundleConfig{}, fmt.Errorf("failed to pull bundle config manifest %q: %s", ref, err)
 	}
-	var manifest schema2.DeserializedManifest
-	if err := manifest.UnmarshalJSON(configManifestPayload); err != nil {
+	var manifest ocischemav1.Manifest
+	if err := json.Unmarshal(configManifestPayload, &manifest); err != nil {
 		return converter.BundleConfig{}, err
 	}
 	// Pull now the config itself

@@ -209,7 +209,7 @@
   source = "github.com/silvin-lubecki/duffle"
 
 [[projects]]
-  branch = "master"
+  branch = "19.03"
   digest = "1:22a6f3e4596bb26adcd3365e894e65ed3b507941a64bfcc659346b765a06a29e"
   name = "github.com/docker/cli"
   packages = [
@@ -265,18 +265,18 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "d6af3e143e68b64d3387d3b6ba3675c2f071b536"
+  revision = "ba9934d4041e37c32160316aad863d7d2dbebded"
 
 [[projects]]
   branch = "master"
-  digest = "1:c8ac645bf1b84ba08ceeca8a966d7a348d780facee2a4af768dfb1bc34c93a14"
+  digest = "1:dceb82de160ec21c5e3a22d48db99932f82f40c74bd7cad8bc23b7455613836b"
   name = "github.com/docker/cnab-to-oci"
   packages = [
     "converter",
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "1625c7fa0296620c7912ff9fa408b98da3191e5c"
+  revision = "1880d9f8741aa6fc3edbce01d172432bb6190b78"
 
 [[projects]]
   digest = "1:d29e07dc6fff1d592442bdf6b947f3a89d418ac6d65344d4e048c64a7cdd511c"
