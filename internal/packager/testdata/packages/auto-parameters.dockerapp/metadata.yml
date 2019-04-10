@@ -1,0 +1,8 @@
+version: 0.1.0
+name: auto-parameters
+description: "test-package-for-auto-params-generation"
+maintainers:
+  - name: dev1
+    email: dev1@example.com
+  - name: dev2
+    email: dev2@example.com

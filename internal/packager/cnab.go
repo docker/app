@@ -1,10 +1,16 @@
 package packager
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/types"
+	"github.com/docker/cli/cli/compose/loader"
+	"github.com/imdario/mergo"
+	"github.com/pkg/errors"
 )
 
 // ToCNAB creates a CNAB bundle from an app package
@@ -86,6 +92,15 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			DefaultValue: flatParameters[name],
 		}
 	}
+	autoParams, err := generateOverrideParameters(app.Composes())
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate automatic parameters: %s", err)
+	}
+	for k, v := range autoParams {
+		if _, exist := parameters[k]; !exist {
+			parameters[k] = v
+		}
+	}
 	var maintainers []bundle.Maintainer
 	for _, m := range app.Metadata().Maintainers {
 		maintainers = append(maintainers, bundle.Maintainer{
@@ -155,4 +170,78 @@ func extractBundleImages(composeFiles [][]byte) (map[string]bundle.Image, error)
 		}
 	}
 	return bundleImages, nil
+}
+
+func generateOverrideParameters(composeFiles [][]byte) (map[string]bundle.ParameterDefinition, error) {
+
+	merged := make(map[string]interface{})
+	for _, composeFile := range composeFiles {
+		parsed, err := loader.ParseYAML(composeFile)
+		if err != nil {
+			return nil, err
+		}
+		if err := mergo.Merge(&merged, parsed, mergo.WithAppendSlice, mergo.WithOverride); err != nil {
+			return nil, err
+		}
+	}
+	servicesRaw, ok := merged["services"]
+	if !ok {
+		return nil, nil
+	}
+	services, ok := servicesRaw.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("unrecognized services type")
+	}
+	defs := make(map[string]bundle.ParameterDefinition)
+	for serviceName, serviceValue := range services {
+		serviceDef, ok := serviceValue.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unerecognized type for service %q", serviceName)
+		}
+		addServiceOverrideParameters(serviceName, serviceDef, defs)
+	}
+	return defs, nil
+}
+
+func addServiceOverrideParameters(serviceName string, serviceDef map[string]interface{}, into map[string]bundle.ParameterDefinition) {
+	for _, p := range serviceParametersToGenerate {
+		path := strings.Split(p, ".")
+		if !hasKey(serviceDef, path...) {
+			dest := "/cnab/app/overrides/services/" + serviceName + "/" + strings.Join(path, "/")
+			name := "services." + serviceName + "." + p
+			into[name] = bundle.ParameterDefinition{
+				DataType: "string",
+				Destination: &bundle.Location{
+					Path: dest,
+				},
+			}
+		}
+	}
+}
+
+var serviceParametersToGenerate = []string{
+	"deploy.replicas",
+	"deploy.resources.limits.cpus",
+	"deploy.resources.limits.memory",
+	"deploy.resources.reservations.cpus",
+	"deploy.resources.reservations.memory",
+}
+
+func hasKey(source map[string]interface{}, path ...string) bool {
+	if len(path) == 0 {
+		return true
+	}
+	key, remaining := path[0], path[1:]
+	subRaw, ok := source[key]
+	if !ok {
+		return false
+	}
+	if len(remaining) == 0 {
+		return true
+	}
+	sub, ok := subRaw.(map[string]interface{})
+	if !ok {
+		return false
+	}
+	return hasKey(sub, remaining...)
 }
