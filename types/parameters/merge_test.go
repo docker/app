@@ -1,6 +1,7 @@
 package parameters
 
 import (
+	"fmt"
 	"testing"
 
 	"gotest.tools/assert"
@@ -42,12 +43,15 @@ func TestMerge(t *testing.T) {
 	assert.NilError(t, err)
 	parameters, err := Merge(m1, m2, m3)
 	assert.NilError(t, err)
+	fmt.Println(parameters)
 	assert.Check(t, is.DeepEqual(parameters.Flatten(), map[string]string{
 		"foo":      "bar",
 		"bar.baz":  "boz",
 		"bar.port": "10",
 		"bar.foo":  "toto",
-		"baz.0":    "c",
+		"baz.0":    "a",
+		"baz.1":    "b",
+		"baz.2":    "c",
 		"banana":   "monkey",
 	}))
 }
