@@ -2,10 +2,12 @@ package packager
 
 import (
 	"encoding/json"
+	"path"
 	"strings"
 	"testing"
 
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
 	"gotest.tools/assert"
 	"gotest.tools/golden"
@@ -45,7 +47,7 @@ func TestCnabAutomaticParameters(t *testing.T) {
 
 func checkOverrideParameter(t *testing.T, b *bundle.Bundle, parameterName string) {
 	t.Helper()
-	parameterDest := "/cnab/app/overrides/" + strings.ReplaceAll(parameterName, ".", "/")
+	parameterDest := path.Join(internal.ComposeOverridesDir, strings.ReplaceAll(parameterName, ".", "/"))
 	param, ok := b.Parameters[parameterName]
 	if !ok {
 		t.Fatalf("parameter %q is not present", parameterName)

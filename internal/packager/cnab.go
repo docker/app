@@ -2,6 +2,7 @@ package packager
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/deislabs/duffle/pkg/bundle"
@@ -205,9 +206,9 @@ func generateOverrideParameters(composeFiles [][]byte) (map[string]bundle.Parame
 
 func addServiceOverrideParameters(serviceName string, serviceDef map[string]interface{}, into map[string]bundle.ParameterDefinition) {
 	for _, p := range serviceParametersToGenerate {
-		path := strings.Split(p, ".")
-		if !hasKey(serviceDef, path...) {
-			dest := "/cnab/app/overrides/services/" + serviceName + "/" + strings.Join(path, "/")
+		pathParts := strings.Split(p, ".")
+		if !hasKey(serviceDef, pathParts...) {
+			dest := path.Join(internal.ComposeOverridesDir, "services", serviceName, strings.Join(pathParts, "/"))
 			name := "services." + serviceName + "." + p
 			into[name] = bundle.ParameterDefinition{
 				DataType: "string",

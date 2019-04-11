@@ -27,7 +27,6 @@ const (
 	// imageMapFilePath is the path where the CNAB runtime will put the actual
 	// service to image mapping to use
 	imageMapFilePath = "/cnab/app/image-map.json"
-	overridesDir     = "/cnab/app/overrides"
 )
 
 func installAction(instanceName string) error {
@@ -97,7 +96,7 @@ func getBundleImageMap() (map[string]bundle.Image, error) {
 
 func parseOverrides() ([]byte, error) {
 	root := make(map[string]interface{})
-	if err := filepath.Walk(overridesDir, func(path string, fi os.FileInfo, err error) error {
+	if err := filepath.Walk(internal.ComposeOverridesDir, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -107,7 +106,7 @@ func parseOverrides() ([]byte, error) {
 				return err
 			}
 			if len(bytes) > 0 {
-				rel, err := filepath.Rel(overridesDir, path)
+				rel, err := filepath.Rel(internal.ComposeOverridesDir, path)
 				if err != nil {
 					return err
 				}
