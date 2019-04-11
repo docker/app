@@ -215,6 +215,7 @@ func addServiceOverrideParameters(serviceName string, serviceDef map[string]inte
 				Destination: &bundle.Location{
 					Path: dest,
 				},
+				DefaultValue: "",
 			}
 		}
 	}

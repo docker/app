@@ -100,18 +100,18 @@ func parseOverrides() ([]byte, error) {
 		if err != nil {
 			return err
 		}
-		if !fi.IsDir() {
+		if !fi.IsDir() && fi.Size() > 0 {
 			bytes, err := ioutil.ReadFile(path)
 			if err != nil {
 				return err
 			}
-			if len(bytes) > 0 {
-				rel, err := filepath.Rel(internal.ComposeOverridesDir, path)
-				if err != nil {
-					return err
-				}
-				splitPath := strings.Split(rel, "/")
-				setValue(root, splitPath, string(bytes))
+			rel, err := filepath.Rel(internal.ComposeOverridesDir, path)
+			if err != nil {
+				return err
+			}
+			splitPath := strings.Split(rel, "/")
+			if err := setValue(root, splitPath, string(bytes)); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -121,13 +121,36 @@ func parseOverrides() ([]byte, error) {
 	return yaml.Marshal(root)
 }
 
-func setValue(root map[string]interface{}, path []string, value string) {
+func setValue(root map[string]interface{}, path []string, value string) error {
 	key, sub := path[0], path[1:]
 	if len(sub) == 0 {
-		root[key] = value
-		return
+		converted, err := converterFor(key)(value)
+		if err != nil {
+			return err
+		}
+		root[key] = converted
+		return nil
 	}
 	subMap := make(map[string]interface{})
-	setValue(subMap, sub, value)
 	root[key] = subMap
+	return setValue(subMap, sub, value)
+}
+
+type valueConverter func(string) (interface{}, error)
+
+func stringConverter(v string) (interface{}, error) {
+	return v, nil
+}
+
+func intConverter(v string) (interface{}, error) {
+	return strconv.ParseInt(v, 10, 32)
+}
+
+func converterFor(key string) valueConverter {
+	switch key {
+	case "replicas":
+		return intConverter
+	default:
+		return stringConverter
+	}
 }
