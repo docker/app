@@ -2,26 +2,34 @@ package commands
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/containerd/containerd/content"
+	"github.com/containerd/containerd/content/local"
+	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/images/archive"
 	"github.com/containerd/containerd/platforms"
+	containerdremotes "github.com/containerd/containerd/remotes"
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cnab-to-oci/remotes"
+	"github.com/docker/distribution"
+	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/term"
-	"github.com/docker/docker/registry"
 	"github.com/morikuni/aec"
+	"github.com/opencontainers/go-digest"
+	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -69,27 +77,12 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		}
 	}
 
-	// pushing invocation image
-	repoInfo, err := registry.ParseRepositoryInfo(retag.invocationImageRef)
-	if err != nil {
-		return err
-	}
-	encodedAuth, err := command.EncodeAuthToBase64(command.ResolveAuthConfig(context.Background(), dockerCli, repoInfo.Index))
-	if err != nil {
-		return err
-	}
-	reader, err := dockerCli.Client().ImagePush(context.Background(), retag.invocationImageRef.String(), types.ImagePushOptions{
-		RegistryAuth: encodedAuth,
-	})
-	if err != nil {
-		return err
-	}
-	defer reader.Close()
-	if err = jsonmessage.DisplayJSONMessagesStream(reader, ioutil.Discard, 0, false, nil); err != nil {
-		return err
-	}
-
 	resolverConfig := remotes.NewResolverConfigFromDockerConfigFile(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
+	invocDescriptor, err := pushInvocationImage(dockerCli, retag.invocationImageRef.String(), resolverConfig, retag.cnabRef.Name())
+	if err != nil {
+		return err
+	}
+	bndl.InvocationImages[0].Image = retag.cnabRef.Name() + "@" + invocDescriptor.Digest.String()
 	var display fixupDisplay = &plainDisplay{out: os.Stdout}
 	if term.IsTerminal(os.Stdout.Fd()) {
 		display = &interactiveDisplay{out: os.Stdout}
@@ -107,6 +100,123 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	}
 	fmt.Printf("Successfully pushed bundle to %s. Digest is %s.\n", retag.cnabRef.String(), descriptor.Digest)
 	return nil
+}
+
+func pushInvocationImage(dockerCli command.Cli, ref string, resolverConfig remotes.ResolverConfig, targetRepo string) (ocischemav1.Descriptor, error) {
+	fmt.Printf("ref: %s, targetRepo: %s\n", ref, targetRepo)
+	storeDir, err := ioutil.TempDir("", "invocation-image-temp")
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+	defer os.RemoveAll(storeDir)
+	localStore, err := local.NewStore(storeDir)
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+	imageStream, err := dockerCli.Client().ImageSave(context.Background(), []string{ref})
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+	defer imageStream.Close()
+	ociIndexDescriptor, err := archive.ImportIndex(context.Background(), localStore, imageStream)
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+
+	// importIndex returns an OCI index descriptor pointing to an OCI index with a single OCI image.
+	// for compatibility with hub and non-oci registries we need to normalize that into a docker image list, pointing to a docker image manifest
+
+	// also, the content store contains uncompressed layers - as docker save does not compress anything - so we need to compress the layer blobs, and rewrite the manifests - huh
+
+	ociManifest, err := images.Manifest(context.Background(), localStore, ociIndexDescriptor, platforms.All)
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+
+	dockerManifest := schema2.Manifest{
+		Versioned: schema2.SchemaVersion,
+		Config: distribution.Descriptor{
+			Annotations: ociManifest.Config.Annotations,
+			Digest:      ociManifest.Config.Digest,
+			MediaType:   schema2.MediaTypeImageConfig,
+			Size:        ociManifest.Config.Size,
+			URLs:        ociManifest.Config.URLs,
+		},
+	}
+
+	// compress layers - we do that ahead to obtain a digest of the compression result, and avoiding pushing multiple times
+	for _, layerDescriptor := range ociManifest.Layers {
+		compressed, err := compressLayer(localStore, layerDescriptor)
+		if err != nil {
+			return ocischemav1.Descriptor{}, err
+		}
+		dockerManifest.Layers = append(dockerManifest.Layers, compressed)
+	}
+
+	manifestPayload, err := json.Marshal(&dockerManifest)
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+	manifestDigest := digest.FromBytes(manifestPayload)
+	writer, err := localStore.Writer(context.Background(), content.WithRef("manifest"))
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+	defer writer.Close()
+
+	if err := content.Copy(context.Background(), writer, bytes.NewReader(manifestPayload), int64(len(manifestPayload)), manifestDigest); err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+	manifestDescriptor := ocischemav1.Descriptor{
+		Digest:    manifestDigest,
+		MediaType: schema2.MediaTypeManifest,
+		Size:      int64(len(manifestPayload)),
+	}
+
+	pusher, err := resolverConfig.Resolver.Pusher(context.Background(), targetRepo)
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+
+	if err := containerdremotes.PushContent(context.Background(), pusher, manifestDescriptor, localStore, platforms.All, nil); err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+
+	return manifestDescriptor, nil
+}
+
+func compressLayer(store content.Store, originalDescriptor ocischemav1.Descriptor) (distribution.Descriptor, error) {
+	readerAt, err := store.ReaderAt(context.Background(), originalDescriptor)
+	if err != nil {
+		return distribution.Descriptor{}, err
+	}
+	defer readerAt.Close()
+	reader := content.NewReader(readerAt)
+	writer, err := store.Writer(context.Background(), content.WithRef("layer "+originalDescriptor.Digest.String()))
+	if err != nil {
+		return distribution.Descriptor{}, err
+	}
+	defer writer.Close()
+	gzipWriter := gzip.NewWriter(writer)
+	defer gzipWriter.Close()
+	if _, err := io.Copy(gzipWriter, reader); err != nil {
+		return distribution.Descriptor{}, err
+	}
+	if err := gzipWriter.Flush(); err != nil {
+		return distribution.Descriptor{}, err
+	}
+	if err := writer.Commit(context.Background(), 0, digest.Digest("")); err != nil {
+		return distribution.Descriptor{}, err
+	}
+	status, err := writer.Status()
+	if err != nil {
+		return distribution.Descriptor{}, err
+	}
+	return distribution.Descriptor{
+		Digest:    writer.Digest(),
+		Size:      status.Offset,
+		MediaType: schema2.MediaTypeLayer,
+	}, nil
 }
 
 func retagInvocationImage(dockerCli command.Cli, bndl *bundle.Bundle, newName string) error {
