@@ -1,5 +1,3 @@
-// +build !windows
-
 /*
    Copyright The containerd Authors.
 
@@ -16,11 +14,26 @@
    limitations under the License.
 */
 
-package syscallx
+package driver
 
-import "syscall"
+import (
+	"os"
 
-// Readlink returns the destination of the named symbolic link.
-func Readlink(path string, buf []byte) (n int, err error) {
-	return syscall.Readlink(path, buf)
+	"golang.org/x/sys/unix"
+)
+
+// Lchmod changes the mode of a file not following symlinks.
+func (d *driver) Lchmod(path string, mode os.FileMode) error {
+	// On Linux, file mode is not supported for symlinks,
+	// and fchmodat() does not support AT_SYMLINK_NOFOLLOW,
+	// so symlinks need to be skipped entirely.
+	if st, err := os.Stat(path); err == nil && st.Mode()&os.ModeSymlink != 0 {
+		return nil
+	}
+
+	err := unix.Fchmodat(unix.AT_FDCWD, path, uint32(mode), 0)
+	if err != nil {
+		err = &os.PathError{Op: "lchmod", Path: path, Err: err}
+	}
+	return err
 }

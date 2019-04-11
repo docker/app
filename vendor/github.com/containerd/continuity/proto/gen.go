@@ -1,5 +1,3 @@
-// +build !windows
-
 /*
    Copyright The containerd Authors.
 
@@ -16,11 +14,6 @@
    limitations under the License.
 */
 
-package syscallx
+package proto
 
-import "syscall"
-
-// Readlink returns the destination of the named symbolic link.
-func Readlink(path string, buf []byte) (n int, err error) {
-	return syscall.Readlink(path, buf)
-}
+//go:generate protoc --go_out=. manifest.proto

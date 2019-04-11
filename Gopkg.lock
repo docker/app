@@ -80,7 +80,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:7b09e241728ee947f7a7ff9069c292693e076063657b23f9c00bf290c25ed1a8"
+  digest = "1:79c3db17a22317d971f328cbcba4550e9f602c1394418d20ce30a18066d375c5"
   name = "github.com/containerd/containerd"
   packages = [
     ".",
@@ -102,6 +102,7 @@
     "cio",
     "containers",
     "content",
+    "content/local",
     "content/proxy",
     "defaults",
     "diff",
@@ -140,17 +141,20 @@
   source = "github.com/simonferquel/containerd"
 
 [[projects]]
-  branch = "master"
-  digest = "1:da6bbba18ca233cac27a74e7b8bc62a72fb8b6ce8af061116ce88380dc0b5f2a"
+  digest = "1:3233b355edcf5534046e31a1c1de63d56b04d7bfff5d0dd10b09b9e6d6a0cbd7"
   name = "github.com/containerd/continuity"
   packages = [
+    ".",
+    "devices",
+    "driver",
     "fs",
     "pathdriver",
+    "proto",
     "syscallx",
     "sysx",
   ]
   pruneopts = "NUT"
-  revision = "0377f7d767206f3a9e8881d0f02267b0d89c7a62"
+  revision = "bd77b46c8352f74eb12c85bdc01f4b90f69d66b4"
 
 [[projects]]
   branch = "master"
@@ -1259,7 +1263,12 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
+    "github.com/containerd/containerd/content",
+    "github.com/containerd/containerd/content/local",
+    "github.com/containerd/containerd/images",
+    "github.com/containerd/containerd/images/archive",
     "github.com/containerd/containerd/platforms",
+    "github.com/containerd/containerd/remotes",
     "github.com/deislabs/duffle/pkg/action",
     "github.com/deislabs/duffle/pkg/bundle",
     "github.com/deislabs/duffle/pkg/claim",
@@ -1289,6 +1298,8 @@
     "github.com/docker/cli/cli/flags",
     "github.com/docker/cli/opts",
     "github.com/docker/cnab-to-oci/remotes",
+    "github.com/docker/distribution",
+    "github.com/docker/distribution/manifest/schema2",
     "github.com/docker/distribution/reference",
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/api/types/container",
@@ -1302,6 +1313,8 @@
     "github.com/gopherjs/gopherjs/js",
     "github.com/imdario/mergo",
     "github.com/morikuni/aec",
+    "github.com/opencontainers/go-digest",
+    "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",

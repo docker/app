@@ -1,5 +1,3 @@
-// +build !windows
-
 /*
    Copyright The containerd Authors.
 
@@ -16,11 +14,14 @@
    limitations under the License.
 */
 
-package syscallx
+package devices
 
-import "syscall"
+import (
+	"os"
 
-// Readlink returns the destination of the named symbolic link.
-func Readlink(path string, buf []byte) (n int, err error) {
-	return syscall.Readlink(path, buf)
+	"github.com/pkg/errors"
+)
+
+func DeviceInfo(fi os.FileInfo) (uint64, uint64, error) {
+	return 0, 0, errors.Wrap(ErrNotSupported, "cannot get device info on windows")
 }

@@ -1,5 +1,3 @@
-// +build !windows
-
 /*
    Copyright The containerd Authors.
 
@@ -16,11 +14,15 @@
    limitations under the License.
 */
 
-package syscallx
+package continuity
 
-import "syscall"
+import "os"
 
-// Readlink returns the destination of the named symbolic link.
-func Readlink(path string, buf []byte) (n int, err error) {
-	return syscall.Readlink(path, buf)
+// newBaseResource returns a *resource, populated with data from p and fi,
+// where p will be populated directly.
+func newBaseResource(p string, fi os.FileInfo) (*resource, error) {
+	return &resource{
+		paths: []string{p},
+		mode:  fi.Mode(),
+	}, nil
 }

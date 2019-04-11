@@ -1,4 +1,4 @@
-// +build !windows
+// +build linux solaris darwin freebsd
 
 /*
    Copyright The containerd Authors.
@@ -16,11 +16,20 @@
    limitations under the License.
 */
 
-package syscallx
+package local
 
-import "syscall"
+import (
+	"os"
+	"syscall"
+	"time"
 
-// Readlink returns the destination of the named symbolic link.
-func Readlink(path string, buf []byte) (n int, err error) {
-	return syscall.Readlink(path, buf)
+	"github.com/containerd/containerd/sys"
+)
+
+func getATime(fi os.FileInfo) time.Time {
+	if st, ok := fi.Sys().(*syscall.Stat_t); ok {
+		return sys.StatATimeAsTime(st)
+	}
+
+	return fi.ModTime()
 }

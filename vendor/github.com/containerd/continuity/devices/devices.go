@@ -1,5 +1,3 @@
-// +build !windows
-
 /*
    Copyright The containerd Authors.
 
@@ -16,11 +14,8 @@
    limitations under the License.
 */
 
-package syscallx
+package devices
 
-import "syscall"
+import "fmt"
 
-// Readlink returns the destination of the named symbolic link.
-func Readlink(path string, buf []byte) (n int, err error) {
-	return syscall.Readlink(path, buf)
-}
+var ErrNotSupported = fmt.Errorf("not supported")

@@ -37,6 +37,10 @@ required = ["github.com/wadey/gocovmerge"]
   revision = "42c3614d58767e96c1752977fed94d0b140a0173"
 
 [[override]]
+  name = "github.com/containerd/continuity"
+  revision = "bd77b46c8352f74eb12c85bdc01f4b90f69d66b4"
+
+[[override]]
   name = "github.com/docker/cli"
   branch = "master"
 
