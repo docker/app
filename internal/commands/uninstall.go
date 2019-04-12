@@ -4,9 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
-	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -28,16 +26,19 @@ func uninstallCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runUninstall(dockerCli command.Cli, claimName string, opts credentialOptions) error {
+func runUninstall(dockerCli command.Cli, installationName string, opts credentialOptions) error {
 	defer muteDockerCli(dockerCli)()
-	h := duffleHome()
+	opts.SetDefaultTargetContext(dockerCli)
 
-	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(h.Claims(), "json"))
-	c, err := claimStore.Read(claimName)
+	_, installationStore, credentialStore, err := prepareStores(opts.targetContext)
 	if err != nil {
 		return err
 	}
-	opts.SetDefaultTargetContext(dockerCli)
+
+	c, err := installationStore.Read(installationName)
+	if err != nil {
+		return err
+	}
 	bind, err := requiredClaimBindMount(c, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
@@ -46,7 +47,7 @@ func runUninstall(dockerCli command.Cli, claimName string, opts credentialOption
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli)...)
+	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
@@ -58,10 +59,10 @@ func runUninstall(dockerCli command.Cli, claimName string, opts credentialOption
 	}
 	err = uninst.Run(&c, creds, dockerCli.Out())
 	if err == nil {
-		return claimStore.Delete(claimName)
+		return installationStore.Delete(installationName)
 	}
-	if err2 := claimStore.Store(c); err2 != nil {
-		fmt.Fprintf(dockerCli.Err(), "failed to update claim: %s\n", err2)
+	if err2 := installationStore.Store(c); err2 != nil {
+		fmt.Fprintf(dockerCli.Err(), "failed to update installation: %s\n", err2)
 	}
 	return fmt.Errorf("uninstall failed: %s", errBuf)
 }

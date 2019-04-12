@@ -41,7 +41,6 @@ func TestCallCustomStatusAction(t *testing.T) {
 			tmpDir := fs.NewDir(t, t.Name())
 			defer tmpDir.Remove()
 			testDir := path.Join("testdata", testCase.cnab)
-			cmd.Env = append(cmd.Env, "DUFFLE_HOME="+tmpDir.Path())
 
 			// We need to explicitly set the SYSTEMROOT on windows
 			// otherwise we get the error:

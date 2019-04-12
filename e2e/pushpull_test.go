@@ -31,7 +31,6 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 
-	cmd.Env = append(cmd.Env, "DUFFLE_HOME="+tmpDir.Path())
 	cmd.Env = append(cmd.Env, "DOCKER_TARGET_CONTEXT=swarm-target-context")
 
 	// The dind doesn't have the cnab-app-base image so we save it in order to load it later

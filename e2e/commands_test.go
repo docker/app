@@ -307,7 +307,6 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	tmpDir := fs.NewDir(t, appName)
 	defer tmpDir.Remove()
 
-	cmd.Env = append(cmd.Env, "DUFFLE_HOME="+tmpDir.Path())
 	cmd.Env = append(cmd.Env, "DOCKER_TARGET_CONTEXT=swarm-target-context")
 
 	// Running a swarm using docker in docker to install the application

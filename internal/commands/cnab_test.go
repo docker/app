@@ -218,7 +218,7 @@ func TestShareRegistryCreds(t *testing.T) {
 					Credentials: map[string]bundle.Location{internal.CredentialRegistryName: {}},
 					Images:      c.images,
 				},
-				addNamedCredentialSets(nil),
+				addNamedCredentialSets(nil, nil),
 				addDockerCredentials("", nil),
 				addRegistryCredentials(c.shareCreds, &registryConfigMock{configFile: &configfile.ConfigFile{
 					AuthConfigs: c.stored,
