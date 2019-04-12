@@ -110,17 +110,21 @@ func TestPushPullInstall(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "pull", ref, "--insecure-registries="+info.registryAddress)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-		// stop the registry
-		info.stopRegistry()
-
-		// install without --pull should succeed (rely on local store)
+		// install one first time to populate the invocation image in the local store
 		cmd.Command = dockerCli.Command("app", "install", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name())
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		cmd.Command = dockerCli.Command("service", "ls")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
 
+		// stop the registry
+		info.stopRegistry()
+
+		// install without --pull should succeed (rely on local cache)
+		cmd.Command = dockerCli.Command("app", "install", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name()+"2")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
 		// install with --pull should fail (registry is stopped)
-		cmd.Command = dockerCli.Command("app", "install", "--pull", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name()+"2")
+		cmd.Command = dockerCli.Command("app", "install", "--pull", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name()+"3")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1}).Combined(), "failed to resolve bundle manifest"))
 	})
 }
