@@ -103,7 +103,6 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 }
 
 func pushInvocationImage(dockerCli command.Cli, ref string, resolverConfig remotes.ResolverConfig, targetRepo string) (ocischemav1.Descriptor, error) {
-	fmt.Printf("ref: %s, targetRepo: %s\n", ref, targetRepo)
 	storeDir, err := ioutil.TempDir("", "invocation-image-temp")
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
