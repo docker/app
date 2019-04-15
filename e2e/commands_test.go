@@ -350,6 +350,14 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", appName),
 		})
 
+	// List the installed applications
+	cmd.Command = dockerCli.Command("app", "list")
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			`INSTALLATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED`,
+			fmt.Sprintf(`%s\s+install\s+success\s+[[:alnum:]]+\ssecond.\s+[[:alnum:]]+\ssecond`, appName),
+		})
+
 	// Installing again the same application is forbidden
 	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--name", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
@@ -420,6 +428,6 @@ func initializeDockerAppEnvironment(t *testing.T, cmd *icmd.Cmd, tmpDir *fs.Dir,
 func checkContains(t *testing.T, combined string, expectedLines []string) {
 	for _, expected := range expectedLines {
 		exp := regexp.MustCompile(expected)
-		assert.Assert(t, exp.MatchString(combined), expected, combined)
+		assert.Assert(t, exp.MatchString(combined), "expected %q != actual %q", expected, combined)
 	}
 }
