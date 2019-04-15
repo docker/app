@@ -44,7 +44,7 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default: <name>:<version> from metadata)")
-	flags.StringSliceVar(&opts.platforms, "platforms", nil, "For multi-arch service images, only push the sepcified platforms")
+	flags.StringSliceVar(&opts.platforms, "platform", nil, "For multi-arch service images, only push the specified platforms")
 	opts.registry.addFlags(flags)
 	return cmd
 }
