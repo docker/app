@@ -4,9 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
-	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
@@ -41,15 +39,19 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOptions) error {
 	defer muteDockerCli(dockerCli)()
 	opts.SetDefaultTargetContext(dockerCli)
-	h := duffleHome()
-	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(h.Claims(), "json"))
-	c, err := claimStore.Read(installationName)
+
+	bundleStore, installationStore, credentialStore, err := prepareStores(opts.targetContext)
+	if err != nil {
+		return err
+	}
+
+	c, err := installationStore.Read(installationName)
 	if err != nil {
 		return err
 	}
 
 	if opts.bundleOrDockerApp != "" {
-		b, err := resolveBundle(dockerCli, opts.bundleOrDockerApp, opts.pull, opts.insecureRegistries)
+		b, err := resolveBundle(dockerCli, bundleStore, opts.bundleOrDockerApp, opts.pull, opts.insecureRegistries)
 		if err != nil {
 			return err
 		}
@@ -71,7 +73,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli)...)
+	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
@@ -82,7 +84,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		Driver: driverImpl,
 	}
 	err = u.Run(&c, creds, dockerCli.Out())
-	err2 := claimStore.Store(c)
+	err2 := installationStore.Store(c)
 	if err != nil {
 		return fmt.Errorf("upgrade failed: %s", errBuf)
 	}

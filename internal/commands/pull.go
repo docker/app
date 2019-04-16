@@ -3,9 +3,10 @@ package commands
 import (
 	"fmt"
 
-	bundlestore "github.com/docker/app/internal/store"
+	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -26,11 +27,20 @@ func pullCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runPull(dockerCli command.Cli, name string, opts registryOptions) error {
+	appstore, err := store.NewApplicationStore(config.Dir())
+	if err != nil {
+		return err
+	}
+	bundleStore, err := appstore.BundleStore()
+	if err != nil {
+		return err
+	}
+
 	ref, err := reference.ParseNormalizedNamed(name)
 	if err != nil {
 		return errors.Wrap(err, name)
 	}
-	bndl, err := bundlestore.LookupOrPullBundle(dockerCli, reference.TagNameOnly(ref), true, opts.insecureRegistries)
+	bndl, err := bundleStore.LookupOrPullBundle(reference.TagNameOnly(ref), true, dockerCli.ConfigFile(), opts.insecureRegistries)
 	if err != nil {
 		return errors.Wrap(err, name)
 	}

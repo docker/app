@@ -186,7 +186,7 @@
 
 [[projects]]
   branch = "set-merge"
-  digest = "1:830f704402fef0cb416e9aca81e23792db372e8f873a595730b79f60726f9367"
+  digest = "1:a5386a94fa817a3b43d86694e5171031ef72200f20ccf09f38b26982d958a279"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
@@ -194,7 +194,6 @@
     "pkg/claim",
     "pkg/credentials",
     "pkg/driver",
-    "pkg/duffle/home",
     "pkg/loader",
     "pkg/signature",
     "pkg/utils/crud",
@@ -1265,7 +1264,6 @@
     "github.com/deislabs/duffle/pkg/claim",
     "github.com/deislabs/duffle/pkg/credentials",
     "github.com/deislabs/duffle/pkg/driver",
-    "github.com/deislabs/duffle/pkg/duffle/home",
     "github.com/deislabs/duffle/pkg/loader",
     "github.com/deislabs/duffle/pkg/utils/crud",
     "github.com/docker/cli/cli",

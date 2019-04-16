@@ -6,7 +6,6 @@ import (
 	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
-	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -36,7 +35,7 @@ const longDescription = `Install the application on either Swarm or Kubernetes.
 Bundle name is optional, and can:
 - be empty and resolve to any *.dockerapp in working directory
 - be a BUNDLE file path and resolve to any *.dockerapp file or dir, or any CNAB file (signed or unsigned)
-- match a bundle name in the local duffle bundle repository
+- match a bundle name in the local bundle repository
 - refer to a CNAB in a container registry
 `
 
@@ -67,27 +66,31 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
 	defer muteDockerCli(dockerCli)()
 	opts.SetDefaultTargetContext(dockerCli)
+
 	bind, err := requiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())
 	if err != nil {
 		return err
 	}
-	bndl, err := resolveBundle(dockerCli, appname, opts.pull, opts.insecureRegistries)
+	bundleStore, installationStore, credentialStore, err := prepareStores(opts.targetContext)
+	if err != nil {
+		return err
+	}
+
+	bndl, err := resolveBundle(dockerCli, bundleStore, appname, opts.pull, opts.insecureRegistries)
 	if err != nil {
 		return err
 	}
 	if err := bndl.Validate(); err != nil {
 		return err
 	}
-	h := duffleHome()
-	claimName := opts.stackName
-	if claimName == "" {
-		claimName = bndl.Name
+	installationName := opts.stackName
+	if installationName == "" {
+		installationName = bndl.Name
 	}
-	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(h.Claims(), "json"))
-	if _, err = claimStore.Read(claimName); err == nil {
-		return fmt.Errorf("installation %q already exists", claimName)
+	if _, err = installationStore.Read(installationName); err == nil {
+		return fmt.Errorf("installation %q already exists", installationName)
 	}
-	c, err := claim.New(claimName)
+	c, err := claim.New(installationName)
 	if err != nil {
 		return err
 	}
@@ -106,7 +109,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	); err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(bndl, opts.CredentialSetOpts(dockerCli)...)
+	creds, err := prepareCredentialSet(bndl, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
@@ -118,9 +121,9 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		Driver: driverImpl,
 	}
 	err = inst.Run(c, creds, dockerCli.Out())
-	// Even if the installation failed, the claim is persisted with its failure status,
+	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.
-	err2 := claimStore.Store(*c)
+	err2 := installationStore.Store(*c)
 	if err != nil {
 		return fmt.Errorf("install failed: %s", errBuf)
 	}

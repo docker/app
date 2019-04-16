@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/deislabs/duffle/pkg/action"
@@ -16,14 +15,15 @@ import (
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/driver"
-	"github.com/deislabs/duffle/pkg/duffle/home"
 	"github.com/deislabs/duffle/pkg/loader"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
-	bundlestore "github.com/docker/app/internal/store"
+	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/context/docker"
 	"github.com/docker/cli/cli/context/store"
+	contextstore "github.com/docker/cli/cli/context/store"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -41,13 +41,10 @@ const defaultSocketPath string = "/var/run/docker.sock"
 
 type credentialSetOpt func(b *bundle.Bundle, creds credentials.Set) error
 
-func addNamedCredentialSets(namedCredentialsets []string) credentialSetOpt {
+func addNamedCredentialSets(credStore appstore.CredentialStore, namedCredentialsets []string) credentialSetOpt {
 	return func(_ *bundle.Bundle, creds credentials.Set) error {
 		for _, file := range namedCredentialsets {
-			if _, err := os.Stat(file); err != nil {
-				file = filepath.Join(duffleHome().Credentials(), file+".yaml")
-			}
-			c, err := credentials.Load(file)
+			c, err := credStore.Read(file)
 			if err != nil {
 				return err
 			}
@@ -63,12 +60,12 @@ func addNamedCredentialSets(namedCredentialsets []string) credentialSetOpt {
 	}
 }
 
-func addDockerCredentials(contextName string, contextStore store.Store) credentialSetOpt {
+func addDockerCredentials(contextName string, store contextstore.Store) credentialSetOpt {
 	// docker desktop contexts require some rewriting for being used within a container
-	contextStore = dockerDesktopAwareStore{Store: contextStore}
+	store = dockerDesktopAwareStore{Store: store}
 	return func(_ *bundle.Bundle, creds credentials.Set) error {
 		if contextName != "" {
-			data, err := ioutil.ReadAll(store.Export(contextName, contextStore))
+			data, err := ioutil.ReadAll(contextstore.Export(contextName, store))
 			if err != nil {
 				return err
 			}
@@ -139,10 +136,6 @@ func getTargetContext(optstargetContext, currentContext string) string {
 		targetContext = currentContext
 	}
 	return targetContext
-}
-
-func duffleHome() home.Home {
-	return home.Home(home.DefaultHome())
 }
 
 // prepareDriver prepares a driver per the user's request.
@@ -217,11 +210,11 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.B
 	return makeBundleFromApp(dockerCli, app)
 }
 
-func resolveBundle(dockerCli command.Cli, name string, pullRef bool, insecureRegistries []string) (*bundle.Bundle, error) {
+func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool, insecureRegistries []string) (*bundle.Bundle, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
 	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
-	// - name matches a bundle name:version stored in duffle bundle store: use it
+	// - name matches a bundle name:version stored in the bundle store: use it
 	// - pull the bundle from the registry and add it to the bundle store
 	name, kind := getAppNameKind(name)
 	switch kind {
@@ -246,7 +239,7 @@ func resolveBundle(dockerCli command.Cli, name string, pullRef bool, insecureReg
 		if err != nil {
 			return nil, errors.Wrap(err, name)
 		}
-		return bundlestore.LookupOrPullBundle(dockerCli, reference.TagNameOnly(ref), pullRef, insecureRegistries)
+		return bundleStore.LookupOrPullBundle(reference.TagNameOnly(ref), pullRef, dockerCli.ConfigFile(), insecureRegistries)
 	}
 	return nil, fmt.Errorf("could not resolve bundle %q", name)
 }
@@ -306,6 +299,14 @@ func isDockerHostLocal(host string) bool {
 
 func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
 	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *claim.Claim, *bytes.Buffer, error) {
+	s, err := appstore.NewApplicationStore(config.Dir())
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	bundleStore, err := s.BundleStore()
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	c, err := claim.New("custom-action")
 	if err != nil {
@@ -315,7 +316,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	bundle, err := resolveBundle(dockerCli, appname, pullOpts.pull, registryOpts.insecureRegistries)
+	bundle, err := resolveBundle(dockerCli, bundleStore, appname, pullOpts.pull, registryOpts.insecureRegistries)
 	if err != nil {
 		return nil, nil, nil, err
 	}

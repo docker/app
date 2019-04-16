@@ -3,7 +3,9 @@ package commands
 import (
 	"io/ioutil"
 
+	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -55,6 +57,26 @@ func muteDockerCli(dockerCli command.Cli) func() {
 	}
 }
 
+func prepareStores(targetContext string) (store.BundleStore, store.InstallationStore, store.CredentialStore, error) {
+	appstore, err := store.NewApplicationStore(config.Dir())
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	installationStore, err := appstore.InstallationStore(targetContext)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	bundleStore, err := appstore.BundleStore()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	credentialStore, err := appstore.CredentialStore(targetContext)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return bundleStore, installationStore, credentialStore, nil
+}
+
 type parametersOptions struct {
 	parametersFiles []string
 	overrides       []string
@@ -73,7 +95,7 @@ type credentialOptions struct {
 
 func (o *credentialOptions) addFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&o.targetContext, "target-context", "", "Context on which the application is executed")
-	flags.StringArrayVarP(&o.credentialsets, "credential-set", "c", []string{}, "Use a duffle credentialset (either a YAML file, or a credential set present in the duffle credential store)")
+	flags.StringArrayVarP(&o.credentialsets, "credential-set", "c", []string{}, "Use a credentialset (either a YAML file, or a credential set present in the credential store)")
 	flags.BoolVar(&o.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
 }
 
@@ -81,9 +103,9 @@ func (o *credentialOptions) SetDefaultTargetContext(dockerCli command.Cli) {
 	o.targetContext = getTargetContext(o.targetContext, dockerCli.CurrentContext())
 }
 
-func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli) []credentialSetOpt {
+func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli, credentialStore store.CredentialStore) []credentialSetOpt {
 	return []credentialSetOpt{
-		addNamedCredentialSets(o.credentialsets),
+		addNamedCredentialSets(credentialStore, o.credentialsets),
 		addDockerCredentials(o.targetContext, dockerCli.ContextStore()),
 		addRegistryCredentials(o.sendRegistryAuth, dockerCli),
 	}

@@ -4,9 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
-	"github.com/deislabs/duffle/pkg/utils/crud"
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -29,16 +27,19 @@ func statusCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) error {
+func runStatus(dockerCli command.Cli, installationName string, opts credentialOptions) error {
 	defer muteDockerCli(dockerCli)()
-	h := duffleHome()
+	opts.SetDefaultTargetContext(dockerCli)
 
-	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(h.Claims(), "json"))
-	c, err := claimStore.Read(claimName)
+	_, installationStore, credentialStore, err := prepareStores(opts.targetContext)
 	if err != nil {
 		return err
 	}
-	opts.SetDefaultTargetContext(dockerCli)
+
+	c, err := installationStore.Read(installationName)
+	if err != nil {
+		return err
+	}
 	bind, err := requiredClaimBindMount(c, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
@@ -52,7 +53,7 @@ func runStatus(dockerCli command.Cli, claimName string, opts credentialOptions) 
 	); err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli)...)
+	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
