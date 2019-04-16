@@ -54,7 +54,7 @@ volumes:
 **Override default parameters with file**. This example sets `debug` to `"false"` and the wordpress service published port to 80 as defined in `prod-parameters.yml`.
 
 ```yaml
-# docker-app render wordpress --parameters-files prod-parameters.yml
+# docker-app render wordpress --parameters-file prod-parameters.yml
 version: "3.6"
 [...]
     environment:

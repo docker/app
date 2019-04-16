@@ -83,8 +83,8 @@ type parametersOptions struct {
 }
 
 func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringArrayVarP(&o.parametersFiles, "parameters-files", "f", []string{}, "Override parameters files")
-	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameters values")
+	flags.StringArrayVar(&o.parametersFiles, "parameters-file", []string{}, "Override parameters file")
+	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameter value")
 }
 
 type credentialOptions struct {
