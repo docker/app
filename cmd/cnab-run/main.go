@@ -38,7 +38,7 @@ func getCnabAction() (cnabAction, string, error) {
 func main() {
 	action, actionName, err := getCnabAction()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error while parsing cnab operation: %s", err)
+		fmt.Fprintf(os.Stderr, "Error while parsing CNAB operation: %s", err)
 		os.Exit(1)
 	}
 	instanceName := os.Getenv("CNAB_INSTALLATION_NAME")
