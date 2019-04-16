@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/docker/app/internal/yaml"
+
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
 	"github.com/docker/docker/pkg/archive"
@@ -78,7 +80,19 @@ func PackInvocationImageContext(app *types.App, target io.Writer) error {
 			return errors.Wrapf(err, "failed to add attachment %q to the invocation image build context", prefix+attachment.Path())
 		}
 	}
+	// extract compose version, and use the same in overrides
+	var v composeVersion
+	if err := yaml.Unmarshal(app.Composes()[0], &v); err != nil {
+		return err
+	}
+	if err := tarAddBytes(tarout, "overrides/version", []byte(v.Version)); err != nil {
+		return err
+	}
 	return nil
+}
+
+type composeVersion struct {
+	Version string `yaml:"version"`
 }
 
 // Pack packs the app as a single file

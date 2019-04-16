@@ -40,6 +40,8 @@ const (
 	CredentialRegistryName = Namespace + "registry-creds"
 	// CredentialRegistryPath is the name to the credential containing registry credentials
 	CredentialRegistryPath = "/cnab/app/registry-creds.json"
+	// ComposeOverridesDir is the path where automatic parameters store their value overrides
+	ComposeOverridesDir = "/cnab/app/overrides"
 
 	// ParameterOrchestratorName is the name of the parameter containing the orchestrator
 	ParameterOrchestratorName = Namespace + "orchestrator"

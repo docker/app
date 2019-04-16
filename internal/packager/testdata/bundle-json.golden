@@ -114,6 +114,114 @@
         "env": "DOCKER_SHARE_REGISTRY_CREDS"
       }
     },
+    "services.app-watcher.deploy.replicas": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/app-watcher/deploy/replicas"
+      }
+    },
+    "services.app-watcher.deploy.resources.limits.cpus": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/app-watcher/deploy/resources/limits/cpus"
+      }
+    },
+    "services.app-watcher.deploy.resources.limits.memory": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/app-watcher/deploy/resources/limits/memory"
+      }
+    },
+    "services.app-watcher.deploy.resources.reservations.cpus": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/app-watcher/deploy/resources/reservations/cpus"
+      }
+    },
+    "services.app-watcher.deploy.resources.reservations.memory": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/app-watcher/deploy/resources/reservations/memory"
+      }
+    },
+    "services.debug.deploy.replicas": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/debug/deploy/replicas"
+      }
+    },
+    "services.debug.deploy.resources.limits.cpus": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/debug/deploy/resources/limits/cpus"
+      }
+    },
+    "services.debug.deploy.resources.reservations.cpus": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/debug/deploy/resources/reservations/cpus"
+      }
+    },
+    "services.debug.deploy.resources.reservations.memory": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/debug/deploy/resources/reservations/memory"
+      }
+    },
+    "services.front.deploy.resources.limits.cpus": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/front/deploy/resources/limits/cpus"
+      }
+    },
+    "services.front.deploy.resources.limits.memory": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/front/deploy/resources/limits/memory"
+      }
+    },
+    "services.front.deploy.resources.reservations.cpus": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/front/deploy/resources/reservations/cpus"
+      }
+    },
+    "services.front.deploy.resources.reservations.memory": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/front/deploy/resources/reservations/memory"
+      }
+    },
+    "services.monitor.deploy.replicas": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/monitor/deploy/replicas"
+      }
+    },
+    "services.monitor.deploy.resources.limits.cpus": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/monitor/deploy/resources/limits/cpus"
+      }
+    },
+    "services.monitor.deploy.resources.limits.memory": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/monitor/deploy/resources/limits/memory"
+      }
+    },
+    "services.monitor.deploy.resources.reservations.cpus": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/monitor/deploy/resources/reservations/cpus"
+      }
+    },
+    "services.monitor.deploy.resources.reservations.memory": {
+      "type": "string",
+      "destination": {
+        "path": "/cnab/app/overrides/services/monitor/deploy/resources/reservations/memory"
+      }
+    },
     "watcher.cmd": {
       "type": "string",
       "defaultValue": "foo",

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"path"
 	"strings"
 	"testing"
 
@@ -26,6 +27,7 @@ func TestPackInvocationImageContext(t *testing.T) {
 		"packing.dockerapp/config.cfg":                            true,
 		"packing.dockerapp/nesteddir/config2.cfg":                 true,
 		"packing.dockerapp/nesteddir/nested2/nested3/config3.cfg": true,
+		path.Join("overrides/version"):                            true,
 	}))
 }
 

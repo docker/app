@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/types"
+	"github.com/pkg/errors"
 
 	"github.com/docker/app/internal/formatter"
 	"github.com/docker/app/internal/packager"
@@ -12,7 +15,11 @@ import (
 )
 
 func renderAction(instanceName string) error {
-	app, err := packager.Extract("")
+	overrides, err := parseOverrides()
+	if err != nil {
+		return errors.Wrap(err, "unable to parse auto-parameter values")
+	}
+	app, err := packager.Extract("", types.WithComposes(bytes.NewReader(overrides)))
 	// todo: merge additional compose file
 	if err != nil {
 		return err

@@ -1,0 +1,10 @@
+version: "3.7"
+services:
+  nothing-specified:
+    image: nginx
+  replicas-fixed:
+    image: nginx
+    deploy:
+      replicas: 1
+  parameter-names-used:
+    image: nginx

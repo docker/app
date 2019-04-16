@@ -6,6 +6,7 @@ import (
 	"net"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -121,6 +122,26 @@ func TestPushPullInstall(t *testing.T) {
 		// install with --pull should fail (registry is stopped)
 		cmd.Command = dockerCli.Command("app", "install", "--pull", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name()+"2")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1}).Combined(), "failed to resolve bundle manifest"))
+	})
+}
+
+func TestAutomaticParameters(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		ref := info.registryAddress + "/test/push-pull"
+		cmd.Command = dockerCli.Command("app", "push", "--tag", ref, "--insecure-registries="+info.registryAddress, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		cmd.Command = dockerCli.Command("app", "install", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name())
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		cmd.Command = dockerCli.Command("--context=swarm-target-context", "service", "inspect", t.Name()+"_web", "-f", "{{.Spec.Mode.Replicated.Replicas}}")
+		replicasOut := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
+		assert.Equal(t, strings.TrimSpace(replicasOut), "1")
+
+		cmd.Command = dockerCli.Command("app", "upgrade", t.Name(), "-s", "services.web.deploy.replicas=2")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		cmd.Command = dockerCli.Command("--context=swarm-target-context", "service", "inspect", t.Name()+"_web", "-f", "{{.Spec.Mode.Replicated.Replicas}}")
+		replicasOut = icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
+		assert.Equal(t, strings.TrimSpace(replicasOut), "2")
 	})
 }
 
