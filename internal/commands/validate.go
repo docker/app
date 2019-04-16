@@ -9,30 +9,29 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	validateParametersFile []string
-	validateEnv            []string
-)
+type validateOptions struct {
+	parametersOptions
+}
 
 func validateCmd() *cobra.Command {
+	var opts validateOptions
 	cmd := &cobra.Command{
 		Use:   "validate [<app-name>] [-s key=value...] [-f parameters-file...]",
 		Short: "Checks the rendered application is syntactically correct",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app, err := packager.Extract(firstOrEmpty(args),
-				types.WithParametersFiles(validateParametersFile...),
+				types.WithParametersFiles(opts.parametersFiles...),
 			)
 			if err != nil {
 				return err
 			}
 			defer app.Cleanup()
-			argParameters := cliopts.ConvertKVStringsToMap(validateEnv)
+			argParameters := cliopts.ConvertKVStringsToMap(opts.overrides)
 			_, err = render.Render(app, argParameters, nil)
 			return err
 		},
 	}
-	cmd.Flags().StringArrayVarP(&validateParametersFile, "parameters-files", "f", []string{}, "Override with parameters from files")
-	cmd.Flags().StringArrayVarP(&validateEnv, "set", "s", []string{}, "Override parameters values")
+	opts.parametersOptions.addFlags(cmd.Flags())
 	return cmd
 }
