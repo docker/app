@@ -16,7 +16,7 @@ type validateOptions struct {
 func validateCmd() *cobra.Command {
 	var opts validateOptions
 	cmd := &cobra.Command{
-		Use:   "validate [<app-name>] [-s key=value...] [-f parameters-file...]",
+		Use:   "validate [APP_NAME] [--set KEY=VALUE ...] [--parameters-file PARAMETERS_FILE]",
 		Short: "Checks the rendered application is syntactically correct",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -23,10 +23,10 @@ type renderOptions struct {
 func renderCmd(dockerCli command.Cli) *cobra.Command {
 	var opts renderOptions
 	cmd := &cobra.Command{
-		Use:   "render <app-name> [-s key=value...] [-f parameters-file...]",
-		Short: "Render the Compose file for the application",
-		Long:  `Render the Compose file for the application.`,
-		Args:  cli.RequiresMaxArgs(1),
+		Use:     "render [APP_NAME] [--set KEY=VALUE ...] [--parameters-file PARAMETERS-FILE ...] [OPTIONS]",
+		Short:   "Render the Compose file for an Application Package",
+		Example: `$ docker app render myapp.dockerapp --set key=value`,
+		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRender(dockerCli, firstOrEmpty(args), opts)
 		},

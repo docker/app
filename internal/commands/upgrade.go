@@ -20,9 +20,10 @@ type upgradeOptions struct {
 func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 	var opts upgradeOptions
 	cmd := &cobra.Command{
-		Use:   "upgrade <installation-name> [options]",
-		Short: "Upgrade an installed application",
-		Args:  cobra.ExactArgs(1),
+		Use:     "upgrade INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
+		Short:   "Upgrade an installed application",
+		Example: `$ docker app upgrade myinstallation --target-context=mycontext --set key=value`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runUpgrade(dockerCli, args[0], opts)
 		},
@@ -31,7 +32,7 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 	opts.credentialOptions.addFlags(cmd.Flags())
 	opts.registryOptions.addFlags(cmd.Flags())
 	opts.pullOptions.addFlags(cmd.Flags())
-	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "bundle", "", "Override with new bundle or Docker App")
+	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "app-name", "", "Override the installation with another Application Package")
 
 	return cmd
 }

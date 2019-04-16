@@ -15,9 +15,11 @@ func statusCmd(dockerCli command.Cli) *cobra.Command {
 	var opts credentialOptions
 
 	cmd := &cobra.Command{
-		Use:   "status <installation-name>",
-		Short: "Get the installation status. If the installation is a docker application, the status shows the stack services.",
-		Args:  cli.ExactArgs(1),
+		Use:     "status INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
+		Short:   "Get the installation status of an application",
+		Long:    "Get the installation status of an application. If the installation is a Docker Application, the status shows the stack services.",
+		Example: "$ docker app status myinstallation --target-context=mycontext",
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runStatus(dockerCli, args[0], opts)
 		},

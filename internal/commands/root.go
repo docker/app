@@ -13,8 +13,8 @@ import (
 // NewRootCmd returns the base root command.
 func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Short: "Docker Application Packages",
-		Long:  `Build and deploy Docker Application Packages.`,
+		Short: "Docker Application",
+		Long:  `A tool to build and manage Docker Applications.`,
 		Use:   use,
 	}
 	addCommands(cmd, dockerCli)
@@ -94,8 +94,8 @@ type credentialOptions struct {
 }
 
 func (o *credentialOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringVar(&o.targetContext, "target-context", "", "Context on which the application is executed")
-	flags.StringArrayVarP(&o.credentialsets, "credential-set", "c", []string{}, "Use a credentialset (either a YAML file, or a credential set present in the credential store)")
+	flags.StringVar(&o.targetContext, "target-context", "", "Context on which the application is installed (default: <current-context>)")
+	flags.StringArrayVar(&o.credentialsets, "credential-set", []string{}, "Use a YAML file containing a credential set or a credential set present in the credential store")
 	flags.BoolVar(&o.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
 }
 

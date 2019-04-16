@@ -14,19 +14,20 @@ func completionCmd(dockerCli command.Cli, rootCmd *cobra.Command) *cobra.Command
 	return &cobra.Command{
 		Use:   "completion SHELL",
 		Short: "Generates completion scripts for the specified shell (bash or zsh)",
-		Long: `# Load the docker-app completion code for bash into the current shell
-. <(docker-app completion bash)
-# Set the docker-app completion code for bash to autoload on startup in your ~/.bashrc,
+		Long: `# Load the "docker app" completion code for bash into the current shell
+. <(docker app completion bash)
+# Set the "docker app" completion code for bash to autoload on startup in your ~/.bashrc,
 # ~/.profile or ~/.bash_profile
-. <(docker-app completion bash)
+. <(docker app completion bash)
 # Note: bash-completion is needed.
 
-# Load the docker-app completion code for zsh into the current shell
-source <(docker-app completion zsh)
-# Set the docker-app completion code for zsh to autoload on startup in your ~/.zshrc
-source <(docker-app completion zsh)
+# Load the "docker app" completion code for zsh into the current shell
+source <(docker app completion zsh)
+# Set the "docker app" completion code for zsh to autoload on startup in your ~/.zshrc,
+source <(docker app completion zsh)
 `,
-		Args: cli.RequiresMaxArgs(1),
+		Example: `$ . <(docker app completion bash)`,
+		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			switch {
 			case len(args) == 0:

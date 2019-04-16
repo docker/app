@@ -28,15 +28,16 @@ type bundleOptions struct {
 func bundleCmd(dockerCli command.Cli) *cobra.Command {
 	var opts bundleOptions
 	cmd := &cobra.Command{
-		Use:   "bundle [<app-name>]",
-		Short: "Create a CNAB invocation image and bundle.json for the application",
-		Args:  cli.RequiresMaxArgs(1),
+		Use:     "bundle [APP_NAME] [--output OUTPUT_FILE]",
+		Short:   "Create a CNAB invocation image and `bundle.json` for the application",
+		Example: `$ docker app bundle myapp.dockerapp`,
+		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runBundle(dockerCli, firstOrEmpty(args), opts)
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.out, "output", "o", "bundle.json", "path to the output bundle.json (- for stdout)")
+	cmd.Flags().StringVarP(&opts.out, "output", "o", "bundle.json", "Output file (- for stdout)")
 	return cmd
 }
 

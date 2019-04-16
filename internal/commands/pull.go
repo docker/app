@@ -15,9 +15,10 @@ import (
 func pullCmd(dockerCli command.Cli) *cobra.Command {
 	var opts registryOptions
 	cmd := &cobra.Command{
-		Use:   "pull <repotag>",
-		Short: "Pull an application from a registry",
-		Args:  cli.ExactArgs(1),
+		Use:     "pull NAME:TAG [OPTIONS]",
+		Short:   "Pull an application package from a registry",
+		Example: `$ docker app pull docker/app-example:0.1.0`,
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPull(dockerCli, args[0], opts)
 		},
