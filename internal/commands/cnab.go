@@ -335,3 +335,8 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	}
 	return a, c, errBuf, nil
 }
+
+func isInstallationFailed(installation *claim.Claim) bool {
+	return installation.Result.Action == claim.ActionInstall &&
+		installation.Result.Status == claim.StatusFailure
+}

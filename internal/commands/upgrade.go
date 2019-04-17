@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/credentials"
@@ -46,9 +47,13 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		return err
 	}
 
-	c, err := installationStore.Read(installationName)
+	installation, err := installationStore.Read(installationName)
 	if err != nil {
 		return err
+	}
+
+	if isInstallationFailed(&installation) {
+		return fmt.Errorf("Installation %q has failed and cannot be upgraded, reinstall it using 'docker app install'", installationName)
 	}
 
 	if opts.bundleOrDockerApp != "" {
@@ -56,9 +61,9 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		if err != nil {
 			return err
 		}
-		c.Bundle = b
+		installation.Bundle = b
 	}
-	if err := mergeBundleParameters(&c,
+	if err := mergeBundleParameters(&installation,
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
 		withSendRegistryAuth(opts.sendRegistryAuth),
@@ -66,7 +71,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		return err
 	}
 
-	bind, err := requiredClaimBindMount(c, opts.targetContext, dockerCli)
+	bind, err := requiredClaimBindMount(installation, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
@@ -74,18 +79,18 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
+	creds, err := prepareCredentialSet(installation.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
-	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
+	if err := credentials.Validate(creds, installation.Bundle.Credentials); err != nil {
 		return err
 	}
 	u := &action.Upgrade{
 		Driver: driverImpl,
 	}
-	err = u.Run(&c, creds, dockerCli.Out())
-	err2 := installationStore.Store(c)
+	err = u.Run(&installation, creds, os.Stdout)
+	err2 := installationStore.Store(installation)
 	if err != nil {
 		return fmt.Errorf("upgrade failed: %s", errBuf)
 	}
