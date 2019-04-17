@@ -57,7 +57,8 @@ func (a ApplicationStore) InstallationStore(context string) (InstallationStore, 
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return nil, errors.Wrapf(err, "failed to create installation store directory for context %q", context)
 	}
-	return claim.NewClaimStore(crud.NewFileSystemStore(path, "json")), nil
+	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(path, "json"))
+	return &installationStore{claimStore: claimStore}, nil
 }
 
 // CredentialStore initializes and returns a context based credential store
