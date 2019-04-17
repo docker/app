@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/credentials"
@@ -58,12 +59,15 @@ func runUninstall(dockerCli command.Cli, installationName string, opts credentia
 	uninst := &action.Uninstall{
 		Driver: driverImpl,
 	}
-	err = uninst.Run(&c, creds, dockerCli.Out())
-	if err == nil {
-		return installationStore.Delete(installationName)
+	if err := uninst.Run(&c, creds, os.Stdout); err != nil {
+		if err2 := installationStore.Store(c); err2 != nil {
+			return fmt.Errorf("%s while %s", err2, errBuf)
+		}
+		return fmt.Errorf("Uninstall failed: %s", errBuf)
 	}
-	if err2 := installationStore.Store(c); err2 != nil {
-		fmt.Fprintf(dockerCli.Err(), "failed to update installation: %s\n", err2)
+	if err := installationStore.Delete(installationName); err != nil {
+		return fmt.Errorf("Failed to delete installation %q from the installation store: %s", installationName, err)
 	}
-	return fmt.Errorf("uninstall failed: %s", errBuf)
+	fmt.Printf("Application %q uninstalled on context %q\n", installationName, opts.targetContext)
+	return nil
 }

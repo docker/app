@@ -131,12 +131,17 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	inst := &action.Install{
 		Driver: driverImpl,
 	}
-	err = inst.Run(c, creds, dockerCli.Out())
+	err = inst.Run(c, creds, os.Stdout)
 	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.
 	err2 := installationStore.Store(*c)
 	if err != nil {
-		return fmt.Errorf("install failed: %s", errBuf)
+		return fmt.Errorf("Installation failed: %s", errBuf)
 	}
-	return err2
+	if err2 != nil {
+		return err2
+	}
+
+	fmt.Printf("Application %q installed on context %q\n", installationName, opts.targetContext)
+	return nil
 }
