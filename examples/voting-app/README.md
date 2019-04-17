@@ -1,10 +1,16 @@
-## The Docker voting app
+## Docker Voting Application
 
 ### Initialize project
 
-In this example, we will create an app from the existing Docker sample `example-voting-app`. First download the `docker-stack.yml` [here](https://github.com/dockersamples/example-voting-app) ([direct link](https://raw.githubusercontent.com/dockersamples/example-voting-app/master/docker-stack.yml)
+In this example, we will create a Docker Application from the existing Docker
+sample `example-voting-app` from
+[here](https://github.com/dockersamples/example-voting-app).
 
-Initialize the project using `docker-app init voting-app --compose-file docker-stack.yml`.
+Initialize the application:
+
+```console
+$ docker app init voting-app --compose-file docker-compose.yml
+```
 
 ### Edit metadata
 
@@ -12,166 +18,112 @@ Go to `voting-app.dockerapp/` and open `metadata.yml` and fill the following fie
 - description
 - maintainers
 
-### Add variables to the compose file
+### Edit the services
 
-Open `docker-compose.yml` and start by changing the version to `3.2` (generated docker-compose are version 3.2+ compatible). Change constants you want by variables, e.g.:
+Open `voting-app/docker-compose.yml` and add some variables. Change the:
 
-Change the images used, from:
-- `dockersamples/examplevotingapp_vote:before` to `${vote.image.name}:${vote.image.tag}`
-- `dockersamples/examplevotingapp_result:before` to `${result.image.name}:${result.image.tag}`
-- `dockersamples/examplevotingapp_worker:before` to `${worker.image.name}:${worker.image.tag}`
-- `dockersamples/examplevotingapp_visualizer:before` to `${visualizer.image.name}:${visualizer.image.tag}`
+* `vote` service port from `"5000:80"` to `${vote.port}:80`
+* `result` service port from `"5001:80"` to `${result.port}:80`
+* `visualizer` service port from `"8080:8080"` to `${visualizer.port}:8080`
+* `vote` service replicas from `2` to `${vote.replicas}`
 
-Change exposed ports, from:
-- `<value:5000>` to `${vote.port}`
-- `<value:5001>` to `${result.port}`
-- `<value:8080>` to `${visualizer.port}`
+In your `voting-app.dockerapp/docker-compose.yml` you should now have:
 
-Change default replicas, from:
-- `<value:2>` to `${vote.replicas}`
-- `<value:1>` to `${result.replicas}`
-- `<value:1>` to `${worker.replicas}`
+```yaml
+version: "3.6"
 
----
-
-[voting-app.dockerapp/docker-compose.yml](voting-app.dockerapp/docker-compose.yml):
-```yml
-[...]
-  vote:
-    image: ${vote.image.name}:${vote.image.tag}
+services:
+  redis:
+    image: redis:alpine
     ports:
-      - ${vote.port}:80
-    networks:
-      - frontend
-    depends_on:
-      - redis
+      - "6379:6379"
+  db:
+    image: postgres:9.4
+    ports:
+      - "5432:5432"
+  vote:
+    image: dockersamples/examplevotingapp_vote:before
+    ports:
+      - "${vote.port}:80"
     deploy:
       replicas: ${vote.replicas}
-      update_config:
-        parallelism: 2
-      restart_policy:
-        condition: on-failure
-
   result:
-    image: ${result.image.name}:${result.image.tag}
+    image: dockersamples/examplevotingapp_result:before
     ports:
-      - ${result.port}:80
-    networks:
-      - backend
-    depends_on:
-      - db
-    deploy:
-      replicas: ${result.replicas}
-      update_config:
-        parallelism: 2
-        delay: 10s
-      restart_policy:
-        condition: on-failure
-
+      - "${result.port}:80"
   worker:
-    image: ${worker.image.name}:${worker.image.tag}
-    networks:
-      - frontend
-      - backend
-    deploy:
-      mode: replicated
-      replicas: ${worker.replicas}
-      labels: [APP=VOTING]
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [node.role == manager]
-
-  visualizer:
-    image: ${visualizer.image.name}:${visualizer.image.tag}
-    ports:
-      - ${visualizer.port}:8080
-    stop_grace_period: 1m30s
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    deploy:
-      placement:
-        constraints: [node.role == manager]
-[...]
+    image: dockersamples/examplevotingapp_worker
 ```
 
-### Give variables their default value
+### Set default parameters
 
-Open `parameters.yml` and add every variables with the default value you want, e.g.:
+Open `voting-app.dockerapp/parameters.yml` and list the variables you created
+above with a default value. Note that the `.` indicates hierarchy.
 
----
-
-[voting-app.dockerapp/parameters.yml](voting-app.dockerapp/parameters.yml):
-```yml
-# Vote.
+```yaml
 vote:
-  image:
-    name: dockersamples/examplevotingapp_vote
-    tag: latest
+  port: 5000
+  replicas: 2
+result:
+  port: 5001
+```
+
+Test your application is valid by generating a Compose file from it:
+
+```console
+$ docker app render voting-app.dockerapp
+version: "3.6"
+services:
+...
+```
+
+### Add a parameters file for an environment
+
+Create a `parameters/` folder to store the parameters you would use for
+production.
+
+```console
+$ mkdir parameters
+```
+
+Create a new file in the `parameters/` folder called `my-environment.yml` and
+open it in a text editor. Set the parameters that you would like to use for this
+environment, for example:
+
+```yaml
+vote:
   port: 8080
-  replicas: 1
-
-# Result.
-result:
-  image:
-    name: dockersamples/examplevotingapp_result
-    tag: latest
-  port: 8181
-  replicas: 1
-
-# Visualizer.
-visualizer:
-  image:
-    name: dockersamples/visualizer
-    tag: latest
-  port: 8282
-
-# Worker.
-worker:
-  image:
-    name: dockersamples/examplevotingapp_worker
-    tag: latest
-  replicas: 1
-```
-
-Test your application by running `docker-app render`.
-
-### Add parameters for production and development environments
-
-Create `parameters/development.yml` and `parameters/production.yml` and add your target-specific variables.
-
----
-
-[voting-app.dockerapp/parameters/development.yml](voting-app.dockerapp/parameters/development.yml):
-```yml
-# Vote.
-vote:
-  image:
-    name: vote
-
-# Result.
-result:
-  image:
-    name: result
-```
----
-
-[voting-app.dockerapp/parameters/production.yml](voting-app.dockerapp/parameters/production.yml):
-```yml
-# Vote.
-vote:
-  port: 80
-  replicas: 3
-
-# Result.
-result:
-  port: 81
   replicas: 5
+result:
+  port: 9000
+
 ```
 
-### Wrap everything in a Makefile
+You can then inspect your application using the parameters specified in this
+file as follows:
 
-Add a Makefile to simplify rendering, deploying and killing your app, see [Makefile](Makefile).
+```yaml
+$ docker app inspect voting-app.dockerapp --parameters-file parameters/my-environment.yml
+voting-app 0.1.0
+
+Maintained by: user <user@email.com>
+
+Dogs or cats?
+
+Services (5) Replicas Ports Image
+------------ -------- ----- -----
+worker       1              dockersamples/examplevotingapp_worker
+redis        1        6379  redis:alpine
+db           1        5432  postgres:9.4
+vote         5        8080  dockersamples/examplevotingapp_vote:before
+result       1        9000  dockersamples/examplevotingapp_result:before
+
+Parameters (3) Value
+-------------- -----
+result.port    9000
+vote.port      8080
+vote.replicas  5
+```
+
+**Note**: You can use a parameters file for `install`, `upgrade`, and `render`
+as well.

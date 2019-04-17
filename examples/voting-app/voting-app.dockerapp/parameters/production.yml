@@ -1,9 +1,0 @@
-# Vote.
-vote:
-  port: 80
-  replicas: 3
-
-# Result.
-result:
-  port: 81
-  replicas: 5

@@ -1,14 +1,15 @@
 {
     "name": "hellohelm",
     "version": "0.1.0",
+    "schemaVersion": "v1.0.0-WD",
     "invocationImages": [
         {
         "imageType": "docker",
         "image": "cnab/hellohelm:latest"
         }
     ],
-    "images": [
-        {
+    "images": {
+        "alpine": {
             "description": "alpine",
             "image": "technosophos/demo2alpine:0.1.0",
             "imageType": "docker",
@@ -19,16 +20,24 @@
                 }
             ]
         }
-    ],
+    },
     "parameters": {
         "port": {
             "defaultValue": 8080,
-            "type": "int"
+            "type": "int",
+            "destination": {
+                "env": "PORT"
+            }
         }
     },
     "credentials": {
         "kubeconfig": {
             "path": "/root/.kube/config"
+        }
+    },
+    "actions": {
+        "status": {
+            "modifies": false
         }
     }
 }
