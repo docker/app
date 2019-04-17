@@ -38,13 +38,11 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cli"
-  branch = "master"
+  branch = "19.03"
 
-# Waiting for https://github.com/deislabs/duffle/pull/682 to be merged
 [[override]]
   name = "github.com/deislabs/duffle"
-  source = "github.com/ijc/duffle"
-  branch = "set-merge"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
@@ -67,28 +65,37 @@ required = ["github.com/wadey/gocovmerge"]
   revision = "d466d4f6fd960e01820085bd7e1a24426ee7ef18"
 
 [[override]]
+  name = "github.com/prometheus/client_golang"
+  revision = "v0.8.0"
+
+[[override]]
   name = "github.com/docker/distribution"
   revision = "0d3efadf0154c2b8a4e7b6621fff9809655cc580"
 
 [[override]]
   name = "github.com/docker/swarmkit"
-  revision = "edd5641391926a50bc5f7040e20b7efc05003c26"
+  revision = "18e7e58ea1a5ec016625a636d0d52500eea123bc"
 
 [[override]]
   name = "k8s.io/kubernetes"
-  revision = "v1.11.1"
+  revision = "v1.14.1"
 
 [[override]]
   name = "k8s.io/api"
-  revision = "kubernetes-1.11.1"
+  revision = "kubernetes-1.14.1"
 
 [[override]]
   name = "k8s.io/apimachinery"
-  revision = "kubernetes-1.11.1"
+  revision = "kubernetes-1.14.1"
+
+# Overriding imdario/mergo since https://github.com/imdario/mergo/pull/112 is required
+[[override]]
+  name = "github.com/imdario/mergo"
+  branch = "master"
 
 [[override]]
   name = "k8s.io/client-go"
-  revision = "kubernetes-1.11.1"
+  revision = "kubernetes-1.14.1"
 
 # This is using a fork waiting for go-yaml/yaml#375 to be merged
 # This PR allows to set a max decoded value, thus not being exposed to yaml bombs

@@ -15,7 +15,7 @@ func TestMergeSliceError(t *testing.T) {
 		"baz": []int{1},
 	}
 	_, err := Merge(m1, m2)
-	assert.Check(t, is.ErrorContains(err, "cannot append two slice with different type"))
+	assert.Check(t, is.ErrorContains(err, "cannot override two slices with different type"))
 }
 
 func TestMerge(t *testing.T) {

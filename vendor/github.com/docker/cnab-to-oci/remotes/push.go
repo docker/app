@@ -8,7 +8,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/converter"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
@@ -20,25 +20,25 @@ import (
 type ManifestOption func(*ocischemav1.Index) error
 
 // Push pushes a bundle as an OCI Image Index manifest
-func Push(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, options ...ManifestOption) (ocischemav1.Descriptor, error) {
-	confBlob, confManifest, confBlobDescriptor, confManifestDescriptor, err := converter.CreateBundleConfig(b).PrepareForPush()
+func Push(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, allowFallbacks bool, options ...ManifestOption) (ocischemav1.Descriptor, error) {
+	bundleConfig, err := converter.CreateBundleConfig(b).PrepareForPush()
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
+	confManifestDescriptor, err := pushBundleConfig(ctx, resolver, ref.Name(), bundleConfig, allowFallbacks)
+	if err != nil {
+		return ocischemav1.Descriptor{}, fmt.Errorf("error while pushing bundle config manifest: %s", err)
+	}
+
 	indexDescriptor, indexPayload, err := prepareIndex(b, ref, confManifestDescriptor, options...)
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
-	// Push the bundle config
-	if err := pushPayload(ctx, resolver, ref.Name(), confBlobDescriptor, confBlob); err != nil {
-		return ocischemav1.Descriptor{}, fmt.Errorf("error while pushing bundle config: %s", err)
-	}
-	// Push the bundle config manifest
-	if err := pushPayload(ctx, resolver, ref.Name(), confManifestDescriptor, confManifest); err != nil {
-		return ocischemav1.Descriptor{}, fmt.Errorf("error while pushing bundle config manifest: %s", err)
-	}
 	// Push the bundle index
 	if err := pushPayload(ctx, resolver, ref.String(), indexDescriptor, indexPayload); err != nil {
+		if !allowFallbacks {
+			return ocischemav1.Descriptor{}, err
+		}
 		// retry with a docker manifestlist
 		indexDescriptor, indexPayload, err = prepareIndexNonOCI(b, ref, confManifestDescriptor, options...)
 		if err != nil {
@@ -129,4 +129,20 @@ func pushPayload(ctx context.Context, resolver remotes.Resolver, reference strin
 		return nil
 	}
 	return err
+}
+
+func pushBundleConfig(ctx context.Context, resolver remotes.Resolver, reference string, bundleConfig *converter.PreparedBundleConfig, allowFallbacks bool) (ocischemav1.Descriptor, error) {
+	if err := pushPayload(ctx, resolver, reference, bundleConfig.ConfigBlobDescriptor, bundleConfig.ConfigBlob); err != nil {
+		if allowFallbacks && bundleConfig.Fallback != nil {
+			return pushBundleConfig(ctx, resolver, reference, bundleConfig.Fallback, allowFallbacks)
+		}
+		return ocischemav1.Descriptor{}, err
+	}
+	if err := pushPayload(ctx, resolver, reference, bundleConfig.ManifestDescriptor, bundleConfig.Manifest); err != nil {
+		if allowFallbacks && bundleConfig.Fallback != nil {
+			return pushBundleConfig(ctx, resolver, reference, bundleConfig.Fallback, allowFallbacks)
+		}
+		return ocischemav1.Descriptor{}, err
+	}
+	return bundleConfig.ManifestDescriptor, nil
 }

@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/driver"
@@ -225,7 +225,7 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 		if strings.HasSuffix(name, internal.AppExtension) {
 			return extractAndLoadAppBasedBundle(dockerCli, name)
 		}
-		return loader.NewDetectingLoader().Load(name)
+		return loader.NewLoader().Load(name)
 	case nameKindDir, nameKindEmpty:
 		if pullRef {
 			if kind == nameKindDir {

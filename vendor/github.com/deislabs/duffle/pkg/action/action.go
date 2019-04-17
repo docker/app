@@ -7,14 +7,15 @@ import (
 	"io"
 	"strings"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
+
 	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/deislabs/duffle/pkg/driver"
 )
 
-// notStateless is there just to make callers of opFromClaims more readable
-const notStateless = false
+// stateful is there just to make callers of opFromClaims more readable
+const stateful = false
 
 // Action describes one of the primary actions that can be executed in CNAB.
 //
@@ -26,7 +27,7 @@ const notStateless = false
 // - status
 type Action interface {
 	// Run an action, and record the status in the given claim
-	Run(*claim.Claim, credentials.Set) error
+	Run(*claim.Claim, credentials.Set, io.Writer) error
 }
 
 func selectInvocationImage(d driver.Driver, c *claim.Claim) (bundle.InvocationImage, error) {

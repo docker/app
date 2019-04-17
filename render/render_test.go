@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/types"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	yaml "gopkg.in/yaml.v2"

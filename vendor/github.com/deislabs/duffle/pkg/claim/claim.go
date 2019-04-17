@@ -8,7 +8,7 @@ import (
 
 	"github.com/oklog/ulid"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 )
 
 // Status constants define the CNAB status fields on a Result.

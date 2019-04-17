@@ -9,7 +9,7 @@ import (
 func Merge(parameters ...Parameters) (Parameters, error) {
 	s := Parameters(map[string]interface{}{})
 	for _, parameter := range parameters {
-		if err := mergo.Merge(&s, parameter, mergo.WithOverride, mergo.WithAppendSlice); err != nil {
+		if err := mergo.Merge(&s, parameter, mergo.WithOverride, mergo.WithTypeCheck); err != nil {
 			return s, errors.Wrap(err, "cannot merge parameters")
 		}
 	}

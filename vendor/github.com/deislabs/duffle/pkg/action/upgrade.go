@@ -20,7 +20,7 @@ func (u *Upgrade) Run(c *claim.Claim, creds credentials.Set, w io.Writer) error 
 		return err
 	}
 
-	op, err := opFromClaim(claim.ActionUpgrade, notStateless, c, invocImage, creds, w)
+	op, err := opFromClaim(claim.ActionUpgrade, stateful, c, invocImage, creds, w)
 	if err != nil {
 		return err
 	}

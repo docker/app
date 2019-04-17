@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/platforms"
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli"
@@ -101,7 +101,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return err
 	}
 	// push bundle manifest
-	descriptor, err := remotes.Push(context.Background(), bndl, retag.cnabRef, resolverConfig.Resolver)
+	descriptor, err := remotes.Push(context.Background(), bndl, retag.cnabRef, resolverConfig.Resolver, true)
 	if err != nil {
 		return err
 	}
