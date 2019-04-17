@@ -1,4 +1,4 @@
-FROM dockercore/golang-cross:1.12.2@sha256:ea93d7ed5b464e5163cf8df40a198ad54afe6a59e1ca335c9bc4a5ed3702f2d0 AS build
+FROM dockercore/golang-cross:1.12.4@sha256:7ccd2d90d99974c7aad84660638590547495cfd3b1c78e6b5971fe944bf1ca51 AS build
 ENV     DISABLE_WARN_OUTSIDE_CONTAINER=1
 
 RUN apt-get install -y -q --no-install-recommends \
@@ -18,7 +18,7 @@ WORKDIR /go/src/github.com/docker/app/
 # main dev image
 FROM build AS dev
 ENV PATH=${PATH}:/go/src/github.com/docker/app/bin/
-ARG DEP_VERSION=v0.5.0
+ARG DEP_VERSION=v0.5.1
 RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
     chmod +x /usr/bin/dep
 ARG GOTESTSUM_VERSION=v0.3.4
