@@ -145,7 +145,8 @@ maintainers:
 
 	// validate metadata with JSON Schema
 	cmd.Command = dockerCli.Command("app", "validate", testAppName)
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	stdOut = icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
+	golden.Assert(t, stdOut, "validate-output.golden")
 
 	// test single-file init
 	cmd.Command = dockerCli.Command("app",
