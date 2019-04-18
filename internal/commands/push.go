@@ -27,8 +27,9 @@ import (
 )
 
 type pushOptions struct {
-	registry registryOptions
-	tag      string
+	registry  registryOptions
+	tag       string
+	platforms []string
 }
 
 func pushCmd(dockerCli command.Cli) *cobra.Command {
@@ -44,6 +45,7 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default: <name>:<version> from metadata)")
+	flags.StringSliceVar(&opts.platforms, "platform", nil, "For multi-arch service images, only push the specified platforms")
 	opts.registry.addFlags(flags)
 	return cmd
 }
@@ -95,8 +97,14 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	if term.IsTerminal(os.Stdout.Fd()) {
 		display = &interactiveDisplay{out: os.Stdout}
 	}
+	fixupOptions := []remotes.FixupOption{
+		remotes.WithEventCallback(display.onEvent),
+	}
+	if len(opts.platforms) > 0 {
+		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(opts.platforms))
+	}
 	// bundle fixup
-	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolverConfig, remotes.WithEventCallback(display.onEvent))
+	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolverConfig, fixupOptions...)
 
 	if err != nil {
 		return err
