@@ -1,0 +1,5 @@
+vote:
+  port: 8080
+  replicas: 5
+result:
+  port: 9000

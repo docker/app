@@ -1,0 +1,5 @@
+vote:
+  port: 5000
+  replicas: 2
+result:
+  port: 5001

@@ -1,5 +1,0 @@
-name: local
-credentials:
-  - name: kubeconfig
-    source:
-      path: C:\Users\garet\.kube\desktop
