@@ -131,7 +131,8 @@ maintainers:
 		"--description", "my cool app",
 		"--maintainer", "dev1",
 		"--maintainer", "dev2:dev2@example.com")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	stdOut := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
+	golden.Assert(t, stdOut, "init-output.golden")
 
 	manifest := fs.Expected(
 		t,
