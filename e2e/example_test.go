@@ -3,7 +3,6 @@ package e2e
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"gotest.tools/assert"
@@ -15,22 +14,12 @@ func TestExamplesAreValid(t *testing.T) {
 	defer cleanup()
 
 	err := filepath.Walk("../examples", func(p string, info os.FileInfo, err error) error {
-		appPath := filepath.Join(p, filepath.Base(p)+".dockerapp")
-		_, statErr := os.Stat(appPath)
-		switch {
-		case strings.HasSuffix(p, "examples"):
-			return nil
-		case strings.HasSuffix(p, ".resources"):
-			return filepath.SkipDir
-		case !info.IsDir():
-			return nil
-		case os.IsNotExist(statErr):
-			return nil
-		default:
-			cmd.Command = dockerCli.Command("app", "validate", appPath)
+		if filepath.Ext(p) == ".dockerapp" {
+			t.Log("Validate example: " + p)
+			cmd.Command = dockerCli.Command("app", "validate", p)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-			return filepath.SkipDir
 		}
+		return nil
 	})
 	assert.NilError(t, err)
 }
