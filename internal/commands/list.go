@@ -27,6 +27,7 @@ var (
 		value  func(c *claim.Claim) string
 	}{
 		{"INSTALLATION", func(c *claim.Claim) string { return c.Name }},
+		{"APPLICATION", func(c *claim.Claim) string { return fmt.Sprintf("%s (%s)", c.Bundle.Name, c.Bundle.Version) }},
 		{"LAST ACTION", func(c *claim.Claim) string { return c.Result.Action }},
 		{"RESULT", func(c *claim.Claim) string { return c.Result.Status }},
 		{"CREATED", func(c *claim.Claim) string { return units.HumanDuration(time.Since(c.Created)) }},

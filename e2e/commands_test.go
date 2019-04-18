@@ -320,7 +320,14 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 		ExitCode: 1,
 		Err:      "error decoding 'Ports': Invalid hostPort: -1",
 	})
-	// TODO: List the installation and check the failed status
+
+	// List the installation and check the failed status
+	cmd.Command = dockerCli.Command("app", "list")
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED`,
+			fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+failure\s+.+second?\s+.+second`, appName),
+		})
 
 	// Upgrading a failed installation is not allowed
 	cmd.Command = dockerCli.Command("app", "upgrade", appName)
@@ -350,12 +357,12 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", appName),
 		})
 
-	// List the installed applications
+	// List the installed application
 	cmd.Command = dockerCli.Command("app", "list")
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
-			`INSTALLATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED`,
-			fmt.Sprintf(`%s\s+install\s+success\s+[[:alnum:]]+\ssecond.\s+[[:alnum:]]+\ssecond`, appName),
+			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED`,
+			fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+success\s+.+second.\s+.+second`, appName),
 		})
 
 	// Installing again the same application is forbidden
