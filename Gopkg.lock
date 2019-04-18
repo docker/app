@@ -194,7 +194,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f6638ee6e1e6cccfdbdfa9a78b19323e1ac9e94528b79626f92cc2becc0765df"
+  digest = "1:eeb92cfa05a5d352a4a6f1c2b3ff418f5ccc9c4b7f257ab73a0527c5449fb5b7"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/action",
@@ -209,7 +209,7 @@
 
 [[projects]]
   branch = "19.03"
-  digest = "1:22a6f3e4596bb26adcd3365e894e65ed3b507941a64bfcc659346b765a06a29e"
+  digest = "1:45401220d930972198a7880d87df89485e53ac44b2a5826d9c2fe57344f650a6"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -264,7 +264,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "ba9934d4041e37c32160316aad863d7d2dbebded"
+  revision = "2432af701a7973ea582196b4b9488831156f3458"
 
 [[projects]]
   branch = "master"
@@ -1274,6 +1274,7 @@
     "github.com/gopherjs/gopherjs/js",
     "github.com/imdario/mergo",
     "github.com/morikuni/aec",
+    "github.com/opencontainers/go-digest",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
