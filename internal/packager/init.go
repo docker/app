@@ -32,14 +32,15 @@ func prependToFile(filename, text string) error {
 }
 
 // Init is the entrypoint initialization function.
-// It generates a new application package based on the provided parameters.
-func Init(name string, composeFile string, description string, maintainers []string, singleFile bool) error {
+// It generates a new application definition based on the provided parameters
+// and returns the path to the created application definition.
+func Init(name string, composeFile string, description string, maintainers []string, singleFile bool) (string, error) {
 	if err := internal.ValidateAppName(name); err != nil {
-		return err
+		return "", err
 	}
 	dirName := internal.DirNameFromAppName(name)
 	if err := os.Mkdir(dirName, 0755); err != nil {
-		return errors.Wrap(err, "failed to create application directory")
+		return "", errors.Wrap(err, "failed to create application directory")
 	}
 	var err error
 	defer func() {
@@ -48,7 +49,7 @@ func Init(name string, composeFile string, description string, maintainers []str
 		}
 	}()
 	if err = writeMetadataFile(name, dirName, description, maintainers); err != nil {
-		return err
+		return "", err
 	}
 
 	if composeFile == "" {
@@ -62,40 +63,40 @@ func Init(name string, composeFile string, description string, maintainers []str
 		err = initFromComposeFile(name, composeFile)
 	}
 	if err != nil {
-		return err
+		return "", err
 	}
 	if !singleFile {
-		return nil
+		return dirName, nil
 	}
 	// Merge as a single file
 	// Add some helfpful comments to distinguish the sections
 	if err := prependToFile(filepath.Join(dirName, internal.ComposeFileName), "# This section contains the Compose file that describes your application services.\n"); err != nil {
-		return err
+		return "", err
 	}
 	if err := prependToFile(filepath.Join(dirName, internal.ParametersFileName), "# This section contains the default values for your application parameters.\n"); err != nil {
-		return err
+		return "", err
 	}
 	if err := prependToFile(filepath.Join(dirName, internal.MetadataFileName), "# This section contains your application metadata.\n"); err != nil {
-		return err
+		return "", err
 	}
 
 	temp := "_temp_dockerapp__.dockerapp"
 	err = os.Rename(dirName, temp)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer os.RemoveAll(temp)
 	var target io.Writer
 	target, err = os.Create(dirName)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer target.(io.WriteCloser).Close()
 	app, err := loader.LoadFromDirectory(temp)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return Merge(app, target)
+	return dirName, Merge(app, target)
 }
 
 func initFromScratch(name string) error {

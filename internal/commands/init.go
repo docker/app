@@ -1,8 +1,11 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/cli/cli"
+	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +16,7 @@ var (
 	initSingleFile  bool
 )
 
-func initCmd() *cobra.Command {
+func initCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "init APP_NAME [--compose-file COMPOSE_FILE] [--description DESCRIPTION] [--maintainer NAME:EMAIL ...] [OPTIONS]",
 		Short:   "Initialize Docker Application definition",
@@ -21,7 +24,12 @@ func initCmd() *cobra.Command {
 		Example: `$ docker app init myapp --description "a useful description"`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return packager.Init(args[0], initComposeFile, initDescription, initMaintainers, initSingleFile)
+			created, err := packager.Init(args[0], initComposeFile, initDescription, initMaintainers, initSingleFile)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(dockerCli.Out(), "Created %q\n", created)
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&initComposeFile, "compose-file", "", "Compose file to use as application base (optional)")
