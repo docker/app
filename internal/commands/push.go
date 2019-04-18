@@ -34,9 +34,10 @@ type pushOptions struct {
 func pushCmd(dockerCli command.Cli) *cobra.Command {
 	var opts pushOptions
 	cmd := &cobra.Command{
-		Use:   "push [<app-name>]",
-		Short: "Push the application to a registry",
-		Args:  cli.RequiresMaxArgs(1),
+		Use:     "push [APP_NAME] --tag TARGET_REFERENCE [OPTIONS]",
+		Short:   "Push an application package to a registry",
+		Example: `$ docker app push myapp --tag myrepo/myapp:mytag`,
+		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPush(dockerCli, firstOrEmpty(args), opts)
 		},

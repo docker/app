@@ -1,20 +1,20 @@
 
 Usage:	docker app COMMAND
 
-Build and deploy Docker Application Packages.
+A tool to build and manage Docker Applications.
 
 Commands:
-  bundle      Create a CNAB invocation image and bundle.json for the application
+  bundle      Create a CNAB invocation image and `bundle.json` for the application
   completion  Generates completion scripts for the specified shell (bash or zsh)
-  init        Start building a Docker application
-  inspect     Shows metadata, parameters and a summary of the compose file for a given application
+  init        Initialize Docker Application definition
+  inspect     Shows metadata, parameters and a summary of the Compose file for a given application
   install     Install an application
-  merge       Merge a multi-file application into a single file
-  pull        Pull an application from a registry
-  push        Push the application to a registry
-  render      Render the Compose file for the application
-  split       Split a single-file application into multiple files
-  status      Get the installation status. If the installation is a docker application, the status shows the stack services.
+  merge       Merge a directory format Docker Application definition into a single file
+  pull        Pull an application package from a registry
+  push        Push an application package to a registry
+  render      Render the Compose file for an Application Package
+  split       Split a single-file Docker Application definition into the directory format
+  status      Get the installation status of an application
   uninstall   Uninstall an application
   upgrade     Upgrade an installed application
   validate    Checks the rendered application is syntactically correct

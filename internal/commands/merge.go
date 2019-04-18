@@ -61,9 +61,10 @@ func removeAndRename(source, target string) error {
 
 func mergeCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "merge [<app-name>] [-o output_file]",
-		Short: "Merge a multi-file application into a single file",
-		Args:  cli.RequiresMaxArgs(1),
+		Use:     "merge [APP_NAME] [--output OUTPUT_FILE]",
+		Short:   "Merge a directory format Docker Application definition into a single file",
+		Example: `$ docker app merge myapp.dockerapp --output myapp-single.dockerapp`,
+		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			extractedApp, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {

@@ -15,7 +15,7 @@ func TestInvokePluginFromCLI(t *testing.T) {
 	// docker --help should list app as a top command
 	cmd.Command = dockerCli.Command("--help")
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
-		Out: "app*        Docker Application Packages (Docker Inc.,",
+		Out: "app*        Docker Application (Docker Inc.,",
 	})
 
 	// docker app --help prints docker-app help
@@ -30,7 +30,7 @@ func TestInvokePluginFromCLI(t *testing.T) {
 
 	// docker info should print app version and short description
 	cmd.Command = dockerCli.Command("info")
-	re := regexp.MustCompile(`app: Docker Application Packages \(Docker Inc\., .*\)`)
+	re := regexp.MustCompile(`app: Docker Application \(Docker Inc\., .*\)`)
 	output := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
 	assert.Assert(t, re.MatchString(output))
 }

@@ -31,22 +31,25 @@ const (
 	nameKindReference
 )
 
-const longDescription = `Install the application on either Swarm or Kubernetes.
-Bundle name is optional, and can:
-- be empty and resolve to any *.dockerapp in working directory
-- be a BUNDLE file path and resolve to any *.dockerapp file or dir, or any CNAB file (signed or unsigned)
-- match a bundle name in the local bundle repository
-- refer to a CNAB in a container registry
-`
+const longDescription = `Install an application.
+By default, the application definition in the current directory will be
+installed. The APP_NAME can also be:
+- a path to a Docker Application definition (.dockerapp) or a CNAB bundle.json
+- a registry Application Package reference`
+
+const example = `$ docker app install myapp.dockerapp --name myinstallation --target-context=mycontext
+$ docker app install myrepo/myapp:mytag --name myinstallation --target-context=mycontext
+$ docker app install bundle.json --name myinstallation --credential-set=mycredentials.yml`
 
 func installCmd(dockerCli command.Cli) *cobra.Command {
 	var opts installOptions
 
 	cmd := &cobra.Command{
-		Use:     "install [<bundle name>] [OPTIONS]",
+		Use:     "install [APP_NAME] [--name INSTALLATION_NAME] [--target-context TARGET_CONTEXT] [OPTIONS]",
 		Aliases: []string{"deploy"},
 		Short:   "Install an application",
 		Long:    longDescription,
+		Example: example,
 		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInstall(dockerCli, firstOrEmpty(args), opts)
@@ -56,7 +59,7 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	opts.credentialOptions.addFlags(cmd.Flags())
 	opts.registryOptions.addFlags(cmd.Flags())
 	opts.pullOptions.addFlags(cmd.Flags())
-	cmd.Flags().StringVarP(&opts.orchestrator, "orchestrator", "o", "", "Orchestrator to install on (swarm, kubernetes)")
+	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "kubernetes-namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Installation name (defaults to application name)")
 

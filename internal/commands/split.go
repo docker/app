@@ -10,9 +10,10 @@ var splitOutputDir string
 
 func splitCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "split [<app-name>] [-o output]",
-		Short: "Split a single-file application into multiple files",
-		Args:  cli.RequiresMaxArgs(1),
+		Use:     "split [APP_NAME] [--output OUTPUT_DIRECTORY]",
+		Short:   "Split a single-file Docker Application definition into the directory format",
+		Example: `$ docker app split myapp.dockerapp --output myapp-directory.dockerapp`,
+		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			extractedApp, err := packager.Extract(firstOrEmpty(args))
 			if err != nil {
@@ -32,6 +33,6 @@ func splitCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&splitOutputDir, "output", "o", "", "Output application directory (default: in-place)")
+	cmd.Flags().StringVarP(&splitOutputDir, "output", "o", "", "Output directory (default: in-place)")
 	return cmd
 }

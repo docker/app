@@ -60,7 +60,7 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
 		assert.NilError(t, err)
 		assert.NilError(t, yaml.Unmarshal(data, &envParameters))
-		args := dockerCli.Command("app", "render", filepath.Join(appPath, "my.dockerapp"), "--parameters-files", filepath.Join(appPath, "parameters-0.yml"))
+		args := dockerCli.Command("app", "render", filepath.Join(appPath, "my.dockerapp"), "--parameters-file", filepath.Join(appPath, "parameters-0.yml"))
 		for k, v := range envParameters {
 			args = append(args, "--set", fmt.Sprintf("%s=%s", k, v))
 		}
