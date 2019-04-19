@@ -18,7 +18,12 @@ func TestStoreAndReadInstallation(t *testing.T) {
 	installationStore, err := appstore.InstallationStore("my-context")
 	assert.NilError(t, err)
 
-	expectedInstallation := claim.Claim{Name: "installation-name"}
+	expectedInstallation := &Installation{
+		Claim: claim.Claim{
+			Name: "installation-name",
+		},
+		Reference: "mybundle:mytag",
+	}
 
 	// Store the installation
 	err = installationStore.Store(expectedInstallation)

@@ -34,11 +34,11 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 
 func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
 	defer muteDockerCli(dockerCli)()
-	a, c, errBuf, err := prepareCustomAction(internal.ActionInspectName, dockerCli, appname, nil, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
+	action, installation, errBuf, err := prepareCustomAction(internal.ActionInspectName, dockerCli, appname, nil, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
 	if err != nil {
 		return err
 	}
-	if err := a.Run(c, nil, nil); err != nil {
+	if err := action.Run(&installation.Claim, nil, nil); err != nil {
 		return fmt.Errorf("inspect failed: %s", errBuf)
 	}
 	return nil
