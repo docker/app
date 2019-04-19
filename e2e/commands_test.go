@@ -305,53 +305,35 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
 	appName := strings.Replace(t.Name(), "/", "_", 1)
-
 	tmpDir := fs.NewDir(t, appName)
 	defer tmpDir.Remove()
-
-	cmd.Env = append(cmd.Env, "DOCKER_TARGET_CONTEXT=swarm-target-context")
-
 	// Running a swarm using docker in docker to install the application
 	// and run the invocation image
 	swarm := NewContainer("docker:18.09-dind", 2375)
 	swarm.Start(t)
 	defer swarm.Stop(t)
+	initializeDockerAppEnvironment(t, &cmd, tmpDir, swarm, useBindMount)
 
-	// The dind doesn't have the cnab-app-base image so we save it in order to load it later
-	icmd.RunCommand(dockerCli.path, "save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "--output", tmpDir.Join("cnab-app-base.tar.gz")).Assert(t, icmd.Success)
+	// Install an illformed Docker Application Package
+	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--set", "web_port=-1", "--name", appName)
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Err:      "error decoding 'Ports': Invalid hostPort: -1",
+	})
+	// TODO: List the installation and check the failed status
 
-	// We  need two contexts:
-	// - one for `docker` so that it connects to the dind swarm created before
-	// - the target context for the invocation image to install within the swarm
-	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	// Upgrading a failed installation is not allowed
+	cmd.Command = dockerCli.Command("app", "upgrade", appName)
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Err:      fmt.Sprintf("Installation %q has failed and cannot be upgraded, reinstall it using 'docker app install'", appName),
+	})
 
-	// When creating a context on a Windows host we cannot use
-	// the unix socket but it's needed inside the invocation image.
-	// The workaround is to create a context with an empty host.
-	// This host will default to the unix socket inside the
-	// invocation image
-	host := "host="
-	if !useBindMount {
-		host += fmt.Sprintf("tcp://%s", swarm.GetPrivateAddress(t))
-	}
-
-	cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", host, "--default-stack-orchestrator", "swarm")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	// Initialize the swarm
-	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")
-	cmd.Command = dockerCli.Command("swarm", "init")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	// Load the needed base cnab image into the swarm docker engine
-	cmd.Command = dockerCli.Command("load", "--input", tmpDir.Join("cnab-app-base.tar.gz"))
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	// Install a Docker Application Package
+	// Install a Docker Application Package with an existing failed installation is fine
 	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--name", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
+			fmt.Sprintf("WARNING: installing over previously failed installation %q", appName),
 			fmt.Sprintf("Creating network %s_back", appName),
 			fmt.Sprintf("Creating network %s_front", appName),
 			fmt.Sprintf("Creating service %s_db", appName),
@@ -367,6 +349,13 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 			fmt.Sprintf(`[[:alnum:]]+        %s_web   replicated          [0-1]/1                 nginx:latest        \*:8082->80/tcp`, appName),
 			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", appName),
 		})
+
+	// Installing again the same application is forbidden
+	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--name", appName)
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Err:      fmt.Sprintf("Installation %q already exists, use 'docker app upgrade' instead", appName),
+	})
 
 	// Upgrade the application, changing the port
 	cmd.Command = dockerCli.Command("app", "upgrade", appName, "--set", "web_port=8081")
@@ -391,6 +380,41 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 			fmt.Sprintf("Removing network %s_front", appName),
 			fmt.Sprintf("Removing network %s_back", appName),
 		})
+}
+
+func initializeDockerAppEnvironment(t *testing.T, cmd *icmd.Cmd, tmpDir *fs.Dir, swarm *Container, useBindMount bool) {
+	cmd.Env = append(cmd.Env, "DOCKER_TARGET_CONTEXT=swarm-target-context")
+
+	// The dind doesn't have the cnab-app-base image so we save it in order to load it later
+	icmd.RunCommand(dockerCli.path, "save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "--output", tmpDir.Join("cnab-app-base.tar.gz")).Assert(t, icmd.Success)
+
+	// We  need two contexts:
+	// - one for `docker` so that it connects to the dind swarm created before
+	// - the target context for the invocation image to install within the swarm
+	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarm.GetAddress(t)), "--default-stack-orchestrator", "swarm")
+	icmd.RunCmd(*cmd).Assert(t, icmd.Success)
+
+	// When creating a context on a Windows host we cannot use
+	// the unix socket but it's needed inside the invocation image.
+	// The workaround is to create a context with an empty host.
+	// This host will default to the unix socket inside the
+	// invocation image
+	host := "host="
+	if !useBindMount {
+		host += fmt.Sprintf("tcp://%s", swarm.GetPrivateAddress(t))
+	}
+
+	cmd.Command = dockerCli.Command("context", "create", "swarm-target-context", "--docker", host, "--default-stack-orchestrator", "swarm")
+	icmd.RunCmd(*cmd).Assert(t, icmd.Success)
+
+	// Initialize the swarm
+	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context")
+	cmd.Command = dockerCli.Command("swarm", "init")
+	icmd.RunCmd(*cmd).Assert(t, icmd.Success)
+
+	// Load the needed base cnab image into the swarm docker engine
+	cmd.Command = dockerCli.Command("load", "--input", tmpDir.Join("cnab-app-base.tar.gz"))
+	icmd.RunCmd(*cmd).Assert(t, icmd.Success)
 }
 
 func checkContains(t *testing.T, combined string, expectedLines []string) {

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/deislabs/duffle/pkg/action"
 	"github.com/deislabs/duffle/pkg/claim"
@@ -90,8 +91,15 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if installationName == "" {
 		installationName = bndl.Name
 	}
-	if _, err = installationStore.Read(installationName); err == nil {
-		return fmt.Errorf("installation %q already exists", installationName)
+	if installation, err := installationStore.Read(installationName); err == nil {
+		// A failed installation can be overridden, but with a warning
+		if isInstallationFailed(&installation) {
+			fmt.Fprintf(os.Stderr, "WARNING: installing over previously failed installation %q\n", installationName)
+		} else {
+			// Return an error in case of successful installation, or even failed upgrade, which means
+			// their was already a successful installation.
+			return fmt.Errorf("Installation %q already exists, use 'docker app upgrade' instead", installationName)
+		}
 	}
 	c, err := claim.New(installationName)
 	if err != nil {
@@ -123,12 +131,17 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	inst := &action.Install{
 		Driver: driverImpl,
 	}
-	err = inst.Run(c, creds, dockerCli.Out())
+	err = inst.Run(c, creds, os.Stdout)
 	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.
 	err2 := installationStore.Store(*c)
 	if err != nil {
-		return fmt.Errorf("install failed: %s", errBuf)
+		return fmt.Errorf("Installation failed: %s", errBuf)
 	}
-	return err2
+	if err2 != nil {
+		return err2
+	}
+
+	fmt.Printf("Application %q installed on context %q\n", installationName, opts.targetContext)
+	return nil
 }
