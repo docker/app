@@ -7,8 +7,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/deislabs/duffle/pkg/claim"
-
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -24,14 +22,16 @@ type listOptions struct {
 var (
 	listColumns = []struct {
 		header string
-		value  func(c *claim.Claim) string
+		value  func(i *store.Installation) string
 	}{
-		{"INSTALLATION", func(c *claim.Claim) string { return c.Name }},
-		{"APPLICATION", func(c *claim.Claim) string { return fmt.Sprintf("%s (%s)", c.Bundle.Name, c.Bundle.Version) }},
-		{"LAST ACTION", func(c *claim.Claim) string { return c.Result.Action }},
-		{"RESULT", func(c *claim.Claim) string { return c.Result.Status }},
-		{"CREATED", func(c *claim.Claim) string { return units.HumanDuration(time.Since(c.Created)) }},
-		{"MODIFIED", func(c *claim.Claim) string { return units.HumanDuration(time.Since(c.Modified)) }}}
+		{"INSTALLATION", func(i *store.Installation) string { return i.Name }},
+		{"APPLICATION", func(i *store.Installation) string { return fmt.Sprintf("%s (%s)", i.Bundle.Name, i.Bundle.Version) }},
+		{"LAST ACTION", func(i *store.Installation) string { return i.Result.Action }},
+		{"RESULT", func(i *store.Installation) string { return i.Result.Status }},
+		{"CREATED", func(i *store.Installation) string { return units.HumanDuration(time.Since(i.Created)) }},
+		{"MODIFIED", func(i *store.Installation) string { return units.HumanDuration(time.Since(i.Modified)) }},
+		{"REFERENCE", func(i *store.Installation) string { return i.Reference }},
+	}
 )
 
 func listCmd(dockerCli command.Cli) *cobra.Command {
@@ -70,12 +70,12 @@ func runList(dockerCli command.Cli, opts listOptions) error {
 	w := tabwriter.NewWriter(dockerCli.Out(), 0, 0, 1, ' ', 0)
 	printHeaders(w)
 
-	for _, c := range installations {
-		installation, err := installationStore.Read(c)
+	for _, name := range installations {
+		installation, err := installationStore.Read(name)
 		if err != nil {
 			return err
 		}
-		printValues(w, &installation)
+		printValues(w, installation)
 	}
 	return w.Flush()
 }
@@ -88,7 +88,7 @@ func printHeaders(w io.Writer) {
 	fmt.Fprintln(w, strings.Join(headers, "\t"))
 }
 
-func printValues(w io.Writer, installation *claim.Claim) {
+func printValues(w io.Writer, installation *store.Installation) {
 	var values []string
 	for _, column := range listColumns {
 		values = append(values, column.value(installation))

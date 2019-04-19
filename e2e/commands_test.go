@@ -325,8 +325,8 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd.Command = dockerCli.Command("app", "list")
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
-			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED`,
-			fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+failure\s+.+second?\s+.+second`, appName),
+			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
+			fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+failure\s+.+second[s]?\s+.+second[s]?\s+`, appName),
 		})
 
 	// Upgrading a failed installation is not allowed
@@ -361,8 +361,8 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd.Command = dockerCli.Command("app", "list")
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
-			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED`,
-			fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+success\s+.+second.\s+.+second`, appName),
+			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
+			fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+success\s+.+second[s]?\s+.+second[s]?\s+`, appName),
 		})
 
 	// Installing again the same application is forbidden
