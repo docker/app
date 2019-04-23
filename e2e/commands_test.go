@@ -320,7 +320,14 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 		ExitCode: 1,
 		Err:      "error decoding 'Ports': Invalid hostPort: -1",
 	})
-	// TODO: List the installation and check the failed status
+
+	// List the installation and check the failed status
+	cmd.Command = dockerCli.Command("app", "list")
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
+			fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+failure\s+.+second[s]?\s+.+second[s]?\s+`, appName),
+		})
 
 	// Upgrading a failed installation is not allowed
 	cmd.Command = dockerCli.Command("app", "upgrade", appName)
@@ -348,6 +355,14 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 			fmt.Sprintf("[[:alnum:]]+        %s_db    replicated          [0-1]/1                 postgres:9.3", appName),
 			fmt.Sprintf(`[[:alnum:]]+        %s_web   replicated          [0-1]/1                 nginx:latest        \*:8082->80/tcp`, appName),
 			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", appName),
+		})
+
+	// List the installed application
+	cmd.Command = dockerCli.Command("app", "list")
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
+			fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+success\s+.+second[s]?\s+.+second[s]?\s+`, appName),
 		})
 
 	// Installing again the same application is forbidden
@@ -420,6 +435,6 @@ func initializeDockerAppEnvironment(t *testing.T, cmd *icmd.Cmd, tmpDir *fs.Dir,
 func checkContains(t *testing.T, combined string, expectedLines []string) {
 	for _, expected := range expectedLines {
 		exp := regexp.MustCompile(expected)
-		assert.Assert(t, exp.MatchString(combined), expected, combined)
+		assert.Assert(t, exp.MatchString(combined), "expected %q != actual %q", expected, combined)
 	}
 }

@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -80,7 +80,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err
 	}
 
-	bndl, err := resolveBundle(dockerCli, bundleStore, appname, opts.pull, opts.insecureRegistries)
+	bndl, ref, err := resolveBundle(dockerCli, bundleStore, appname, opts.pull, opts.insecureRegistries)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	}
 	if installation, err := installationStore.Read(installationName); err == nil {
 		// A failed installation can be overridden, but with a warning
-		if isInstallationFailed(&installation) {
+		if isInstallationFailed(installation) {
 			fmt.Fprintf(os.Stderr, "WARNING: installing over previously failed installation %q\n", installationName)
 		} else {
 			// Return an error in case of successful installation, or even failed upgrade, which means
@@ -101,7 +101,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 			return fmt.Errorf("Installation %q already exists, use 'docker app upgrade' instead", installationName)
 		}
 	}
-	c, err := claim.New(installationName)
+	installation, err := store.NewInstallation(installationName, ref)
 	if err != nil {
 		return err
 	}
@@ -110,9 +110,9 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if err != nil {
 		return err
 	}
-	c.Bundle = bndl
+	installation.Bundle = bndl
 
-	if err := mergeBundleParameters(c,
+	if err := mergeBundleParameters(installation,
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
 		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
@@ -131,10 +131,10 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	inst := &action.Install{
 		Driver: driverImpl,
 	}
-	err = inst.Run(c, creds, os.Stdout)
+	err = inst.Run(&installation.Claim, creds, os.Stdout)
 	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.
-	err2 := installationStore.Store(*c)
+	err2 := installationStore.Store(installation)
 	if err != nil {
 		return fmt.Errorf("Installation failed: %s", errBuf)
 	}

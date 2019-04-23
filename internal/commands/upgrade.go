@@ -52,18 +52,18 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		return err
 	}
 
-	if isInstallationFailed(&installation) {
+	if isInstallationFailed(installation) {
 		return fmt.Errorf("Installation %q has failed and cannot be upgraded, reinstall it using 'docker app install'", installationName)
 	}
 
 	if opts.bundleOrDockerApp != "" {
-		b, err := resolveBundle(dockerCli, bundleStore, opts.bundleOrDockerApp, opts.pull, opts.insecureRegistries)
+		b, _, err := resolveBundle(dockerCli, bundleStore, opts.bundleOrDockerApp, opts.pull, opts.insecureRegistries)
 		if err != nil {
 			return err
 		}
 		installation.Bundle = b
 	}
-	if err := mergeBundleParameters(&installation,
+	if err := mergeBundleParameters(installation,
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
 		withSendRegistryAuth(opts.sendRegistryAuth),
@@ -71,7 +71,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		return err
 	}
 
-	bind, err := requiredClaimBindMount(installation, opts.targetContext, dockerCli)
+	bind, err := requiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	u := &action.Upgrade{
 		Driver: driverImpl,
 	}
-	err = u.Run(&installation, creds, os.Stdout)
+	err = u.Run(&installation.Claim, creds, os.Stdout)
 	err2 := installationStore.Store(installation)
 	if err != nil {
 		return fmt.Errorf("Upgrade failed: %s", errBuf)

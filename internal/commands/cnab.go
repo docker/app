@@ -201,16 +201,17 @@ func getAppNameKind(name string) (string, nameKind) {
 	return name, nameKindFile
 }
 
-func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.Bundle, error) {
+func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.Bundle, string, error) {
 	app, err := packager.Extract(name)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer app.Cleanup()
-	return makeBundleFromApp(dockerCli, app)
+	bndl, err := makeBundleFromApp(dockerCli, app)
+	return bndl, "", err
 }
 
-func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool, insecureRegistries []string) (*bundle.Bundle, error) {
+func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool, insecureRegistries []string) (*bundle.Bundle, string, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
 	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
@@ -220,28 +221,31 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 	switch kind {
 	case nameKindFile:
 		if pullRef {
-			return nil, errors.Errorf("%s: cannot pull when referencing a file based app", name)
+			return nil, "", errors.Errorf("%s: cannot pull when referencing a file based app", name)
 		}
 		if strings.HasSuffix(name, internal.AppExtension) {
 			return extractAndLoadAppBasedBundle(dockerCli, name)
 		}
-		return loader.NewLoader().Load(name)
+		bndl, err := loader.NewLoader().Load(name)
+		return bndl, "", err
 	case nameKindDir, nameKindEmpty:
 		if pullRef {
 			if kind == nameKindDir {
-				return nil, errors.Errorf("%s: cannot pull when referencing a directory based app", name)
+				return nil, "", errors.Errorf("%s: cannot pull when referencing a directory based app", name)
 			}
-			return nil, errors.Errorf("cannot pull when referencing a directory based app")
+			return nil, "", errors.Errorf("cannot pull when referencing a directory based app")
 		}
 		return extractAndLoadAppBasedBundle(dockerCli, name)
 	case nameKindReference:
 		ref, err := reference.ParseNormalizedNamed(name)
 		if err != nil {
-			return nil, errors.Wrap(err, name)
+			return nil, "", errors.Wrap(err, name)
 		}
-		return bundleStore.LookupOrPullBundle(reference.TagNameOnly(ref), pullRef, dockerCli.ConfigFile(), insecureRegistries)
+		tagRef := reference.TagNameOnly(ref)
+		bndl, err := bundleStore.LookupOrPullBundle(tagRef, pullRef, dockerCli.ConfigFile(), insecureRegistries)
+		return bndl, tagRef.String(), err
 	}
-	return nil, fmt.Errorf("could not resolve bundle %q", name)
+	return nil, "", fmt.Errorf("could not resolve bundle %q", name)
 }
 
 func requiredClaimBindMount(c claim.Claim, targetContextName string, dockerCli command.Cli) (bindMount, error) {
@@ -298,7 +302,7 @@ func isDockerHostLocal(host string) bool {
 }
 
 func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
-	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *claim.Claim, *bytes.Buffer, error) {
+	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err
@@ -307,22 +311,21 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
-	c, err := claim.New("custom-action")
-	if err != nil {
-		return nil, nil, nil, err
-	}
 	driverImpl, errBuf, err := prepareDriver(dockerCli, bindMount{}, stdout)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	bundle, err := resolveBundle(dockerCli, bundleStore, appname, pullOpts.pull, registryOpts.insecureRegistries)
+	bundle, ref, err := resolveBundle(dockerCli, bundleStore, appname, pullOpts.pull, registryOpts.insecureRegistries)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	c.Bundle = bundle
+	installation, err := appstore.NewInstallation("custom-action", ref)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	installation.Bundle = bundle
 
-	if err := mergeBundleParameters(c,
+	if err := mergeBundleParameters(installation,
 		withFileParameters(paramsOpts.parametersFiles),
 		withCommandLineParameters(paramsOpts.overrides),
 	); err != nil {
@@ -333,10 +336,10 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 		Action: actionName,
 		Driver: driverImpl,
 	}
-	return a, c, errBuf, nil
+	return a, installation, errBuf, nil
 }
 
-func isInstallationFailed(installation *claim.Claim) bool {
+func isInstallationFailed(installation *appstore.Installation) bool {
 	return installation.Result.Action == claim.ActionInstall &&
 		installation.Result.Status == claim.StatusFailure
 }

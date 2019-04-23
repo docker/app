@@ -38,11 +38,11 @@ func runStatus(dockerCli command.Cli, installationName string, opts credentialOp
 		return err
 	}
 
-	c, err := installationStore.Read(installationName)
+	installation, err := installationStore.Read(installationName)
 	if err != nil {
 		return err
 	}
-	bind, err := requiredClaimBindMount(c, opts.targetContext, dockerCli)
+	bind, err := requiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
@@ -50,23 +50,23 @@ func runStatus(dockerCli command.Cli, installationName string, opts credentialOp
 	if err != nil {
 		return err
 	}
-	if err := mergeBundleParameters(&c,
+	if err := mergeBundleParameters(installation,
 		withSendRegistryAuth(opts.sendRegistryAuth),
 	); err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
+	creds, err := prepareCredentialSet(installation.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
-	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
+	if err := credentials.Validate(creds, installation.Bundle.Credentials); err != nil {
 		return err
 	}
 	status := &action.RunCustom{
 		Action: internal.ActionStatusName,
 		Driver: driverImpl,
 	}
-	if err := status.Run(&c, creds, dockerCli.Out()); err != nil {
+	if err := status.Run(&installation.Claim, creds, dockerCli.Out()); err != nil {
 		return fmt.Errorf("status failed: %s\n%s", err, errBuf)
 	}
 	return nil

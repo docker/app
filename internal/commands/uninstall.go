@@ -37,11 +37,11 @@ func runUninstall(dockerCli command.Cli, installationName string, opts credentia
 		return err
 	}
 
-	c, err := installationStore.Read(installationName)
+	installation, err := installationStore.Read(installationName)
 	if err != nil {
 		return err
 	}
-	bind, err := requiredClaimBindMount(c, opts.targetContext, dockerCli)
+	bind, err := requiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
@@ -49,18 +49,18 @@ func runUninstall(dockerCli command.Cli, installationName string, opts credentia
 	if err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(c.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
+	creds, err := prepareCredentialSet(installation.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
-	if err := credentials.Validate(creds, c.Bundle.Credentials); err != nil {
+	if err := credentials.Validate(creds, installation.Bundle.Credentials); err != nil {
 		return err
 	}
 	uninst := &action.Uninstall{
 		Driver: driverImpl,
 	}
-	if err := uninst.Run(&c, creds, os.Stdout); err != nil {
-		if err2 := installationStore.Store(c); err2 != nil {
+	if err := uninst.Run(&installation.Claim, creds, os.Stdout); err != nil {
+		if err2 := installationStore.Store(installation); err2 != nil {
 			return fmt.Errorf("%s while %s", err2, errBuf)
 		}
 		return fmt.Errorf("Uninstall failed: %s", errBuf)

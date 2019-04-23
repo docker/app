@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/deislabs/duffle/pkg/utils/crud"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
@@ -57,8 +56,7 @@ func (a ApplicationStore) InstallationStore(context string) (InstallationStore, 
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return nil, errors.Wrapf(err, "failed to create installation store directory for context %q", context)
 	}
-	claimStore := claim.NewClaimStore(crud.NewFileSystemStore(path, "json"))
-	return &installationStore{claimStore: claimStore}, nil
+	return &installationStore{store: crud.NewFileSystemStore(path, "json")}, nil
 }
 
 // CredentialStore initializes and returns a context based credential store

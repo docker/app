@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/duffle/pkg/claim"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types/parameters"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/pkg/errors"
@@ -61,10 +61,10 @@ func withOrchestratorParameters(orchestrator string, kubeNamespace string) merge
 	}
 }
 
-func mergeBundleParameters(c *claim.Claim, ops ...mergeBundleOpt) error {
-	bndl := c.Bundle
-	if c.Parameters == nil {
-		c.Parameters = make(map[string]interface{})
+func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleOpt) error {
+	bndl := installation.Bundle
+	if installation.Parameters == nil {
+		installation.Parameters = make(map[string]interface{})
 	}
 	userParams := map[string]string{}
 	for _, op := range ops {
@@ -72,11 +72,11 @@ func mergeBundleParameters(c *claim.Claim, ops ...mergeBundleOpt) error {
 			return err
 		}
 	}
-	if err := matchAndMergeParametersDefinition(c.Parameters, userParams, bndl.Parameters); err != nil {
+	if err := matchAndMergeParametersDefinition(installation.Parameters, userParams, bndl.Parameters); err != nil {
 		return err
 	}
 	var err error
-	c.Parameters, err = bundle.ValuesOrDefaults(c.Parameters, bndl)
+	installation.Parameters, err = bundle.ValuesOrDefaults(installation.Parameters, bndl)
 	return err
 }
 
