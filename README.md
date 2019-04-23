@@ -289,7 +289,7 @@ directory instead of a single file, containing `metadata.yml`,
 `docker-compose.yml` and `parameters.yml`.
 
 Converting between the two formats can be achieved by using the
-`docker app split` and `docker-app merge` commands.
+`docker app split` and `docker app merge` commands.
 
 **Note**: You cannot store attachments in the single file format. If you want to
 use attachments you should use the directory format.
@@ -326,7 +326,7 @@ $ docker app inspect myhubuser/myimage
 
 The first time a command is executed against a given image name the bundle is
 pulled from the registry and put in the local bundle store. You can pre-populate
-this store by running `docker-app pull myhubuser/myimage:latest`. All commands
+this store by running `docker app pull myhubuser/myimage:latest`. All commands
 manipulating a package also accept a `--pull` flag to force pulling the bundle
 from the registry, even if it is present in the local store. This can be useful
 when you are repeatedly pushing a bundle on the same tag.
