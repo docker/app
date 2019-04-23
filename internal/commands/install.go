@@ -136,7 +136,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	// so any installation needs a clean uninstallation.
 	err2 := installationStore.Store(installation)
 	if err != nil {
-		return fmt.Errorf("Installation failed: %s", errBuf)
+		return fmt.Errorf("Installation failed: %s\n%s", errBuf, err)
 	}
 	if err2 != nil {
 		return err2

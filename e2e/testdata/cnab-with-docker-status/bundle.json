@@ -1,0 +1,15 @@
+{
+  "name": "cnab-with-docker-status",
+  "version": "0.1.0",
+  "invocationImages": [
+    {
+      "imageType": "docker",
+      "image": "e2e/cnab-with-docker-status:v0.1.0"
+    }
+  ],
+  "actions": {
+    "com.docker.app.status": {
+      "modifies": false
+    }
+  }
+}

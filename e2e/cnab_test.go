@@ -20,15 +20,23 @@ func TestCallCustomStatusAction(t *testing.T) {
 		cnab           string
 	}{
 		{
-			name:           "validCustomStatusAction",
+			name:           "validCustomDockerStatusAction",
 			exitCode:       0,
-			expectedOutput: "Status action",
-			cnab:           "cnab-with-status",
+			expectedOutput: "com.docker.app.status",
+			cnab:           "cnab-with-docker-status",
 		},
 		{
+			name:           "validCustomStandardStatusAction",
+			exitCode:       0,
+			expectedOutput: "io.cnab.status",
+			cnab:           "cnab-with-standard-status",
+		},
+		// A CNAB bundle without standard or docker status action still can output
+		// some informations about the installation.
+		{
 			name:           "missingCustomStatusAction",
-			exitCode:       1,
-			expectedOutput: "status failed: action not defined for bundle",
+			exitCode:       0,
+			expectedOutput: "Name:        missingCustomStatusAction",
 			cnab:           "cnab-without-status",
 		},
 	}
