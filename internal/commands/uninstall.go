@@ -11,8 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type uninstallOptions struct {
+	credentialOptions
+	force bool
+}
+
 func uninstallCmd(dockerCli command.Cli) *cobra.Command {
-	var opts credentialOptions
+	var opts uninstallOptions
 
 	cmd := &cobra.Command{
 		Use:     "uninstall INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
@@ -24,11 +29,12 @@ func uninstallCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	opts.addFlags(cmd.Flags())
+	cmd.Flags().BoolVar(&opts.force, "force", false, "Force removal of installation")
 
 	return cmd
 }
 
-func runUninstall(dockerCli command.Cli, installationName string, opts credentialOptions) error {
+func runUninstall(dockerCli command.Cli, installationName string, opts uninstallOptions) (mainErr error) {
 	defer muteDockerCli(dockerCli)()
 	opts.SetDefaultTargetContext(dockerCli)
 
@@ -40,6 +46,18 @@ func runUninstall(dockerCli command.Cli, installationName string, opts credentia
 	installation, err := installationStore.Read(installationName)
 	if err != nil {
 		return err
+	}
+	if opts.force {
+		defer func() {
+			if mainErr == nil {
+				return
+			}
+			if err := installationStore.Delete(installationName); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to force deletion of installation %q: %s\n", installationName, err)
+				return
+			}
+			fmt.Fprintf(os.Stderr, "deletion forced for installation %q\n", installationName)
+		}()
 	}
 	bind, err := requiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
 	if err != nil {
@@ -63,7 +81,7 @@ func runUninstall(dockerCli command.Cli, installationName string, opts credentia
 		if err2 := installationStore.Store(installation); err2 != nil {
 			return fmt.Errorf("%s while %s", err2, errBuf)
 		}
-		return fmt.Errorf("Uninstall failed: %s", errBuf)
+		return fmt.Errorf("Uninstall failed: %s\n%s", err, errBuf)
 	}
 	if err := installationStore.Delete(installationName); err != nil {
 		return fmt.Errorf("Failed to delete installation %q from the installation store: %s", installationName, err)
