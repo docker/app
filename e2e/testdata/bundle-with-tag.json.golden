@@ -1,0 +1,142 @@
+{
+	"name": "simple",
+	"version": "1.1.0-beta1",
+	"description": "new fancy webapp with microservices",
+	"maintainers": [
+		{
+			"name": "John Developer",
+			"email": "john.dev@example.com"
+		},
+		{
+			"name": "Jane Developer",
+			"email": "jane.dev@example.com"
+		}
+	],
+	"invocationImages": [
+		{
+			"imageType": "docker",
+			"image": "myimage:mytag-invoc"
+		}
+	],
+	"images": {
+		"api": {
+			"imageType": "docker",
+			"image": "python:3.6",
+			"description": "python:3.6"
+		},
+		"db": {
+			"imageType": "docker",
+			"image": "postgres:9.3",
+			"description": "postgres:9.3"
+		},
+		"web": {
+			"imageType": "docker",
+			"image": "nginx:latest",
+			"description": "nginx:latest"
+		}
+	},
+	"actions": {
+		"com.docker.app.inspect": {
+			"stateless": true
+		},
+		"com.docker.app.render": {
+			"stateless": true
+		},
+		"com.docker.app.status": {}
+	},
+	"parameters": {
+		"api_host": {
+			"type": "string",
+			"defaultValue": "example.com",
+			"destination": {
+				"env": "docker_param1"
+			}
+		},
+		"com.docker.app.kubernetes-namespace": {
+			"type": "string",
+			"defaultValue": "",
+			"metadata": {
+				"description": "Namespace in which to deploy"
+			},
+			"destination": {
+				"env": "DOCKER_KUBERNETES_NAMESPACE"
+			},
+			"apply-to": [
+				"install",
+				"upgrade",
+				"uninstall",
+				"com.docker.app.status"
+			]
+		},
+		"com.docker.app.orchestrator": {
+			"type": "string",
+			"defaultValue": "",
+			"allowedValues": [
+				"",
+				"swarm",
+				"kubernetes"
+			],
+			"metadata": {
+				"description": "Orchestrator on which to deploy"
+			},
+			"destination": {
+				"env": "DOCKER_STACK_ORCHESTRATOR"
+			},
+			"apply-to": [
+				"install",
+				"upgrade",
+				"uninstall",
+				"com.docker.app.status"
+			]
+		},
+		"com.docker.app.render-format": {
+			"type": "string",
+			"defaultValue": "yaml",
+			"allowedValues": [
+				"yaml",
+				"json"
+			],
+			"metadata": {
+				"description": "Output format for the render command"
+			},
+			"destination": {
+				"env": "DOCKER_RENDER_FORMAT"
+			},
+			"apply-to": [
+				"com.docker.app.render"
+			]
+		},
+		"com.docker.app.share-registry-creds": {
+			"type": "bool",
+			"defaultValue": false,
+			"metadata": {
+				"description": "Share registry credentials with the invocation image"
+			},
+			"destination": {
+				"env": "DOCKER_SHARE_REGISTRY_CREDS"
+			}
+		},
+		"static_subdir": {
+			"type": "string",
+			"defaultValue": "data/static",
+			"destination": {
+				"env": "docker_param2"
+			}
+		},
+		"web_port": {
+			"type": "string",
+			"defaultValue": "8082",
+			"destination": {
+				"env": "docker_param3"
+			}
+		}
+	},
+	"credentials": {
+		"com.docker.app.registry-creds": {
+			"path": "/cnab/app/registry-creds.json"
+		},
+		"docker.context": {
+			"path": "/cnab/app/context.dockercontext"
+		}
+	}
+}
