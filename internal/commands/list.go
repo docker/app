@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -53,28 +54,15 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 
 func runList(dockerCli command.Cli, opts listOptions) error {
 	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-
-	appstore, err := store.NewApplicationStore(config.Dir())
-	if err != nil {
-		return err
-	}
-	installationStore, err := appstore.InstallationStore(targetContext)
+	installations, err := getInstallations(targetContext, config.Dir())
 	if err != nil {
 		return err
 	}
 
-	installations, err := installationStore.List()
-	if err != nil {
-		return err
-	}
 	w := tabwriter.NewWriter(dockerCli.Out(), 0, 0, 1, ' ', 0)
 	printHeaders(w)
 
-	for _, name := range installations {
-		installation, err := installationStore.Read(name)
-		if err != nil {
-			return err
-		}
+	for _, installation := range installations {
 		printValues(w, installation)
 	}
 	return w.Flush()
@@ -94,4 +82,32 @@ func printValues(w io.Writer, installation *store.Installation) {
 		values = append(values, column.value(installation))
 	}
 	fmt.Fprintln(w, strings.Join(values, "\t"))
+}
+
+func getInstallations(targetContext, configDir string) ([]*store.Installation, error) {
+	appstore, err := store.NewApplicationStore(configDir)
+	if err != nil {
+		return nil, err
+	}
+	installationStore, err := appstore.InstallationStore(targetContext)
+	if err != nil {
+		return nil, err
+	}
+	installationNames, err := installationStore.List()
+	if err != nil {
+		return nil, err
+	}
+	installations := make([]*store.Installation, len(installationNames))
+	for i, name := range installationNames {
+		installation, err := installationStore.Read(name)
+		if err != nil {
+			return nil, err
+		}
+		installations[i] = installation
+	}
+	// Sort installations with last modified first
+	sort.Slice(installations, func(i, j int) bool {
+		return installations[i].Modified.After(installations[j].Modified)
+	})
+	return installations, nil
 }
