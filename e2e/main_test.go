@@ -29,12 +29,17 @@ type dockerCliCommand struct {
 	cliPluginDir string
 }
 
-func (d dockerCliCommand) createTestCmd() (icmd.Cmd, func()) {
+type ConfigFileOperator func(configFile *dockerConfigFile.ConfigFile)
+
+func (d dockerCliCommand) createTestCmd(ops ...ConfigFileOperator) (icmd.Cmd, func()) {
 	configDir, err := ioutil.TempDir("", "config")
 	if err != nil {
 		panic(err)
 	}
 	config := dockerConfigFile.ConfigFile{CLIPluginsExtraDirs: []string{d.cliPluginDir}}
+	for _, op := range ops {
+		op(&config)
+	}
 	configFile, err := os.Create(filepath.Join(configDir, "config.json"))
 	if err != nil {
 		panic(err)

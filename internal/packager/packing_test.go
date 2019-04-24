@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/docker/app/types"
+	"github.com/docker/cli/cli/command"
 	"gotest.tools/assert"
 )
 
@@ -16,7 +17,9 @@ func TestPackInvocationImageContext(t *testing.T) {
 	app, err := types.NewAppFromDefaultFiles("testdata/packages/packing.dockerapp")
 	assert.NilError(t, err)
 	buf := bytes.NewBuffer(nil)
-	assert.NilError(t, PackInvocationImageContext(app, buf))
+	dockerCli, err := command.NewDockerCli()
+	assert.NilError(t, err)
+	assert.NilError(t, PackInvocationImageContext(dockerCli, app, buf))
 	assert.NilError(t, hasExpectedFiles(buf, map[string]bool{
 		"Dockerfile":                                              true,
 		".dockerignore":                                           true,

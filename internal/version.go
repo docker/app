@@ -19,14 +19,15 @@ var (
 )
 
 // FullVersion returns a string of version information.
-func FullVersion() string {
+func FullVersion(invocationBaseImage string) string {
 	res := []string{
-		fmt.Sprintf("Version:      %s", Version),
-		fmt.Sprintf("Git commit:   %s", GitCommit),
-		fmt.Sprintf("Built:        %s", reformatDate(BuildTime)),
-		fmt.Sprintf("OS/Arch:      %s/%s", runtime.GOOS, runtime.GOARCH),
-		fmt.Sprintf("Experimental: %s", Experimental),
-		fmt.Sprintf("Renderers:    %s", strings.Join(renderer.Drivers(), ", ")),
+		fmt.Sprintf("Version:               %s", Version),
+		fmt.Sprintf("Git commit:            %s", GitCommit),
+		fmt.Sprintf("Built:                 %s", reformatDate(BuildTime)),
+		fmt.Sprintf("OS/Arch:               %s/%s", runtime.GOOS, runtime.GOARCH),
+		fmt.Sprintf("Experimental:          %s", Experimental),
+		fmt.Sprintf("Renderers:             %s", strings.Join(renderer.Drivers(), ", ")),
+		fmt.Sprintf("Invocation Base Image: %s", invocationBaseImage),
 	}
 	return strings.Join(res, "\n")
 }
