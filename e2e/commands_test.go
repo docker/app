@@ -352,6 +352,30 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd.Command = dockerCli.Command("app", "status", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
+			`INSTALLATION
+------------
+Name:         TestDockerAppLifecycle_.*
+Created:      .*
+Modified:     .*
+Revision:     .*
+Last Action:  install
+Result:       SUCCESS
+Orchestrator: swarm
+
+APPLICATION
+-----------
+Name:      simple
+Version:   1.1.0-beta1
+Reference:.*
+
+PARAMETERS
+----------
+api_host:      example.com
+static_subdir: data/static
+web_port:      8082
+
+STATUS
+------`,
 			fmt.Sprintf("[[:alnum:]]+        %s_db    replicated          [0-1]/1                 postgres:9.3", appName),
 			fmt.Sprintf(`[[:alnum:]]+        %s_web   replicated          [0-1]/1                 nginx:latest        \*:8082->80/tcp`, appName),
 			fmt.Sprintf("[[:alnum:]]+        %s_api   replicated          [0-1]/1                 python:3.6", appName),

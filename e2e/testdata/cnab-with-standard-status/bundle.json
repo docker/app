@@ -1,14 +1,14 @@
 {
-  "name": "cnab-with-status",
+  "name": "cnab-with-standard-status",
   "version": "0.1.0",
   "invocationImages": [
     {
       "imageType": "docker",
-      "image": "e2e/cnab-with-status:v0.1.0"
+      "image": "e2e/cnab-with-standard-status:v0.1.0"
     }
   ],
   "actions": {
-    "com.docker.app.status": {
+    "io.cnab.status": {
       "modifies": false
     }
   }
