@@ -1,6 +1,12 @@
 # Docker Application
 
-A utility to help make Compose files more reusable and shareable.
+A Docker CLI Plugin to configure, share and install applications:
+* Extend [Compose files](https://docs.docker.com/compose/compose-file/) with metadata and parameters
+* Re-use same application across multiple environments (Development/QA/Staging/Production)
+* Multi orchestrator installation (Swarm or Kubernetes)
+* Push/Pull/[Promotion](https://docs.docker.com/ee/dtr/user/promotion-policies/internal-promotion/)/[Signing](https://docs.docker.com/engine/security/trust/content_trust/) supported for application, with same workflow as images
+* Fully [CNAB](https://cnab.io) compliant
+* Full support of Docker Contexts
 
 ## The problem Application Packages solves
 
