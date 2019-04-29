@@ -67,19 +67,29 @@ name: myapp
 version: "3.1"
 
 services:
-  web:
+  web1:
     image: nginx:latest
     ports:
       - 8080-8100:12300-12320
     deploy:
       replicas: 2
+  web2:
+    image: nginx:latest
+    ports:
+      - 9080-9100:22300-22320
+    deploy:
+      replicas: 2
 networks:
-  my-network:
+  my-network1:
+  my-network2:
 volumes:
-  my-volume:
+  my-volume1:
+  my-volume2:
 secrets:
-  my-secret:
-    file: ./my_secret.txt
+  my-secret1:
+    file: ./my_secret1.txt
+  my-secret2:
+    file: ./my_secret2.txt
 `),
 			fs.WithFile(internal.MetadataFileName, `
 version: 0.1.0
@@ -107,12 +117,18 @@ text: hello`),
 		{name: "full"},
 	} {
 		t.Run(testcase.name, func(t *testing.T) {
-			outBuffer := new(bytes.Buffer)
 			app, err := types.NewAppFromDefaultFiles(dir.Join(testcase.name))
 			assert.NilError(t, err)
-			err = Inspect(outBuffer, app, testcase.args, nil)
-			assert.NilError(t, err)
-			golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s.golden", testcase.name))
+			// Inspect twice to ensure output is stable (e.g. sorting of maps)
+			for i := 0; i < 2; i++ {
+				t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+					outBuffer := new(bytes.Buffer)
+					err = Inspect(outBuffer, app, testcase.args, nil)
+					assert.NilError(t, err)
+					golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s.golden", testcase.name))
+				})
+			}
+
 		})
 	}
 }
