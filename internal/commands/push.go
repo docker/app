@@ -11,7 +11,6 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -29,7 +28,6 @@ import (
 type pushOptions struct {
 	registry  registryOptions
 	tag       string
-	bundle    string
 	platforms []string
 }
 
@@ -46,7 +44,6 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default: <name>:<version> from metadata)")
-	flags.StringVar(&opts.bundle, "bundle", "", "Push a specific bundle")
 	flags.StringSliceVar(&opts.platforms, "platform", nil, "For multi-arch service images, only push the specified platforms")
 	opts.registry.addFlags(flags)
 	return cmd
@@ -55,37 +52,20 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	defer muteDockerCli(dockerCli)()
 
-	var (
-		bndl *bundle.Bundle
-		meta metadata.AppMetadata
-	)
-	if opts.bundle == "" {
-		app, err := packager.Extract(name)
-		if err != nil {
-			return err
-		}
-		defer app.Cleanup()
-		if bndl, err = makeBundleFromApp(dockerCli, app, nil); err != nil {
-			return err
-		}
-		meta = app.Metadata()
-	} else {
-		if name != "" {
-			fmt.Fprintf(os.Stderr, "WARNING: ignoring dockerapp at %q, pushing app directly from %q\n", name, opts.bundle)
-		}
-		r, err := os.Open(opts.bundle)
-		if err != nil {
-			return err
-		}
-		if b, err := bundle.ParseReader(r); err == nil {
-			bndl = &b // TODO: PR to change return type of ParseReader
-		} else {
-			return err
-		}
-		meta = metadata.FromBundle(bndl)
+	bundleStore, err := prepareBundleStore()
+	if err != nil {
+		return err
 	}
 
-	retag, err := shouldRetagInvocationImage(meta, bndl, opts.tag)
+	bndl, _, err := resolveBundle(dockerCli, bundleStore, name, false, nil)
+	if err != nil {
+		return err
+	}
+	if err := bndl.Validate(); err != nil {
+		return err
+	}
+
+	retag, err := shouldRetagInvocationImage(metadata.FromBundle(bndl), bndl, opts.tag)
 	if err != nil {
 		return err
 	}
