@@ -85,11 +85,11 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		RegistryAuth: encodedAuth,
 	})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "starting push of %q", retag.invocationImageRef.String())
 	}
 	defer reader.Close()
 	if err = jsonmessage.DisplayJSONMessagesStream(reader, ioutil.Discard, 0, false, nil); err != nil {
-		return err
+		return errors.Wrapf(err, "pushing to %q", retag.invocationImageRef.String())
 	}
 
 	resolverConfig := remotes.NewResolverConfigFromDockerConfigFile(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
@@ -107,12 +107,12 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolverConfig, fixupOptions...)
 
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
 	descriptor, err := remotes.Push(context.Background(), bndl, retag.cnabRef, resolverConfig.Resolver, true)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
 	}
 	fmt.Printf("Successfully pushed bundle to %s. Digest is %s.\n", retag.cnabRef.String(), descriptor.Digest)
 	return nil
