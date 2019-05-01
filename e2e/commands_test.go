@@ -66,14 +66,15 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		}
 		cmd.Command = args
 		cmd.Env = append(cmd.Env, env...)
-		// Check rendering to stdout
-		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
-		// Checks rendering to a file
-		cmd.Command = append(cmd.Command, "--output="+dir.Join("actual.yaml"))
-		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-		assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), readFile(t, dir.Join("actual.yaml"))), "rendering mismatch")
+		t.Run("stdout", func(t *testing.T) {
+			result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
+		})
+		t.Run("file", func(t *testing.T) {
+			cmd.Command = append(cmd.Command, "--output="+dir.Join("actual.yaml"))
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), readFile(t, dir.Join("actual.yaml"))), "rendering mismatch")
+		})
 	}
 }
 
