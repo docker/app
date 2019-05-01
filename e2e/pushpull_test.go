@@ -6,6 +6,7 @@ import (
 	"net"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -129,6 +130,53 @@ func TestPushPullInstall(t *testing.T) {
 		// install with --pull should fail (registry is stopped)
 		cmd.Command = dockerCli.Command("app", "install", "--pull", "--insecure-registries="+info.registryAddress, ref, "--name", t.Name()+"2")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1}).Combined(), "failed to resolve bundle manifest"))
+	})
+}
+
+func TestPushInstallBundle(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		ref := info.registryAddress + "/test/push-bundle"
+
+		tmpDir := fs.NewDir(t, t.Name())
+		defer tmpDir.Remove()
+		bundleFile := tmpDir.Join("bundle.json")
+
+		// render the app to a bundle, we use the app from the push pull test above.
+		cmd.Command = dockerCli.Command("app", "bundle", "-o", bundleFile, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		// push it and install to check it is available
+		t.Run("push-bundle", func(t *testing.T) {
+			name := strings.Replace(t.Name(), "/", "_", 1)
+			cmd.Command = dockerCli.Command("app", "push", "--insecure-registries="+info.registryAddress, "--tag", ref, bundleFile)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+			cmd.Command = dockerCli.Command("app", "install", "--insecure-registries="+info.registryAddress, ref, "--name", name)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			cmd.Command = dockerCli.Command("service", "ls")
+			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
+
+			// ensure it doesn't confuse the next test
+			cmd.Command = dockerCli.Command("app", "uninstall", name)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+			cmd.Command = dockerCli.Command("service", "ls")
+			assert.Check(t, !strings.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
+		})
+
+		// push it again using the first ref and install from the new ref to check it is also available
+		t.Run("push-ref", func(t *testing.T) {
+			name := strings.Replace(t.Name(), "/", "_", 1)
+			ref2 := info.registryAddress + "/test/push-ref"
+			cmd.Command = dockerCli.Command("app", "push", "--insecure-registries="+info.registryAddress, "--tag", ref2, ref+":latest")
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+			cmd.Command = dockerCli.Command("app", "install", "--insecure-registries="+info.registryAddress, ref2, "--name", name)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			cmd.Command = dockerCli.Command("service", "ls")
+			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref2))
+		})
 	})
 }
 
