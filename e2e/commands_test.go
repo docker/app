@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/deislabs/duffle/pkg/credentials"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/yaml"
 	"gotest.tools/assert"
@@ -419,6 +420,90 @@ STATUS
 			fmt.Sprintf("Removing network %s_front", appName),
 			fmt.Sprintf("Removing network %s_back", appName),
 		})
+}
+
+func TestCredentials(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd(
+		withCredentialSet(t, "default", &credentials.CredentialSet{
+			Name: "test-creds",
+			Credentials: []credentials.CredentialStrategy{
+				{
+					Name: "secret1",
+					Source: credentials.Source{
+						Value: "secret1value",
+					},
+				},
+				{
+					Name: "secret2",
+					Source: credentials.Source{
+						Value: "secret2value",
+					},
+				},
+			},
+		}),
+	)
+	defer cleanup()
+
+	bundleJSON := golden.Get(t, "credential-install-bundle.json")
+	tmpDir := fs.NewDir(t, t.Name(),
+		fs.WithFile("bundle.json", "", fs.WithBytes(bundleJSON)),
+	)
+	defer tmpDir.Remove()
+
+	bundle := tmpDir.Join("bundle.json")
+
+	t.Run("missing", func(t *testing.T) {
+		cmd.Command = dockerCli.Command(
+			"app", "install",
+			"--credential", "secret1=foo",
+			// secret2 deliberately omitted.
+			"--credential", "secret3=baz",
+			"--name", "missing", bundle,
+		)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Out:      icmd.None,
+		})
+		golden.Assert(t, result.Stderr(), "credential-install-missing.golden")
+	})
+
+	t.Run("full", func(t *testing.T) {
+		cmd.Command = dockerCli.Command(
+			"app", "install",
+			"--credential", "secret1=foo",
+			"--credential", "secret2=bar",
+			"--credential", "secret3=baz",
+			"--name", "full", bundle,
+		)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		golden.Assert(t, result.Stdout(), "credential-install-full.golden")
+	})
+
+	t.Run("mixed", func(t *testing.T) {
+		cmd.Command = dockerCli.Command(
+			"app", "install",
+			"--credential-set", "test-creds",
+			"--credential", "secret3=xyzzy",
+			"--name", "mixed", bundle,
+		)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		golden.Assert(t, result.Stdout(), "credential-install-mixed.golden")
+	})
+
+	t.Run("overload", func(t *testing.T) {
+		cmd.Command = dockerCli.Command(
+			"app", "install",
+			"--credential-set", "test-creds",
+			"--credential", "secret1=overload",
+			"--credential", "secret3=xyzzy",
+			"--name", "overload", bundle,
+		)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Out:      icmd.None,
+		})
+		golden.Assert(t, result.Stderr(), "credential-install-overload.golden")
+	})
 }
 
 func initializeDockerAppEnvironment(t *testing.T, cmd *icmd.Cmd, tmpDir *fs.Dir, swarm *Container, useBindMount bool) {

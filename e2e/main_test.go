@@ -12,7 +12,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/docker/app/internal/store"
 	dockerConfigFile "github.com/docker/cli/cli/config/configfile"
+	"gotest.tools/assert"
 	"gotest.tools/icmd"
 )
 
@@ -36,11 +39,17 @@ func (d dockerCliCommand) createTestCmd(ops ...ConfigFileOperator) (icmd.Cmd, fu
 	if err != nil {
 		panic(err)
 	}
-	config := dockerConfigFile.ConfigFile{CLIPluginsExtraDirs: []string{d.cliPluginDir}}
+	configFilePath := filepath.Join(configDir, "config.json")
+	config := dockerConfigFile.ConfigFile{
+		CLIPluginsExtraDirs: []string{
+			d.cliPluginDir,
+		},
+		Filename: configFilePath,
+	}
 	for _, op := range ops {
 		op(&config)
 	}
-	configFile, err := os.Create(filepath.Join(configDir, "config.json"))
+	configFile, err := os.Create(configFilePath)
 	if err != nil {
 		panic(err)
 	}
@@ -58,6 +67,21 @@ func (d dockerCliCommand) createTestCmd(ops ...ConfigFileOperator) (icmd.Cmd, fu
 
 func (d dockerCliCommand) Command(args ...string) []string {
 	return append([]string{d.path}, args...)
+}
+
+func withCredentialSet(t *testing.T, context string, creds *credentials.CredentialSet) ConfigFileOperator {
+	t.Helper()
+	return func(config *dockerConfigFile.ConfigFile) {
+		configDir := filepath.Dir(config.Filename)
+		appstore, err := store.NewApplicationStore(configDir)
+		assert.NilError(t, err)
+
+		credstore, err := appstore.CredentialStore(context)
+		assert.NilError(t, err)
+
+		err = credstore.Store(creds)
+		assert.NilError(t, err)
+	}
 }
 
 func TestMain(m *testing.M) {

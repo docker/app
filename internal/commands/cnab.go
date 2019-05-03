@@ -60,6 +60,33 @@ func addNamedCredentialSets(credStore appstore.CredentialStore, namedCredentials
 	}
 }
 
+func parseCommandlineCredential(c string) (string, string, error) {
+	split := strings.SplitN(c, "=", 2)
+	if len(split) != 2 || split[0] == "" {
+		return "", "", errors.Errorf("failed to parse %q as a credential name=value", c)
+	}
+	name := split[0]
+	value := split[1]
+	return name, value, nil
+}
+
+func addCredentials(strcreds []string) credentialSetOpt {
+	return func(_ *bundle.Bundle, creds credentials.Set) error {
+		for _, c := range strcreds {
+			name, value, err := parseCommandlineCredential(c)
+			if err != nil {
+				return err
+			}
+			if err := creds.Merge(credentials.Set{
+				name: value,
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
 func addDockerCredentials(contextName string, store contextstore.Store) credentialSetOpt {
 	// docker desktop contexts require some rewriting for being used within a container
 	store = dockerDesktopAwareStore{Store: store}
