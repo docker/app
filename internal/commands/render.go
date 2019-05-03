@@ -59,6 +59,9 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 	}
 	installation.Parameters[internal.ParameterRenderFormatName] = opts.formatDriver
 
+	fmt.Fprintf(os.Stderr, "Rendering %q using format %q\n", appname, opts.formatDriver)
+	fmt.Fprintf(os.Stderr, "Action: %+v\n", action)
+	fmt.Fprintf(os.Stderr, "Installation: %+v\n", installation)
 	if err := action.Run(&installation.Claim, nil, nil); err != nil {
 		return fmt.Errorf("render failed: %s", errBuf)
 	}

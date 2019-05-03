@@ -31,6 +31,8 @@ func renderAction(instanceName string) error {
 
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
 
+	fmt.Fprintf(os.Stderr, "cnab-run render on instance %q with formatter %q\n", instanceName, formatDriver)
+
 	rendered, err := render.Render(app, parameters, imageMap)
 	if err != nil {
 		return err
@@ -39,6 +41,7 @@ func renderAction(instanceName string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Fprintf(os.Stderr, "BEGIN FORMATTED OUTPUT\n%s\nEND FORMATTED OUTPUT\n", res)
 	fmt.Print(res)
 
 	return nil

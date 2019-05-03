@@ -68,12 +68,16 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		cmd.Env = append(cmd.Env, env...)
 		t.Run("stdout", func(t *testing.T) {
 			result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
 		})
 		t.Run("file", func(t *testing.T) {
 			cmd.Command = append(cmd.Command, "--output="+dir.Join("actual.yaml"))
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), readFile(t, dir.Join("actual.yaml"))), "rendering mismatch")
+			result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
+			out := readFile(t, dir.Join("actual.yaml"))
+			t.Logf("Content of %s:\n%s\nEND\n", dir.Join("actual.yaml"), out)
+			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), out), "rendering mismatch")
 		})
 	}
 }
@@ -87,12 +91,14 @@ func TestRenderFormatters(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 		golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 	})
 
 	t.Run("yaml", func(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", appPath)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 		golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
 	})
 }
@@ -225,6 +231,7 @@ func TestSplitMerge(t *testing.T) {
 	// test that inspect works on single-file
 	cmd.Command = dockerCli.Command("app", "inspect", "remerged")
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 
 	// split it
@@ -233,6 +240,7 @@ func TestSplitMerge(t *testing.T) {
 
 	cmd.Command = dockerCli.Command("app", "inspect", "remerged")
 	result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	t.Logf("Output of %v (second time):\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 	golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
 
 	// test inplace
