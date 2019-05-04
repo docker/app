@@ -133,3 +133,9 @@ help: ## this help
 
 .PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor schemas help
 .DEFAULT: all
+
+
+.PHONY: yamldocs
+yamldocs: ## generate documentation YAML files consumed by docs repo
+	mkdir -p ./_build/docs
+	docker build --output type=local,dest=./_build/ -f docs/yaml/Dockerfile .
