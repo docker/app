@@ -65,5 +65,6 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 	if err := action.Run(&installation.Claim, nil, nil); err != nil {
 		return fmt.Errorf("render failed: %s", errBuf)
 	}
+	fmt.Fprintf(os.Stderr, "START RENDER STDERR:\n%s\nEND RENDER STDERR\n", errBuf)
 	return nil
 }
