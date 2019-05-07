@@ -16,25 +16,6 @@ pipeline {
     stages {
         stage('Build') {
             parallel {
-                stage("Validate") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
-                    steps {
-                        dir('src/github.com/docker/app') {
-                            checkout scm
-                            ansiColor('xterm') {
-                                sh 'make -f docker.Makefile lint'
-                                sh 'make -f docker.Makefile check-vendor'
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            deleteDir()
-                        }
-                    }
-                }
                 stage("Binaries"){
                     agent {
                         label 'ubuntu-1604-aufs-edge'
@@ -107,89 +88,6 @@ pipeline {
         }
         stage('Test') {
             parallel {
-                stage("Coverage") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
-                    steps {
-                        dir('src/github.com/docker/app') {
-                            checkout scm
-                            dir('_build') {
-                                unstash "coverage-invocation-image"
-                                sh 'docker load -i coverage-invocation-image.tar'
-                            }
-                            ansiColor('xterm') {
-                                sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-run || true'
-                                sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-results'
-                            }
-                            archiveArtifacts '_build/ci-cov/all.out'
-                            archiveArtifacts '_build/ci-cov/coverage.html'
-                        }
-                    }
-                    post {
-                        always {
-                            dir('src/github.com/docker/app/_build/test-results') {
-                                sh '[ ! -e unit-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app","unit/basic",g; s,"github.com/docker/app/([^"]*)","unit/basic/\\1",g\' unit-coverage.xml'
-                                sh '[ ! -e e2e-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/basic",g\' e2e-coverage.xml'
-                                archiveArtifacts '*.xml'
-                                junit '*.xml'
-                            }
-                            sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
-                            deleteDir()
-                        }
-                    }
-                }
-                stage("Coverage (experimental)") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
-                    steps {
-                        dir('src/github.com/docker/app') {
-                            checkout scm
-                            dir('_build') {
-                                unstash "coverage-experimental-invocation-image"
-                                sh 'docker load -i coverage-experimental-invocation-image.tar'
-                            }
-                            ansiColor('xterm') {
-                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile TAG=$TAG-coverage-experimental coverage-run || true'
-                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile TAG=$TAG-coverage-experimental coverage-results'
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            dir('src/github.com/docker/app/_build/test-results') {
-                                sh '[ ! -e experimental-unit-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app","unit/experimental",g; s,"github.com/docker/app/([^"]*)","unit/experimental/\\1",g\' experimental-unit-coverage.xml'
-                                sh '[ ! -e experimental-e2e-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/experimental",g\' experimental-e2e-coverage.xml'
-                                archiveArtifacts '*.xml'
-                                junit '*.xml'
-                            }
-                            sh 'docker rmi docker/cnab-app-base:$TAG-coverage-experimental'
-                            deleteDir()
-                        }
-                    }
-                }
-                stage("Gradle test") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
-                    steps {
-                        dir('src/github.com/docker/app') {
-                            checkout scm
-                            dir("bin") {
-                                unstash "binaries"
-                            }
-                            ansiColor('xterm') {
-                                sh 'make -f docker.Makefile gradle-test'
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            deleteDir()
-                        }
-                    }
-                }
                 stage("Test Linux") {
                     agent {
                         label 'ubuntu-1604-aufs-edge'
