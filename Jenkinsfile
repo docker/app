@@ -213,7 +213,7 @@ pipeline {
                                 unstash "e2e"
                             }
                             ansiColor('xterm') {
-                                sh './gotestsum-linux --format short-verbose --junitfile e2e-linux.xml --raw-command -- ./test2json-linux -t -p e2e/linux ./docker-app-e2e-linux -test.v --e2e-path=e2e'
+                                sh './gotestsum-linux --format standard-verbose --junitfile e2e-linux.xml --raw-command -- ./test2json-linux -t -p e2e/linux ./docker-app-e2e-linux -test.v --e2e-path=e2e'
                             }
                         }
                     }
