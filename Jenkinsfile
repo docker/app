@@ -41,6 +41,7 @@ pipeline {
                                         stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
                                         archiveArtifacts 'bin/*.tar.gz'
                                     }
+                                    archiveArtifacts 'bin/*-linux'
                                 } finally {
                                     def clean_images = /docker image ls --format="{{.Repository}}:{{.Tag}}" '*$BUILD_TAG*' | xargs docker image rm -f/
                                     sh clean_images
@@ -70,6 +71,7 @@ pipeline {
                                 stash name: 'invocation-image', includes: 'invocation-image.tar'
                                 stash name: 'coverage-invocation-image', includes: 'coverage-invocation-image.tar'
                                 stash name: 'coverage-experimental-invocation-image', includes: 'coverage-experimental-invocation-image.tar'
+                                archiveArtifacts 'invocation-image.tar'
                             }
                         }
                     }

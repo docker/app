@@ -43,6 +43,7 @@ pipeline {
                                         stash name: 'artifacts', includes: 'bin/*.tar.gz', excludes: 'bin/*-e2e-*'
                                     }
                                     archiveArtifacts 'bin/*.tar.gz'
+                                    archiveArtifacts 'bin/*-linux'
                                 } finally {
                                     def clean_images = /docker image ls --format="{{.Repository}}:{{.Tag}}" '*$TAG*' | xargs docker image rm -f/
                                     sh clean_images
