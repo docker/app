@@ -103,6 +103,10 @@ pipeline {
                                 sh 'docker load -i invocation-image.tar'
                             }
                             unstash "binaries"
+                            sh 'docker version'
+                            sh './docker-linux version'
+                            sh 'uname -a'
+                            sh 'lsb_release -a || true'
                             dir('examples') {
                                 unstash "examples"
                             }
