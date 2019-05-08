@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
@@ -59,12 +60,15 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 	}
 	installation.Parameters[internal.ParameterRenderFormatName] = opts.formatDriver
 
+	fmt.Fprintf(os.Stderr, "%s\n", time.Now())
 	fmt.Fprintf(os.Stderr, "Rendering %q using format %q\n", appname, opts.formatDriver)
 	fmt.Fprintf(os.Stderr, "Action: %+v\n", action)
 	fmt.Fprintf(os.Stderr, "Installation: %+v\n", installation)
 	if err := action.Run(&installation.Claim, nil, nil); err != nil {
 		return fmt.Errorf("render failed: %s", errBuf)
 	}
-	fmt.Fprintf(os.Stderr, "START RENDER STDERR:\n%s\nEND RENDER STDERR\n", errBuf)
+	fmt.Fprintf(os.Stderr, "%s: START RENDER STDERR:\n", time.Now())
+	fmt.Fprintf(os.Stderr, "%s\n", errBuf)
+	fmt.Fprintf(os.Stderr, "%s: END RENDER STDERR\n", time.Now())
 	return nil
 }

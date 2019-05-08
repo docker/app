@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/docker/app/internal"
 
@@ -31,7 +32,7 @@ func renderAction(instanceName string) error {
 
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
 
-	fmt.Fprintf(os.Stderr, "cnab-run render on instance %q with formatter %q\n", instanceName, formatDriver)
+	fmt.Fprintf(os.Stderr, "%s: cnab-run render on instance %q with formatter %q\n", time.Now(), instanceName, formatDriver)
 
 	rendered, err := render.Render(app, parameters, imageMap)
 	if err != nil {
@@ -41,7 +42,10 @@ func renderAction(instanceName string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stderr, "BEGIN FORMATTED OUTPUT\n%s\nEND FORMATTED OUTPUT\n", res)
+
+	fmt.Fprintf(os.Stderr, "%s: BEGIN FORMATTED OUTPUT\n", time.Now())
+	fmt.Fprintf(os.Stderr, "%s\n", res)
+	fmt.Fprintf(os.Stderr, "%s: END FORMATTED OUTPUT\n", time.Now())
 	fmt.Print(res)
 
 	return nil
