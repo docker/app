@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -65,20 +66,37 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		for k, v := range envParameters {
 			args = append(args, "--set", fmt.Sprintf("%s=%s", k, v))
 		}
+		strace := []string{"strace", "-s", "4096", "-fff", "-o"}
 		cmd.Command = args
 		cmd.Env = append(cmd.Env, env...)
 		t.Run("stdout", func(t *testing.T) {
+			straceDir, err := ioutil.TempDir("../_build", "strace")
+			assert.NilError(t, err)
+			cmd.Command = append(strace, straceDir+"/stdout")
+			cmd.Command = append(cmd.Command, args...)
 			result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
+			// Only reached on success
+			t.Logf("Removing %q\n", straceDir)
+			err = os.RemoveAll(straceDir)
+			assert.NilError(t, err)
 		})
 		t.Run("file", func(t *testing.T) {
+			straceDir, err := ioutil.TempDir("../_build", "strace")
+			assert.NilError(t, err)
+			cmd.Command = append(strace, straceDir+"/file")
+			cmd.Command = append(cmd.Command, args...)
 			cmd.Command = append(cmd.Command, "--output="+dir.Join("actual.yaml"))
 			result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 			out := readFile(t, dir.Join("actual.yaml"))
 			t.Logf("Content of %s:\n%s\nEND\n", dir.Join("actual.yaml"), out)
 			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), out), "rendering mismatch")
+			// Only reached on success
+			t.Logf("Removing %q\n", straceDir)
+			err = os.RemoveAll(straceDir)
+			assert.NilError(t, err)
 		})
 	}
 }
@@ -89,19 +107,34 @@ func TestRenderFormatters(t *testing.T) {
 	defer cleanup()
 
 	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
+	strace := []string{"strace", "-s", "4096", "-fff", "-o"}
 
 	t.Run("json", func(t *testing.T) {
-		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
+		straceDir, err := ioutil.TempDir("../_build", "strace")
+		assert.NilError(t, err)
+		cmd.Command = append(strace, straceDir+"/json")
+		cmd.Command = append(cmd.Command, dockerCli.Command("app", "render", "--formatter", "json", appPath)...)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 		golden.Assert(t, result.Stdout(), "expected-json-render.golden")
+		// Only reached on success
+		t.Logf("Removing %q\n", straceDir)
+		err = os.RemoveAll(straceDir)
+		assert.NilError(t, err)
 	})
 
 	t.Run("yaml", func(t *testing.T) {
-		cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", appPath)
+		straceDir, err := ioutil.TempDir("../_build", "strace")
+		assert.NilError(t, err)
+		cmd.Command = append(strace, straceDir+"/yaml")
+		cmd.Command = append(cmd.Command, dockerCli.Command("app", "render", "--formatter", "yaml", appPath)...)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		t.Logf("Output of %v:\nSTDOUT:\n%s\n\nSTDERR:\n%s\nEND\n", cmd.Command, result.Stdout(), result.Stderr())
 		golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
+		// Only reached on success
+		t.Logf("Removing %q\n", straceDir)
+		err = os.RemoveAll(straceDir)
+		assert.NilError(t, err)
 	})
 }
 

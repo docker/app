@@ -123,6 +123,7 @@ pipeline {
                     }
                     post {
                         always {
+                            archiveArtifacts artifacts: 'src/github.com/docker/app/_build/strace**/*', allowEmptyArchive: true
                             archiveArtifacts 'src/github.com/docker/app/e2e-linux.xml'
                             junit 'src/github.com/docker/app/e2e-linux.xml'
                             sh 'docker rmi docker/cnab-app-base:$TAG'
