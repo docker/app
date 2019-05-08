@@ -51,6 +51,7 @@ func TestRender(t *testing.T) {
 
 func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	return func(t *testing.T) {
+		t.Parallel()
 		cmd, cleanup := dockerCli.createTestCmd()
 		defer cleanup()
 		dir := fs.NewDir(t, "")
@@ -83,6 +84,7 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 }
 
 func TestRenderFormatters(t *testing.T) {
+	t.Parallel()
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
 
