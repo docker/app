@@ -6,9 +6,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/deislabs/duffle/pkg/driver"
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/spf13/cobra"
 )
 
@@ -59,6 +62,32 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		return err
 	}
 	installation.Parameters[internal.ParameterRenderFormatName] = opts.formatDriver
+
+	if dir, ok := os.LookupEnv("INVOC_STRACE_DIR"); ok {
+		d := action.Driver.(*driver.DockerDriver)
+		d.AddConfigurationOptions(
+			func(config *container.Config, hostConfig *container.HostConfig) error {
+				fmt.Fprintf(os.Stderr, "Stracing invoc image to %q\n", dir)
+				config.User = "0:0"
+				//fmt.Fprintf(os.Stderr, "Original entrypoint is %+v\n", config.Entrypoint)
+				config.Entrypoint = append([]string{"strace", "-s", "4096", "-fff", "-o", "/strace/cnab-run.render"}, config.Entrypoint...)
+				//fmt.Fprintf(os.Stderr, "New entrypoint is %+v\n", config.Entrypoint)
+
+				m := mount.Mount{
+					Type:   mount.TypeBind,
+					Source: dir,
+					Target: "/strace",
+				}
+				//fmt.Fprintf(os.Stderr, "Mount: %+v\n", m)
+				hostConfig.Mounts = append(hostConfig.Mounts, m)
+
+				//fmt.Fprintf(os.Stderr, "Original CapAdd: %+v\n", hostConfig.CapAdd)
+				hostConfig.CapAdd = append(hostConfig.CapAdd, "SYS_PTRACE")
+				//fmt.Fprintf(os.Stderr, "New CapAdd: %+v\n", hostConfig.CapAdd)
+				return nil
+			},
+		)
+	}
 
 	fmt.Fprintf(os.Stderr, "%s\n", time.Now())
 	fmt.Fprintf(os.Stderr, "Rendering %q using format %q\n", appname, opts.formatDriver)
