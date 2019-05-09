@@ -83,13 +83,18 @@ func TestRenderFormatters(t *testing.T) {
 	defer cleanup()
 
 	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
-	cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
-	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 
-	cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", appPath)
-	result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
+	t.Run("json", func(t *testing.T) {
+		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		golden.Assert(t, result.Stdout(), "expected-json-render.golden")
+	})
+
+	t.Run("yaml", func(t *testing.T) {
+		cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", appPath)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
+	})
 }
 
 func TestInit(t *testing.T) {
