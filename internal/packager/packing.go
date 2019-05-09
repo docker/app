@@ -10,19 +10,17 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
+	"github.com/docker/cli/cli/command"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/pkg/errors"
 )
 
 const (
-	// CNABBaseImageName is the name of the base invocation image.
-	CNABBaseImageName = "docker/cnab-app-base"
+	// DefaultCNABBaseImageName is the name of the default base invocation image.
+	DefaultCNABBaseImageName = "docker/cnab-app-base"
 
 	dockerIgnore = "Dockerfile"
 )
-
-var dockerFile = `FROM ` + CNABBaseImageName + `:` + internal.Version + `
-COPY . .`
 
 func tarAdd(tarout *tar.Writer, path, file string) error {
 	payload, err := ioutil.ReadFile(file)
@@ -48,7 +46,7 @@ func tarAddBytes(tarout *tar.Writer, path string, payload []byte) error {
 }
 
 // PackInvocationImageContext creates a Docker build context for building a CNAB invocation image
-func PackInvocationImageContext(app *types.App, target io.Writer) error {
+func PackInvocationImageContext(cli command.Cli, app *types.App, target io.Writer) error {
 	tarout := tar.NewWriter(target)
 	defer tarout.Close()
 	prefix := fmt.Sprintf("%s%s/", app.Metadata().Name, internal.AppExtension)
@@ -58,7 +56,7 @@ func PackInvocationImageContext(app *types.App, target io.Writer) error {
 	if len(app.ParametersRaw()) != 1 {
 		return errors.New("app should have one and only one parameters file")
 	}
-	if err := tarAddBytes(tarout, "Dockerfile", []byte(dockerFile)); err != nil {
+	if err := tarAddBytes(tarout, "Dockerfile", []byte(dockerFile(cli))); err != nil {
 		return errors.Wrap(err, "failed to add Dockerfile to the invocation image build context")
 	}
 	if err := tarAddBytes(tarout, ".dockerignore", []byte(dockerIgnore)); err != nil {
@@ -147,4 +145,19 @@ func Unpack(appname, targetDir string) error {
 	return archive.Untar(f, out, &archive.TarOptions{
 		NoLchown: true,
 	})
+}
+
+// BaseInvocationImage returns the name and tag of the CNAB base invocation image
+func BaseInvocationImage(cli command.Cli) string {
+	img := DefaultCNABBaseImageName + `:` + internal.Version
+	if cfg := cli.ConfigFile(); cfg != nil {
+		if v, ok := cfg.PluginConfig("app", "base-invocation-image"); ok {
+			return v
+		}
+	}
+	return img
+}
+
+func dockerFile(cli command.Cli) string {
+	return fmt.Sprintf("FROM %s\nCOPY . .", BaseInvocationImage(cli))
 }
