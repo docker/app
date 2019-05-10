@@ -11,6 +11,7 @@ func TestMakeInvocationImage(t *testing.T) {
 	testcases := []struct {
 		name     string
 		meta     metadata.AppMetadata
+		tag      string
 		expected string
 		err      string
 	}{
@@ -20,14 +21,22 @@ func TestMakeInvocationImage(t *testing.T) {
 			expected: "name:version-invoc",
 		},
 		{
-			name: "simple-metadata",
+			name:     "tag-override",
+			meta:     metadata.AppMetadata{Name: "name", Version: "version"},
+			expected: "myimage:mytag-invoc",
+			tag:      "myimage:mytag",
+		},
+		{
+			name: "invalid-metadata",
 			meta: metadata.AppMetadata{Name: "WrongName&%*", Version: "version"},
 			err:  "invalid",
 		},
 	}
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			actual, err := makeInvocationImageName(c.meta)
+			ref, err := getNamedTagged(c.tag)
+			assert.NilError(t, err)
+			actual, err := makeInvocationImageName(c.meta, ref)
 			if c.err != "" {
 				assert.ErrorContains(t, err, c.err)
 				assert.Equal(t, actual, "", "On "+c.meta.Name)

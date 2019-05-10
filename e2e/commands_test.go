@@ -261,35 +261,60 @@ func TestBundle(t *testing.T) {
 	cmd.Command = dockerCli.Command("load", "-i", tmpDir.Join("cnab-app-base.tar.gz"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	// Bundle the docker application package to a CNAB bundle, using the build-context.
-	cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--output", tmpDir.Join("bundle.json"))
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	testCases := []struct {
+		name           string
+		cmd            []string
+		invocImage     string
+		expectedBundle string
+	}{
+		{
+			name:           "simple-bundle",
+			cmd:            dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--output", tmpDir.Join("simple-bundle.json")),
+			invocImage:     "simple:1.1.0-beta1-invoc",
+			expectedBundle: "simple-bundle.json.golden",
+		},
+		{
+			name:           "bundle-with-tag",
+			cmd:            dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "myimage:mytag", "--output", tmpDir.Join("bundle-with-tag.json")),
+			invocImage:     "myimage:mytag-invoc",
+			expectedBundle: "bundle-with-tag.json.golden",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			testDir := fs.NewDir(t, "")
+			defer testDir.Remove()
 
-	// Check the resulting CNAB bundle.json
-	golden.Assert(t, string(golden.Get(t, tmpDir.Join("bundle.json"))), "simple-bundle.json.golden")
+			// Bundle the docker application package to a CNAB bundle, using the build-context.
+			cmd.Command = tc.cmd
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	// List the images on the build context daemon and checks the invocation image is there
-	cmd.Command = dockerCli.Command("image", "ls", "--format", "{{.Repository}}:{{.Tag}}")
-	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "simple:1.1.0-beta1-invoc"})
+			// Check the resulting CNAB bundle.json
+			golden.Assert(t, string(golden.Get(t, tmpDir.Join(tc.name+".json"))), tc.expectedBundle)
 
-	// Copy all the files from the invocation image and check them
-	cmd.Command = dockerCli.Command("create", "--name", "invocation", "simple:1.1.0-beta1-invoc")
-	id := strings.TrimSpace(icmd.RunCmd(cmd).Assert(t, icmd.Success).Stdout())
-	cmd.Command = dockerCli.Command("cp", "invocation:/cnab/app/simple.dockerapp", tmpDir.Join("simple.dockerapp"))
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("rm", "--force", id)
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			// List the images on the build context daemon and checks the invocation image is there
+			cmd.Command = dockerCli.Command("image", "ls", "--format", "{{.Repository}}:{{.Tag}}")
+			icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: tc.invocImage})
 
-	appDir := filepath.Join("testdata", "simple", "simple.dockerapp")
-	manifest := fs.Expected(
-		t,
-		fs.WithMode(0755),
-		fs.WithFile(internal.MetadataFileName, readFile(t, filepath.Join(appDir, internal.MetadataFileName)), fs.WithMode(0644)),
-		fs.WithFile(internal.ComposeFileName, readFile(t, filepath.Join(appDir, internal.ComposeFileName)), fs.WithMode(0644)),
-		fs.WithFile(internal.ParametersFileName, readFile(t, filepath.Join(appDir, internal.ParametersFileName)), fs.WithMode(0644)),
-	)
+			// Copy all the files from the invocation image and check them
+			cmd.Command = dockerCli.Command("create", "--name", "invocation", tc.invocImage)
+			id := strings.TrimSpace(icmd.RunCmd(cmd).Assert(t, icmd.Success).Stdout())
+			cmd.Command = dockerCli.Command("cp", "invocation:/cnab/app/simple.dockerapp", testDir.Join("simple.dockerapp"))
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			cmd.Command = dockerCli.Command("rm", "--force", id)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	assert.Assert(t, fs.Equal(tmpDir.Join("simple.dockerapp"), manifest))
+			appDir := filepath.Join("testdata", "simple", "simple.dockerapp")
+			manifest := fs.Expected(
+				t,
+				fs.WithMode(0755),
+				fs.WithFile(internal.MetadataFileName, readFile(t, filepath.Join(appDir, internal.MetadataFileName)), fs.WithMode(0644)),
+				fs.WithFile(internal.ComposeFileName, readFile(t, filepath.Join(appDir, internal.ComposeFileName)), fs.WithMode(0644)),
+				fs.WithFile(internal.ParametersFileName, readFile(t, filepath.Join(appDir, internal.ParametersFileName)), fs.WithMode(0644)),
+			)
+			assert.Assert(t, fs.Equal(testDir.Join("simple.dockerapp"), manifest))
+		})
+	}
 }
 
 func TestDockerAppLifecycle(t *testing.T) {

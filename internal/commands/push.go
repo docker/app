@@ -57,7 +57,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return err
 	}
 	defer app.Cleanup()
-	bndl, err := makeBundleFromApp(dockerCli, app)
+	bndl, err := makeBundleFromApp(dockerCli, app, nil)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func shouldRetagInvocationImage(meta metadata.AppMetadata, bndl *bundle.Bundle, 
 	imgName := tagOverride
 	var err error
 	if imgName == "" {
-		imgName, err = makeCNABImageName(meta, "")
+		imgName, err = makeCNABImageName(meta.Name, meta.Version, "")
 		if err != nil {
 			return retagResult{}, err
 		}
