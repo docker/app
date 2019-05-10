@@ -108,6 +108,7 @@ pipeline {
                             unstash "binaries"
                             sh 'docker version'
                             sh './docker-linux version'
+                            sh './docker-linux system info'
                             sh 'uname -a'
                             sh 'lsb_release -a || true'
                             dir('examples') {
