@@ -44,6 +44,7 @@ func (d dockerCliCommand) createTestCmd(ops ...ConfigFileOperator) (icmd.Cmd, fu
 	if err != nil {
 		panic(err)
 	}
+	defer configFile.Close()
 	err = json.NewEncoder(configFile).Encode(config)
 	if err != nil {
 		panic(err)
