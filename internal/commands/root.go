@@ -78,6 +78,18 @@ func prepareStores(targetContext string) (store.BundleStore, store.InstallationS
 	return bundleStore, installationStore, credentialStore, nil
 }
 
+func prepareBundleStore() (store.BundleStore, error) {
+	appstore, err := store.NewApplicationStore(config.Dir())
+	if err != nil {
+		return nil, err
+	}
+	bundleStore, err := appstore.BundleStore()
+	if err != nil {
+		return nil, err
+	}
+	return bundleStore, nil
+}
+
 type parametersOptions struct {
 	parametersFiles []string
 	overrides       []string

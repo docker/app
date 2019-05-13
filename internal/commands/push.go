@@ -11,7 +11,6 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -52,16 +51,21 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 
 func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	defer muteDockerCli(dockerCli)()
-	app, err := packager.Extract(name)
+
+	bundleStore, err := prepareBundleStore()
 	if err != nil {
 		return err
 	}
-	defer app.Cleanup()
-	bndl, err := makeBundleFromApp(dockerCli, app, nil)
+
+	bndl, _, err := resolveBundle(dockerCli, bundleStore, name, false, nil)
 	if err != nil {
 		return err
 	}
-	retag, err := shouldRetagInvocationImage(app.Metadata(), bndl, opts.tag)
+	if err := bndl.Validate(); err != nil {
+		return err
+	}
+
+	retag, err := shouldRetagInvocationImage(metadata.FromBundle(bndl), bndl, opts.tag)
 	if err != nil {
 		return err
 	}
@@ -85,11 +89,11 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		RegistryAuth: encodedAuth,
 	})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "starting push of %q", retag.invocationImageRef.String())
 	}
 	defer reader.Close()
 	if err = jsonmessage.DisplayJSONMessagesStream(reader, ioutil.Discard, 0, false, nil); err != nil {
-		return err
+		return errors.Wrapf(err, "pushing to %q", retag.invocationImageRef.String())
 	}
 
 	resolverConfig := remotes.NewResolverConfigFromDockerConfigFile(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
@@ -107,12 +111,12 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolverConfig, fixupOptions...)
 
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
 	descriptor, err := remotes.Push(context.Background(), bndl, retag.cnabRef, resolverConfig.Resolver, true)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
 	}
 	fmt.Printf("Successfully pushed bundle to %s. Digest is %s.\n", retag.cnabRef.String(), descriptor.Digest)
 	return nil

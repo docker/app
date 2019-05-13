@@ -2,6 +2,8 @@ package metadata
 
 import (
 	"strings"
+
+	"github.com/deislabs/cnab-go/bundle"
 )
 
 // Maintainer represents one of the apps's maintainers
@@ -37,4 +39,20 @@ type AppMetadata struct {
 	Name        string      `json:"name"`
 	Description string      `json:"description,omitempty"`
 	Maintainers Maintainers `json:"maintainers,omitempty"`
+}
+
+// Metadata extracts the docker-app metadata from the bundle
+func FromBundle(bndl *bundle.Bundle) AppMetadata {
+	meta := AppMetadata{
+		Name:        bndl.Name,
+		Version:     bndl.Version,
+		Description: bndl.Description,
+	}
+	for _, m := range bndl.Maintainers {
+		meta.Maintainers = append(meta.Maintainers, Maintainer{
+			Name:  m.Name,
+			Email: m.Email,
+		})
+	}
+	return meta
 }
