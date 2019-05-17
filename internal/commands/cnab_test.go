@@ -230,3 +230,34 @@ func TestShareRegistryCreds(t *testing.T) {
 		})
 	}
 }
+
+func TestParseCommandlineCredential(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		n, v string
+		err  string // either err or n+v are non-""
+	}{
+		{in: "", err: `failed to parse "" as a credential name=value`},
+		{in: "A", err: `failed to parse "A" as a credential name=value`},
+		{in: "=B", err: `failed to parse "=B" as a credential name=value`},
+		{in: "A=", n: "A", v: ""},
+		{in: "A=B", n: "A", v: "B"},
+		{in: "A==", n: "A", v: "="},
+		{in: "A=B=C", n: "A", v: "B=C"},
+	} {
+		n := tc.in
+		if n == "" {
+			n = "«empty»"
+		}
+		t.Run(n, func(t *testing.T) {
+			n, v, err := parseCommandlineCredential(tc.in)
+			if tc.err != "" {
+				assert.Error(t, err, tc.err)
+			} else {
+				assert.NilError(t, err)
+				assert.Equal(t, tc.n, n)
+				assert.Equal(t, tc.v, v)
+			}
+		})
+	}
+}
