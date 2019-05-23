@@ -74,6 +74,7 @@ func (r *dockerDesktopKubernetesEndpointRewriter) rewrite(ep *kubernetes.Endpoin
 	ep.Host = fmt.Sprintf("https://%s:6443", ip)
 }
 
+// nolint:interfacer
 func makeLinuxkitIPProvider(contextName string, s store.Store) dockerDesktopLinuxKitIPProvider {
 	return func() (string, error) {
 		clientCfg, err := kubernetes.ConfigFromContext(contextName, s)
@@ -104,7 +105,7 @@ func makeLinuxkitIPProvider(contextName string, s store.Store) dockerDesktopLinu
 	}
 }
 
-func rewriteContextIfDockerDesktop(meta *store.ContextMetadata, s store.Store) {
+func rewriteContextIfDockerDesktop(meta *store.Metadata, s store.Store) {
 	// errors are treated as "don't rewrite"
 	rewriter := dockerDesktopDockerEndpointRewriter{
 		defaultHostProvider: defaultDockerDesktopHostProvider,
@@ -131,8 +132,8 @@ type dockerDesktopAwareStore struct {
 	store.Store
 }
 
-func (s dockerDesktopAwareStore) ListContexts() ([]store.ContextMetadata, error) {
-	contexts, err := s.Store.ListContexts()
+func (s dockerDesktopAwareStore) List() ([]store.Metadata, error) {
+	contexts, err := s.Store.List()
 	if err != nil {
 		return nil, err
 	}
@@ -143,10 +144,10 @@ func (s dockerDesktopAwareStore) ListContexts() ([]store.ContextMetadata, error)
 	return contexts, nil
 }
 
-func (s dockerDesktopAwareStore) GetContextMetadata(name string) (store.ContextMetadata, error) {
-	context, err := s.Store.GetContextMetadata(name)
+func (s dockerDesktopAwareStore) GetMetadata(name string) (store.Metadata, error) {
+	context, err := s.Store.GetMetadata(name)
 	if err != nil {
-		return store.ContextMetadata{}, err
+		return store.Metadata{}, err
 	}
 	rewriteContextIfDockerDesktop(&context, s.Store)
 	return context, nil

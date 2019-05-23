@@ -29,7 +29,7 @@
   version = "v0.4.12"
 
 [[projects]]
-  digest = "1:a8e16b4caf3575365c9aa3380d9418f31dd0b810596faebfe3a15c37fabeee4a"
+  digest = "1:3b7289c340e1043e1b826ba201d4d9ed1eb3ec32a5e8600208ec030afa74f458"
   name = "github.com/Microsoft/hcsshim"
   packages = [
     ".",
@@ -47,6 +47,7 @@
     "internal/schema2",
     "internal/timeout",
     "internal/wclayer",
+    "osversion",
   ]
   pruneopts = "NUT"
   revision = "f92b8fb9c92e17da496af5a69e3ee13fbe9916e1"
@@ -209,7 +210,7 @@
 
 [[projects]]
   branch = "19.03"
-  digest = "1:45401220d930972198a7880d87df89485e53ac44b2a5826d9c2fe57344f650a6"
+  digest = "1:2f437f78f32178b2951314dd82649fda98e8f114e4d2c42588dd40fc2184a434"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -264,7 +265,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "2432af701a7973ea582196b4b9488831156f3458"
+  revision = "8aebc318062963ba861b65cc2a43425dfdd80fe7"
 
 [[projects]]
   branch = "master"
@@ -323,7 +324,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:37c8169fc0ff166b4ca825154d709545282fffee5572a6a63e1fdfa709c3f0fe"
+  digest = "1:83ede099909456cf1f5d6de21e5108b1ea593d5d33859799bfa7d8e575281a3c"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -365,7 +366,7 @@
     "registry/resumable",
   ]
   pruneopts = "NUT"
-  revision = "df3b6383d1ee2f067afce98cefd7c300ddcb02d6"
+  revision = "8a208a10de6a13ba2d9f65b9955d3594d9b14615"
 
 [[projects]]
   digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
@@ -436,14 +437,6 @@
   revision = "18e7e58ea1a5ec016625a636d0d52500eea123bc"
 
 [[projects]]
-  branch = "master"
-  digest = "1:1ccd7321e62f680a988bba496f0f5a9c80410b8104d55b0f6b8ecf84ad328476"
-  name = "github.com/flynn-archive/go-shlex"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "3f9db97f856818214da2e1057f8ad84803971cff"
-
-[[projects]]
   digest = "1:c6f5a29fce208cb102ad1e356d3a3a361be54604549063943613058a377dd0d0"
   name = "github.com/gogo/googleapis"
   packages = ["google/rpc"]
@@ -499,6 +492,14 @@
   pruneopts = "NUT"
   revision = "f140a6486e521aad38f5917de355cbf147cc0496"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:c54b2df9eb45e238bca9d7f0e1a4acc90a2e6284e8d31c0df3ec72886ec53406"
+  name = "github.com/google/shlex"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c34317bd91bf98fab745d77b03933cf8769299fe"
 
 [[projects]]
   digest = "1:06a7dadb7b760767341ffb6c8d377238d68a1226f2b21b5d497d2e3f6ecf6b4e"
