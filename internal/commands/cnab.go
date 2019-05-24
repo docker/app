@@ -296,7 +296,7 @@ func requiredBindMount(targetContextName string, targetOrchestrator string, s st
 	// in case of docker desktop, we want to rewrite the context in cases where it targets the local swarm or Kubernetes
 	s = &dockerDesktopAwareStore{Store: s}
 
-	ctxMeta, err := s.GetContextMetadata(targetContextName)
+	ctxMeta, err := s.GetMetadata(targetContextName)
 	if err != nil {
 		return bindMount{}, err
 	}
