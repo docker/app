@@ -210,7 +210,7 @@
 
 [[projects]]
   branch = "19.03"
-  digest = "1:2f437f78f32178b2951314dd82649fda98e8f114e4d2c42588dd40fc2184a434"
+  digest = "1:40bdcf28756970bfa940ffcce99e7592d5511313ba950a842947736a9a386d5c"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -265,7 +265,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "8aebc318062963ba861b65cc2a43425dfdd80fe7"
+  revision = "a1b83ffd2cbeefc0752e5aa7a543d49c1ddfd2cb"
 
 [[projects]]
   branch = "master"
