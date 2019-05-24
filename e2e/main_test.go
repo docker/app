@@ -61,7 +61,9 @@ func (d dockerCliCommand) createTestCmd(ops ...ConfigFileOperator) (icmd.Cmd, fu
 	cleanup := func() {
 		os.RemoveAll(configDir)
 	}
-	env := append(os.Environ(), "DOCKER_CONFIG="+configDir)
+	env := append(os.Environ(),
+		"DOCKER_CONFIG="+configDir,
+		"DOCKER_CLI_EXPERIMENTAL=enabled") // TODO: Remove this once docker app plugin is no more experimental
 	return icmd.Cmd{Env: env}, cleanup
 }
 
