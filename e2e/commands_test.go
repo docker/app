@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -449,30 +450,38 @@ STATUS
 }
 
 func TestCredentials(t *testing.T) {
-	cmd, cleanup := dockerCli.createTestCmd(
-		withCredentialSet(t, "default", &credentials.CredentialSet{
-			Name: "test-creds",
-			Credentials: []credentials.CredentialStrategy{
-				{
-					Name: "secret1",
-					Source: credentials.Source{
-						Value: "secret1value",
-					},
-				},
-				{
-					Name: "secret2",
-					Source: credentials.Source{
-						Value: "secret2value",
-					},
+	credSet := &credentials.CredentialSet{
+		Name: "test-creds",
+		Credentials: []credentials.CredentialStrategy{
+			{
+				Name: "secret1",
+				Source: credentials.Source{
+					Value: "secret1value",
 				},
 			},
-		}),
+			{
+				Name: "secret2",
+				Source: credentials.Source{
+					Value: "secret2value",
+				},
+			},
+		},
+	}
+	// Create a tmp dir with a credential store
+	cmd, cleanup := dockerCli.createTestCmd(
+		withCredentialSet(t, "default", credSet),
 	)
 	defer cleanup()
+	// Create a local credentialSet
 
+	buf, err := json.Marshal(credSet)
+	assert.NilError(t, err)
 	bundleJSON := golden.Get(t, "credential-install-bundle.json")
 	tmpDir := fs.NewDir(t, t.Name(),
 		fs.WithFile("bundle.json", "", fs.WithBytes(bundleJSON)),
+		fs.WithDir("local",
+			fs.WithFile("test-creds.yaml", "", fs.WithBytes(buf)),
+		),
 	)
 	defer tmpDir.Remove()
 
@@ -505,15 +514,26 @@ func TestCredentials(t *testing.T) {
 		golden.Assert(t, result.Stdout(), "credential-install-full.golden")
 	})
 
-	t.Run("mixed", func(t *testing.T) {
+	t.Run("mixed-credstore", func(t *testing.T) {
 		cmd.Command = dockerCli.Command(
 			"app", "install",
 			"--credential-set", "test-creds",
 			"--credential", "secret3=xyzzy",
-			"--name", "mixed", bundle,
+			"--name", "mixed-credstore", bundle,
 		)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		golden.Assert(t, result.Stdout(), "credential-install-mixed.golden")
+		golden.Assert(t, result.Stdout(), "credential-install-mixed-credstore.golden")
+	})
+
+	t.Run("mixed-local-cred", func(t *testing.T) {
+		cmd.Command = dockerCli.Command(
+			"app", "install",
+			"--credential-set", tmpDir.Join("local", "test-creds.yaml"),
+			"--credential", "secret3=xyzzy",
+			"--name", "mixed-local-cred", bundle,
+		)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		golden.Assert(t, result.Stdout(), "credential-install-mixed-local-cred.golden")
 	})
 
 	t.Run("overload", func(t *testing.T) {
