@@ -181,7 +181,7 @@ func initFromComposeFile(name string, composeFile string) error {
 		return errors.Wrap(err, "failed to write parameters.yml")
 	}
 	if needsFilling {
-		fmt.Println("You will need to edit parameters.yml to fill in default values.")
+		fmt.Fprintln(os.Stderr, "You will need to edit parameters.yml to fill in default values.")
 	}
 	return nil
 }
