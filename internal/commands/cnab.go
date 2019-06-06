@@ -44,7 +44,16 @@ type credentialSetOpt func(b *bundle.Bundle, creds credentials.Set) error
 func addNamedCredentialSets(credStore appstore.CredentialStore, namedCredentialsets []string) credentialSetOpt {
 	return func(_ *bundle.Bundle, creds credentials.Set) error {
 		for _, file := range namedCredentialsets {
-			c, err := credStore.Read(file)
+			var (
+				c   *credentials.CredentialSet
+				err error
+			)
+			// Check the credentialset locally first, then try in the credential store
+			if _, e := os.Stat(file); e == nil {
+				c, err = credentials.Load(file)
+			} else {
+				c, err = credStore.Read(file)
+			}
 			if err != nil {
 				return err
 			}
