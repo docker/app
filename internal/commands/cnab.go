@@ -54,6 +54,9 @@ func addNamedCredentialSets(credStore appstore.CredentialStore, namedCredentials
 				c, err = credentials.Load(file)
 			} else {
 				c, err = credStore.Read(file)
+				if os.IsNotExist(err) {
+					err = e
+				}
 			}
 			if err != nil {
 				return err
