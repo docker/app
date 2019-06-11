@@ -9,47 +9,62 @@
 
 ### Examples
 
-Install the Helm chart example using `docker app`
-
-**Note**: This example comes from
-[deislabs/example-bundles](https://github.com/deislabs/example-bundles/tree/d1d95e25a2092ac170d9accd749dffa8babb2e05/hellohelm). See the [license file](./LICENSE) in this directory.
+Install the Helm chart example using `docker app`:
 
 ```console
-$ docker app install --credential-set mycreds.yml bundle.json
+$ docker app install --credential-set creds.yaml bundle.json
 Do install for hellohelm
 helm install --namespace hellohelm -n hellohelm /cnab/app/charts/alpine
 NAME:   hellohelm
-LAST DEPLOYED: Wed Nov 28 13:58:22 2018
+LAST DEPLOYED: Tue Jun 11 15:31:10 2019
 NAMESPACE: hellohelm
 STATUS: DEPLOYED
 
 RESOURCES:
 ==> v1/Pod
-NAME              AGE
-hellohelm-alpine  0s
+NAME              READY  STATUS             RESTARTS  AGE
+hellohelm-alpine  0/1    ContainerCreating  0         0s
+
+
+Application "hellohelm" installed on context "default"
 ```
+
+**Note**: When using Docker Desktop, you will need to change the IP address in
+your Kubernetes configuration file from `127.0.0.1` to its internal IP address.
 
 Check the status of the Helm-based application:
 
 ```console
-$ docker app status --credential-set mycreds.yml hellohelm
-Do Status
-helm status hellohelm
-LAST DEPLOYED: Wed Nov 28 13:58:22 2018
-NAMESPACE: hellohelm
-STATUS: DEPLOYED
+$ docker app status --credential-set creds.yaml hellohelm
+INSTALLATION
+------------
+Name:        hellohelm
+Created:     39 seconds
+Modified:    36 seconds
+Revision:    01DD3JM99WRGVAV7T56RMAW13E
+Last Action: install
+Result:      SUCCESS
 
-RESOURCES:
-==> v1/Pod
-NAME              AGE
-hellohelm-alpine  2m
+APPLICATION
+-----------
+Name:      hellohelm
+Version:   0.1.0
+Reference:
+
+PARAMETERS
+----------
+port: 8080
 ```
 
 Uninstall the Helm-based application:
 
 ```console
-docker app uninstall --credential-set mycreds.yml hellohelm
+docker app uninstall --credential-set creds.yaml hellohelm
 Do Uninstall
 helm delete --purge hellohelm
 release "hellohelm" deleted
+Application "hellohelm" uninstalled on context "default"
 ```
+
+**Note**: This example comes from
+[deislabs/example-bundles](https://github.com/deislabs/example-bundles/tree/d1d95e25a2092ac170d9accd749dffa8babb2e05/hellohelm). See the [license file](./LICENSE) in this directory.
