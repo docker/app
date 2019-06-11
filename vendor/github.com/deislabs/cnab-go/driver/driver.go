@@ -15,18 +15,6 @@ const (
 	ImageTypeQCOW   = "qcow"
 )
 
-// Lookup takes a driver name and tries to resolve the most pertinent driver.
-func Lookup(name string) (Driver, error) {
-	switch name {
-	case "docker":
-		return &DockerDriver{}, nil
-	case "debug":
-		return &DebugDriver{}, nil
-	default:
-		return &CommandDriver{Name: name}, nil
-	}
-}
-
 // Operation describes the data passed into the driver to run an operation
 type Operation struct {
 	// Installation is the name of this installation

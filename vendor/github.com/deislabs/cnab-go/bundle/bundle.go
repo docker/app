@@ -23,6 +23,10 @@ type Bundle struct {
 	Actions          map[string]Action              `json:"actions,omitempty" mapstructure:"actions"`
 	Parameters       map[string]ParameterDefinition `json:"parameters" mapstructure:"parameters"`
 	Credentials      map[string]Location            `json:"credentials" mapstructure:"credentials"`
+
+	// Custom extension metadata is a named collection of auxiliary data whose
+	// meaning is defined outside of the CNAB specification.
+	Custom map[string]interface{} `json:"custom,omitempty" mapstructure:"custom"`
 }
 
 //Unmarshal unmarshals a Bundle that was not signed.
@@ -67,12 +71,13 @@ type LocationRef struct {
 
 // BaseImage contains fields shared across image types
 type BaseImage struct {
-	ImageType string         `json:"imageType" mapstructure:"imageType"`
-	Image     string         `json:"image" mapstructure:"image"`
-	Digest    string         `json:"digest,omitempty" mapstructure:"digest"`
-	Size      uint64         `json:"size,omitempty" mapstructure:"size"`
-	Platform  *ImagePlatform `json:"platform,omitempty" mapstructure:"platform"`
-	MediaType string         `json:"mediaType,omitempty" mapstructure:"mediaType"`
+	ImageType     string         `json:"imageType" mapstructure:"imageType"`
+	Image         string         `json:"image" mapstructure:"image"`
+	OriginalImage string         `json:"originalImage,omitempty" mapstructure:"originalImage"`
+	Digest        string         `json:"digest,omitempty" mapstructure:"digest"`
+	Size          uint64         `json:"size,omitempty" mapstructure:"size"`
+	Platform      *ImagePlatform `json:"platform,omitempty" mapstructure:"platform"`
+	MediaType     string         `json:"mediaType,omitempty" mapstructure:"mediaType"`
 }
 
 // ImagePlatform indicates what type of platform an image is built for
@@ -137,7 +142,7 @@ func ValuesOrDefaults(vals map[string]interface{}, b *Bundle) (map[string]interf
 		} else if def.Required {
 			return res, fmt.Errorf("parameter %q is required", name)
 		}
-		res[name] = def.DefaultValue
+		res[name] = def.Default
 	}
 	return res, nil
 }

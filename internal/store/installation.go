@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/deislabs/duffle/pkg/claim"
-	"github.com/deislabs/duffle/pkg/utils/crud"
+	"github.com/deislabs/cnab-go/claim"
+	"github.com/deislabs/cnab-go/utils/crud"
 )
 
 // InstallationStore is an interface to persist, delete, list and read installations.

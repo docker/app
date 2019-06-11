@@ -10,7 +10,7 @@ import (
 )
 
 // ErrFileDoesNotExist represents when file path is not found on file system
-var ErrFileDoesNotExist = errors.New(`File does not exist`)
+var ErrFileDoesNotExist = errors.New("File does not exist")
 
 // NewFileSystemStore creates a Store backed by a file system directory.
 // Each key is represented by a file in that directory.

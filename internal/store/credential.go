@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/deislabs/cnab-go/credentials"
 	"github.com/pkg/errors"
 )
 

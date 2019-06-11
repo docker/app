@@ -9,6 +9,7 @@ import (
 	"os"
 	unix_path "path"
 
+	"github.com/deislabs/cnab-go/driver"
 	"github.com/docker/cli/cli/command"
 	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/docker/distribution/reference"
@@ -33,13 +34,13 @@ type DockerDriver struct {
 }
 
 // Run executes the Docker driver
-func (d *DockerDriver) Run(op *Operation) error {
+func (d *DockerDriver) Run(op *driver.Operation) error {
 	return d.exec(op)
 }
 
 // Handles indicates that the Docker driver supports "docker" and "oci"
 func (d *DockerDriver) Handles(dt string) bool {
-	return dt == ImageTypeDocker || dt == ImageTypeOCI
+	return dt == driver.ImageTypeDocker || dt == driver.ImageTypeOCI
 }
 
 // AddConfigurationOptions adds configuration callbacks to the driver
@@ -123,7 +124,7 @@ func (d *DockerDriver) initializeDockerCli() (command.Cli, error) {
 	return cli, nil
 }
 
-func (d *DockerDriver) exec(op *Operation) error {
+func (d *DockerDriver) exec(op *driver.Operation) error {
 	ctx := context.Background()
 
 	cli, err := d.initializeDockerCli()

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/deislabs/cnab-go/action"
+	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"

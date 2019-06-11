@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/deislabs/duffle/pkg/claim"
+	"github.com/deislabs/cnab-go/claim"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/duffle/pkg/claim"
+	"github.com/deislabs/cnab-go/claim"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/store"
 	"gotest.tools/assert"
@@ -102,8 +102,8 @@ func TestMergeBundleParameters(t *testing.T) {
 		bundle := &bundle.Bundle{
 			Parameters: map[string]bundle.ParameterDefinition{
 				"param": {
-					DefaultValue: "default",
-					DataType:     "string",
+					Default:  "default",
+					DataType: "string",
 				},
 			},
 		}
@@ -123,8 +123,8 @@ func TestMergeBundleParameters(t *testing.T) {
 		bundle := &bundle.Bundle{
 			Parameters: map[string]bundle.ParameterDefinition{
 				"param": {
-					DefaultValue: "default",
-					DataType:     "string",
+					Default:  "default",
+					DataType: "string",
 				},
 			},
 		}
@@ -163,8 +163,8 @@ func TestMergeBundleParameters(t *testing.T) {
 		bundle := &bundle.Bundle{
 			Parameters: map[string]bundle.ParameterDefinition{
 				"param": {
-					DefaultValue: "default",
-					DataType:     "string",
+					Default:  "default",
+					DataType: "string",
 				},
 			},
 		}

@@ -10,11 +10,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/duffle/pkg/action"
-	"github.com/deislabs/duffle/pkg/claim"
-	"github.com/deislabs/duffle/pkg/credentials"
-	"github.com/deislabs/duffle/pkg/driver"
+	"github.com/deislabs/cnab-go/claim"
+	"github.com/deislabs/cnab-go/credentials"
+	"github.com/deislabs/cnab-go/driver"
+	duffleDriver "github.com/deislabs/duffle/pkg/driver"
 	"github.com/deislabs/duffle/pkg/loader"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
@@ -176,12 +177,12 @@ func getTargetContext(optstargetContext, currentContext string) string {
 
 // prepareDriver prepares a driver per the user's request.
 func prepareDriver(dockerCli command.Cli, bindMount bindMount, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
-	driverImpl, err := driver.Lookup("docker")
+	driverImpl, err := duffleDriver.Lookup("docker")
 	if err != nil {
 		return driverImpl, nil, err
 	}
 	errBuf := bytes.NewBuffer(nil)
-	if d, ok := driverImpl.(*driver.DockerDriver); ok {
+	if d, ok := driverImpl.(*duffleDriver.DockerDriver); ok {
 		d.SetDockerCli(dockerCli)
 		if stdout != nil {
 			d.SetContainerOut(stdout)

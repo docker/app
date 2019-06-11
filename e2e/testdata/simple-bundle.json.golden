@@ -47,14 +47,14 @@
 	"parameters": {
 		"api_host": {
 			"type": "string",
-			"defaultValue": "example.com",
+			"default": "example.com",
 			"destination": {
 				"env": "docker_param1"
 			}
 		},
 		"com.docker.app.kubernetes-namespace": {
 			"type": "string",
-			"defaultValue": "",
+			"default": "",
 			"metadata": {
 				"description": "Namespace in which to deploy"
 			},
@@ -70,7 +70,7 @@
 		},
 		"com.docker.app.orchestrator": {
 			"type": "string",
-			"defaultValue": "",
+			"default": "",
 			"allowedValues": [
 				"",
 				"swarm",
@@ -91,7 +91,7 @@
 		},
 		"com.docker.app.render-format": {
 			"type": "string",
-			"defaultValue": "yaml",
+			"default": "yaml",
 			"allowedValues": [
 				"yaml",
 				"json"
@@ -108,7 +108,7 @@
 		},
 		"com.docker.app.share-registry-creds": {
 			"type": "bool",
-			"defaultValue": false,
+			"default": false,
 			"metadata": {
 				"description": "Share registry credentials with the invocation image"
 			},
@@ -118,14 +118,14 @@
 		},
 		"static_subdir": {
 			"type": "string",
-			"defaultValue": "data/static",
+			"default": "data/static",
 			"destination": {
 				"env": "docker_param2"
 			}
 		},
 		"web_port": {
 			"type": "string",
-			"defaultValue": "8082",
+			"default": "8082",
 			"destination": {
 				"env": "docker_param3"
 			}

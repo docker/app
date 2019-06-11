@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/yaml"
 	"gotest.tools/assert"

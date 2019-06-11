@@ -8,10 +8,9 @@ import (
 	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
-
-	"github.com/deislabs/duffle/pkg/claim"
-	"github.com/deislabs/duffle/pkg/credentials"
-	"github.com/deislabs/duffle/pkg/driver"
+	"github.com/deislabs/cnab-go/claim"
+	"github.com/deislabs/cnab-go/credentials"
+	"github.com/deislabs/cnab-go/driver"
 )
 
 // stateful is there just to make callers of opFromClaims more readable

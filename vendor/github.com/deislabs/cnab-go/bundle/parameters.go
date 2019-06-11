@@ -10,7 +10,7 @@ import (
 // ParameterDefinition defines a single parameter for a CNAB bundle
 type ParameterDefinition struct {
 	DataType      string             `json:"type" mapstructure:"type"`
-	DefaultValue  interface{}        `json:"defaultValue,omitempty" mapstructure:"defaultValue"`
+	Default       interface{}        `json:"default,omitempty" mapstructure:"default"`
 	AllowedValues []interface{}      `json:"allowedValues,omitempty" mapstructure:"allowedValues"`
 	Required      bool               `json:"required,omitempty" mapstructure:"required"`
 	MinValue      *int               `json:"minValue,omitempty" mapstructure:"minValue"`
