@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/deislabs/duffle/pkg/utils/crud"
+	"github.com/deislabs/cnab-go/utils/crud"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )

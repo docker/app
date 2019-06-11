@@ -187,26 +187,29 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f5537515bc64edb9117ec396d197d88852d927185352ce08e2667562ef532a96"
+  digest = "1:375b61e3283d3cd8dee36926f91d3303f6e5313b0cc7d1ca7a4017e2922ec266"
   name = "github.com/deislabs/cnab-go"
-  packages = ["bundle"]
+  packages = [
+    "action",
+    "bundle",
+    "claim",
+    "credentials",
+    "driver",
+    "utils/crud",
+  ]
   pruneopts = "NUT"
-  revision = "1a73873b84025123a0f8fe84086e59493e051302"
+  revision = "83e9f9815137410102c256af79eee9d76e8ef320"
 
 [[projects]]
   branch = "master"
-  digest = "1:eeb92cfa05a5d352a4a6f1c2b3ff418f5ccc9c4b7f257ab73a0527c5449fb5b7"
+  digest = "1:7eac2e7c49d46ea2627e05a77956becb31d544d8a7ae809dbbb4c46d2ff50ae2"
   name = "github.com/deislabs/duffle"
   packages = [
-    "pkg/action",
-    "pkg/claim",
-    "pkg/credentials",
     "pkg/driver",
     "pkg/loader",
-    "pkg/utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "1847f2f7127f13f62c1377f936cba522e8947dfb"
+  revision = "cd780230f68aa989edfdc2231470274696da89e9"
 
 [[projects]]
   branch = "19.03"
@@ -1234,13 +1237,14 @@
   input-imports = [
     "github.com/cbroglie/mustache",
     "github.com/containerd/containerd/platforms",
+    "github.com/deislabs/cnab-go/action",
     "github.com/deislabs/cnab-go/bundle",
-    "github.com/deislabs/duffle/pkg/action",
-    "github.com/deislabs/duffle/pkg/claim",
-    "github.com/deislabs/duffle/pkg/credentials",
+    "github.com/deislabs/cnab-go/claim",
+    "github.com/deislabs/cnab-go/credentials",
+    "github.com/deislabs/cnab-go/driver",
+    "github.com/deislabs/cnab-go/utils/crud",
     "github.com/deislabs/duffle/pkg/driver",
     "github.com/deislabs/duffle/pkg/loader",
-    "github.com/deislabs/duffle/pkg/utils/crud",
     "github.com/docker/cli/cli",
     "github.com/docker/cli/cli-plugins/manager",
     "github.com/docker/cli/cli-plugins/plugin",

@@ -19,7 +19,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				"swarm",
 				"kubernetes",
 			},
-			DefaultValue: "",
+			Default: "",
 			Destination: &bundle.Location{
 				EnvironmentVariable: internal.DockerStackOrchestratorEnvVar,
 			},
@@ -34,8 +34,8 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			},
 		},
 		internal.ParameterKubernetesNamespaceName: {
-			DataType:     "string",
-			DefaultValue: "",
+			DataType: "string",
+			Default:  "",
 			Destination: &bundle.Location{
 				EnvironmentVariable: internal.DockerKubernetesNamespaceEnvVar,
 			},
@@ -55,7 +55,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				"yaml",
 				"json",
 			},
-			DefaultValue: "yaml",
+			Default: "yaml",
 			Destination: &bundle.Location{
 				EnvironmentVariable: internal.DockerRenderFormatEnvVar,
 			},
@@ -74,7 +74,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Metadata: &bundle.ParameterMetadata{
 				Description: "Share registry credentials with the invocation image",
 			},
-			DefaultValue: false,
+			Default: false,
 		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
@@ -83,7 +83,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Destination: &bundle.Location{
 				EnvironmentVariable: envVar,
 			},
-			DefaultValue: flatParameters[name],
+			Default: flatParameters[name],
 		}
 	}
 	var maintainers []bundle.Maintainer

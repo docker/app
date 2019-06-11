@@ -52,7 +52,7 @@
   "parameters": {
     "com.docker.app.kubernetes-namespace": {
       "type": "string",
-      "defaultValue": "",
+      "default": "",
       "metadata": {
         "description": "Namespace in which to deploy"
       },
@@ -68,7 +68,7 @@
     },
     "com.docker.app.orchestrator": {
       "type": "string",
-      "defaultValue": "",
+      "default": "",
       "allowedValues": [
         "",
         "swarm",
@@ -89,7 +89,7 @@
     },
     "com.docker.app.render-format": {
       "type": "string",
-      "defaultValue": "yaml",
+      "default": "yaml",
       "allowedValues": [
         "yaml",
         "json"
@@ -106,7 +106,7 @@
     },
     "com.docker.app.share-registry-creds": {
       "type": "bool",
-      "defaultValue": false,
+      "default": false,
       "metadata": {
         "description": "Share registry credentials with the invocation image"
       },
@@ -116,7 +116,7 @@
     },
     "watcher.cmd": {
       "type": "string",
-      "defaultValue": "foo",
+      "default": "foo",
       "destination": {
         "env": "docker_param1"
       }

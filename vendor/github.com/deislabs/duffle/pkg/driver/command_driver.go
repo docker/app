@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/deislabs/cnab-go/driver"
 )
 
 // CommandDriver relies upon a system command to provide a driver implementation
@@ -15,7 +18,7 @@ type CommandDriver struct {
 }
 
 // Run executes the command
-func (d *CommandDriver) Run(op *Operation) error {
+func (d *CommandDriver) Run(op *driver.Operation) error {
 	return d.exec(op)
 }
 
@@ -39,7 +42,7 @@ func (d *CommandDriver) cliName() string {
 	return "duffle-" + strings.ToLower(d.Name)
 }
 
-func (d *CommandDriver) exec(op *Operation) error {
+func (d *CommandDriver) exec(op *driver.Operation) error {
 	// We need to do two things here: We need to make it easier for the
 	// command to access data, and we need to make it easy for the command
 	// to pass that data on to the image it invokes. So we do some data
@@ -69,7 +72,34 @@ func (d *CommandDriver) exec(op *Operation) error {
 	}
 	cmd.Env = pairs
 	cmd.Stdin = bytes.NewBuffer(data)
-	out, err := cmd.CombinedOutput()
-	fmt.Fprintln(op.Out, string(out))
-	return err
+
+	// Make stdout and stderr from driver available immediately
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("Setting up output handling for driver (%s) failed: %v", d.Name, err)
+	}
+
+	go func() {
+
+		// Errors not handled here as they only prevent output from the driver being shown, errors in the command execution are handled when command is executed
+
+		io.Copy(op.Out, stdout)
+	}()
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("Setting up error output handling for driver (%s) failed: %v", d.Name, err)
+	}
+	go func() {
+
+		// Errors not handled here as they only prevent output from the driver being shown, errors in the command execution are handled when command is executed
+
+		io.Copy(op.Out, stderr)
+	}()
+
+	if err = cmd.Start(); err != nil {
+		return fmt.Errorf("Start of driver (%s) failed: %v", d.Name, err)
+	}
+
+	return cmd.Wait()
 }

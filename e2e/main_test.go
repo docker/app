@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/duffle/pkg/credentials"
+	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/app/internal/store"
 	dockerConfigFile "github.com/docker/cli/cli/config/configfile"
 	"gotest.tools/assert"
