@@ -13,9 +13,10 @@ import (
 // NewRootCmd returns the base root command.
 func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Short: "Docker Application",
-		Long:  `A tool to build and manage Docker Applications.`,
-		Use:   use,
+		Short:       "Docker Application",
+		Long:        `A tool to build and manage Docker Applications.`,
+		Use:         use,
+		Annotations: map[string]string{"experimentalCLI": "true"},
 	}
 	addCommands(cmd, dockerCli)
 	return cmd
