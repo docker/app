@@ -34,6 +34,9 @@ func Inspect(out io.Writer, app *types.App, argParameters map[string]string, ima
 
 	// Add Service section
 	printSection(out, len(config.Services), func(w io.Writer) {
+		sort.Slice(config.Services, func(i, j int) bool {
+			return config.Services[i].Name < config.Services[j].Name
+		})
 		for _, service := range config.Services {
 			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, getReplicas(service), getPorts(service.Ports), service.Image)
 		}
@@ -41,21 +44,36 @@ func Inspect(out io.Writer, app *types.App, argParameters map[string]string, ima
 
 	// Add Network section
 	printSection(out, len(config.Networks), func(w io.Writer) {
+		names := make([]string, 0, len(config.Networks))
 		for name := range config.Networks {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
 			fmt.Fprintln(w, name)
 		}
 	}, "Network")
 
 	// Add Volume section
 	printSection(out, len(config.Volumes), func(w io.Writer) {
+		names := make([]string, 0, len(config.Volumes))
 		for name := range config.Volumes {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
 			fmt.Fprintln(w, name)
 		}
 	}, "Volume")
 
 	// Add Secret section
 	printSection(out, len(config.Secrets), func(w io.Writer) {
+		names := make([]string, 0, len(config.Secrets))
 		for name := range config.Secrets {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
 			fmt.Fprintln(w, name)
 		}
 	}, "Secret")

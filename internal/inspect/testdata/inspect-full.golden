@@ -4,21 +4,25 @@ Maintained by: dev <dev@example.com>
 
 some description
 
-Service (1) Replicas Ports     Image
------------ -------- -----     -----
-web         2        8080-8100 nginx:latest
+Services (2) Replicas Ports     Image
+------------ -------- -----     -----
+web1         2        8080-8100 nginx:latest
+web2         2        9080-9100 nginx:latest
 
-Network (1)
+Networks (2)
+------------
+my-network1
+my-network2
+
+Volumes (2)
 -----------
-my-network
+my-volume1
+my-volume2
 
-Volume (1)
-----------
-my-volume
-
-Secret (1)
-----------
-my-secret
+Secrets (2)
+-----------
+my-secret1
+my-secret2
 
 Parameters (2) Value
 -------------- -----
