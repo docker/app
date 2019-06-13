@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
@@ -46,7 +47,7 @@ func runPull(dockerCli command.Cli, name string, opts registryOptions) error {
 		return errors.Wrap(err, name)
 	}
 
-	fmt.Printf("Successfully pulled %q (%s) from %s\n", bndl.Name, bndl.Version, ref.String())
+	fmt.Fprintf(os.Stdout, "Successfully pulled %q (%s) from %s\n", bndl.Name, bndl.Version, ref.String())
 
 	return nil
 }

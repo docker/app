@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
@@ -25,9 +26,9 @@ In order to be able to build an invocation images when using docker app from an 
 		Run: func(cmd *cobra.Command, args []string) {
 			image := packager.BaseInvocationImage(dockerCli)
 			if onlyBaseImage {
-				fmt.Fprintln(dockerCli.Out(), image)
+				fmt.Fprintln(os.Stdout, image)
 			} else {
-				fmt.Fprintln(dockerCli.Out(), internal.FullVersion(image))
+				fmt.Fprintln(os.Stdout, internal.FullVersion(image))
 			}
 		},
 	}

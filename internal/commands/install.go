@@ -142,6 +142,6 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err2
 	}
 
-	fmt.Printf("Application %q installed on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(os.Stdout, "Application %q installed on context %q\n", installationName, opts.targetContext)
 	return nil
 }

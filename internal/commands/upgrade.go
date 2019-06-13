@@ -97,6 +97,6 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err2 != nil {
 		return err2
 	}
-	fmt.Printf("Application %q upgraded on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(os.Stdout, "Application %q upgraded on context %q\n", installationName, opts.targetContext)
 	return nil
 }

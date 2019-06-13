@@ -86,6 +86,6 @@ func runUninstall(dockerCli command.Cli, installationName string, opts uninstall
 	if err := installationStore.Delete(installationName); err != nil {
 		return fmt.Errorf("Failed to delete installation %q from the installation store: %s", installationName, err)
 	}
-	fmt.Printf("Application %q uninstalled on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(os.Stdout, "Application %q uninstalled on context %q\n", installationName, opts.targetContext)
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/packager"
@@ -61,7 +62,7 @@ func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error 
 		return err
 	}
 
-	fmt.Fprintf(dockerCli.Out(), "Invocation image %q successfully built\n", bundle.InvocationImages[0].Image)
+	fmt.Fprintf(os.Stdout, "Invocation image %q successfully built\n", bundle.InvocationImages[0].Image)
 	bundleBytes, err := json.MarshalIndent(bundle, "", "\t")
 	if err != nil {
 		return err
