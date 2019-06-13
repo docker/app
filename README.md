@@ -254,7 +254,7 @@ the examples will work the same way.
 Download your OS tarball:
 ```console
 export OSTYPE="$(uname | tr A-Z a-z)"
-curl -fsSL --output "/tmp/docker-app-${OSTYPE}.tar.gz" "https://github.com/docker/app/releases/download/v0.6.0/docker-app-${OSTYPE}.tar.gz"
+curl -fsSL --output "/tmp/docker-app-${OSTYPE}.tar.gz" "https://github.com/docker/app/releases/download/v0.8.0/docker-app-${OSTYPE}.tar.gz"
 tar xf "/tmp/docker-app-${OSTYPE}.tar.gz" -C /tmp/
 ```
 
@@ -272,7 +272,7 @@ mkdir -p ~/.docker/cli-plugins && cp "/tmp/docker-app-plugin-${OSTYPE}" ~/.docke
 
 Download the Windows tarball:
 ```powershell
-Invoke-WebRequest -Uri https://github.com/docker/app/releases/download/v0.6.0/docker-app-windows.tar.gz -OutFile docker-app.tar.gz -UseBasicParsing
+Invoke-WebRequest -Uri https://github.com/docker/app/releases/download/v0.8.0/docker-app-windows.tar.gz -OutFile docker-app.tar.gz -UseBasicParsing
 tar xf "docker-app.tar.gz"
 ```
 
