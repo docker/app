@@ -1,0 +1,122 @@
+{
+    "name": "hello-test",
+    "version": "0.2.0",
+    "description": "Simple Test App",
+    "maintainers": [
+        {
+            "name": "sirot",
+            "email": "someone@example.com"
+        }
+    ],
+    "invocationImages": [
+        {
+            "imageType": "docker",
+            "image": "hello-test:0.2.0-invoc"
+        }
+    ],
+    "images": {
+        "hello": {
+            "imageType": "docker",
+            "image": "hashicorp/http-echo:0.2.3",
+            "originalImage": "hashicorp/http-echo:0.2.3",
+            "description": ""
+        }
+    },
+    "actions": {
+        "com.docker.app.inspect": {
+            "stateless": true
+        },
+        "com.docker.app.render": {
+            "stateless": true
+        },
+        "com.docker.app.status": {}
+    },
+    "parameters": {
+        "com.docker.app.kubernetes-namespace": {
+            "type": "string",
+            "default": "",
+            "metadata": {
+                "description": "Namespace in which to deploy"
+            },
+            "destination": {
+                "env": "DOCKER_KUBERNETES_NAMESPACE"
+            },
+            "apply-to": [
+                "install",
+                "upgrade",
+                "uninstall",
+                "com.docker.app.status"
+            ]
+        },
+        "com.docker.app.orchestrator": {
+            "type": "string",
+            "default": "",
+            "allowedValues": [
+                "",
+                "swarm",
+                "kubernetes"
+            ],
+            "metadata": {
+                "description": "Orchestrator on which to deploy"
+            },
+            "destination": {
+                "env": "DOCKER_STACK_ORCHESTRATOR"
+            },
+            "apply-to": [
+                "install",
+                "upgrade",
+                "uninstall",
+                "com.docker.app.status"
+            ]
+        },
+        "com.docker.app.render-format": {
+            "type": "string",
+            "default": "yaml",
+            "allowedValues": [
+                "yaml",
+                "json"
+            ],
+            "metadata": {
+                "description": "Output format for the render command"
+            },
+            "destination": {
+                "env": "DOCKER_RENDER_FORMAT"
+            },
+            "apply-to": [
+                "com.docker.app.render"
+            ]
+        },
+        "com.docker.app.share-registry-creds": {
+            "type": "bool",
+            "default": false,
+            "metadata": {
+                "description": "Share registry credentials with the invocation image"
+            },
+            "destination": {
+                "env": "DOCKER_SHARE_REGISTRY_CREDS"
+            }
+        },
+        "port": {
+            "type": "string",
+            "default": "8765",
+            "destination": {
+                "env": "docker_param1"
+            }
+        },
+        "text": {
+            "type": "string",
+            "default": "Hello DockerCon!",
+            "destination": {
+                "env": "docker_param2"
+            }
+        }
+    },
+    "credentials": {
+        "com.docker.app.registry-creds": {
+            "path": "/cnab/app/registry-creds.json"
+        },
+        "docker.context": {
+            "path": "/cnab/app/context.dockercontext"
+        }
+    }
+}

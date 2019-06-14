@@ -147,10 +147,10 @@ func extractBundleImages(composeFiles [][]byte) (map[string]bundle.Image, error)
 	bundleImages := map[string]bundle.Image{}
 	for serviceName, imageName := range images {
 		bundleImages[serviceName] = bundle.Image{
-			Description: imageName,
 			BaseImage: bundle.BaseImage{
-				Image:     imageName,
-				ImageType: "docker",
+				Image:         imageName,
+				ImageType:     "docker",
+				OriginalImage: imageName,
 			},
 		}
 	}

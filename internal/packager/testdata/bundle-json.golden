@@ -22,22 +22,26 @@
     "app-watcher": {
       "imageType": "docker",
       "image": "watcher",
-      "description": "watcher"
+      "originalImage": "watcher",
+      "description": ""
     },
     "debug": {
       "imageType": "docker",
       "image": "busybox:latest",
-      "description": "busybox:latest"
+      "originalImage": "busybox:latest",
+      "description": ""
     },
     "front": {
       "imageType": "docker",
       "image": "nginx",
-      "description": "nginx"
+      "originalImage": "nginx",
+      "description": ""
     },
     "monitor": {
       "imageType": "docker",
       "image": "busybox:latest",
-      "description": "busybox:latest"
+      "originalImage": "busybox:latest",
+      "description": ""
     }
   },
   "actions": {

@@ -22,17 +22,20 @@
 		"api": {
 			"imageType": "docker",
 			"image": "python:3.6",
-			"description": "python:3.6"
+			"originalImage": "python:3.6",
+			"description": ""
 		},
 		"db": {
 			"imageType": "docker",
 			"image": "postgres:9.3",
-			"description": "postgres:9.3"
+			"originalImage": "postgres:9.3",
+			"description": ""
 		},
 		"web": {
 			"imageType": "docker",
 			"image": "nginx:latest",
-			"description": "nginx:latest"
+			"originalImage": "nginx:latest",
+			"description": ""
 		}
 	},
 	"actions": {

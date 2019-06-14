@@ -3,10 +3,13 @@ package inspect
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"testing"
 
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
+	composetypes "github.com/docker/cli/cli/compose/types"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 	"gotest.tools/golden"
@@ -129,6 +132,48 @@ text: hello`),
 				})
 			}
 
+		})
+	}
+}
+
+func TestInspectServices(t *testing.T) {
+	for _, testcase := range []struct {
+		name     string
+		bundle   string
+		expected string
+	}{
+		{
+			name:     "pulled-app",
+			bundle:   "testdata/sample-cnab/bundle-pulled.json",
+			expected: "inspect-service-pulled.golden",
+		},
+		{
+			name:     "new-app",
+			bundle:   "testdata/sample-cnab/bundle-new.json",
+			expected: "inspect-service-new.golden",
+		},
+	} {
+		t.Run(testcase.name, func(t *testing.T) {
+			bundlefile, err := os.Open(testcase.bundle)
+			assert.NilError(t, err)
+			defer bundlefile.Close()
+			b, err := bundle.ParseReader(bundlefile)
+			assert.NilError(t, err)
+			sc := composetypes.ServiceConfig{
+				Name:  "hello",
+				Image: b.Images["hello"].Image,
+				Ports: []composetypes.ServicePortConfig{
+					{
+						Published: 8765,
+					},
+				},
+			}
+			services := []composetypes.ServiceConfig{sc}
+			assert.NilError(t, err)
+			outBuffer := new(bytes.Buffer)
+			printServices(outBuffer, services, b.Images)
+			assert.NilError(t, err)
+			golden.Assert(t, outBuffer.String(), fmt.Sprintf(testcase.expected))
 		})
 	}
 }

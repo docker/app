@@ -1,0 +1,4 @@
+
+Service (1) Replicas Ports Image                     Reference
+----------- -------- ----- -----                     ---------
+hello       1        8765  hashicorp/http-echo:0.2.3 sirot/hello-test@sha256:ba27d460cd1f22a1a4331bdf74f4fccbc025552357e8a3249c40ae216275de96

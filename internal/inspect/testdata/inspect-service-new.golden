@@ -1,0 +1,4 @@
+
+Service (1) Replicas Ports Image
+----------- -------- ----- -----
+hello       1        8765  hashicorp/http-echo:0.2.3

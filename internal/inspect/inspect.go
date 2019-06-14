@@ -33,14 +33,7 @@ func Inspect(out io.Writer, app *types.App, argParameters map[string]string, ima
 	printMetadata(out, app)
 
 	// Add Service section
-	printSection(out, len(config.Services), func(w io.Writer) {
-		sort.Slice(config.Services, func(i, j int) bool {
-			return config.Services[i].Name < config.Services[j].Name
-		})
-		for _, service := range config.Services {
-			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, getReplicas(service), getPorts(service.Ports), service.Image)
-		}
-	}, "Service", "Replicas", "Ports", "Image")
+	printServices(out, config.Services, imageMap)
 
 	// Add Network section
 	printSection(out, len(config.Networks), func(w io.Writer) {
@@ -95,6 +88,31 @@ func Inspect(out io.Writer, app *types.App, argParameters map[string]string, ima
 	}, "Attachment", "Size")
 
 	return nil
+}
+
+func printServices(out io.Writer, services composetypes.Services, imageMap map[string]bundle.Image) {
+	servicesSectionHeader, printService := getServicesPrinter(imageMap)
+	printSection(out, len(services), func(w io.Writer) {
+		sort.Slice(services, func(i, j int) bool {
+			return services[i].Name < services[j].Name
+		})
+		for _, service := range services {
+			printService(w, service)
+		}
+	}, servicesSectionHeader...)
+}
+
+func getServicesPrinter(imageMap map[string]bundle.Image) ([]string, func(io.Writer, composetypes.ServiceConfig)) {
+	for _, image := range imageMap {
+		if image.BaseImage.OriginalImage != "" && image.BaseImage.OriginalImage != image.BaseImage.Image {
+			return []string{"Service", "Replicas", "Ports", "Image", "Reference"}, func(w io.Writer, service composetypes.ServiceConfig) {
+				fmt.Fprintf(w, "%s\t%d\t%s\t%s\t%s\n", service.Name, getReplicas(service), getPorts(service.Ports), imageMap[service.Name].OriginalImage, service.Image)
+			}
+		}
+	}
+	return []string{"Service", "Replicas", "Ports", "Image"}, func(w io.Writer, service composetypes.ServiceConfig) {
+		fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, getReplicas(service), getPorts(service.Ports), service.Image)
+	}
 }
 
 func printMetadata(out io.Writer, app *types.App) {
