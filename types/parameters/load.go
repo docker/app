@@ -30,13 +30,18 @@ func Load(data []byte, ops ...func(*Options)) (Parameters, error) {
 	if err != nil {
 		return nil, err
 	}
-	parameters := converted.(map[string]interface{})
+	params := converted.(map[string]interface{})
 	if options.prefix != "" {
-		parameters = map[string]interface{}{
-			options.prefix: parameters,
+		params = map[string]interface{}{
+			options.prefix: params,
 		}
 	}
-	return parameters, nil
+	// Make sure params are always loaded expanded
+	expandedParams, err := FromFlatten(flatten(params))
+	if err != nil {
+		return nil, err
+	}
+	return expandedParams, nil
 }
 
 // LoadMultiple loads multiple data in parameters

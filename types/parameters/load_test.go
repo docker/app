@@ -43,6 +43,16 @@ baz:
 	}))
 }
 
+func TestLoadSameWithDifferentNotation(t *testing.T) {
+	flatParameters, err := Load([]byte(`foo.bar: baz`))
+	assert.NilError(t, err)
+	expandedParameters, err := Load([]byte(`
+foo:
+  bar: "baz"`))
+	assert.NilError(t, err)
+	assert.Check(t, is.DeepEqual(flatParameters, expandedParameters))
+}
+
 func TestLoadWithPrefix(t *testing.T) {
 	parameters, err := Load([]byte(`
 foo: bar

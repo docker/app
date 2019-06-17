@@ -6,6 +6,7 @@ import (
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/types"
+	"github.com/docker/app/types/parameters"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	yaml "gopkg.in/yaml.v2"
 	"gotest.tools/assert"
@@ -231,4 +232,32 @@ func TestServiceImageOverride(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Check(t, is.Len(c.Services, 1))
 	assert.Check(t, is.Equal(c.Services[0].Image, "test"))
+}
+
+func TestRenderShouldMergeNonUniformParameters(t *testing.T) {
+	metadata := strings.NewReader(validMeta)
+	composeFile := strings.NewReader(`
+version: "3.6"
+services:
+  any:
+    image: none/none
+    environment:
+      SSH_USER: ${ssh.user}
+`)
+	p := strings.NewReader(`
+ssh.user: FILLME
+`)
+	parametersOverride := strings.NewReader(`
+ssh:
+  user: sirtea
+`)
+	app := &types.App{Path: "my-app"}
+	assert.NilError(t, types.Metadata(metadata)(app))
+	assert.NilError(t, types.WithComposes(composeFile)(app))
+	assert.NilError(t, types.WithParameters(p, parametersOverride)(app))
+	params := app.Parameters()
+	assert.Equal(t, len(params), 1)
+	assert.DeepEqual(t, params, parameters.Parameters{
+		"ssh": map[string]interface{}{"user": "sirtea"},
+	})
 }
