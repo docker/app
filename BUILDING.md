@@ -91,7 +91,7 @@ During the automated CI, the unit tests and end-to-end tests are run as
 part of the PR validation. As a developer you can run these tests
 locally by using any of the following `Makefile` targets:
 
-- `make test`: run all non-end-to-end tests
+- `make test-unit`: run all non-end-to-end tests
 - `make test-e2e`: run all end-to-end tests
 
 To execute a specific test or set of tests you can use the `go test`
