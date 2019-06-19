@@ -47,7 +47,7 @@
     "com.docker.app.render": {
       "stateless": true
     },
-    "com.docker.app.status": {}
+    "io.cnab.status": {}
   },
   "parameters": {
     "com.docker.app.kubernetes-namespace": {
@@ -63,7 +63,7 @@
         "install",
         "upgrade",
         "uninstall",
-        "com.docker.app.status"
+        "io.cnab.status"
       ]
     },
     "com.docker.app.orchestrator": {
@@ -84,7 +84,7 @@
         "install",
         "upgrade",
         "uninstall",
-        "com.docker.app.status"
+        "io.cnab.status"
       ]
     },
     "com.docker.app.render-format": {
