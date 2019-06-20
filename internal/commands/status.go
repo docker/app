@@ -22,8 +22,7 @@ import (
 var (
 	knownStatusActions = []string{
 		internal.ActionStatusName,
-		// TODO: Extract this constant to the cnab-go library
-		"io.cnab.status",
+		internal.ActionStatusNameDeprecated,
 	}
 )
 

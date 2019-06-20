@@ -24,9 +24,14 @@ const (
 
 	// Namespace is the reverse DNS namespace used with labels and CNAB custom actions.
 	Namespace = "com.docker.app."
+	// CnabNamespace is the namespace used with the CNAB well known custom actions
+	CnabNamespace = "io.cnab."
 
-	// ActionStatusName is the name of the custom "status" action
-	ActionStatusName = Namespace + "status"
+	// ActionStatusNameDeprecated is the name of the docker custom "status" action
+	// Deprecated: use ActionStatusName instead
+	ActionStatusNameDeprecated = Namespace + "status"
+	// ActionStatusName is the name of the CNAB well known custom "status" action - TODO: Extract this constant to the cnab-go library
+	ActionStatusName = CnabNamespace + "status"
 	// ActionInspectName is the name of the custom "inspect" action
 	ActionInspectName = Namespace + "inspect"
 	// ActionRenderName is the name of the custom "render" action

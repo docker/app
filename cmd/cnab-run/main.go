@@ -12,12 +12,13 @@ type cnabAction func(string) error
 
 var (
 	cnabActions = map[string]cnabAction{
-		"install":                  installAction,
-		"upgrade":                  installAction, // upgrade is implemented as reinstall.
-		"uninstall":                uninstallAction,
-		internal.ActionStatusName:  statusAction,
-		internal.ActionInspectName: inspectAction,
-		internal.ActionRenderName:  renderAction,
+		"install":                           installAction,
+		"upgrade":                           installAction, // upgrade is implemented as reinstall.
+		"uninstall":                         uninstallAction,
+		internal.ActionStatusNameDeprecated: statusAction,
+		internal.ActionStatusName:           statusAction,
+		internal.ActionInspectName:          inspectAction,
+		internal.ActionRenderName:           renderAction,
 	}
 )
 
