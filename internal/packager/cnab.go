@@ -2,88 +2,109 @@ package packager
 
 import (
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/types"
+)
+
+const (
+	// CNABVersion1_0_0 is the CNAB Schema version 1.0.0
+	CNABVersion1_0_0 = "v1.0.0-WD"
 )
 
 // ToCNAB creates a CNAB bundle from an app package
 func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) {
 	mapping := ExtractCNABParameterMapping(app.Parameters())
 	flatParameters := app.Parameters().Flatten()
-	parameters := map[string]bundle.ParameterDefinition{
+	definitions := definition.Definitions{
 		internal.ParameterOrchestratorName: {
-			DataType: "string",
-			AllowedValues: []interface{}{
+			Type: "string",
+			Enum: []interface{}{
 				"",
 				"swarm",
 				"kubernetes",
 			},
-			Default: "",
-			Destination: &bundle.Location{
-				EnvironmentVariable: internal.DockerStackOrchestratorEnvVar,
-			},
-			Metadata: &bundle.ParameterMetadata{
-				Description: "Orchestrator on which to deploy",
-			},
-			ApplyTo: []string{
-				"install",
-				"upgrade",
-				"uninstall",
-				internal.ActionStatusName,
-			},
+			Default:     "",
+			Title:       "Orchestrator",
+			Description: "Orchestrator on which to deploy",
 		},
 		internal.ParameterKubernetesNamespaceName: {
-			DataType: "string",
-			Default:  "",
-			Destination: &bundle.Location{
-				EnvironmentVariable: internal.DockerKubernetesNamespaceEnvVar,
-			},
-			Metadata: &bundle.ParameterMetadata{
-				Description: "Namespace in which to deploy",
-			},
-			ApplyTo: []string{
-				"install",
-				"upgrade",
-				"uninstall",
-				internal.ActionStatusName,
-			},
+			Type:        "string",
+			Default:     "",
+			Title:       "Namespace",
+			Description: "Namespace in which to deploy",
 		},
 		internal.ParameterRenderFormatName: {
-			DataType: "string",
-			AllowedValues: []interface{}{
+			Type: "string",
+			Enum: []interface{}{
 				"yaml",
 				"json",
 			},
-			Default: "yaml",
-			Destination: &bundle.Location{
-				EnvironmentVariable: internal.DockerRenderFormatEnvVar,
-			},
-			Metadata: &bundle.ParameterMetadata{
-				Description: "Output format for the render command",
-			},
-			ApplyTo: []string{
-				internal.ActionRenderName,
-			},
+			Default:     "yaml",
+			Title:       "Render format",
+			Description: "Output format for the render command",
 		},
 		internal.ParameterShareRegistryCredsName: {
-			DataType: "bool",
-			Destination: &bundle.Location{
-				EnvironmentVariable: "DOCKER_SHARE_REGISTRY_CREDS",
+			Type:        "boolean",
+			Default:     false,
+			Title:       "Share registry credentials",
+			Description: "Share registry credentials with the invocation image",
+		},
+	}
+	parameters := bundle.ParametersDefinition{
+		Fields: map[string]bundle.ParameterDefinition{
+			internal.ParameterOrchestratorName: {
+				Destination: &bundle.Location{
+					EnvironmentVariable: internal.DockerStackOrchestratorEnvVar,
+				},
+				ApplyTo: []string{
+					"install",
+					"upgrade",
+					"uninstall",
+					internal.ActionStatusName,
+				},
+				Definition: internal.ParameterOrchestratorName,
 			},
-			Metadata: &bundle.ParameterMetadata{
-				Description: "Share registry credentials with the invocation image",
+			internal.ParameterKubernetesNamespaceName: {
+				Destination: &bundle.Location{
+					EnvironmentVariable: internal.DockerKubernetesNamespaceEnvVar,
+				},
+				ApplyTo: []string{
+					"install",
+					"upgrade",
+					"uninstall",
+					internal.ActionStatusName,
+				},
+				Definition: internal.ParameterKubernetesNamespaceName,
 			},
-			Default: false,
+			internal.ParameterRenderFormatName: {
+				Destination: &bundle.Location{
+					EnvironmentVariable: internal.DockerRenderFormatEnvVar,
+				},
+				ApplyTo: []string{
+					internal.ActionRenderName,
+				},
+				Definition: internal.ParameterRenderFormatName,
+			},
+			internal.ParameterShareRegistryCredsName: {
+				Destination: &bundle.Location{
+					EnvironmentVariable: "DOCKER_SHARE_REGISTRY_CREDS",
+				},
+				Definition: internal.ParameterShareRegistryCredsName,
+			},
 		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
-		parameters[name] = bundle.ParameterDefinition{
-			DataType: "string",
+		definitions[name] = &definition.Schema{
+			Type:    "string",
+			Default: flatParameters[name],
+		}
+		parameters.Fields[name] = bundle.ParameterDefinition{
 			Destination: &bundle.Location{
 				EnvironmentVariable: envVar,
 			},
-			Default: flatParameters[name],
+			Definition: name,
 		}
 	}
 	var maintainers []bundle.Maintainer
@@ -100,12 +121,17 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 	}
 
 	return &bundle.Bundle{
-		Credentials: map[string]bundle.Location{
+		SchemaVersion: CNABVersion1_0_0,
+		Credentials: map[string]bundle.Credential{
 			internal.CredentialDockerContextName: {
-				Path: internal.CredentialDockerContextPath,
+				Location: bundle.Location{
+					Path: internal.CredentialDockerContextPath,
+				},
 			},
 			internal.CredentialRegistryName: {
-				Path: internal.CredentialRegistryPath,
+				Location: bundle.Location{
+					Path: internal.CredentialRegistryPath,
+				},
 			},
 		},
 		Description: app.Metadata().Description,
@@ -120,7 +146,8 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Maintainers: maintainers,
 		Name:        app.Metadata().Name,
 		Version:     app.Metadata().Version,
-		Parameters:  parameters,
+		Parameters:  &parameters,
+		Definitions: definitions,
 		Actions: map[string]bundle.Action{
 			internal.ActionInspectName: {
 				Modifies:  false,

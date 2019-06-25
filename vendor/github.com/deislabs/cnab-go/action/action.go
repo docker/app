@@ -36,6 +36,11 @@ func selectInvocationImage(d driver.Driver, c *claim.Claim) (bundle.InvocationIm
 
 	for _, ii := range c.Bundle.InvocationImages {
 		if d.Handles(ii.ImageType) {
+			if c.RelocationMap != nil {
+				if img, ok := c.RelocationMap[ii.Image]; ok {
+					ii.Image = img
+				}
+			}
 			return ii, nil
 		}
 	}
@@ -71,30 +76,14 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 
 	// Quick verification that no params were passed that are not actual legit params.
 	for key := range c.Parameters {
-		if _, ok := c.Bundle.Parameters[key]; !ok {
+		if _, ok := c.Bundle.Parameters.Fields[key]; !ok {
 			return nil, fmt.Errorf("undefined parameter %q", key)
 		}
 	}
 
-	for k, param := range c.Bundle.Parameters {
-		rawval, ok := c.Parameters[k]
-		if !ok {
-			if param.Required && appliesToAction(action, param) {
-				return nil, fmt.Errorf("missing required parameter %q for action %q", k, action)
-			}
-			continue
-		}
-		value := fmt.Sprintf("%v", rawval)
-		if param.Destination == nil {
-			// env is a CNAB_P_
-			env[fmt.Sprintf("CNAB_P_%s", strings.ToUpper(k))] = value
-			continue
-		}
-		if param.Destination.Path != "" {
-			files[param.Destination.Path] = value
-		}
-		if param.Destination.EnvironmentVariable != "" {
-			env[param.Destination.EnvironmentVariable] = value
+	if c.Bundle.Parameters != nil {
+		if err := injectParameters(action, c, env, files); err != nil {
+			return nil, err
 		}
 	}
 
@@ -120,4 +109,34 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 		Files:        files,
 		Out:          w,
 	}, nil
+}
+
+func injectParameters(action string, c *claim.Claim, env, files map[string]string) error {
+	requiredMap := map[string]struct{}{}
+	for _, key := range c.Bundle.Parameters.Required {
+		requiredMap[key] = struct{}{}
+	}
+	for k, param := range c.Bundle.Parameters.Fields {
+		rawval, ok := c.Parameters[k]
+		if !ok {
+			_, required := requiredMap[k]
+			if required && appliesToAction(action, param) {
+				return fmt.Errorf("missing required parameter %q for action %q", k, action)
+			}
+			continue
+		}
+		value := fmt.Sprintf("%v", rawval)
+		if param.Destination == nil {
+			// env is a CNAB_P_
+			env[fmt.Sprintf("CNAB_P_%s", strings.ToUpper(k))] = value
+			continue
+		}
+		if param.Destination.Path != "" {
+			files[param.Destination.Path] = value
+		}
+		if param.Destination.EnvironmentVariable != "" {
+			env[param.Destination.EnvironmentVariable] = value
+		}
+	}
+	return nil
 }

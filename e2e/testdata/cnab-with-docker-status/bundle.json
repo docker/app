@@ -1,4 +1,5 @@
 {
+  "schemaVersion": "v1.0.0-WD",
   "name": "cnab-with-docker-status",
   "version": "0.1.0",
   "invocationImages": [

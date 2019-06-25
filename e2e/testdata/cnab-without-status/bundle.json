@@ -1,10 +1,11 @@
 {
+    "schemaVersion": "v1.0.0-WD",
     "name": "cnab-without-status",
     "version": "0.1.0",
     "invocationImages": [
         {
-        "imageType": "docker",
-        "image": "e2e/cnab-without-status:v0.1.0"
+            "imageType": "docker",
+            "image": "e2e/cnab-without-status:v0.1.0"
         }
     ]
 }

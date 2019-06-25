@@ -42,7 +42,7 @@ func (s Store) Store(claim Claim) error {
 func (s Store) Read(name string) (Claim, error) {
 	bytes, err := s.backingStore.Read(name)
 	if err != nil {
-		if err == crud.ErrFileDoesNotExist {
+		if err == crud.ErrRecordDoesNotExist {
 			return Claim{}, ErrClaimNotFound
 		}
 		return Claim{}, err

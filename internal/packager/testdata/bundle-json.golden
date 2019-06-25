@@ -1,4 +1,5 @@
 {
+  "schemaVersion": "v1.0.0-WD",
   "name": "packing",
   "version": "0.1.0",
   "description": "hello",
@@ -50,75 +51,51 @@
     "io.cnab.status": {}
   },
   "parameters": {
-    "com.docker.app.kubernetes-namespace": {
-      "type": "string",
-      "default": "",
-      "metadata": {
-        "description": "Namespace in which to deploy"
+    "fields": {
+      "com.docker.app.kubernetes-namespace": {
+        "definition": "com.docker.app.kubernetes-namespace",
+        "applyTo": [
+          "install",
+          "upgrade",
+          "uninstall",
+          "io.cnab.status"
+        ],
+        "destination": {
+          "env": "DOCKER_KUBERNETES_NAMESPACE"
+        }
       },
-      "destination": {
-        "env": "DOCKER_KUBERNETES_NAMESPACE"
+      "com.docker.app.orchestrator": {
+        "definition": "com.docker.app.orchestrator",
+        "applyTo": [
+          "install",
+          "upgrade",
+          "uninstall",
+          "io.cnab.status"
+        ],
+        "destination": {
+          "env": "DOCKER_STACK_ORCHESTRATOR"
+        }
       },
-      "apply-to": [
-        "install",
-        "upgrade",
-        "uninstall",
-        "io.cnab.status"
-      ]
-    },
-    "com.docker.app.orchestrator": {
-      "type": "string",
-      "default": "",
-      "allowedValues": [
-        "",
-        "swarm",
-        "kubernetes"
-      ],
-      "metadata": {
-        "description": "Orchestrator on which to deploy"
+      "com.docker.app.render-format": {
+        "definition": "com.docker.app.render-format",
+        "applyTo": [
+          "com.docker.app.render"
+        ],
+        "destination": {
+          "env": "DOCKER_RENDER_FORMAT"
+        }
       },
-      "destination": {
-        "env": "DOCKER_STACK_ORCHESTRATOR"
+      "com.docker.app.share-registry-creds": {
+        "definition": "com.docker.app.share-registry-creds",
+        "destination": {
+          "env": "DOCKER_SHARE_REGISTRY_CREDS"
+        }
       },
-      "apply-to": [
-        "install",
-        "upgrade",
-        "uninstall",
-        "io.cnab.status"
-      ]
-    },
-    "com.docker.app.render-format": {
-      "type": "string",
-      "default": "yaml",
-      "allowedValues": [
-        "yaml",
-        "json"
-      ],
-      "metadata": {
-        "description": "Output format for the render command"
-      },
-      "destination": {
-        "env": "DOCKER_RENDER_FORMAT"
-      },
-      "apply-to": [
-        "com.docker.app.render"
-      ]
-    },
-    "com.docker.app.share-registry-creds": {
-      "type": "bool",
-      "default": false,
-      "metadata": {
-        "description": "Share registry credentials with the invocation image"
-      },
-      "destination": {
-        "env": "DOCKER_SHARE_REGISTRY_CREDS"
-      }
-    },
-    "watcher.cmd": {
-      "type": "string",
-      "default": "foo",
-      "destination": {
-        "env": "docker_param1"
+      "watcher.cmd": {
+        "definition": "watcher.cmd",
+        "destination": {
+          "env": "docker_param1"
+        }
       }
     }
   },
@@ -128,6 +105,45 @@
     },
     "docker.context": {
       "path": "/cnab/app/context.dockercontext"
+    }
+  },
+  "definitions": {
+    "com.docker.app.kubernetes-namespace": {
+      "default": "",
+      "description": "Namespace in which to deploy",
+      "title": "Namespace",
+      "type": "string"
+    },
+    "com.docker.app.orchestrator": {
+      "default": "",
+      "description": "Orchestrator on which to deploy",
+      "enum": [
+        "",
+        "swarm",
+        "kubernetes"
+      ],
+      "title": "Orchestrator",
+      "type": "string"
+    },
+    "com.docker.app.render-format": {
+      "default": "yaml",
+      "description": "Output format for the render command",
+      "enum": [
+        "yaml",
+        "json"
+      ],
+      "title": "Render format",
+      "type": "string"
+    },
+    "com.docker.app.share-registry-creds": {
+      "default": false,
+      "description": "Share registry credentials with the invocation image",
+      "title": "Share registry credentials",
+      "type": "boolean"
+    },
+    "watcher.cmd": {
+      "default": "foo",
+      "type": "string"
     }
   }
 }

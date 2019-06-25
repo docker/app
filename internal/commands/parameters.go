@@ -2,8 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types/parameters"
@@ -38,7 +40,7 @@ func withCommandLineParameters(overrides []string) mergeBundleOpt {
 
 func withSendRegistryAuth(sendRegistryAuth bool) mergeBundleOpt {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
-		if _, ok := bndl.Parameters[internal.ParameterShareRegistryCredsName]; ok {
+		if _, ok := bndl.Definitions[internal.ParameterShareRegistryCredsName]; ok {
 			val := "false"
 			if sendRegistryAuth {
 				val = "true"
@@ -51,10 +53,10 @@ func withSendRegistryAuth(sendRegistryAuth bool) mergeBundleOpt {
 
 func withOrchestratorParameters(orchestrator string, kubeNamespace string) mergeBundleOpt {
 	return func(bndl *bundle.Bundle, params map[string]string) error {
-		if _, ok := bndl.Parameters[internal.ParameterOrchestratorName]; ok {
+		if _, ok := bndl.Definitions[internal.ParameterOrchestratorName]; ok {
 			params[internal.ParameterOrchestratorName] = orchestrator
 		}
-		if _, ok := bndl.Parameters[internal.ParameterKubernetesNamespaceName]; ok {
+		if _, ok := bndl.Definitions[internal.ParameterKubernetesNamespaceName]; ok {
 			params[internal.ParameterKubernetesNamespaceName] = kubeNamespace
 		}
 		return nil
@@ -72,7 +74,7 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 			return err
 		}
 	}
-	if err := matchAndMergeParametersDefinition(installation.Parameters, userParams, bndl.Parameters); err != nil {
+	if err := matchAndMergeParametersDefinition(installation.Parameters, userParams, bndl.Definitions); err != nil {
 		return err
 	}
 	var err error
@@ -80,7 +82,7 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 	return err
 }
 
-func matchAndMergeParametersDefinition(currentValues map[string]interface{}, parameterValues map[string]string, parameterDefinitions map[string]bundle.ParameterDefinition) error {
+func matchAndMergeParametersDefinition(currentValues map[string]interface{}, parameterValues map[string]string, parameterDefinitions definition.Definitions) error {
 	for k, v := range parameterValues {
 		definition, ok := parameterDefinitions[k]
 		if !ok {
@@ -90,7 +92,16 @@ func matchAndMergeParametersDefinition(currentValues map[string]interface{}, par
 		if err != nil {
 			return errors.Wrapf(err, "invalid value for parameter %q", k)
 		}
-		if err := definition.ValidateParameterValue(value); err != nil {
+		valErrors, err := definition.Validate(value)
+		if valErrors != nil {
+			errs := make([]string, len(valErrors))
+			for i, v := range valErrors {
+				errs[i] = v.Error
+			}
+			errMsg := strings.Join(errs, ", ")
+			return errors.Wrapf(fmt.Errorf(errMsg), "invalid value for parameter %q", k)
+		}
+		if err != nil {
 			return errors.Wrapf(err, "invalid value for parameter %q", k)
 		}
 		currentValues[k] = value

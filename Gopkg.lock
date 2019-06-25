@@ -21,6 +21,14 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
+  digest = "1:a26f8da48b22e6176c1c6a2459904bb30bd0c49ada04b2963c2c3a203e81a620"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
+  version = "v1.4.2"
+
+[[projects]]
   digest = "1:2be791e7b333ff7c06f8fb3dc18a7d70580e9399dbdffd352621d067ff260b6e"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
@@ -186,30 +194,33 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:375b61e3283d3cd8dee36926f91d3303f6e5313b0cc7d1ca7a4017e2922ec266"
+  branch = "fix-nil-pointer-default-value"
+  digest = "1:b9939908f92930027ee187965575375bc422a0812936c8a8f02e27edeeeeb45f"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "action",
     "bundle",
+    "bundle/definition",
     "claim",
     "credentials",
     "driver",
     "utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "83e9f9815137410102c256af79eee9d76e8ef320"
+  revision = "ce49f34a85c1f68435d3778e5ba32b09d58d2ddc"
+  source = "https://github.com/jcsirot/cnab-go.git"
 
 [[projects]]
-  branch = "master"
-  digest = "1:7eac2e7c49d46ea2627e05a77956becb31d544d8a7ae809dbbb4c46d2ff50ae2"
+  branch = "sync-cnab-go-dep"
+  digest = "1:719fa8aafc69a874805bde687d292fc9160f74385c235943d0b7f010e3c135d3"
   name = "github.com/deislabs/duffle"
   packages = [
     "pkg/driver",
     "pkg/loader",
   ]
   pruneopts = "NUT"
-  revision = "cd780230f68aa989edfdc2231470274696da89e9"
+  revision = "93f6720f5a5c6f59afe131da70c474522f176324"
+  source = "https://github.com/jcsirot/duffle.git"
 
 [[projects]]
   branch = "19.03"
@@ -272,14 +283,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:266d45292b063fa39002dd5c2fd77ec0a9f448f099fc261dcb91d04fd964335c"
+  digest = "1:40fb85b6cfffe0948cf921eb40ecdbc32ac67b64cacf37cd5239d3b2d7a43ef2"
   name = "github.com/docker/cnab-to-oci"
   packages = [
     "converter",
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "093790100fa9ecf0b5b5e56292d820a0e618da8b"
+  revision = "1b72bb4e4634f6ffc0f3508a7be761a13b8bfb3c"
 
 [[projects]]
   digest = "1:d29e07dc6fff1d592442bdf6b947f3a89d418ac6d65344d4e048c64a7cdd511c"
@@ -438,6 +449,20 @@
   ]
   pruneopts = "NUT"
   revision = "18e7e58ea1a5ec016625a636d0d52500eea123bc"
+
+[[projects]]
+  branch = "master"
+  digest = "1:6be8997d410d48dd045a8c18ee25e59ebfaeb9aa502c240b0d8ad9bb3e3fdd4f"
+  name = "github.com/globalsign/mgo"
+  packages = [
+    ".",
+    "bson",
+    "internal/json",
+    "internal/sasl",
+    "internal/scram",
+  ]
+  pruneopts = "NUT"
+  revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
 
 [[projects]]
   digest = "1:c6f5a29fce208cb102ad1e356d3a3a361be54604549063943613058a377dd0d0"
@@ -728,6 +753,22 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "ea9eea63887261e4d8ed8315f4078e88d540c725"
+
+[[projects]]
+  digest = "1:51365c3135ef6d52b4134bfa52005cb4f0cb7740a1ddc5ce46398a2ddf033eef"
+  name = "github.com/qri-io/jsonpointer"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "43be820608971e680b60469cfc7cc0e2e75fd4ef"
+  version = "v0.1.0"
+
+[[projects]]
+  digest = "1:7413856103afc3d0d748c26346ff4e82222cd57cc095e28d18194dfc50ac5582"
+  name = "github.com/qri-io/jsonschema"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "b244d4b99401d163bd9e382fd58698794259d091"
+  version = "v0.1.1"
 
 [[projects]]
   digest = "1:998e4640c25e00ccb7b2569bf94562283937b8afb3485c0e1a0a05a15330240d"
@@ -1239,6 +1280,7 @@
     "github.com/containerd/containerd/platforms",
     "github.com/deislabs/cnab-go/action",
     "github.com/deislabs/cnab-go/bundle",
+    "github.com/deislabs/cnab-go/bundle/definition",
     "github.com/deislabs/cnab-go/claim",
     "github.com/deislabs/cnab-go/credentials",
     "github.com/deislabs/cnab-go/driver",

@@ -35,14 +35,15 @@ const (
 // provide the necessary data to upgrade, uninstall, and downgrade
 // a CNAB package.
 type Claim struct {
-	Name       string                 `json:"name"`
-	Revision   string                 `json:"revision"`
-	Created    time.Time              `json:"created"`
-	Modified   time.Time              `json:"modified"`
-	Bundle     *bundle.Bundle         `json:"bundle"`
-	Result     Result                 `json:"result"`
-	Parameters map[string]interface{} `json:"parameters"`
-	Files      map[string]string      `json:"files"`
+	Name          string                    `json:"name"`
+	Revision      string                    `json:"revision"`
+	Created       time.Time                 `json:"created"`
+	Modified      time.Time                 `json:"modified"`
+	Bundle        *bundle.Bundle            `json:"bundle"`
+	Result        Result                    `json:"result"`
+	Parameters    map[string]interface{}    `json:"parameters"`
+	Files         map[string]string         `json:"files"`
+	RelocationMap bundle.ImageRelocationMap `json:"relocationMap"`
 }
 
 // ValidName is a regular expression that indicates whether a name is a valid claim name.
@@ -65,7 +66,8 @@ func New(name string) (*Claim, error) {
 			Action: ActionUnknown,
 			Status: StatusUnknown,
 		},
-		Parameters: map[string]interface{}{},
+		Parameters:    map[string]interface{}{},
+		RelocationMap: bundle.ImageRelocationMap{},
 	}, nil
 }
 
