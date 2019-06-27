@@ -194,8 +194,8 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "fix-nil-pointer-default-value"
-  digest = "1:b9939908f92930027ee187965575375bc422a0812936c8a8f02e27edeeeeb45f"
+  branch = "master"
+  digest = "1:0b31d075847995f6b74ab66aac4b64c588fdb0737aa3a2731b432f03cb7a1faa"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "action",
@@ -207,11 +207,9 @@
     "utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "ce49f34a85c1f68435d3778e5ba32b09d58d2ddc"
-  source = "https://github.com/jcsirot/cnab-go.git"
+  revision = "5ca85500e801be695748cf1f360f2254f425d19c"
 
 [[projects]]
-  branch = "sync-cnab-go-dep"
   digest = "1:719fa8aafc69a874805bde687d292fc9160f74385c235943d0b7f010e3c135d3"
   name = "github.com/deislabs/duffle"
   packages = [
@@ -219,8 +217,7 @@
     "pkg/loader",
   ]
   pruneopts = "NUT"
-  revision = "93f6720f5a5c6f59afe131da70c474522f176324"
-  source = "https://github.com/jcsirot/duffle.git"
+  revision = "5930527762a46c7adfcfccaec1e6a2ddf5841319"
 
 [[projects]]
   branch = "19.03"
@@ -283,14 +280,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:40fb85b6cfffe0948cf921eb40ecdbc32ac67b64cacf37cd5239d3b2d7a43ef2"
+  digest = "1:641cc37fc8e5a9ce8c904aba478ec4ca9bed9250cfdde6e10409784d88ca6e08"
   name = "github.com/docker/cnab-to-oci"
   packages = [
     "converter",
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "1b72bb4e4634f6ffc0f3508a7be761a13b8bfb3c"
+  revision = "9221877ea74af2cbb6d87730e3ef6cfa9bf38c8a"
 
 [[projects]]
   digest = "1:d29e07dc6fff1d592442bdf6b947f3a89d418ac6d65344d4e048c64a7cdd511c"

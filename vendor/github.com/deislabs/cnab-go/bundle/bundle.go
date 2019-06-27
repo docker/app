@@ -142,36 +142,38 @@ type Action struct {
 func ValuesOrDefaults(vals map[string]interface{}, b *Bundle) (map[string]interface{}, error) {
 	res := map[string]interface{}{}
 
-	if b.Parameters != nil {
-		requiredMap := map[string]struct{}{}
-		for _, key := range b.Parameters.Required {
-			requiredMap[key] = struct{}{}
-		}
+	if b.Parameters == nil {
+		return res, nil
+	}
 
-		for name, def := range b.Parameters.Fields {
-			s, ok := b.Definitions[def.Definition]
-			if !ok {
-				return res, fmt.Errorf("unable to find definition for %s", name)
-			}
-			if val, ok := vals[name]; ok {
-				valErrs, err := s.Validate(val)
-				if err != nil {
-					return res, pkgErrors.Wrapf(err, "encountered an error validating parameter %s", name)
-				}
-				// This interface returns a single error. Validation can have multiple errors. For now return the first
-				// We should update this later.
-				if len(valErrs) > 0 {
-					valErr := valErrs[0]
-					return res, fmt.Errorf("cannot use value: %v as parameter %s: %s ", val, name, valErr.Error)
-				}
-				typedVal := s.CoerceValue(val)
-				res[name] = typedVal
-				continue
-			} else if _, ok := requiredMap[name]; ok {
-				return res, fmt.Errorf("parameter %q is required", name)
-			}
-			res[name] = s.Default
+	requiredMap := map[string]struct{}{}
+	for _, key := range b.Parameters.Required {
+		requiredMap[key] = struct{}{}
+	}
+
+	for name, def := range b.Parameters.Fields {
+		s, ok := b.Definitions[def.Definition]
+		if !ok {
+			return res, fmt.Errorf("unable to find definition for %s", name)
 		}
+		if val, ok := vals[name]; ok {
+			valErrs, err := s.Validate(val)
+			if err != nil {
+				return res, pkgErrors.Wrapf(err, "encountered an error validating parameter %s", name)
+			}
+			// This interface returns a single error. Validation can have multiple errors. For now return the first
+			// We should update this later.
+			if len(valErrs) > 0 {
+				valErr := valErrs[0]
+				return res, fmt.Errorf("cannot use value: %v as parameter %s: %s ", val, name, valErr.Error)
+			}
+			typedVal := s.CoerceValue(val)
+			res[name] = typedVal
+			continue
+		} else if _, ok := requiredMap[name]; ok {
+			return res, fmt.Errorf("parameter %q is required", name)
+		}
+		res[name] = s.Default
 	}
 	return res, nil
 }

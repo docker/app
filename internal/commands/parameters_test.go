@@ -103,7 +103,7 @@ func withParameterAndValues(name, typ string, allowedValues []interface{}) bundl
 	}
 }
 
-func mockBundle(ops ...bundleOperator) *bundle.Bundle {
+func prepareBundle(ops ...bundleOperator) *bundle.Bundle {
 	b := &bundle.Bundle{}
 	for _, op := range ops {
 		op(b)
@@ -119,7 +119,7 @@ func TestWithOrchestratorParameters(t *testing.T) {
 	}{
 		{
 			name:   "Bundle with orchestrator params",
-			bundle: mockBundle(withParameter(internal.ParameterOrchestratorName, "string"), withParameter(internal.ParameterKubernetesNamespaceName, "string")),
+			bundle: prepareBundle(withParameter(internal.ParameterOrchestratorName, "string"), withParameter(internal.ParameterKubernetesNamespaceName, "string")),
 			expected: map[string]string{
 				internal.ParameterOrchestratorName:        "kubernetes",
 				internal.ParameterKubernetesNamespaceName: "my-namespace",
@@ -127,7 +127,7 @@ func TestWithOrchestratorParameters(t *testing.T) {
 		},
 		{
 			name:     "Bundle without orchestrator params",
-			bundle:   mockBundle(),
+			bundle:   prepareBundle(),
 			expected: map[string]string{},
 		},
 	}
@@ -152,7 +152,7 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "second"
 			return nil
 		}
-		bundle := mockBundle(withParameterAndDefault("param", "string", "default"))
+		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i,
 			first,
@@ -166,7 +166,7 @@ func TestMergeBundleParameters(t *testing.T) {
 	})
 
 	t.Run("Default values", func(t *testing.T) {
-		bundle := mockBundle(withParameterAndDefault("param", "string", "default"))
+		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i)
 		assert.NilError(t, err)
@@ -181,7 +181,7 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "1"
 			return nil
 		}
-		bundle := mockBundle(withParameter("param", "integer"))
+		bundle := prepareBundle(withParameter("param", "integer"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i, withIntValue)
 		assert.NilError(t, err)
@@ -192,7 +192,7 @@ func TestMergeBundleParameters(t *testing.T) {
 	})
 
 	t.Run("Default values", func(t *testing.T) {
-		bundle := mockBundle(withParameterAndDefault("param", "string", "default"))
+		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i)
 		assert.NilError(t, err)
@@ -207,7 +207,7 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "1"
 			return nil
 		}
-		bundle := mockBundle()
+		bundle := prepareBundle()
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i, withUndefined)
 		assert.ErrorContains(t, err, "is not defined in the bundle")
@@ -218,7 +218,7 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "foo"
 			return nil
 		}
-		bundle := mockBundle(withParameter("param", "integer"))
+		bundle := prepareBundle(withParameter("param", "integer"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i, withIntValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
@@ -229,7 +229,7 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "invalid"
 			return nil
 		}
-		bundle := mockBundle(withParameterAndValues("param", "string", []interface{}{"valid"}))
+		bundle := prepareBundle(withParameterAndValues("param", "string", []interface{}{"valid"}))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i, withInvalidValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")

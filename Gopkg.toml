@@ -42,13 +42,11 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/deislabs/duffle"
-  branch = "sync-cnab-go-dep"
-  source = "https://github.com/jcsirot/duffle.git"
+  revision = "5930527762a46c7adfcfccaec1e6a2ddf5841319"
 
 [[override]]
   name = "github.com/deislabs/cnab-go"
-  branch = "fix-nil-pointer-default-value"
-  source = "https://github.com/jcsirot/cnab-go.git"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
