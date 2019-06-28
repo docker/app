@@ -21,8 +21,21 @@ import (
 	"github.com/docker/docker/pkg/term"
 	"github.com/docker/docker/registry"
 	"github.com/morikuni/aec"
+	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+)
+
+const ( // Docker specific annotations and values
+	// DockerAppFormatAnnotation is the top level annotation specifying the kind of the App Bundle
+	DockerAppFormatAnnotation = "io.docker.app.format"
+	// DockerAppFormatCNAB is the DockerAppFormatAnnotation value for CNAB
+	DockerAppFormatCNAB = "cnab"
+
+	// DockerTypeAnnotation is the annotation that designates the type of the application
+	DockerTypeAnnotation = "io.docker.type"
+	// DockerTypeApp is the value used to fill DockerTypeAnnotation when targeting a docker-app
+	DockerTypeApp = "app"
 )
 
 type pushOptions struct {
@@ -114,11 +127,20 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
-	descriptor, err := remotes.Push(context.Background(), bndl, retag.cnabRef, resolverConfig.Resolver, true)
+	descriptor, err := remotes.Push(context.Background(), bndl, retag.cnabRef, resolverConfig.Resolver, true, withAppAnnotations)
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
 	}
 	fmt.Fprintf(os.Stdout, "Successfully pushed bundle to %s. Digest is %s.\n", retag.cnabRef.String(), descriptor.Digest)
+	return nil
+}
+
+func withAppAnnotations(index *ocischemav1.Index) error {
+	if index.Annotations == nil {
+		index.Annotations = make(map[string]string)
+	}
+	index.Annotations[DockerAppFormatAnnotation] = DockerAppFormatCNAB
+	index.Annotations[DockerTypeAnnotation] = DockerTypeApp
 	return nil
 }
 
