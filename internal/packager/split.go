@@ -45,9 +45,9 @@ func Merge(app *types.App, target io.Writer) error {
 	}
 	for _, data := range [][]byte{
 		app.MetadataRaw(),
-		[]byte(types.SingleFileSeparator),
+		types.YamlSingleFileSeparator(app.HasCRLF()),
 		app.Composes()[0],
-		[]byte(types.SingleFileSeparator),
+		types.YamlSingleFileSeparator(app.HasCRLF()),
 		app.ParametersRaw()[0],
 	} {
 		if _, err := target.Write(data); err != nil {

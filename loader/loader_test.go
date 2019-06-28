@@ -18,26 +18,44 @@ import (
 
 const (
 	metadata = `name: my-app
-version: 1.0.0`
-	yaml = `version: "3.1"
-
-services:
+version: 1.0.0
+`
+	compose = `services:
   web:
-    image: nginx`
-	parameters = `foo: bar`
+    image: nginx
+version: "3.1"
+`
+	params = `foo: bar
+`
 )
 
 func TestLoadFromSingleFile(t *testing.T) {
-	singlefile := fmt.Sprintf(`%s
----
-%s
----
-%s`, metadata, yaml, parameters)
-	app, err := LoadFromSingleFile("my-app", strings.NewReader(singlefile))
-	assert.NilError(t, err)
-	assert.Assert(t, app != nil)
-	assert.Assert(t, is.Equal(app.Path, "my-app"))
-	assertAppContent(t, app)
+	testCases := []struct {
+		name string
+		file string
+	}{
+		{
+			name: "line-feed",
+			file: fmt.Sprintf("%s\n---\n%s\n---\n%s", metadata, compose, params),
+		},
+		{
+			name: "carriage-return-line-feed",
+			file: fmt.Sprintf("%s\r\n---\r\n%s\r\n---\r\n%s", metadata, compose, params),
+		},
+		{
+			name: "unordered-documents",
+			file: fmt.Sprintf("%s\n---\n%s\n---\n%s", params, metadata, compose),
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			app, err := LoadFromSingleFile("my-app", strings.NewReader(test.file))
+			assert.NilError(t, err)
+			assert.Assert(t, app != nil)
+			assert.Assert(t, is.Equal(app.Path, "my-app"))
+			assertAppContent(t, app)
+		})
+	}
 }
 
 func TestLoadFromSingleFileInvalidReader(t *testing.T) {
@@ -46,17 +64,17 @@ func TestLoadFromSingleFileInvalidReader(t *testing.T) {
 }
 
 func TestLoadFromSingleFileMalformed(t *testing.T) {
-	_, err := LoadFromSingleFile("my-app", strings.NewReader(`foo
+	_, err := LoadFromSingleFile("my-app", strings.NewReader(`foo: foo
 ---
-bar`))
+bar: bar`))
 	assert.ErrorContains(t, err, "malformed single-file application")
 }
 
 func TestLoadFromDirectory(t *testing.T) {
 	dir := fs.NewDir(t, "my-app",
 		fs.WithFile(internal.MetadataFileName, metadata),
-		fs.WithFile(internal.ParametersFileName, parameters),
-		fs.WithFile(internal.ComposeFileName, yaml),
+		fs.WithFile(internal.ParametersFileName, params),
+		fs.WithFile(internal.ComposeFileName, compose),
 	)
 	defer dir.Remove()
 	app, err := LoadFromDirectory(dir.Path())
@@ -69,8 +87,8 @@ func TestLoadFromDirectory(t *testing.T) {
 func TestLoadFromDirectoryDeprecatedSettings(t *testing.T) {
 	dir := fs.NewDir(t, "my-app",
 		fs.WithFile(internal.MetadataFileName, metadata),
-		fs.WithFile(internal.DeprecatedSettingsFileName, parameters),
-		fs.WithFile(internal.ComposeFileName, yaml),
+		fs.WithFile(internal.DeprecatedSettingsFileName, params),
+		fs.WithFile(internal.ComposeFileName, compose),
 	)
 	defer dir.Remove()
 	app, err := LoadFromDirectory(dir.Path())
@@ -97,8 +115,8 @@ func createAppTar(t *testing.T) *fs.File {
 	t.Helper()
 	dir := fs.NewDir(t, "my-app",
 		fs.WithFile(internal.MetadataFileName, metadata),
-		fs.WithFile(internal.ParametersFileName, parameters),
-		fs.WithFile(internal.ComposeFileName, yaml),
+		fs.WithFile(internal.ParametersFileName, params),
+		fs.WithFile(internal.ComposeFileName, compose),
 	)
 	defer dir.Remove()
 	r, err := archive.TarWithOptions(dir.Path(), &archive.TarOptions{
@@ -117,9 +135,9 @@ func assertContentIs(t *testing.T, actual []byte, expected string) {
 
 func assertAppContent(t *testing.T, app *types.App) {
 	assert.Assert(t, is.Len(app.ParametersRaw(), 1))
-	assertContentIs(t, app.ParametersRaw()[0], parameters)
+	assertContentIs(t, app.ParametersRaw()[0], params)
 	assert.Assert(t, is.Len(app.Composes(), 1))
-	assertContentIs(t, app.Composes()[0], yaml)
+	assertContentIs(t, app.Composes()[0], compose)
 	assertContentIs(t, app.MetadataRaw(), metadata)
 }
 

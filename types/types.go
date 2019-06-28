@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -12,9 +13,6 @@ import (
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/app/types/parameters"
 )
-
-// SingleFileSeparator is the separator used in single-file app
-const SingleFileSeparator = "\n---\n"
 
 // AppSourceKind represents what format the app was in when read
 type AppSourceKind int
@@ -29,6 +27,14 @@ const (
 	// AppSourceArchive represents an Application in an archive format
 	AppSourceArchive
 )
+
+// YamlSingleFileSeparator returns the separator used in single-file app, depending detected CRLF
+func YamlSingleFileSeparator(hasCRLF bool) []byte {
+	if hasCRLF {
+		return []byte("\r\n---\r\n")
+	}
+	return []byte("\n---\n")
+}
 
 // ShouldRunInsideDirectory returns whether the package is run from a directory on disk
 func (a AppSourceKind) ShouldRunInsideDirectory() bool {
@@ -48,6 +54,7 @@ type App struct {
 	metadataContent   []byte
 	metadata          metadata.AppMetadata
 	attachments       []Attachment
+	hasCRLF           bool
 }
 
 // Attachment is a summary of an attachment (attached file) stored in the app definition
@@ -94,6 +101,10 @@ func (a *App) Metadata() metadata.AppMetadata {
 // Attachments returns the external files list
 func (a *App) Attachments() []Attachment {
 	return a.attachments
+}
+
+func (a *App) HasCRLF() bool {
+	return a.hasCRLF
 }
 
 // Extract writes the app in the specified folder
@@ -173,6 +184,13 @@ func WithCleanup(f func()) func(*App) error {
 func WithSource(source AppSourceKind) func(*App) error {
 	return func(app *App) error {
 		app.Source = source
+		return nil
+	}
+}
+
+func WithCRLF(hasCRLF bool) func(*App) error {
+	return func(app *App) error {
+		app.hasCRLF = hasCRLF
 		return nil
 	}
 }
@@ -258,6 +276,7 @@ func metadataLoader(f func() ([]byte, error)) func(app *App) error {
 		}
 		app.metadata = loaded
 		app.metadataContent = d
+		app.hasCRLF = bytes.Contains(d, []byte{'\r', '\n'})
 		return nil
 	}
 }

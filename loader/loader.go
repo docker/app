@@ -1,11 +1,16 @@
 package loader
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
+
+	"github.com/docker/cli/cli/compose/loader"
+
+	"github.com/docker/app/specification"
+	"github.com/docker/cli/cli/compose/schema"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types"
@@ -19,20 +24,38 @@ func LoadFromSingleFile(path string, r io.Reader, ops ...func(*types.App) error)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading single-file")
 	}
-	parts := strings.Split(string(data), types.SingleFileSeparator)
+	hasCRLF := bytes.Contains(data, []byte{'\r', '\n'})
+
+	parts := bytes.Split(data, types.YamlSingleFileSeparator(hasCRLF))
 	if len(parts) != 3 {
 		return nil, errors.Errorf("malformed single-file application: expected 3 documents, got %d", len(parts))
 	}
-	// 0. is metadata
-	metadata := strings.NewReader(parts[0])
-	// 1. is compose
-	compose := strings.NewReader(parts[1])
-	// 2. is parameters
-	parameters := strings.NewReader(parts[2])
+
+	var (
+		metadata io.Reader
+		compose  io.Reader
+		params   io.Reader
+	)
+	for i := 0; i < 3; i++ {
+		parsed, err := loader.ParseYAML(parts[i])
+		if err != nil {
+			return nil, err
+		}
+		if err := specification.Validate(parsed, internal.MetadataVersion); metadata == nil && err == nil {
+			metadata = bytes.NewBuffer(parts[i])
+		} else if err2 := schema.Validate(parsed, schema.Version(parsed)); compose == nil && err2 == nil {
+			compose = bytes.NewBuffer(parts[i])
+		} else if params == nil {
+			params = bytes.NewBuffer(parts[i])
+		} else {
+			return nil, errors.New("malformed single-file application")
+		}
+	}
 	appOps := append([]func(*types.App) error{
 		types.WithComposes(compose),
-		types.WithParameters(parameters),
+		types.WithParameters(params),
 		types.Metadata(metadata),
+		types.WithCRLF(hasCRLF),
 	}, ops...)
 	return types.NewApp(path, appOps...)
 }
