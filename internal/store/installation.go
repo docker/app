@@ -55,7 +55,7 @@ func (i installationStore) Store(installation *Installation) error {
 func (i installationStore) Read(installationName string) (*Installation, error) {
 	data, err := i.store.Read(installationName)
 	if err != nil {
-		if err == crud.ErrFileDoesNotExist {
+		if err == crud.ErrRecordDoesNotExist {
 			return nil, fmt.Errorf("Installation %q not found", installationName)
 
 		}

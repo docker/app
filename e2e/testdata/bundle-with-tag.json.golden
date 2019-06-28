@@ -1,4 +1,5 @@
 {
+	"schemaVersion": "v1.0.0-WD",
 	"name": "simple",
 	"version": "1.1.0-beta1",
 	"description": "new fancy webapp with microservices",
@@ -45,89 +46,63 @@
 		"io.cnab.status": {}
 	},
 	"parameters": {
-		"api_host": {
-			"type": "string",
-			"default": "example.com",
-			"destination": {
-				"env": "docker_param1"
-			}
-		},
-		"com.docker.app.kubernetes-namespace": {
-			"type": "string",
-			"default": "",
-			"metadata": {
-				"description": "Namespace in which to deploy"
+		"fields": {
+			"api_host": {
+				"definition": "api_host",
+				"destination": {
+					"env": "docker_param1"
+				}
 			},
-			"destination": {
-				"env": "DOCKER_KUBERNETES_NAMESPACE"
+			"com.docker.app.kubernetes-namespace": {
+				"definition": "com.docker.app.kubernetes-namespace",
+				"applyTo": [
+					"install",
+					"upgrade",
+					"uninstall",
+					"io.cnab.status"
+				],
+				"destination": {
+					"env": "DOCKER_KUBERNETES_NAMESPACE"
+				}
 			},
-			"apply-to": [
-				"install",
-				"upgrade",
-				"uninstall",
-				"io.cnab.status"
-			]
-		},
-		"com.docker.app.orchestrator": {
-			"type": "string",
-			"default": "",
-			"allowedValues": [
-				"",
-				"swarm",
-				"kubernetes"
-			],
-			"metadata": {
-				"description": "Orchestrator on which to deploy"
+			"com.docker.app.orchestrator": {
+				"definition": "com.docker.app.orchestrator",
+				"applyTo": [
+					"install",
+					"upgrade",
+					"uninstall",
+					"io.cnab.status"
+				],
+				"destination": {
+					"env": "DOCKER_STACK_ORCHESTRATOR"
+				}
 			},
-			"destination": {
-				"env": "DOCKER_STACK_ORCHESTRATOR"
+			"com.docker.app.render-format": {
+				"definition": "com.docker.app.render-format",
+				"applyTo": [
+					"com.docker.app.render"
+				],
+				"destination": {
+					"env": "DOCKER_RENDER_FORMAT"
+				}
 			},
-			"apply-to": [
-				"install",
-				"upgrade",
-				"uninstall",
-				"io.cnab.status"
-			]
-		},
-		"com.docker.app.render-format": {
-			"type": "string",
-			"default": "yaml",
-			"allowedValues": [
-				"yaml",
-				"json"
-			],
-			"metadata": {
-				"description": "Output format for the render command"
+			"com.docker.app.share-registry-creds": {
+				"definition": "com.docker.app.share-registry-creds",
+				"destination": {
+					"env": "DOCKER_SHARE_REGISTRY_CREDS"
+				}
 			},
-			"destination": {
-				"env": "DOCKER_RENDER_FORMAT"
+			"static_subdir": {
+				"definition": "static_subdir",
+				"destination": {
+					"env": "docker_param2"
+				}
 			},
-			"apply-to": [
-				"com.docker.app.render"
-			]
-		},
-		"com.docker.app.share-registry-creds": {
-			"type": "bool",
-			"default": false,
-			"metadata": {
-				"description": "Share registry credentials with the invocation image"
-			},
-			"destination": {
-				"env": "DOCKER_SHARE_REGISTRY_CREDS"
-			}
-		},
-		"static_subdir": {
-			"type": "string",
-			"default": "data/static",
-			"destination": {
-				"env": "docker_param2"
-			}
-		},
-		"web_port": {
-			"type": "string",
-			"default": "8082",
-			"destination": {
-				"env": "docker_param3"
+			"web_port": {
+				"definition": "web_port",
+				"destination": {
+					"env": "docker_param3"
+				}
 			}
 		}
 	},
@@ -137,6 +112,53 @@
 		},
 		"docker.context": {
 			"path": "/cnab/app/context.dockercontext"
+		}
+	},
+	"definitions": {
+		"api_host": {
+			"default": "example.com",
+			"type": "string"
+		},
+		"com.docker.app.kubernetes-namespace": {
+			"default": "",
+			"description": "Namespace in which to deploy",
+			"title": "Namespace",
+			"type": "string"
+		},
+		"com.docker.app.orchestrator": {
+			"default": "",
+			"description": "Orchestrator on which to deploy",
+			"enum": [
+				"",
+				"swarm",
+				"kubernetes"
+			],
+			"title": "Orchestrator",
+			"type": "string"
+		},
+		"com.docker.app.render-format": {
+			"default": "yaml",
+			"description": "Output format for the render command",
+			"enum": [
+				"yaml",
+				"json"
+			],
+			"title": "Render format",
+			"type": "string"
+		},
+		"com.docker.app.share-registry-creds": {
+			"default": false,
+			"description": "Share registry credentials with the invocation image",
+			"title": "Share registry credentials",
+			"type": "boolean"
+		},
+		"static_subdir": {
+			"default": "data/static",
+			"type": "string"
+		},
+		"web_port": {
+			"default": "8082",
+			"type": "string"
 		}
 	}
 }

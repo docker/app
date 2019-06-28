@@ -215,7 +215,7 @@ func TestShareRegistryCreds(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			creds, err := prepareCredentialSet(
 				&bundle.Bundle{
-					Credentials: map[string]bundle.Location{internal.CredentialRegistryName: {}},
+					Credentials: map[string]bundle.Credential{internal.CredentialRegistryName: {}},
 					Images:      c.images,
 				},
 				addNamedCredentialSets(nil, nil),

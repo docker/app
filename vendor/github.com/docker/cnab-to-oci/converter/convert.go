@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/containerd/containerd/images"
 	"github.com/deislabs/cnab-go/bundle"
@@ -21,24 +22,9 @@ const ( // General values
 	OCIIndexSchemaVersion = 2
 )
 
-// Type aliases to clarify to which annotation the values belong
-type dockerAppFormatValue = string
-
-type dockerTypeValue = string
-
 type cnabDescriptorTypeValue = string
 
 const ( // Top Level annotations and values
-	// DockerAppFormatAnnotation is the top level annotation specifying the kind of the App Bundle
-	DockerAppFormatAnnotation = "io.docker.app.format"
-	// DockerAppFormatCNAB is the DockerAppFormatAnnotation value for CNAB
-	DockerAppFormatCNAB dockerAppFormatValue = "cnab"
-
-	// DockerTypeAnnotation is the annotation that designates the type of the application
-	DockerTypeAnnotation = "io.docker.type"
-	// DockerTypeApp is the value used to fill DockerTypeAnnotation when targeting a docker-app
-	DockerTypeApp dockerTypeValue = "app"
-
 	// CNABRuntimeVersionAnnotation is the top level annotation specifying the CNAB runtime version
 	CNABRuntimeVersionAnnotation = "io.cnab.runtime_version"
 	// CNABKeywordsAnnotation is the top level annotation specifying a list of keywords
@@ -61,9 +47,6 @@ const ( // Descriptor level annotations and values
 
 	// CNABDescriptorComponentNameAnnotation is a decriptor-level annotation specifying the component name
 	CNABDescriptorComponentNameAnnotation = "io.cnab.component.name"
-
-	// CNABDescriptorOriginalNameAnnotation is a decriptor-level annotation specifying the original image name
-	CNABDescriptorOriginalNameAnnotation = "io.cnab.component.original_name"
 )
 
 // GetBundleConfigManifestDescriptor returns the CNAB runtime config manifest descriptor from a OCI index
@@ -99,10 +82,12 @@ func ConvertBundleToOCIIndex(b *bundle.Bundle, targetRef reference.Named, bundle
 // ConvertOCIIndexToBundle converts an OCI index to a CNAB bundle representation
 func ConvertOCIIndexToBundle(ix *ocischemav1.Index, config *BundleConfig, originRepo reference.Named) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
-		Actions:     config.Actions,
-		Credentials: config.Credentials,
-		Parameters:  config.Parameters,
-		Custom:      config.Custom,
+		SchemaVersion: CNABVersion,
+		Actions:       config.Actions,
+		Credentials:   config.Credentials,
+		Definitions:   config.Definitions,
+		Parameters:    config.Parameters,
+		Custom:        config.Custom,
 	}
 	if err := parseTopLevelAnnotations(ix.Annotations, b); err != nil {
 		return nil, err
@@ -115,12 +100,10 @@ func ConvertOCIIndexToBundle(ix *ocischemav1.Index, config *BundleConfig, origin
 
 func makeAnnotations(b *bundle.Bundle) (map[string]string, error) {
 	result := map[string]string{
-		DockerAppFormatAnnotation:         DockerAppFormatCNAB,
-		CNABRuntimeVersionAnnotation:      CNABVersion,
+		CNABRuntimeVersionAnnotation:      b.SchemaVersion,
 		ocischemav1.AnnotationTitle:       b.Name,
 		ocischemav1.AnnotationVersion:     b.Version,
 		ocischemav1.AnnotationDescription: b.Description,
-		DockerTypeAnnotation:              DockerTypeApp,
 		ArtifactTypeAnnotation:            ArtifactTypeValue,
 	}
 	if b.Maintainers != nil {
@@ -179,7 +162,9 @@ func makeManifests(b *bundle.Bundle, targetReference reference.Named, bundleConf
 		CNABDescriptorTypeAnnotation: CNABDescriptorTypeInvocation,
 	}
 	manifests = append(manifests, invocationImage)
-	for name, img := range b.Images {
+	images := makeSortedImages(b.Images)
+	for _, name := range images {
+		img := b.Images[name]
 		image, err := makeDescriptor(img.BaseImage, targetReference)
 		if err != nil {
 			return nil, fmt.Errorf("invalid image: %s", err)
@@ -187,11 +172,19 @@ func makeManifests(b *bundle.Bundle, targetReference reference.Named, bundleConf
 		image.Annotations = map[string]string{
 			CNABDescriptorTypeAnnotation:          CNABDescriptorTypeComponent,
 			CNABDescriptorComponentNameAnnotation: name,
-			CNABDescriptorOriginalNameAnnotation:  img.Description,
 		}
 		manifests = append(manifests, image)
 	}
 	return manifests, nil
+}
+
+func makeSortedImages(images map[string]bundle.Image) []string {
+	var result []string
+	for k := range images {
+		result = append(result, k)
+	}
+	sort.Strings(result)
+	return result
 }
 
 func parseManifests(descriptors []ocischemav1.Descriptor, into *bundle.Bundle, originRepo reference.Named) error {
@@ -239,12 +232,10 @@ func parseManifests(descriptors []ocischemav1.Descriptor, into *bundle.Bundle, o
 			if !ok {
 				return fmt.Errorf("component name missing in descriptor %q", d.Digest)
 			}
-			originalName := d.Annotations[CNABDescriptorOriginalNameAnnotation]
 			if into.Images == nil {
 				into.Images = make(map[string]bundle.Image)
 			}
 			into.Images[componentName] = bundle.Image{
-				Description: originalName,
 				BaseImage: bundle.BaseImage{
 					Image:     refFamiliar,
 					ImageType: imageType,

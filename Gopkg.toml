@@ -42,6 +42,10 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/deislabs/duffle"
+  revision = "5930527762a46c7adfcfccaec1e6a2ddf5841319"
+
+[[override]]
+  name = "github.com/deislabs/cnab-go"
   branch = "master"
 
 [[constraint]]

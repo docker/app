@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/store"
@@ -51,38 +52,90 @@ func TestWithCommandLineParameters(t *testing.T) {
 	assert.Assert(t, cmp.DeepEqual(actual, expected))
 }
 
+type bundleOperator func(*bundle.Bundle)
+
+func prepareBundleWithParameters(b *bundle.Bundle) {
+	if b.Parameters != nil && len(b.Parameters.Fields) > 0 {
+		return
+	}
+	b.Parameters = &bundle.ParametersDefinition{
+		Fields:   map[string]bundle.ParameterDefinition{},
+		Required: []string{},
+	}
+	b.Definitions = definition.Definitions{}
+}
+
+func withParameter(name, typ string) bundleOperator {
+	return func(b *bundle.Bundle) {
+		prepareBundleWithParameters(b)
+		b.Parameters.Fields[name] = bundle.ParameterDefinition{
+			Definition: name,
+		}
+		b.Definitions[name] = &definition.Schema{
+			Type: typ,
+		}
+	}
+}
+
+func withParameterAndDefault(name, typ string, def interface{}) bundleOperator {
+	return func(b *bundle.Bundle) {
+		prepareBundleWithParameters(b)
+		b.Parameters.Fields[name] = bundle.ParameterDefinition{
+			Definition: name,
+		}
+		b.Definitions[name] = &definition.Schema{
+			Type:    typ,
+			Default: def,
+		}
+	}
+}
+
+func withParameterAndValues(name, typ string, allowedValues []interface{}) bundleOperator {
+	return func(b *bundle.Bundle) {
+		prepareBundleWithParameters(b)
+		b.Parameters.Fields[name] = bundle.ParameterDefinition{
+			Definition: name,
+		}
+		b.Definitions[name] = &definition.Schema{
+			Type: typ,
+			Enum: allowedValues,
+		}
+	}
+}
+
+func prepareBundle(ops ...bundleOperator) *bundle.Bundle {
+	b := &bundle.Bundle{}
+	for _, op := range ops {
+		op(b)
+	}
+	return b
+}
+
 func TestWithOrchestratorParameters(t *testing.T) {
 	testCases := []struct {
-		name       string
-		parameters map[string]bundle.ParameterDefinition
-		expected   map[string]string
+		name     string
+		bundle   *bundle.Bundle
+		expected map[string]string
 	}{
 		{
-			name: "Bundle with orchestrator params",
-			parameters: map[string]bundle.ParameterDefinition{
-				internal.ParameterOrchestratorName:        {},
-				internal.ParameterKubernetesNamespaceName: {},
-			},
+			name:   "Bundle with orchestrator params",
+			bundle: prepareBundle(withParameter(internal.ParameterOrchestratorName, "string"), withParameter(internal.ParameterKubernetesNamespaceName, "string")),
 			expected: map[string]string{
 				internal.ParameterOrchestratorName:        "kubernetes",
 				internal.ParameterKubernetesNamespaceName: "my-namespace",
 			},
 		},
 		{
-			name:       "Bundle without orchestrator params",
-			parameters: map[string]bundle.ParameterDefinition{},
-			expected:   map[string]string{},
+			name:     "Bundle without orchestrator params",
+			bundle:   prepareBundle(),
+			expected: map[string]string{},
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-
-			bundle := &bundle.Bundle{
-				Parameters: testCase.parameters,
-			}
 			actual := map[string]string{}
-			err := withOrchestratorParameters("kubernetes", "my-namespace")(bundle, actual)
+			err := withOrchestratorParameters("kubernetes", "my-namespace")(testCase.bundle, actual)
 			assert.NilError(t, err)
 			assert.Assert(t, cmp.DeepEqual(actual, testCase.expected))
 		})
@@ -99,14 +152,7 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "second"
 			return nil
 		}
-		bundle := &bundle.Bundle{
-			Parameters: map[string]bundle.ParameterDefinition{
-				"param": {
-					Default:  "default",
-					DataType: "string",
-				},
-			},
-		}
+		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i,
 			first,
@@ -120,14 +166,7 @@ func TestMergeBundleParameters(t *testing.T) {
 	})
 
 	t.Run("Default values", func(t *testing.T) {
-		bundle := &bundle.Bundle{
-			Parameters: map[string]bundle.ParameterDefinition{
-				"param": {
-					Default:  "default",
-					DataType: "string",
-				},
-			},
-		}
+		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i)
 		assert.NilError(t, err)
@@ -142,14 +181,7 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "1"
 			return nil
 		}
-
-		bundle := &bundle.Bundle{
-			Parameters: map[string]bundle.ParameterDefinition{
-				"param": {
-					DataType: "int",
-				},
-			},
-		}
+		bundle := prepareBundle(withParameter("param", "integer"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i, withIntValue)
 		assert.NilError(t, err)
@@ -160,14 +192,7 @@ func TestMergeBundleParameters(t *testing.T) {
 	})
 
 	t.Run("Default values", func(t *testing.T) {
-		bundle := &bundle.Bundle{
-			Parameters: map[string]bundle.ParameterDefinition{
-				"param": {
-					Default:  "default",
-					DataType: "string",
-				},
-			},
-		}
+		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i)
 		assert.NilError(t, err)
@@ -182,9 +207,7 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "1"
 			return nil
 		}
-		bundle := &bundle.Bundle{
-			Parameters: map[string]bundle.ParameterDefinition{},
-		}
+		bundle := prepareBundle()
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i, withUndefined)
 		assert.ErrorContains(t, err, "is not defined in the bundle")
@@ -195,33 +218,20 @@ func TestMergeBundleParameters(t *testing.T) {
 			params["param"] = "foo"
 			return nil
 		}
-		bundle := &bundle.Bundle{
-			Parameters: map[string]bundle.ParameterDefinition{
-				"param": {
-					DataType: "int",
-				},
-			},
-		}
+		bundle := prepareBundle(withParameter("param", "integer"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i, withIntValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})
 
 	t.Run("Invalid value is rejected", func(t *testing.T) {
-		withIntValue := func(b *bundle.Bundle, params map[string]string) error {
+		withInvalidValue := func(b *bundle.Bundle, params map[string]string) error {
 			params["param"] = "invalid"
 			return nil
 		}
-		bundle := &bundle.Bundle{
-			Parameters: map[string]bundle.ParameterDefinition{
-				"param": {
-					DataType:      "string",
-					AllowedValues: []interface{}{"valid"},
-				},
-			},
-		}
+		bundle := prepareBundle(withParameterAndValues("param", "string", []interface{}{"valid"}))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i, withIntValue)
+		err := mergeBundleParameters(i, withInvalidValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})
 }

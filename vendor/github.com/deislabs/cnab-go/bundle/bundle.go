@@ -8,21 +8,27 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Masterminds/semver"
+	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/docker/go/canonical/json"
+	pkgErrors "github.com/pkg/errors"
 )
 
 // Bundle is a CNAB metadata document
 type Bundle struct {
-	Name             string                         `json:"name" mapstructure:"name"`
-	Version          string                         `json:"version" mapstructure:"version"`
-	Description      string                         `json:"description" mapstructure:"description"`
-	Keywords         []string                       `json:"keywords,omitempty" mapstructure:"keywords"`
-	Maintainers      []Maintainer                   `json:"maintainers,omitempty" mapstructure:"maintainers"`
-	InvocationImages []InvocationImage              `json:"invocationImages" mapstructure:"invocationImages"`
-	Images           map[string]Image               `json:"images" mapstructure:"images"`
-	Actions          map[string]Action              `json:"actions,omitempty" mapstructure:"actions"`
-	Parameters       map[string]ParameterDefinition `json:"parameters" mapstructure:"parameters"`
-	Credentials      map[string]Location            `json:"credentials" mapstructure:"credentials"`
+	SchemaVersion    string                 `json:"schemaVersion" mapstructure:"schemaVersion"`
+	Name             string                 `json:"name" mapstructure:"name"`
+	Version          string                 `json:"version" mapstructure:"version"`
+	Description      string                 `json:"description" mapstructure:"description"`
+	Keywords         []string               `json:"keywords,omitempty" mapstructure:"keywords"`
+	Maintainers      []Maintainer           `json:"maintainers,omitempty" mapstructure:"maintainers"`
+	InvocationImages []InvocationImage      `json:"invocationImages" mapstructure:"invocationImages"`
+	Images           map[string]Image       `json:"images,omitempty" mapstructure:"images"`
+	Actions          map[string]Action      `json:"actions,omitempty" mapstructure:"actions"`
+	Parameters       *ParametersDefinition  `json:"parameters,omitempty" mapstructure:"parameters"`
+	Credentials      map[string]Credential  `json:"credentials,omitempty" mapstructure:"credentials"`
+	Outputs          *OutputsDefinition     `json:"outputs,omitempty" mapstructure:"outputs"`
+	Definitions      definition.Definitions `json:"definitions,omitempty" mapstructure:"definitions"`
 
 	// Custom extension metadata is a named collection of auxiliary data whose
 	// meaning is defined outside of the CNAB specification.
@@ -71,13 +77,12 @@ type LocationRef struct {
 
 // BaseImage contains fields shared across image types
 type BaseImage struct {
-	ImageType     string         `json:"imageType" mapstructure:"imageType"`
-	Image         string         `json:"image" mapstructure:"image"`
-	OriginalImage string         `json:"originalImage,omitempty" mapstructure:"originalImage"`
-	Digest        string         `json:"digest,omitempty" mapstructure:"digest"`
-	Size          uint64         `json:"size,omitempty" mapstructure:"size"`
-	Platform      *ImagePlatform `json:"platform,omitempty" mapstructure:"platform"`
-	MediaType     string         `json:"mediaType,omitempty" mapstructure:"mediaType"`
+	ImageType string         `json:"imageType" mapstructure:"imageType"`
+	Image     string         `json:"image" mapstructure:"image"`
+	Digest    string         `json:"digest,omitempty" mapstructure:"digest"`
+	Size      uint64         `json:"size,omitempty" mapstructure:"size"`
+	Platform  *ImagePlatform `json:"platform,omitempty" mapstructure:"platform"`
+	MediaType string         `json:"mediaType,omitempty" mapstructure:"mediaType"`
 }
 
 // ImagePlatform indicates what type of platform an image is built for
@@ -96,6 +101,11 @@ type Image struct {
 type InvocationImage struct {
 	BaseImage `mapstructure:",squash"`
 }
+
+// Map that stores the relocated images
+// The key is the Image in bundle.json and the value is the new Image
+// from the relocated registry
+type ImageRelocationMap map[string]string
 
 // Location provides the location where a value should be written in
 // the invocation image.
@@ -131,24 +141,50 @@ type Action struct {
 // ValuesOrDefaults returns parameter values or the default parameter values
 func ValuesOrDefaults(vals map[string]interface{}, b *Bundle) (map[string]interface{}, error) {
 	res := map[string]interface{}{}
-	for name, def := range b.Parameters {
+
+	if b.Parameters == nil {
+		return res, nil
+	}
+
+	requiredMap := map[string]struct{}{}
+	for _, key := range b.Parameters.Required {
+		requiredMap[key] = struct{}{}
+	}
+
+	for name, def := range b.Parameters.Fields {
+		s, ok := b.Definitions[def.Definition]
+		if !ok {
+			return res, fmt.Errorf("unable to find definition for %s", name)
+		}
 		if val, ok := vals[name]; ok {
-			if err := def.ValidateParameterValue(val); err != nil {
-				return res, fmt.Errorf("can't use %v as value of %s: %s", val, name, err)
+			valErrs, err := s.Validate(val)
+			if err != nil {
+				return res, pkgErrors.Wrapf(err, "encountered an error validating parameter %s", name)
 			}
-			typedVal := def.CoerceValue(val)
+			// This interface returns a single error. Validation can have multiple errors. For now return the first
+			// We should update this later.
+			if len(valErrs) > 0 {
+				valErr := valErrs[0]
+				return res, fmt.Errorf("cannot use value: %v as parameter %s: %s ", val, name, valErr.Error)
+			}
+			typedVal := s.CoerceValue(val)
 			res[name] = typedVal
 			continue
-		} else if def.Required {
+		} else if _, ok := requiredMap[name]; ok {
 			return res, fmt.Errorf("parameter %q is required", name)
 		}
-		res[name] = def.Default
+		res[name] = s.Default
 	}
 	return res, nil
 }
 
 // Validate the bundle contents.
 func (b Bundle) Validate() error {
+	_, err := semver.NewVersion(b.SchemaVersion)
+	if err != nil {
+		return fmt.Errorf("invalid bundle schema version %q: %v", b.SchemaVersion, err)
+	}
+
 	if len(b.InvocationImages) == 0 {
 		return errors.New("at least one invocation image must be defined in the bundle")
 	}

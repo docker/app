@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// ErrFileDoesNotExist represents when file path is not found on file system
-var ErrFileDoesNotExist = errors.New("File does not exist")
+// ErrRecordDoesNotExist represents when file path is not found on file system
+var ErrRecordDoesNotExist = errors.New("File does not exist")
 
 // NewFileSystemStore creates a Store backed by a file system directory.
 // Each key is represented by a file in that directory.
@@ -55,7 +55,7 @@ func (s fileSystemStore) Read(name string) ([]byte, error) {
 	}
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return nil, ErrFileDoesNotExist
+		return nil, ErrRecordDoesNotExist
 	}
 
 	return ioutil.ReadFile(filename)

@@ -83,7 +83,7 @@ func Load(path string) (*CredentialSet, error) {
 //
 // It is allowed for spec to specify both an env var and a file. In such case, if
 // the givn set provides either, it will be considered valid.
-func Validate(given Set, spec map[string]bundle.Location) error {
+func Validate(given Set, spec map[string]bundle.Credential) error {
 	for name := range spec {
 		if !isValidCred(given, name) {
 			return fmt.Errorf("bundle requires credential for %s", name)

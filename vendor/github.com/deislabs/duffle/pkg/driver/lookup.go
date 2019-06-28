@@ -11,6 +11,8 @@ func Lookup(name string) (driver.Driver, error) {
 	switch name {
 	case "docker":
 		return &DockerDriver{}, nil
+	case "kubernetes", "k8s":
+		return &KubernetesDriver{}, nil
 	case "debug":
 		return &driver.DebugDriver{}, nil
 	case "command":
