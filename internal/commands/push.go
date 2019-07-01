@@ -24,6 +24,7 @@ import (
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 const ( // Docker specific annotations and values
@@ -39,9 +40,10 @@ const ( // Docker specific annotations and values
 )
 
 type pushOptions struct {
-	registry  registryOptions
-	tag       string
-	platforms []string
+	registry     registryOptions
+	tag          string
+	platforms    []string
+	allPlatforms bool
 }
 
 func pushCmd(dockerCli command.Cli) *cobra.Command {
@@ -51,13 +53,17 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 		Short:   "Push an application package to a registry",
 		Example: `$ docker app push myapp --tag myrepo/myapp:mytag`,
 		Args:    cli.RequiresMaxArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return checkFlags(cmd.Flags(), opts)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPush(dockerCli, firstOrEmpty(args), opts)
 		},
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default: <name>:<version> from metadata)")
-	flags.StringSliceVar(&opts.platforms, "platform", nil, "For multi-arch service images, only push the specified platforms")
+	flags.StringSliceVar(&opts.platforms, "platform", []string{"linux/amd64"}, "For multi-arch service images, push the specified platforms")
+	flags.BoolVar(&opts.allPlatforms, "all-platforms", false, "If present, push all platforms")
 	opts.registry.addFlags(flags)
 	return cmd
 }
@@ -117,8 +123,8 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	fixupOptions := []remotes.FixupOption{
 		remotes.WithEventCallback(display.onEvent),
 	}
-	if len(opts.platforms) > 0 {
-		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(opts.platforms))
+	if platforms := platformFilter(opts); len(platforms) > 0 {
+		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(platforms))
 	}
 	// bundle fixup
 	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolverConfig, fixupOptions...)
@@ -142,6 +148,13 @@ func withAppAnnotations(index *ocischemav1.Index) error {
 	index.Annotations[DockerAppFormatAnnotation] = DockerAppFormatCNAB
 	index.Annotations[DockerTypeAnnotation] = DockerTypeApp
 	return nil
+}
+
+func platformFilter(opts pushOptions) []string {
+	if opts.allPlatforms {
+		return nil
+	}
+	return opts.platforms
 }
 
 func retagInvocationImage(dockerCli command.Cli, bndl *bundle.Bundle, newName string) error {
@@ -318,4 +331,11 @@ func (r *plainDisplay) onEvent(ev remotes.FixupEvent) {
 			fmt.Fprint(r.out, " done!\n")
 		}
 	}
+}
+
+func checkFlags(flags *pflag.FlagSet, opts pushOptions) error {
+	if opts.allPlatforms && flags.Changed("all-platforms") && flags.Changed("platform") {
+		return fmt.Errorf("--all-plaforms and --plaform flags cannot be used at the same time")
+	}
+	return nil
 }
