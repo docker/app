@@ -20,10 +20,10 @@ const (
 	metadata = `name: my-app
 version: 1.0.0
 `
-	compose = `services:
+	compose = `version: "3.1"
+services:
   web:
     image: nginx
-version: "3.1"
 `
 	params = `foo: bar
 `
@@ -41,6 +41,10 @@ func TestLoadFromSingleFile(t *testing.T) {
 		{
 			name: "carriage-return-line-feed",
 			file: fmt.Sprintf("%s\r\n---\r\n%s\r\n---\r\n%s", metadata, compose, params),
+		},
+		{
+			name: "mixed-carriage-return-line-feed",
+			file: fmt.Sprintf("%s\r\n---\r\n%s\r\n---\n%s", metadata, compose, params),
 		},
 		{
 			name: "unordered-documents",
