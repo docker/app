@@ -78,9 +78,13 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return err
 	}
 
-	bndl, _, err := resolveBundle(dockerCli, bundleStore, name, false, nil)
+	bndl, ref, err := resolveBundle(dockerCli, bundleStore, name, false, nil)
 	if err != nil {
 		return err
+	}
+	// Use the bundle reference as a tag
+	if ref != "" && opts.tag == "" {
+		opts.tag = ref
 	}
 	if err := bndl.Validate(); err != nil {
 		return err

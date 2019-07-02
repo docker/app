@@ -251,6 +251,9 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.B
 	return bndl, "", err
 }
 
+//resolveBundle looks for a CNAB bundle which can be in a Docker App Package format or
+// a bundle stored locally or in the bundle store. It returns a built or found bundle,
+// a reference to the bundle if it is found in the bundlestore, and an error.
 func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool, insecureRegistries []string) (*bundle.Bundle, string, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
