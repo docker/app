@@ -98,6 +98,7 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride refere
 	buildResp, err := dockerCli.Client().ImageBuild(context.TODO(), buildContext, dockertypes.ImageBuildOptions{
 		Dockerfile: "Dockerfile",
 		Tags:       []string{invocationImageName},
+		BuildArgs:  map[string]*string{},
 	})
 	if err != nil {
 		return nil, err
