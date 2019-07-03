@@ -15,6 +15,7 @@ type retagTestCase struct {
 	metaVersion         string
 	invocationImageName string
 	tag                 string
+	bundleRef           string
 	expectedImageRef    reference.Named
 	expectedCnabRef     reference.Named
 	shouldRetag         bool
@@ -40,7 +41,7 @@ func parseRefOrDie(t *testing.T, name string) reference.Named {
 func TestInvocationImageRetag(t *testing.T) {
 	cases := []retagTestCase{
 		{
-			name:                "no-tag-aligned-names",
+			name:                "no-tag-override-should-not-retag",
 			metaName:            "app",
 			metaVersion:         "0.1.0",
 			invocationImageName: "app:0.1.0-invoc",
@@ -50,7 +51,7 @@ func TestInvocationImageRetag(t *testing.T) {
 			shouldRetag:         false,
 		},
 		{
-			name:                "tag-aligned-names-untagged-ref",
+			name:                "name-override-should-retag",
 			metaName:            "app",
 			metaVersion:         "0.1.0",
 			invocationImageName: "app:0.1.0-invoc",
@@ -60,11 +61,32 @@ func TestInvocationImageRetag(t *testing.T) {
 			shouldRetag:         true,
 		},
 		{
-			name:                "tag-aligned-names-tagged-ref",
+			name:                "tag-override-should-retag",
 			metaName:            "app",
 			metaVersion:         "0.1.0",
 			invocationImageName: "app:0.1.0-invoc",
 			tag:                 "some-app:test",
+			expectedImageRef:    parseRefOrDie(t, "some-app:test-invoc"),
+			expectedCnabRef:     parseRefOrDie(t, "some-app:test"),
+			shouldRetag:         true,
+		},
+		{
+			name:                "bundle-ref-should-retag",
+			metaName:            "app",
+			metaVersion:         "0.1.0",
+			invocationImageName: "app:0.1.0-invoc",
+			bundleRef:           "some-app:test",
+			expectedImageRef:    parseRefOrDie(t, "some-app:test-invoc"),
+			expectedCnabRef:     parseRefOrDie(t, "some-app:test"),
+			shouldRetag:         true,
+		},
+		{
+			name:                "tag-overrides-bundle-ref",
+			metaName:            "app",
+			metaVersion:         "0.1.0",
+			invocationImageName: "app:0.1.0-invoc",
+			tag:                 "some-app:test",
+			bundleRef:           "other-app:other-test",
 			expectedImageRef:    parseRefOrDie(t, "some-app:test-invoc"),
 			expectedCnabRef:     parseRefOrDie(t, "some-app:test"),
 			shouldRetag:         true,
@@ -78,7 +100,7 @@ func TestInvocationImageRetag(t *testing.T) {
 			errorMessage:        "some-App:test: invalid reference format: repository name must be lowercase",
 		},
 		{
-			name:                "no-digest",
+			name:                "error-no-digest",
 			metaName:            "app",
 			metaVersion:         "0.1.0",
 			invocationImageName: "app:0.1.0-invoc",
@@ -90,7 +112,7 @@ func TestInvocationImageRetag(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			p, b := c.buildPackageMetaAndBundle()
-			retag, err := shouldRetagInvocationImage(p, b, c.tag)
+			retag, err := shouldRetagInvocationImage(p, b, c.tag, c.bundleRef)
 			if c.errorMessage == "" {
 				assert.NilError(t, err)
 				assert.Equal(t, retag.shouldRetag, c.shouldRetag)

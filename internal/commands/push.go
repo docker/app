@@ -72,36 +72,46 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 
 func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	defer muteDockerCli(dockerCli)()
-
-	bundleStore, err := prepareBundleStore()
+	// Get the bundle
+	bndl, ref, err := resolveReferenceAndBundle(dockerCli, name)
 	if err != nil {
 		return err
 	}
-
-	bndl, ref, err := resolveBundle(dockerCli, bundleStore, name, false, nil)
-	if err != nil {
-		return err
-	}
-	// Use the bundle reference as a tag
-	if ref != "" && opts.tag == "" {
-		opts.tag = ref
-	}
-	if err := bndl.Validate(); err != nil {
-		return err
-	}
-
-	retag, err := shouldRetagInvocationImage(metadata.FromBundle(bndl), bndl, opts.tag)
+	// Retag invocation image if needed
+	retag, err := shouldRetagInvocationImage(metadata.FromBundle(bndl), bndl, opts.tag, ref)
 	if err != nil {
 		return err
 	}
 	if retag.shouldRetag {
-		err := retagInvocationImage(dockerCli, bndl, retag.invocationImageRef.String())
-		if err != nil {
+		if err := retagInvocationImage(dockerCli, bndl, retag.invocationImageRef.String()); err != nil {
 			return err
 		}
 	}
+	// Push the invocation image
+	if err := pushInvocationImage(dockerCli, retag); err != nil {
+		return err
+	}
+	// Push the bundle
+	return pushBundle(dockerCli, opts, bndl, retag)
+}
 
-	// pushing invocation image
+func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bundle, string, error) {
+	bundleStore, err := prepareBundleStore()
+	if err != nil {
+		return nil, "", err
+	}
+
+	bndl, ref, err := resolveBundle(dockerCli, bundleStore, name, false, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	if err := bndl.Validate(); err != nil {
+		return nil, "", err
+	}
+	return bndl, ref, err
+}
+
+func pushInvocationImage(dockerCli command.Cli, retag retagResult) error {
 	repoInfo, err := registry.ParseRepositoryInfo(retag.invocationImageRef)
 	if err != nil {
 		return err
@@ -117,10 +127,13 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return errors.Wrapf(err, "starting push of %q", retag.invocationImageRef.String())
 	}
 	defer reader.Close()
-	if err = jsonmessage.DisplayJSONMessagesStream(reader, ioutil.Discard, 0, false, nil); err != nil {
+	if err := jsonmessage.DisplayJSONMessagesStream(reader, ioutil.Discard, 0, false, nil); err != nil {
 		return errors.Wrapf(err, "pushing to %q", retag.invocationImageRef.String())
 	}
+	return nil
+}
 
+func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, retag retagResult) error {
 	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
 	var display fixupDisplay = &plainDisplay{out: os.Stdout}
 	if term.IsTerminal(os.Stdout.Fd()) {
@@ -133,9 +146,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(platforms))
 	}
 	// bundle fixup
-	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolver, fixupOptions...)
-
-	if err != nil {
+	if err := remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolver, fixupOptions...); err != nil {
 		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
@@ -185,7 +196,11 @@ type retagResult struct {
 	invocationImageRef reference.Named
 }
 
-func shouldRetagInvocationImage(meta metadata.AppMetadata, bndl *bundle.Bundle, tagOverride string) (retagResult, error) {
+func shouldRetagInvocationImage(meta metadata.AppMetadata, bndl *bundle.Bundle, tagOverride, bundleRef string) (retagResult, error) {
+	// Use the bundle reference as a tag override
+	if tagOverride == "" && bundleRef != "" {
+		tagOverride = bundleRef
+	}
 	imgName := tagOverride
 	var err error
 	if imgName == "" {
