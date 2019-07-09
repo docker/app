@@ -1,0 +1,16 @@
+version: "3.4"
+services:
+  test:
+    image: alpine:latest
+    command: bash -c "${myapp.command1} ${myapp.command2} ${myapp.command3}"
+---
+myapp:
+  command1: cat
+  command2: foo
+  command3: bar
+---
+version: 0.1.0
+name: myapp
+maintainers:
+  - name: dev
+    email: dev@example.com

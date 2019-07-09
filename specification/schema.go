@@ -36,5 +36,4 @@ func Validate(config map[string]interface{}, version string) error {
 	}
 
 	return nil
-
 }
