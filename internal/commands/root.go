@@ -94,11 +94,13 @@ func prepareBundleStore() (store.BundleStore, error) {
 type parametersOptions struct {
 	parametersFiles []string
 	overrides       []string
+	strictMode      bool
 }
 
 func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
 	flags.StringArrayVar(&o.parametersFiles, "parameters-file", []string{}, "Override parameters file")
 	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameter value")
+	flags.BoolVar(&o.strictMode, "strict", false, "Fail when a paramater is undefined instead of displaying a warning")
 }
 
 type credentialOptions struct {
