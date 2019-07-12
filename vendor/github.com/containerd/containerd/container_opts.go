@@ -39,6 +39,15 @@ type NewContainerOpts func(ctx context.Context, client *Client, c *containers.Co
 // UpdateContainerOpts allows the caller to set additional options when updating a container
 type UpdateContainerOpts func(ctx context.Context, client *Client, c *containers.Container) error
 
+// InfoOpts controls how container metadata is fetched and returned
+type InfoOpts func(*InfoConfig)
+
+// InfoConfig specifies how container metadata is fetched
+type InfoConfig struct {
+	// Refresh will to a fetch of the latest container metadata
+	Refresh bool
+}
+
 // WithRuntime allows a user to specify the runtime name and additional options that should
 // be used to create tasks for the container
 func WithRuntime(name string, options interface{}) NewContainerOpts {
@@ -107,9 +116,17 @@ func WithSnapshotter(name string) NewContainerOpts {
 // WithSnapshot uses an existing root filesystem for the container
 func WithSnapshot(id string) NewContainerOpts {
 	return func(ctx context.Context, client *Client, c *containers.Container) error {
-		setSnapshotterIfEmpty(c)
 		// check that the snapshot exists, if not, fail on creation
-		if _, err := client.SnapshotService(c.Snapshotter).Mounts(ctx, id); err != nil {
+		var err error
+		c.Snapshotter, err = client.resolveSnapshotterName(ctx, c.Snapshotter)
+		if err != nil {
+			return err
+		}
+		s, err := client.getSnapshotter(ctx, c.Snapshotter)
+		if err != nil {
+			return err
+		}
+		if _, err := s.Mounts(ctx, id); err != nil {
 			return err
 		}
 		c.SnapshotKey = id
@@ -121,13 +138,21 @@ func WithSnapshot(id string) NewContainerOpts {
 // root filesystem in read-write mode
 func WithNewSnapshot(id string, i Image, opts ...snapshots.Opt) NewContainerOpts {
 	return func(ctx context.Context, client *Client, c *containers.Container) error {
-		diffIDs, err := i.(*image).i.RootFS(ctx, client.ContentStore(), platforms.Default())
+		diffIDs, err := i.RootFS(ctx)
 		if err != nil {
 			return err
 		}
-		setSnapshotterIfEmpty(c)
+
 		parent := identity.ChainID(diffIDs).String()
-		if _, err := client.SnapshotService(c.Snapshotter).Prepare(ctx, id, parent, opts...); err != nil {
+		c.Snapshotter, err = client.resolveSnapshotterName(ctx, c.Snapshotter)
+		if err != nil {
+			return err
+		}
+		s, err := client.getSnapshotter(ctx, c.Snapshotter)
+		if err != nil {
+			return err
+		}
+		if _, err := s.Prepare(ctx, id, parent, opts...); err != nil {
 			return err
 		}
 		c.SnapshotKey = id
@@ -142,7 +167,11 @@ func WithSnapshotCleanup(ctx context.Context, client *Client, c containers.Conta
 		if c.Snapshotter == "" {
 			return errors.Wrapf(errdefs.ErrInvalidArgument, "container.Snapshotter must be set to cleanup rootfs snapshot")
 		}
-		return client.SnapshotService(c.Snapshotter).Remove(ctx, c.SnapshotKey)
+		s, err := client.getSnapshotter(ctx, c.Snapshotter)
+		if err != nil {
+			return err
+		}
+		return s.Remove(ctx, c.SnapshotKey)
 	}
 	return nil
 }
@@ -155,20 +184,22 @@ func WithNewSnapshotView(id string, i Image, opts ...snapshots.Opt) NewContainer
 		if err != nil {
 			return err
 		}
-		setSnapshotterIfEmpty(c)
+
 		parent := identity.ChainID(diffIDs).String()
-		if _, err := client.SnapshotService(c.Snapshotter).View(ctx, id, parent, opts...); err != nil {
+		c.Snapshotter, err = client.resolveSnapshotterName(ctx, c.Snapshotter)
+		if err != nil {
+			return err
+		}
+		s, err := client.getSnapshotter(ctx, c.Snapshotter)
+		if err != nil {
+			return err
+		}
+		if _, err := s.View(ctx, id, parent, opts...); err != nil {
 			return err
 		}
 		c.SnapshotKey = id
 		c.Image = i.Name()
 		return nil
-	}
-}
-
-func setSnapshotterIfEmpty(c *containers.Container) {
-	if c.Snapshotter == "" {
-		c.Snapshotter = DefaultSnapshotter
 	}
 }
 
@@ -223,4 +254,9 @@ func WithSpec(s *oci.Spec, opts ...oci.SpecOpts) NewContainerOpts {
 		c.Spec, err = typeurl.MarshalAny(s)
 		return err
 	}
+}
+
+// WithoutRefreshedMetadata will use the current metadata attached to the container object
+func WithoutRefreshedMetadata(i *InfoConfig) {
+	i.Refresh = false
 }

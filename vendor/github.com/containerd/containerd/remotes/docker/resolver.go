@@ -18,10 +18,10 @@ package docker
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/containerd/containerd/errdefs"
@@ -29,6 +29,7 @@ import (
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes"
+	"github.com/containerd/containerd/remotes/docker/schema1"
 	"github.com/containerd/containerd/version"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -96,11 +97,6 @@ type ResolverOptions struct {
 	// since the registry does not have upload tracking and the existing
 	// mechanism for getting blob upload status is expensive.
 	Tracker StatusTracker
-
-	// OriginProvider returns a slice of refspecs where the Pusher may find candidates for mounting
-	// instead of pushing from local store.
-	// When the Pusher succeeds by mounting, it returns an AlreadyExists error
-	OriginProvider func(ocispec.Descriptor) []reference.Spec
 }
 
 // DefaultHost is the default host function.
@@ -112,13 +108,13 @@ func DefaultHost(ns string) (string, error) {
 }
 
 type dockerResolver struct {
-	auth           Authorizer
-	host           func(string) (string, error)
-	headers        http.Header
-	plainHTTP      bool
-	client         *http.Client
-	tracker        StatusTracker
-	originProvider func(ocispec.Descriptor) []reference.Spec
+	auth      Authorizer
+	host      func(string) (string, error)
+	headers   http.Header
+	uagent    string
+	plainHTTP bool
+	client    *http.Client
+	tracker   StatusTracker
 }
 
 // NewResolver returns a new resolver to a Docker registry
@@ -140,24 +136,52 @@ func NewResolver(options ResolverOptions) remotes.Resolver {
 			ocispec.MediaTypeImageManifest,
 			ocispec.MediaTypeImageIndex, "*"}, ", "))
 	}
-	if _, ok := options.Headers["User-Agent"]; !ok {
-		options.Headers.Set("User-Agent", "containerd/"+version.Version)
+	ua := options.Headers.Get("User-Agent")
+	if ua != "" {
+		options.Headers.Del("User-Agent")
+	} else {
+		ua = "containerd/" + version.Version
 	}
+
 	if options.Authorizer == nil {
 		options.Authorizer = NewAuthorizer(options.Client, options.Credentials)
-	}
-	if options.OriginProvider == nil {
-		options.OriginProvider = func(_ ocispec.Descriptor) []reference.Spec { return nil }
+		options.Authorizer.(*dockerAuthorizer).ua = ua
 	}
 	return &dockerResolver{
-		auth:           options.Authorizer,
-		host:           options.Host,
-		headers:        options.Headers,
-		plainHTTP:      options.PlainHTTP,
-		client:         options.Client,
-		tracker:        options.Tracker,
-		originProvider: options.OriginProvider,
+		auth:      options.Authorizer,
+		host:      options.Host,
+		headers:   options.Headers,
+		uagent:    ua,
+		plainHTTP: options.PlainHTTP,
+		client:    options.Client,
+		tracker:   options.Tracker,
 	}
+}
+
+func getManifestMediaType(resp *http.Response) string {
+	// Strip encoding data (manifests should always be ascii JSON)
+	contentType := resp.Header.Get("Content-Type")
+	if sp := strings.IndexByte(contentType, ';'); sp != -1 {
+		contentType = contentType[0:sp]
+	}
+
+	// As of Apr 30 2019 the registry.access.redhat.com registry does not specify
+	// the content type of any data but uses schema1 manifests.
+	if contentType == "text/plain" {
+		contentType = images.MediaTypeDockerSchema1Manifest
+	}
+	return contentType
+}
+
+type countingReader struct {
+	reader    io.Reader
+	bytesRead int64
+}
+
+func (r *countingReader) Read(p []byte) (int, error) {
+	n, err := r.reader.Read(p)
+	r.bytesRead += int64(n)
+	return n, err
 }
 
 var _ remotes.Resolver = &dockerResolver{}
@@ -230,40 +254,56 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 			}
 			return "", ocispec.Descriptor{}, errors.Errorf("unexpected status code %v: %v", u, resp.Status)
 		}
+		size := resp.ContentLength
 
 		// this is the only point at which we trust the registry. we use the
 		// content headers to assemble a descriptor for the name. when this becomes
 		// more robust, we mostly get this information from a secure trust store.
 		dgstHeader := digest.Digest(resp.Header.Get("Docker-Content-Digest"))
+		contentType := getManifestMediaType(resp)
 
-		if dgstHeader != "" {
+		if dgstHeader != "" && size != -1 {
 			if err := dgstHeader.Validate(); err != nil {
 				return "", ocispec.Descriptor{}, errors.Wrapf(err, "%q in header not a valid digest", dgstHeader)
 			}
 			dgst = dgstHeader
-		}
+		} else {
+			log.G(ctx).Debug("no Docker-Content-Digest header, fetching manifest instead")
 
-		if dgst == "" {
-			return "", ocispec.Descriptor{}, errors.Errorf("could not resolve digest for %v", ref)
-		}
+			req, err := http.NewRequest(http.MethodGet, u, nil)
+			if err != nil {
+				return "", ocispec.Descriptor{}, err
+			}
+			req.Header = r.headers
 
-		var (
-			size       int64
-			sizeHeader = resp.Header.Get("Content-Length")
-		)
+			resp, err := fetcher.doRequestWithRetries(ctx, req, nil)
+			if err != nil {
+				return "", ocispec.Descriptor{}, err
+			}
+			defer resp.Body.Close()
 
-		size, err = strconv.ParseInt(sizeHeader, 10, 64)
-		if err != nil {
+			bodyReader := countingReader{reader: resp.Body}
 
-			return "", ocispec.Descriptor{}, errors.Wrapf(err, "invalid size header: %q", sizeHeader)
-		}
-		if size < 0 {
-			return "", ocispec.Descriptor{}, errors.Errorf("%q in header not a valid size", sizeHeader)
+			contentType = getManifestMediaType(resp)
+			if contentType == images.MediaTypeDockerSchema1Manifest {
+				b, err := schema1.ReadStripSignature(&bodyReader)
+				if err != nil {
+					return "", ocispec.Descriptor{}, err
+				}
+
+				dgst = digest.FromBytes(b)
+			} else {
+				dgst, err = digest.FromReader(&bodyReader)
+				if err != nil {
+					return "", ocispec.Descriptor{}, err
+				}
+			}
+			size = bodyReader.bytesRead
 		}
 
 		desc := ocispec.Descriptor{
 			Digest:    dgst,
-			MediaType: resp.Header.Get("Content-Type"), // need to strip disposition?
+			MediaType: contentType,
 			Size:      size,
 		}
 
@@ -309,16 +349,16 @@ func (r *dockerResolver) Pusher(ctx context.Context, ref string) (remotes.Pusher
 	}
 
 	return dockerPusher{
-		dockerBase:     base,
-		tag:            refspec.Object,
-		tracker:        r.tracker,
-		originProvider: r.originProvider,
+		dockerBase: base,
+		tag:        refspec.Object,
+		tracker:    r.tracker,
 	}, nil
 }
 
 type dockerBase struct {
 	refspec reference.Spec
 	base    url.URL
+	uagent  string
 
 	client *http.Client
 	auth   Authorizer
@@ -350,6 +390,7 @@ func (r *dockerResolver) base(refspec reference.Spec) (*dockerBase, error) {
 	return &dockerBase{
 		refspec: refspec,
 		base:    base,
+		uagent:  r.uagent,
 		client:  r.client,
 		auth:    r.auth,
 	}, nil
@@ -375,6 +416,7 @@ func (r *dockerBase) authorize(ctx context.Context, req *http.Request) error {
 func (r *dockerBase) doRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
 	ctx = log.WithLogger(ctx, log.G(ctx).WithField("url", req.URL.String()))
 	log.G(ctx).WithField("request.headers", req.Header).WithField("request.method", req.Method).Debug("do request")
+	req.Header.Set("User-Agent", r.uagent)
 	if err := r.authorize(ctx, req); err != nil {
 		return nil, errors.Wrap(err, "failed to authorize")
 	}
@@ -413,7 +455,8 @@ func (r *dockerBase) retryRequest(ctx context.Context, req *http.Request, respon
 		return nil, nil
 	}
 	last := responses[len(responses)-1]
-	if last.StatusCode == http.StatusUnauthorized {
+	switch last.StatusCode {
+	case http.StatusUnauthorized:
 		log.G(ctx).WithField("header", last.Header.Get("WWW-Authenticate")).Debug("Unauthorized")
 		if r.auth != nil {
 			if err := r.auth.AddResponses(ctx, responses); err == nil {
@@ -422,16 +465,17 @@ func (r *dockerBase) retryRequest(ctx context.Context, req *http.Request, respon
 				return nil, err
 			}
 		}
-
 		return nil, nil
-	} else if last.StatusCode == http.StatusMethodNotAllowed && req.Method == http.MethodHead {
+	case http.StatusMethodNotAllowed:
 		// Support registries which have not properly implemented the HEAD method for
 		// manifests endpoint
-		if strings.Contains(req.URL.Path, "/manifests/") {
+		if req.Method == http.MethodHead && strings.Contains(req.URL.Path, "/manifests/") {
 			// TODO: copy request?
 			req.Method = http.MethodGet
 			return copyRequest(req)
 		}
+	case http.StatusRequestTimeout, http.StatusTooManyRequests:
+		return copyRequest(req)
 	}
 
 	// TODO: Handle 50x errors accounting for attempt history

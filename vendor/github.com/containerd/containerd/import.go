@@ -25,14 +25,16 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/images/archive"
+	"github.com/containerd/containerd/platforms"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type importOpts struct {
-	indexName string
-	imageRefT func(string) string
-	dgstRefT  func(digest.Digest) string
+	indexName    string
+	imageRefT    func(string) string
+	dgstRefT     func(digest.Digest) string
+	allPlatforms bool
 }
 
 // ImportOpt allows the caller to specify import specific options
@@ -60,6 +62,14 @@ func WithDigestRef(f func(digest.Digest) string) ImportOpt {
 func WithIndexName(name string) ImportOpt {
 	return func(c *importOpts) error {
 		c.indexName = name
+		return nil
+	}
+}
+
+// WithAllPlatforms is used to import content for all platforms.
+func WithAllPlatforms(allPlatforms bool) ImportOpt {
+	return func(c *importOpts) error {
+		c.allPlatforms = allPlatforms
 		return nil
 	}
 }
@@ -98,6 +108,10 @@ func (c *Client) Import(ctx context.Context, reader io.Reader, opts ...ImportOpt
 			Target: index,
 		})
 	}
+	var platformMatcher = platforms.All
+	if !iopts.allPlatforms {
+		platformMatcher = platforms.Default()
+	}
 
 	var handler images.HandlerFunc = func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 		// Only save images at top level
@@ -116,16 +130,12 @@ func (c *Client) Import(ctx context.Context, reader io.Reader, opts ...ImportOpt
 		}
 
 		for _, m := range idx.Manifests {
-			if ref := m.Annotations[ocispec.AnnotationRefName]; ref != "" {
-				if iopts.imageRefT != nil {
-					ref = iopts.imageRefT(ref)
-				}
-				if ref != "" {
-					imgs = append(imgs, images.Image{
-						Name:   ref,
-						Target: m,
-					})
-				}
+			name := imageName(m.Annotations, iopts.imageRefT)
+			if name != "" {
+				imgs = append(imgs, images.Image{
+					Name:   name,
+					Target: m,
+				})
 			}
 			if iopts.dgstRefT != nil {
 				ref := iopts.dgstRefT(m.Digest)
@@ -141,6 +151,7 @@ func (c *Client) Import(ctx context.Context, reader io.Reader, opts ...ImportOpt
 		return idx.Manifests, nil
 	}
 
+	handler = images.FilterPlatforms(handler, platformMatcher)
 	handler = images.SetChildrenLabels(cs, handler)
 	if err := images.Walk(ctx, handler, index); err != nil {
 		return nil, err
@@ -162,4 +173,18 @@ func (c *Client) Import(ctx context.Context, reader io.Reader, opts ...ImportOpt
 	}
 
 	return imgs, nil
+}
+
+func imageName(annotations map[string]string, ociCleanup func(string) string) string {
+	name := annotations[images.AnnotationImageName]
+	if name != "" {
+		return name
+	}
+	name = annotations[ocispec.AnnotationRefName]
+	if name != "" {
+		if ociCleanup != nil {
+			name = ociCleanup(name)
+		}
+	}
+	return name
 }

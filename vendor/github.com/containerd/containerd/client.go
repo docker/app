@@ -43,6 +43,7 @@ import (
 	"github.com/containerd/containerd/content"
 	contentproxy "github.com/containerd/containerd/content/proxy"
 	"github.com/containerd/containerd/defaults"
+	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/events"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/leases"
@@ -86,13 +87,15 @@ func New(address string, opts ...ClientOpt) (*Client, error) {
 	if copts.timeout == 0 {
 		copts.timeout = 10 * time.Second
 	}
-	rt := fmt.Sprintf("%s.%s", plugin.RuntimePlugin, runtime.GOOS)
+
+	c := &Client{}
+
 	if copts.defaultRuntime != "" {
-		rt = copts.defaultRuntime
+		c.runtime = copts.defaultRuntime
+	} else {
+		c.runtime = fmt.Sprintf("%s.%s", plugin.RuntimePlugin, runtime.GOOS)
 	}
-	c := &Client{
-		runtime: rt,
-	}
+
 	if copts.services != nil {
 		c.services = *copts.services
 	}
@@ -102,7 +105,7 @@ func New(address string, opts ...ClientOpt) (*Client, error) {
 			grpc.WithInsecure(),
 			grpc.FailOnNonTempDialError(true),
 			grpc.WithBackoffMaxDelay(3 * time.Second),
-			grpc.WithDialer(dialer.Dialer),
+			grpc.WithContextDialer(dialer.ContextDialer),
 
 			// TODO(stevvooe): We may need to allow configuration of this on the client.
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaults.DefaultMaxRecvMsgSize)),
@@ -136,6 +139,17 @@ func New(address string, opts ...ClientOpt) (*Client, error) {
 	if copts.services == nil && c.conn == nil {
 		return nil, errors.New("no grpc connection or services is available")
 	}
+
+	// check namespace labels for default runtime
+	if copts.defaultRuntime == "" && copts.defaultns != "" {
+		ctx := namespaces.WithNamespace(context.Background(), copts.defaultns)
+		if label, err := c.GetLabel(ctx, defaults.DefaultRuntimeNSLabel); err != nil {
+			return nil, err
+		} else if label != "" {
+			c.runtime = label
+		}
+	}
+
 	return c, nil
 }
 
@@ -152,6 +166,17 @@ func NewWithConn(conn *grpc.ClientConn, opts ...ClientOpt) (*Client, error) {
 		conn:    conn,
 		runtime: fmt.Sprintf("%s.%s", plugin.RuntimePlugin, runtime.GOOS),
 	}
+
+	// check namespace labels for default runtime
+	if copts.defaultRuntime == "" && copts.defaultns != "" {
+		ctx := namespaces.WithNamespace(context.Background(), copts.defaultns)
+		if label, err := c.GetLabel(ctx, defaults.DefaultRuntimeNSLabel); err != nil {
+			return nil, err
+		} else if label != "" {
+			c.runtime = label
+		}
+	}
+
 	if copts.services != nil {
 		c.services = *copts.services
 	}
@@ -197,7 +222,7 @@ func (c *Client) IsServing(ctx context.Context) (bool, error) {
 		return false, errors.New("no grpc connection available")
 	}
 	c.connMu.Unlock()
-	r, err := c.HealthService().Check(ctx, &grpc_health_v1.HealthCheckRequest{}, grpc.FailFast(false))
+	r, err := c.HealthService().Check(ctx, &grpc_health_v1.HealthCheckRequest{}, grpc.WaitForReady(true))
 	if err != nil {
 		return false, err
 	}
@@ -311,7 +336,6 @@ func defaultRemoteContext() *RemoteContext {
 		Resolver: docker.NewResolver(docker.ResolverOptions{
 			Client: http.DefaultClient,
 		}),
-		Snapshotter: DefaultSnapshotter,
 	}
 }
 
@@ -462,6 +486,24 @@ func writeIndex(ctx context.Context, index *ocispec.Index, client *Client, ref s
 	return writeContent(ctx, client.ContentStore(), ocispec.MediaTypeImageIndex, ref, bytes.NewReader(data), content.WithLabels(labels))
 }
 
+// GetLabel gets a label value from namespace store
+// If there is no default label, an empty string returned with nil error
+func (c *Client) GetLabel(ctx context.Context, label string) (string, error) {
+	ns, err := namespaces.NamespaceRequired(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	srv := c.NamespaceService()
+	labels, err := srv.Labels(ctx, ns)
+	if err != nil {
+		return "", err
+	}
+
+	value := labels[label]
+	return value, nil
+}
+
 // Subscribe to events that match one or more of the provided filters.
 //
 // Callers should listen on both the envelope and errs channels. If the errs
@@ -594,6 +636,13 @@ func (c *Client) VersionService() versionservice.VersionClient {
 	return versionservice.NewVersionClient(c.conn)
 }
 
+// Conn returns the underlying GRPC connection object
+func (c *Client) Conn() *grpc.ClientConn {
+	c.connMu.Lock()
+	defer c.connMu.Unlock()
+	return c.conn
+}
+
 // Version of containerd
 type Version struct {
 	// Version number
@@ -618,6 +667,37 @@ func (c *Client) Version(ctx context.Context) (Version, error) {
 		Version:  response.Version,
 		Revision: response.Revision,
 	}, nil
+}
+
+func (c *Client) resolveSnapshotterName(ctx context.Context, name string) (string, error) {
+	if name == "" {
+		label, err := c.GetLabel(ctx, defaults.DefaultSnapshotterNSLabel)
+		if err != nil {
+			return "", err
+		}
+
+		if label != "" {
+			name = label
+		} else {
+			name = DefaultSnapshotter
+		}
+	}
+
+	return name, nil
+}
+
+func (c *Client) getSnapshotter(ctx context.Context, name string) (snapshots.Snapshotter, error) {
+	name, err := c.resolveSnapshotterName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	s := c.SnapshotService(name)
+	if s == nil {
+		return nil, errors.Wrapf(errdefs.ErrNotFound, "snapshotter %s was not found", name)
+	}
+
+	return s, nil
 }
 
 // CheckRuntime returns true if the current runtime matches the expected

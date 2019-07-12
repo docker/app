@@ -117,7 +117,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return errors.Wrapf(err, "pushing to %q", retag.invocationImageRef.String())
 	}
 
-	resolverConfig := remotes.NewResolverConfigFromDockerConfigFile(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
+	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
 	var display fixupDisplay = &plainDisplay{out: os.Stdout}
 	if term.IsTerminal(os.Stdout.Fd()) {
 		display = &interactiveDisplay{out: os.Stdout}
@@ -129,13 +129,13 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(platforms))
 	}
 	// bundle fixup
-	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolverConfig, fixupOptions...)
+	err = remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolver, fixupOptions...)
 
 	if err != nil {
 		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
-	descriptor, err := remotes.Push(newMuteLogContext(), bndl, retag.cnabRef, resolverConfig.Resolver, true, withAppAnnotations)
+	descriptor, err := remotes.Push(newMuteLogContext(), bndl, retag.cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
 	}

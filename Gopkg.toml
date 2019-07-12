@@ -33,8 +33,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/containerd/containerd"
-  source = "github.com/simonferquel/containerd"
-  revision = "42c3614d58767e96c1752977fed94d0b140a0173"
+  branch = "master"
 
 [[override]]
   name = "github.com/docker/cli"
@@ -106,7 +105,11 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "gopkg.in/yaml.v2"
   source = "https://github.com/simonferquel/yaml"
-  revision="c86e64ed9581b7588e736f0c3e6ecc02cc22996e"
+  revision = "c86e64ed9581b7588e736f0c3e6ecc02cc22996e"
+
+[[override]]
+  name = "github.com/opencontainers/runtime-spec"
+  revision = "29686dbc5559d93fb1ef402eeda3e35c38d75af4"
 
 [[constraint]]
   name = "github.com/spf13/pflag"

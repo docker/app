@@ -69,7 +69,7 @@ func (c *BundleConfig) PrepareForPush() (*PreparedBundleConfig, error) {
 		if current == nil {
 			first = cfg
 		} else {
-			first.Fallback = cfg
+			current.Fallback = cfg
 		}
 		current = cfg
 	}

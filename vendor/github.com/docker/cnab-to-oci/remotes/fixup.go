@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,7 +13,6 @@ import (
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -34,16 +32,9 @@ type fixupConfig struct {
 	eventCallback                 func(FixupEvent)
 	maxConcurrentJobs             int
 	jobsBufferLength              int
-	resolverConfig                ResolverConfig
+	resolver                      remotes.Resolver
 	invocationImagePlatformFilter platforms.Matcher
 	componentImagePlatformFilter  platforms.Matcher
-}
-
-func (cfg *fixupConfig) complete() error {
-	if cfg.resolverConfig.Resolver == nil || cfg.resolverConfig.OriginProviderWrapper == nil {
-		return errors.New("resolver and originProviderWrapper are required, please use a complete ResolverConfig")
-	}
-	return nil
 }
 
 // WithInvocationImagePlatforms use filters platforms for an invocation image
@@ -108,32 +99,11 @@ func WithParallelism(maxConcurrentJobs int, jobsBufferLength int) FixupOption {
 // FixupOption is a helper for configuring a FixupBundle
 type FixupOption func(*fixupConfig) error
 
-// ResolverConfig represents a resolver and its associated OriginProviderWrapper
-type ResolverConfig struct {
-	Resolver              remotes.Resolver
-	OriginProviderWrapper OriginProviderWrapper
-}
-
-// NewResolverConfig creates a ResolverConfig
-func NewResolverConfig(resolver remotes.Resolver, originProviderWrapper OriginProviderWrapper) ResolverConfig {
-	return ResolverConfig{
-		Resolver:              resolver,
-		OriginProviderWrapper: originProviderWrapper,
-	}
-}
-
-// NewResolverConfigFromDockerConfigFile creates a ResolverConfig from a docker CLI config file and a list of registries to reach
-// using plain HTTP
-func NewResolverConfigFromDockerConfigFile(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) ResolverConfig {
-	resolver, originProviderWrapper := CreateResolver(cfg, plainHTTPRegistries...)
-	return NewResolverConfig(resolver, originProviderWrapper)
-}
-
-func newFixupConfig(b *bundle.Bundle, ref reference.Named, resolverConfig ResolverConfig, options ...FixupOption) (fixupConfig, error) {
+func newFixupConfig(b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, options ...FixupOption) (fixupConfig, error) {
 	cfg := fixupConfig{
 		bundle:            b,
 		targetRef:         ref,
-		resolverConfig:    resolverConfig,
+		resolver:          resolver,
 		eventCallback:     noopEventCallback,
 		jobsBufferLength:  defaultJobsBufferLength,
 		maxConcurrentJobs: defaultMaxConcurrentJobs,
@@ -143,16 +113,13 @@ func newFixupConfig(b *bundle.Bundle, ref reference.Named, resolverConfig Resolv
 			return fixupConfig{}, err
 		}
 	}
-	if err := cfg.complete(); err != nil {
-		return fixupConfig{}, err
-	}
 	return cfg, nil
 }
 
 // FixupBundle checks that all the references are present in the referenced repository, otherwise it will mount all
 // the manifests to that repository. The bundle is then patched with the new digested references.
-func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolverConfig ResolverConfig, opts ...FixupOption) error {
-	cfg, err := newFixupConfig(b, ref, resolverConfig, opts...)
+func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, opts ...FixupOption) error {
+	cfg, err := newFixupConfig(b, ref, resolver, opts...)
 	if err != nil {
 		return err
 	}
@@ -204,7 +171,7 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 		}
 	}()
 	notifyEvent(FixupEventTypeCopyImageStart, "", nil)
-	fixupInfo, err := fixupBaseImage(ctx, &baseImage, cfg.targetRef, cfg.resolverConfig.Resolver)
+	fixupInfo, err := fixupBaseImage(ctx, &baseImage, cfg.targetRef, cfg.resolver)
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
@@ -217,7 +184,7 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
-	f, err := cfg.resolverConfig.Resolver.Fetcher(ctx, sourceRepoOnly.Name())
+	f, err := cfg.resolver.Fetcher(ctx, sourceRepoOnly.Name())
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
@@ -225,12 +192,9 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	if err := fixupPlatforms(ctx, &baseImage, &fixupInfo, sourceFetcher, platformFilter); err != nil {
 		return bundle.BaseImage{}, err
 	}
-	if err := setFromImageReference(cfg.resolverConfig.OriginProviderWrapper, fixupInfo.sourceRef); err != nil {
-		return bundle.BaseImage{}, err
-	}
 
 	// Prepare the copier
-	copier, err := newDescriptorCopier(ctx, cfg.resolverConfig.Resolver, sourceFetcher, fixupInfo.targetRepo.String(), notifyEvent)
+	copier, err := newDescriptorCopier(ctx, cfg.resolver, sourceFetcher, fixupInfo.targetRepo.String(), notifyEvent, fixupInfo.sourceRef)
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
