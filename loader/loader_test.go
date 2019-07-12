@@ -46,10 +46,6 @@ func TestLoadFromSingleFile(t *testing.T) {
 			name: "mixed-carriage-return-line-feed",
 			file: fmt.Sprintf("%s\r\n---\r\n%s\r\n---\n%s", metadata, compose, params),
 		},
-		{
-			name: "unordered-documents",
-			file: fmt.Sprintf("%s\n---\n%s\n---\n%s", params, metadata, compose),
-		},
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {

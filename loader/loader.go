@@ -8,10 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/specification"
 	"github.com/docker/app/types"
-	"github.com/docker/cli/cli/compose/loader"
-	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/pkg/errors"
 )
@@ -69,26 +66,12 @@ func LoadFromSingleFile(path string, r io.Reader, ops ...func(*types.App) error)
 		return nil, errors.Errorf("malformed single-file application: expected 3 documents, got %d", len(parts))
 	}
 
-	var (
-		metadata io.Reader
-		compose  io.Reader
-		params   io.Reader
-	)
-	for i := 0; i < 3; i++ {
-		parsed, err := loader.ParseYAML(parts[i])
-		if err != nil {
-			return nil, err
-		}
-		if err := specification.Validate(parsed, internal.MetadataVersion); metadata == nil && err == nil {
-			metadata = bytes.NewBuffer(parts[i])
-		} else if err2 := schema.Validate(parsed, schema.Version(parsed)); compose == nil && err2 == nil {
-			compose = bytes.NewBuffer(parts[i])
-		} else if params == nil {
-			params = bytes.NewBuffer(parts[i])
-		} else {
-			return nil, errors.New("malformed single-file application")
-		}
-	}
+	// 0. is metadata
+	metadata := bytes.NewBuffer(parts[0])
+	// 1. is compose
+	compose := bytes.NewBuffer(parts[1])
+	// 2. is parameters
+	params := bytes.NewBuffer(parts[2])
 
 	appOps := append([]func(*types.App) error{
 		types.WithComposes(compose),

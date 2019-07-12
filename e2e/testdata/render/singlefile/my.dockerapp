@@ -1,3 +1,9 @@
+version: 0.1.0
+name: myapp
+maintainers:
+  - name: dev
+    email: dev@example.com
+---
 version: "3.4"
 services:
   test:
@@ -8,9 +14,3 @@ myapp:
   command1: cat
   command2: foo
   command3: bar
----
-version: 0.1.0
-name: myapp
-maintainers:
-  - name: dev
-    email: dev@example.com
