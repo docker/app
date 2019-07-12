@@ -1,9 +1,11 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net"
+	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -11,6 +13,10 @@ import (
 	"time"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/cnab-to-oci/converter"
+	"github.com/docker/distribution/manifest/manifestlist"
+	"github.com/opencontainers/go-digest"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
 	"gotest.tools/assert/cmp"
 	"gotest.tools/fs"
@@ -85,6 +91,92 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	}
 	todo(info)
 
+}
+
+func TestPushArchs(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		testCases := []struct {
+			name              string
+			args              []string
+			expectedPlatforms []manifestlist.PlatformSpec
+		}{
+			{
+				name: "default",
+				args: []string{},
+				expectedPlatforms: []manifestlist.PlatformSpec{
+					{
+						OS:           "linux",
+						Architecture: "amd64",
+					},
+				},
+			},
+			{
+				name: "all-platforms",
+				args: []string{"--all-platforms"},
+				expectedPlatforms: []manifestlist.PlatformSpec{
+					{
+						OS:           "linux",
+						Architecture: "amd64",
+					},
+					{
+						OS:           "linux",
+						Architecture: "386",
+					},
+					{
+						OS:           "linux",
+						Architecture: "ppc64le",
+					},
+					{
+						OS:           "linux",
+						Architecture: "s390x",
+					},
+					{
+						OS:           "linux",
+						Architecture: "arm",
+						Variant:      "v5",
+					},
+					{
+						OS:           "linux",
+						Architecture: "arm",
+						Variant:      "v6",
+					},
+					{
+						OS:           "linux",
+						Architecture: "arm",
+						Variant:      "v7",
+					},
+					{
+						OS:           "linux",
+						Architecture: "arm64",
+						Variant:      "v8",
+					},
+				},
+			},
+		}
+
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				cmd := info.configuredCmd
+				ref := info.registryAddress + "/test/push-pull:1"
+				args := []string{"app", "push", "--tag", ref, "--insecure-registries=" + info.registryAddress}
+				args = append(args, testCase.args...)
+				args = append(args, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+				cmd.Command = dockerCli.Command(args...)
+				icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+				var index v1.Index
+				httpGet(t, "http://"+info.registryAddress+"/v2/test/push-pull/manifests/1", &index)
+				digest, err := getManifestListDigest(index)
+				assert.NilError(t, err)
+				var manifestList manifestlist.ManifestList
+				httpGet(t, "http://"+info.registryAddress+"/v2/test/push-pull/manifests/"+digest.String(), &manifestList)
+				assert.Equal(t, len(manifestList.Manifests), len(testCase.expectedPlatforms), "Unexpected number of platforms")
+				for _, m := range manifestList.Manifests {
+					assert.Assert(t, cmp.Contains(testCase.expectedPlatforms, m.Platform), "Platform expected but not found: %s", m.Platform)
+				}
+			})
+		}
+	})
 }
 
 func TestPushInstall(t *testing.T) {
@@ -197,4 +289,22 @@ func isPortAvailable(port int) bool {
 	}
 	defer l.Close()
 	return true
+}
+
+func httpGet(t *testing.T, url string, obj interface{}) {
+	r, err := http.Get(url)
+	assert.NilError(t, err)
+	defer r.Body.Close()
+	assert.Equal(t, r.StatusCode, 200)
+	err = json.NewDecoder(r.Body).Decode(obj)
+	assert.NilError(t, err)
+}
+
+func getManifestListDigest(index v1.Index) (digest.Digest, error) {
+	for _, m := range index.Manifests {
+		if m.Annotations[converter.CNABDescriptorTypeAnnotation] == "component" {
+			return m.Digest, nil
+		}
+	}
+	return "", fmt.Errorf("Service image not found")
 }
