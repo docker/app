@@ -221,7 +221,7 @@
 
 [[projects]]
   branch = "19.03"
-  digest = "1:40bdcf28756970bfa940ffcce99e7592d5511313ba950a842947736a9a386d5c"
+  digest = "1:e0d546e1b6582adce85a80829128887eb287f6d3bd5d7a9636b27df0798a71c5"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -276,7 +276,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "a1b83ffd2cbeefc0752e5aa7a543d49c1ddfd2cb"
+  revision = "5b38d82aa0767e32f53b5821a9a5044f20eeef29"
 
 [[projects]]
   branch = "master"
@@ -1319,6 +1319,7 @@
     "github.com/imdario/mergo",
     "github.com/morikuni/aec",
     "github.com/opencontainers/go-digest",
+    "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
