@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	containerdreference "github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/docker/cli/cli/config/configfile"
@@ -66,7 +65,7 @@ func (r *multiRegistryResolver) Pusher(ctx context.Context, ref string) (remotes
 }
 
 // CreateResolver creates a docker registry resolver, using the local docker CLI credentials
-func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) (remotes.Resolver, OriginProviderWrapper) {
+func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) remotes.Resolver {
 	authorizer := docker.NewAuthorizer(nil, func(hostName string) (string, string, error) {
 		if hostName == registry.DefaultV2Registry.Host {
 			hostName = registry.IndexServer
@@ -103,24 +102,19 @@ func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) (
 		return a.Username, a.Password, nil
 	})
 
-	originProvider := &originProviderWrapper{}
-
 	result := &multiRegistryResolver{
 		plainHTTP: docker.NewResolver(docker.ResolverOptions{
-			Authorizer:     authorizer,
-			PlainHTTP:      true,
-			OriginProvider: originProvider.resolveSource,
+			Authorizer: authorizer,
+			PlainHTTP:  true,
 		}),
 		secure: docker.NewResolver(docker.ResolverOptions{
-			Authorizer:     authorizer,
-			PlainHTTP:      false,
-			OriginProvider: originProvider.resolveSource,
+			Authorizer: authorizer,
+			PlainHTTP:  false,
 		}),
 		skipTLS: docker.NewResolver(docker.ResolverOptions{
-			Authorizer:     skipTLSAuthorizer,
-			PlainHTTP:      false,
-			OriginProvider: originProvider.resolveSource,
-			Client:         clientSkipTLS,
+			Authorizer: skipTLSAuthorizer,
+			PlainHTTP:  false,
+			Client:     clientSkipTLS,
 		}),
 		plainHTTPRegistries: make(map[string]struct{}),
 		skipTLSRegistries:   make(map[string]struct{}),
@@ -137,39 +131,5 @@ func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) (
 		}
 	}
 
-	return result, originProvider
-}
-
-// OriginProviderWrapper wraps an origin provider, to be able to change the origin provider implementation
-// after having created the resolver
-type OriginProviderWrapper interface {
-	Wrap(func(ocispec.Descriptor) []containerdreference.Spec)
-}
-
-type originProviderWrapper struct {
-	originProvider func(ocispec.Descriptor) []containerdreference.Spec
-}
-
-func (p *originProviderWrapper) resolveSource(desc ocispec.Descriptor) []containerdreference.Spec {
-	if p.originProvider == nil {
-		return nil
-	}
-	return p.originProvider(desc)
-}
-
-func (p *originProviderWrapper) Wrap(provider func(ocispec.Descriptor) []containerdreference.Spec) {
-	p.originProvider = provider
-}
-
-// nolint: interfacer
-func setFromImageReference(wrapper OriginProviderWrapper, named reference.Named) error {
-	spec, err := containerdreference.Parse(named.Name())
-	if err != nil {
-		return err
-	}
-	origins := []containerdreference.Spec{spec}
-	wrapper.Wrap(func(_ ocispec.Descriptor) []containerdreference.Spec {
-		return origins
-	})
-	return nil
+	return result
 }

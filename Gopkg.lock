@@ -89,7 +89,16 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:7b09e241728ee947f7a7ff9069c292693e076063657b23f9c00bf290c25ed1a8"
+  branch = "master"
+  digest = "1:fdd135f63857b858859a5a2e361a117622824826a78ce9d8c058144a0f89c7ba"
+  name = "github.com/containerd/cgroups"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d596c78861b15c27a9ac82975aca4413390b9b49"
+
+[[projects]]
+  branch = "master"
+  digest = "1:ea483229ebc7e8aada30debed694367b74c6f1944c9e3f6a1bdba46ec6fb4165"
   name = "github.com/containerd/containerd"
   packages = [
     ".",
@@ -121,7 +130,6 @@
     "identifiers",
     "images",
     "images/archive",
-    "images/oci",
     "labels",
     "leases",
     "leases/proxy",
@@ -145,8 +153,7 @@
     "version",
   ]
   pruneopts = "NUT"
-  revision = "42c3614d58767e96c1752977fed94d0b140a0173"
-  source = "github.com/simonferquel/containerd"
+  revision = "f2b6c31d0fa7f5541f6a37d525ed461b294d785f"
 
 [[projects]]
   branch = "master"
@@ -171,6 +178,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:46b7a15b488f43a404976adbcd31971bbba210ce47e2b1daa98c9ba99d3047ef"
+  name = "github.com/containerd/ttrpc"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "1fb3814edf44a76e0ccf503decf726d994919a9a"
+
+[[projects]]
+  branch = "master"
   digest = "1:fda6b4a39771e0c9bdc114f8a5528d3ab5c4eb635a2cfa54ff08ac0fcc8db3a7"
   name = "github.com/containerd/typeurl"
   packages = ["."]
@@ -184,6 +199,14 @@
   pruneopts = "NUT"
   revision = "d57e8b8d97adfc4a6c224fe116714bf1a1f3beb9"
   version = "v3.3.12"
+
+[[projects]]
+  digest = "1:84c51760e27ff758724218a0b234a8264aa0992f49af4da50bedd682e196f996"
+  name = "github.com/coreos/go-systemd"
+  packages = ["dbus"]
+  pruneopts = "NUT"
+  revision = "e64a0ec8b42a61e2a9801dc1d0abe539dea79197"
+  version = "v20"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -280,14 +303,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:641cc37fc8e5a9ce8c904aba478ec4ca9bed9250cfdde6e10409784d88ca6e08"
+  digest = "1:c2ab9eddaa3e77cd550fd7430eb20095a86a8a323590dc581332c35e26bc1415"
   name = "github.com/docker/cnab-to-oci"
   packages = [
     "converter",
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "9221877ea74af2cbb6d87730e3ef6cfa9bf38c8a"
+  revision = "c9ffda63d51e790034412d57a3eb7c12c23462d3"
 
 [[projects]]
   digest = "1:d29e07dc6fff1d592442bdf6b947f3a89d418ac6d65344d4e048c64a7cdd511c"
@@ -460,6 +483,14 @@
   ]
   pruneopts = "NUT"
   revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
+
+[[projects]]
+  digest = "1:08a552769d7194c0268ba31010f5da91878212603d11b4b551583a7586a76632"
+  name = "github.com/godbus/dbus"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "2ff6f7ffd60f0f2410b3105864bdd12c7894f844"
+  version = "v5.0.1"
 
 [[projects]]
   digest = "1:c6f5a29fce208cb102ad1e356d3a3a361be54604549063943613058a377dd0d0"
@@ -701,12 +732,11 @@
   version = "v1.0.0-rc7"
 
 [[projects]]
-  digest = "1:57234a321bf1f8f98a8a9a5122a2404cc60d0800516f4ab7a7b2375e4b2d19ea"
+  digest = "1:7a58202c5cdf3d2c1eb0621fe369315561cea7f036ad10f0f0479ac36bcc95eb"
   name = "github.com/opencontainers/runtime-spec"
   packages = ["specs-go"]
   pruneopts = "NUT"
-  revision = "4e3b9264a330d094b0386c3703c5f379119711e8"
-  version = "v1.0.1"
+  revision = "29686dbc5559d93fb1ef402eeda3e35c38d75af4"
 
 [[projects]]
   digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"

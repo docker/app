@@ -72,7 +72,7 @@ func (b *bundleStore) LookupOrPullBundle(ref reference.Named, pullRef bool, conf
 			return nil, err
 		}
 	}
-	bndl, err := remotes.Pull(context.TODO(), reference.TagNameOnly(ref), remotes.NewResolverConfigFromDockerConfigFile(config, insecureRegistries...).Resolver)
+	bndl, err := remotes.Pull(context.TODO(), reference.TagNameOnly(ref), remotes.CreateResolver(config, insecureRegistries...))
 	if err != nil {
 		return nil, errors.Wrap(err, ref.String())
 	}

@@ -18,7 +18,6 @@ package docker
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -30,7 +29,6 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
-	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -42,18 +40,7 @@ type dockerPusher struct {
 	tag string
 
 	// TODO: namespace tracker
-	tracker        StatusTracker
-	originProvider func(ocispec.Descriptor) []reference.Spec
-}
-
-func findMatchingOrigins(targetRef reference.Spec, origins []reference.Spec) []reference.Spec {
-	var result []reference.Spec
-	for _, origin := range origins {
-		if origin.Hostname() == targetRef.Hostname() {
-			result = append(result, origin)
-		}
-	}
-	return result
+	tracker StatusTracker
 }
 
 func (p dockerPusher) Push(ctx context.Context, desc ocispec.Descriptor) (content.Writer, error) {
@@ -129,8 +116,6 @@ func (p dockerPusher) Push(ctx context.Context, desc ocispec.Descriptor) (conten
 		}
 	}
 
-	// TODO: Lookup related objects for cross repository push
-
 	if isManifest {
 		var putPath string
 		if p.tag != "" {
@@ -145,64 +130,57 @@ func (p dockerPusher) Push(ctx context.Context, desc ocispec.Descriptor) (conten
 		}
 		req.Header.Add("Content-Type", desc.MediaType)
 	} else {
-		mountCandidates := findMatchingOrigins(p.refspec, p.originProvider(desc))
-		for _, mountCandidate := range mountCandidates {
-			// this is important that ctx get shadowed here. We need to rollback to the previous context when we try the next candidate
-			ctx, err := contextWithRepositoryScope(ctx, mountCandidate, false)
-			if err != nil {
-				// try next candidate
-				continue
-			}
-			i := strings.Index(mountCandidate.Locator, "/")
-			originRepoPath := mountCandidate.Locator[i+1:]
-			req, err = http.NewRequest(http.MethodPost, fmt.Sprintf("%s/?mount=%s&from=%s", p.url("blobs", "uploads"), desc.Digest, originRepoPath), nil)
-			if err != nil {
-				// try next candidate
-				continue
-			}
-
-			resp, err = p.doRequestWithRetries(ctx, req, nil)
-			if err != nil {
-				// try next candidate
-				continue
-			}
-
-			switch resp.StatusCode {
-			case http.StatusCreated:
-			default:
-				// try next candidate
-				continue
-			}
-
-			p.tracker.SetStatus(ref, Status{
-				Status: content.Status{
-					Ref:       ref,
-					Total:     desc.Size,
-					Expected:  desc.Digest,
-					StartedAt: time.Now(),
-					Offset:    desc.Size,
-				},
-			})
-			// mount succeeded, returning a nil writer, without error
-			return nil, errors.Wrapf(errdefs.ErrAlreadyExists, "content %v mounted from %s", desc.Digest, mountCandidate)
-		}
-		// no mount candidates found, or mount failure, fallback to real push
-
-		// TODO: Do monolithic upload if size is small
-
 		// Start upload request
 		req, err = http.NewRequest(http.MethodPost, p.url("blobs", "uploads")+"/", nil)
 		if err != nil {
 			return nil, err
 		}
 
-		resp, err := p.doRequestWithRetries(ctx, req, nil)
-		if err != nil {
-			return nil, err
+		var resp *http.Response
+		if fromRepo := selectRepositoryMountCandidate(p.refspec, desc.Annotations); fromRepo != "" {
+			req = requestWithMountFrom(req, desc.Digest.String(), fromRepo)
+			pctx := contextWithAppendPullRepositoryScope(ctx, fromRepo)
+
+			// NOTE: the fromRepo might be private repo and
+			// auth service still can grant token without error.
+			// but the post request will fail because of 401.
+			//
+			// for the private repo, we should remove mount-from
+			// query and send the request again.
+			resp, err = p.doRequest(pctx, req)
+			if err != nil {
+				return nil, err
+			}
+
+			if resp.StatusCode == http.StatusUnauthorized {
+				log.G(ctx).Debugf("failed to mount from repository %s", fromRepo)
+
+				resp.Body.Close()
+				resp = nil
+
+				req, err = removeMountFromQuery(req)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		if resp == nil {
+			resp, err = p.doRequestWithRetries(ctx, req, nil)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		switch resp.StatusCode {
 		case http.StatusOK, http.StatusAccepted, http.StatusNoContent:
+		case http.StatusCreated:
+			p.tracker.SetStatus(ref, Status{
+				Status: content.Status{
+					Ref: ref,
+				},
+			})
+			return nil, errors.Wrapf(errdefs.ErrAlreadyExists, "content %v on remote", desc.Digest)
 		default:
 			// TODO: log error
 			return nil, errors.Errorf("unexpected response: %s", resp.Status)
@@ -375,4 +353,26 @@ func (pw *pushWriter) Truncate(size int64) error {
 	// TODO: if blob close request and start new request at offset
 	// TODO: always error on manifest
 	return errors.New("cannot truncate remote upload")
+}
+
+func requestWithMountFrom(req *http.Request, mount, from string) *http.Request {
+	q := req.URL.Query()
+
+	q.Set("mount", mount)
+	q.Set("from", from)
+	req.URL.RawQuery = q.Encode()
+	return req
+}
+
+func removeMountFromQuery(req *http.Request) (*http.Request, error) {
+	req, err := copyRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Del("mount")
+	q.Del("from")
+	req.URL.RawQuery = q.Encode()
+	return req, nil
 }
