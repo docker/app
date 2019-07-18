@@ -269,6 +269,27 @@ func TestPushInstallBundle(t *testing.T) {
 			cmd.Command = dockerCli.Command("service", "ls")
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref2))
 		})
+
+		// push it again using an app pre-bundled and tagged in the bundle store and install it to check it is also available
+		t.Run("push-bundleref", func(t *testing.T) {
+			name := strings.Replace(t.Name(), "/", "_", 1)
+			ref2 := ref + ":v0.42"
+			// Create a new command so the bundle store can be trashed before installing the app
+			cmd2, cleanup2 := dockerCli.createTestCmd()
+			// bundle the app again but this time with a tag to store it into the bundle store
+			cmd2.Command = dockerCli.Command("app", "bundle", "--tag", ref2, "-o", bundleFile, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+			icmd.RunCmd(cmd2).Assert(t, icmd.Success)
+			// Push the app without tagging it explicitly
+			cmd2.Command = dockerCli.Command("app", "push", "--insecure-registries="+info.registryAddress, ref2)
+			icmd.RunCmd(cmd2).Assert(t, icmd.Success)
+			// remove the bundle from the bundle store to be sure it won't be used instead of registry
+			cleanup2()
+			// install from the registry
+			cmd.Command = dockerCli.Command("app", "install", "--insecure-registries="+info.registryAddress, ref2, "--name", name)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			cmd.Command = dockerCli.Command("service", "ls")
+			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
+		})
 	})
 }
 
