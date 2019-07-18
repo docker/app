@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types/parameters"
@@ -85,14 +84,14 @@ func withStrictMode(strict bool) mergeBundleOpt {
 		return nil
 	}
 }
+
 func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleOpt) error {
-	bndl := installation.Bundle
 	if installation.Parameters == nil {
 		installation.Parameters = make(map[string]interface{})
 	}
 	userParams := map[string]string{}
 	cfg := &mergeBundleConfig{
-		bundle: bndl,
+		bundle: installation.Bundle,
 		params: userParams,
 		stderr: os.Stderr,
 	}
@@ -101,27 +100,31 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 			return err
 		}
 	}
-	if err := matchAndMergeParametersDefinition(installation.Parameters, cfg.params, bndl.Definitions, cfg.strictMode, cfg.stderr); err != nil {
+	mergedValues, err := matchAndMergeParametersDefinition(installation.Parameters, cfg)
+	if err != nil {
 		return err
 	}
-	var err error
-	installation.Parameters, err = bundle.ValuesOrDefaults(installation.Parameters, bndl)
+	installation.Parameters, err = bundle.ValuesOrDefaults(mergedValues, installation.Parameters, installation.Bundle)
 	return err
 }
 
-func matchAndMergeParametersDefinition(currentValues map[string]interface{}, parameterValues map[string]string, parameterDefinitions definition.Definitions, strictMode bool, stderr io.Writer) error {
-	for k, v := range parameterValues {
-		definition, ok := parameterDefinitions[k]
+func matchAndMergeParametersDefinition(currentValues map[string]interface{}, cfg *mergeBundleConfig) (map[string]interface{}, error) {
+	mergedValues := make(map[string]interface{})
+	for k, v := range currentValues {
+		mergedValues[k] = v
+	}
+	for k, v := range cfg.params {
+		definition, ok := cfg.bundle.Definitions[k]
 		if !ok {
-			if strictMode {
-				return fmt.Errorf("parameter %q is not defined in the bundle", k)
+			if cfg.strictMode {
+				return nil, fmt.Errorf("parameter %q is not defined in the bundle", k)
 			}
-			fmt.Fprintf(stderr, "Warning: parameter %q is not defined in the bundle\n", k)
+			fmt.Fprintf(cfg.stderr, "Warning: parameter %q is not defined in the bundle\n", k)
 			continue
 		}
 		value, err := definition.ConvertValue(v)
 		if err != nil {
-			return errors.Wrapf(err, "invalid value for parameter %q", k)
+			return nil, errors.Wrapf(err, "invalid value for parameter %q", k)
 		}
 		valErrors, err := definition.Validate(value)
 		if valErrors != nil {
@@ -130,12 +133,12 @@ func matchAndMergeParametersDefinition(currentValues map[string]interface{}, par
 				errs[i] = v.Error
 			}
 			errMsg := strings.Join(errs, ", ")
-			return errors.Wrapf(fmt.Errorf(errMsg), "invalid value for parameter %q", k)
+			return nil, errors.Wrapf(fmt.Errorf(errMsg), "invalid value for parameter %q", k)
 		}
 		if err != nil {
-			return errors.Wrapf(err, "invalid value for parameter %q", k)
+			return nil, errors.Wrapf(err, "invalid value for parameter %q", k)
 		}
-		currentValues[k] = value
+		mergedValues[k] = value
 	}
-	return nil
+	return mergedValues, nil
 }

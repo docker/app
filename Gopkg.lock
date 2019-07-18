@@ -218,7 +218,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0b31d075847995f6b74ab66aac4b64c588fdb0737aa3a2731b432f03cb7a1faa"
+  digest = "1:57222ef01ff3930c9010c1387d0311974ec5a1c3627ed63e41374aef6341a12d"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "action",
@@ -230,7 +230,7 @@
     "utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "5ca85500e801be695748cf1f360f2254f425d19c"
+  revision = "d0e47f49ea9a4ef8aedf1043b11ffa7506fc10d7"
 
 [[projects]]
   digest = "1:719fa8aafc69a874805bde687d292fc9160f74385c235943d0b7f010e3c135d3"
@@ -1304,6 +1304,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
+    "github.com/containerd/containerd/log",
     "github.com/containerd/containerd/platforms",
     "github.com/deislabs/cnab-go/action",
     "github.com/deislabs/cnab-go/bundle",

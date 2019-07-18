@@ -24,6 +24,11 @@ ifeq ($(OS),Windows_NT)
   EXEC_EXT := .exe
 endif
 
+INCLUDE_E2E :=
+ifneq ($(E2E_TESTS),)
+  INCLUDE_E2E := -run $(E2E_TESTS)
+endif
+
 TEST_RESULTS_DIR = _build/test-results
 STATIC_FLAGS= CGO_ENABLED=0
 GO_BUILD = $(STATIC_FLAGS) go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
@@ -78,7 +83,7 @@ lint: ## run linter(s)
 test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."
 	@$(call mkdir,$(TEST_RESULTS_DIR))
-	$(call GO_TESTSUM,e2e.xml) -v ./e2e/
+	$(call GO_TESTSUM,e2e.xml) -v ./e2e/ $(INCLUDE_E2E)
 
 test-unit: ## run unit tests
 	@echo "Running unit tests..."

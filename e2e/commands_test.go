@@ -478,6 +478,13 @@ STATUS
 			fmt.Sprintf("Updating service %s_web", appName),
 		})
 
+	// Upgrade the application, changing the orchestrator, fails because this parameters is immutable
+	cmd.Command = dockerCli.Command("app", "upgrade", appName, "--set", "com.docker.app.orchestrator=kubernetes")
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Err:      fmt.Sprint("parameter com.docker.app.orchestrator is immutable and cannot be overridden with value kubernetes"),
+	})
+
 	// Query the application status again, the port should have change
 	cmd.Command = dockerCli.Command("app", "status", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "8081"})

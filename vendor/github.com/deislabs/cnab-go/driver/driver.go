@@ -34,7 +34,7 @@ type Operation struct {
 	// Files contains files that should be injected into the invocation image.
 	Files map[string]string `json:"files"`
 	// Output stream for log messages from the driver
-	Out io.Writer
+	Out io.Writer `json:"-"`
 }
 
 // ResolvedCred is a credential that has been resolved and is ready for injection into the runtime.

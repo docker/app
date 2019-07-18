@@ -64,6 +64,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 					"uninstall",
 					internal.ActionStatusName,
 				},
+				Immutable:  true,
 				Definition: internal.ParameterOrchestratorName,
 			},
 			internal.ParameterKubernetesNamespaceName: {
@@ -76,6 +77,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 					"uninstall",
 					internal.ActionStatusName,
 				},
+				Immutable:  true,
 				Definition: internal.ParameterKubernetesNamespaceName,
 			},
 			internal.ParameterRenderFormatName: {

@@ -63,7 +63,8 @@
 				],
 				"destination": {
 					"env": "DOCKER_KUBERNETES_NAMESPACE"
-				}
+				},
+				"immutable": true
 			},
 			"com.docker.app.orchestrator": {
 				"definition": "com.docker.app.orchestrator",
@@ -75,7 +76,8 @@
 				],
 				"destination": {
 					"env": "DOCKER_STACK_ORCHESTRATOR"
-				}
+				},
+				"immutable": true
 			},
 			"com.docker.app.render-format": {
 				"definition": "com.docker.app.render-format",

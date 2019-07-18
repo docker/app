@@ -87,6 +87,19 @@ func withParameter(name, typ string) bundleOperator {
 	}
 }
 
+func withImmutableParameter(name, typ string) bundleOperator {
+	return func(b *bundle.Bundle) {
+		prepareBundleWithParameters(b)
+		b.Parameters.Fields[name] = bundle.ParameterDefinition{
+			Definition: name,
+			Immutable:  true,
+		}
+		b.Definitions[name] = &definition.Schema{
+			Type: typ,
+		}
+	}
+}
+
 func withParameterAndDefault(name, typ string, def interface{}) bundleOperator {
 	return func(b *bundle.Bundle) {
 		prepareBundleWithParameters(b)
@@ -259,5 +272,16 @@ func TestMergeBundleParameters(t *testing.T) {
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		err := mergeBundleParameters(i, withInvalidValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
+	})
+
+	t.Run("Overridden immutable parameter is rejected", func(t *testing.T) {
+		withValue := func(c *mergeBundleConfig) error {
+			c.params["param"] = "newValue"
+			return nil
+		}
+		bundle := prepareBundle(withImmutableParameter("param", "string"))
+		i := &store.Installation{Claim: claim.Claim{Bundle: bundle, Parameters: map[string]interface{}{"param": "currentValue"}}}
+		err := mergeBundleParameters(i, withValue)
+		assert.ErrorContains(t, err, "is immutable and cannot be overridden")
 	})
 }
