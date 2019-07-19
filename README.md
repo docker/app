@@ -337,6 +337,22 @@ manipulating a package also accept a `--pull` flag to force pulling the bundle
 from the registry, even if it is present in the local store. This can be useful
 when you are repeatedly pushing a bundle on the same tag.
 
+### Multi-arch applications
+
+By default the `docker app push` command only pushes service images for the linux/amd64
+platform to the Docker Hub. By using the the `--all-platforms` flag it is possible to push
+the services images for all platforms:
+
+```console
+$ docker app push --all-platforms myhubuser/myimage
+```
+
+It is also possible to push only a limited subset of platforms with the `--platform` flag:
+
+```console
+$ docker app push --platform linux/amd64 --platform linux/arm64 --platform linux/arm/v7 myhubuser/myimage
+```
+
 ## Next steps
 
 If you're interested in contributing to the project, jump to
