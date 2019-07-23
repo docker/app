@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "v1.0.0-WD",
+  "name": "cnab-parameters",
+  "version": "0.1.0",
+  "invocationImages": [
+    {
+      "imageType": "docker",
+      "image": "e2e/cnab-parameters:v0.1.0"
+    }
+  ],
+  "definitions": {
+    "boolParam_type": {
+      "type": "boolean"
+    },
+    "stringParam_type": {
+      "type": "string"
+    },
+    "intParam_type": {
+      "type": "integer"
+    },
+    "floatParam_type": {
+      "type": "number"
+    }
+  },
+  "parameters": {
+    "fields": {
+      "boolParam": {
+        "definition": "boolParam_type",
+        "destination": {
+          "env": "BOOL_PARAM"
+        }
+      },
+      "stringParam": {
+        "definition": "stringParam_type",
+        "destination": {
+          "env": "STRING_PARAM"
+        }
+      },
+      "intParam": {
+        "definition": "intParam_type",
+        "destination": {
+          "env": "INT_PARAM"
+        }
+      },
+      "floatParam": {
+        "definition": "floatParam_type",
+        "destination": {
+          "env": "FLOAT_PARAM"
+        }
+      }
+    }
+  }
+}

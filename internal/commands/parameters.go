@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types/parameters"
@@ -101,7 +100,7 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 			return err
 		}
 	}
-	if err := matchAndMergeParametersDefinition(installation.Parameters, cfg.params, bndl.Definitions, cfg.strictMode, cfg.stderr); err != nil {
+	if err := matchAndMergeParametersDefinition(installation.Parameters, cfg.params, cfg.bundle, cfg.strictMode, cfg.stderr); err != nil {
 		return err
 	}
 	var err error
@@ -109,15 +108,27 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 	return err
 }
 
-func matchAndMergeParametersDefinition(currentValues map[string]interface{}, parameterValues map[string]string, parameterDefinitions definition.Definitions, strictMode bool, stderr io.Writer) error {
+func getParameterFromBundle(name string, bndl *bundle.Bundle) (bundle.ParameterDefinition, bool) {
+	if bndl.Parameters == nil {
+		return bundle.ParameterDefinition{}, false
+	}
+	param, found := bndl.Parameters.Fields[name]
+	return param, found
+}
+
+func matchAndMergeParametersDefinition(currentValues map[string]interface{}, parameterValues map[string]string, bundle *bundle.Bundle, strictMode bool, stderr io.Writer) error {
 	for k, v := range parameterValues {
-		definition, ok := parameterDefinitions[k]
+		param, ok := getParameterFromBundle(k, bundle)
 		if !ok {
 			if strictMode {
 				return fmt.Errorf("parameter %q is not defined in the bundle", k)
 			}
 			fmt.Fprintf(stderr, "Warning: parameter %q is not defined in the bundle\n", k)
 			continue
+		}
+		definition, ok := bundle.Definitions[param.Definition]
+		if !ok {
+			return fmt.Errorf("invalid bundle: definition not found for parameter %q", k)
 		}
 		value, err := definition.ConvertValue(v)
 		if err != nil {
