@@ -3,12 +3,10 @@ package e2e
 import (
 	"fmt"
 	"path"
-	"runtime"
 	"testing"
 
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
-	"gotest.tools/fs"
 	"gotest.tools/icmd"
 )
 
@@ -45,18 +43,8 @@ func TestCallCustomStatusAction(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			cmd, cleanup := dockerCli.createTestCmd()
 			defer cleanup()
-
-			tmpDir := fs.NewDir(t, t.Name())
-			defer tmpDir.Remove()
 			testDir := path.Join("testdata", testCase.cnab)
 
-			// We need to explicitly set the SYSTEMROOT on windows
-			// otherwise we get the error:
-			// "panic: failed to read random bytes: CryptAcquireContext: Provider DLL failed to initialize correctly."
-			// See: https://github.com/golang/go/issues/25210
-			if runtime.GOOS == "windows" {
-				cmd.Env = append(cmd.Env, `SYSTEMROOT=C:\WINDOWS`)
-			}
 			// Build CNAB invocation image
 			cmd.Command = dockerCli.Command("build", "--file", path.Join(testDir, "cnab", "build", "Dockerfile"), "--tag", fmt.Sprintf("e2e/%s:v0.1.0", testCase.cnab), testDir)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -78,4 +66,33 @@ func TestCallCustomStatusAction(t *testing.T) {
 			assert.Assert(t, is.Contains(result.Combined(), testCase.expectedOutput))
 		})
 	}
+}
+
+func TestCnabParameters(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+	testDir := path.Join("testdata", "cnab-parameters")
+
+	// Build CNAB invocation image
+	cmd.Command = dockerCli.Command("build", "--file", path.Join(testDir, "cnab", "build", "Dockerfile"), "--tag", "e2e/cnab-parameters:v0.1.0", testDir)
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	// docker app uninstall
+	defer func() {
+		cmd.Command = dockerCli.Command("app", "uninstall", "cnab-parameters")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	}()
+
+	// docker app install
+	cmd.Command = dockerCli.Command("app", "install", path.Join(testDir, "bundle.json"), "--name", "cnab-parameters",
+		"--set", "boolParam=true",
+		"--set", "stringParam=value",
+		"--set", "intParam=42",
+		"--set", "floatParam=3.14")
+	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	expectedOutput := `boolParam=true
+stringParam=value
+intParam=42
+floatParam=3.14`
+	assert.Assert(t, is.Contains(result.Combined(), expectedOutput))
 }
