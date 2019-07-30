@@ -111,3 +111,13 @@ you forgot to rebuild the base invocation image, simply run
 ```sh
 $ make -f docker.Makefile invocation-image
 ```
+
+### Running specific end-to-end tests
+
+To execute a specific end-to-end test or set of end-to-end tests you can specify
+them with the E2E_TESTS Makefile variable.
+
+```console
+# run the e2e test <TEST_NAME>:
+make E2E_TESTS=<TEST_NAME> test-e2e
+```
