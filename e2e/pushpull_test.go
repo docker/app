@@ -3,6 +3,7 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -28,6 +29,7 @@ type dindSwarmAndRegistryInfo struct {
 	registryAddress string
 	configuredCmd   icmd.Cmd
 	stopRegistry    func()
+	registryLogs    func() string
 }
 
 func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInfo)) {
@@ -88,6 +90,7 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 		registryAddress: registry.GetAddress(t),
 		swarmAddress:    swarm.GetAddress(t),
 		stopRegistry:    registry.StopNoFail,
+		registryLogs:    registry.Logs(t),
 	}
 	todo(info)
 
@@ -165,11 +168,16 @@ func TestPushArchs(t *testing.T) {
 				icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 				var index v1.Index
-				httpGet(t, "http://"+info.registryAddress+"/v2/test/push-pull/manifests/1", &index)
+				headers := map[string]string{
+					"Accept": "application/vnd.docker.distribution.manifest.list.v2+json",
+				}
+				err := httpGet("http://"+info.registryAddress+"/v2/test/push-pull/manifests/1", headers, &index)
+				assert.NilError(t, err, info.registryLogs())
 				digest, err := getManifestListDigest(index)
-				assert.NilError(t, err)
+				assert.NilError(t, err, info.registryLogs())
 				var manifestList manifestlist.ManifestList
-				httpGet(t, "http://"+info.registryAddress+"/v2/test/push-pull/manifests/"+digest.String(), &manifestList)
+				err = httpGet("http://"+info.registryAddress+"/v2/test/push-pull/manifests/"+digest.String(), headers, &manifestList)
+				assert.NilError(t, err)
 				assert.Equal(t, len(manifestList.Manifests), len(testCase.expectedPlatforms), "Unexpected number of platforms")
 				for _, m := range manifestList.Manifests {
 					assert.Assert(t, cmp.Contains(testCase.expectedPlatforms, m.Platform), "Platform expected but not found: %s", m.Platform)
@@ -312,13 +320,31 @@ func isPortAvailable(port int) bool {
 	return true
 }
 
-func httpGet(t *testing.T, url string, obj interface{}) {
-	r, err := http.Get(url)
-	assert.NilError(t, err)
+func httpGet(url string, headers map[string]string, obj interface{}) error {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	r, err := client.Do(req)
+	if err != nil {
+		return err
+	}
 	defer r.Body.Close()
-	assert.Equal(t, r.StatusCode, 200)
-	err = json.NewDecoder(r.Body).Decode(obj)
-	assert.NilError(t, err)
+	if r.StatusCode != http.StatusOK {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("unexpected http error code %d with message %s", r.StatusCode, string(body))
+	}
+	if err := json.NewDecoder(r.Body).Decode(obj); err != nil {
+		return err
+	}
+	return nil
 }
 
 func getManifestListDigest(index v1.Index) (digest.Digest, error) {

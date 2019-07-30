@@ -107,3 +107,9 @@ func (c *Container) GetPrivateAddress(t *testing.T) string {
 	result := icmd.RunCommand(dockerCli.path, "inspect", container, "-f", "{{.NetworkSettings.IPAddress}}").Assert(t, icmd.Success)
 	return fmt.Sprintf("%s:%d", strings.TrimSpace(result.Stdout()), c.privatePort)
 }
+
+func (c *Container) Logs(t *testing.T) func() string {
+	return func() string {
+		return icmd.RunCommand(dockerCli.path, "logs", c.container).Assert(t, icmd.Success).Combined()
+	}
+}
