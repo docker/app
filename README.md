@@ -278,7 +278,7 @@ tar xf "docker-app.tar.gz"
 
 To install as standalone, copy it somewhere in your path:
 ```powershell
-cp docker-app-plugin-windows.exe PATH/docker-app.exe
+cp docker-app-standalone-windows.exe PATH/docker-app.exe
 ```
 
 To install as a Docker CLI plugin:
