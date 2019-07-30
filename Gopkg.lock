@@ -218,7 +218,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0b31d075847995f6b74ab66aac4b64c588fdb0737aa3a2731b432f03cb7a1faa"
+  digest = "1:6bb72d6164ebe63381198527a2f678184b434ecb3bb74e6fd7e9276992e7e026"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "action",
@@ -227,20 +227,11 @@
     "claim",
     "credentials",
     "driver",
+    "driver/docker",
     "utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "5ca85500e801be695748cf1f360f2254f425d19c"
-
-[[projects]]
-  digest = "1:719fa8aafc69a874805bde687d292fc9160f74385c235943d0b7f010e3c135d3"
-  name = "github.com/deislabs/duffle"
-  packages = [
-    "pkg/driver",
-    "pkg/loader",
-  ]
-  pruneopts = "NUT"
-  revision = "5930527762a46c7adfcfccaec1e6a2ddf5841319"
+  revision = "4f3db84e6bab52dfbf3ebcd26c3dd08a3bf94893"
 
 [[projects]]
   branch = "19.03"
@@ -1304,6 +1295,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
+    "github.com/containerd/containerd/log",
     "github.com/containerd/containerd/platforms",
     "github.com/deislabs/cnab-go/action",
     "github.com/deislabs/cnab-go/bundle",
@@ -1311,9 +1303,8 @@
     "github.com/deislabs/cnab-go/claim",
     "github.com/deislabs/cnab-go/credentials",
     "github.com/deislabs/cnab-go/driver",
+    "github.com/deislabs/cnab-go/driver/docker",
     "github.com/deislabs/cnab-go/utils/crud",
-    "github.com/deislabs/duffle/pkg/driver",
-    "github.com/deislabs/duffle/pkg/loader",
     "github.com/docker/cli/cli",
     "github.com/docker/cli/cli-plugins/manager",
     "github.com/docker/cli/cli-plugins/plugin",

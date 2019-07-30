@@ -100,11 +100,11 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 			return err
 		}
 	}
-	if err := matchAndMergeParametersDefinition(installation.Parameters, cfg.params, cfg.bundle, cfg.strictMode, cfg.stderr); err != nil {
+	mergedValues, err := matchAndMergeParametersDefinition(installation.Parameters, cfg)
+	if err != nil {
 		return err
 	}
-	var err error
-	installation.Parameters, err = bundle.ValuesOrDefaults(installation.Parameters, bndl)
+	installation.Parameters, err = bundle.ValuesOrDefaults(mergedValues, installation.Parameters, bndl)
 	return err
 }
 
@@ -116,23 +116,27 @@ func getParameterFromBundle(name string, bndl *bundle.Bundle) (bundle.ParameterD
 	return param, found
 }
 
-func matchAndMergeParametersDefinition(currentValues map[string]interface{}, parameterValues map[string]string, bundle *bundle.Bundle, strictMode bool, stderr io.Writer) error {
-	for k, v := range parameterValues {
-		param, ok := getParameterFromBundle(k, bundle)
+func matchAndMergeParametersDefinition(currentValues map[string]interface{}, cfg *mergeBundleConfig) (map[string]interface{}, error) {
+	mergedValues := make(map[string]interface{})
+	for k, v := range currentValues {
+		mergedValues[k] = v
+	}
+	for k, v := range cfg.params {
+		param, ok := getParameterFromBundle(k, cfg.bundle)
 		if !ok {
-			if strictMode {
-				return fmt.Errorf("parameter %q is not defined in the bundle", k)
+			if cfg.strictMode {
+				return nil, fmt.Errorf("parameter %q is not defined in the bundle", k)
 			}
-			fmt.Fprintf(stderr, "Warning: parameter %q is not defined in the bundle\n", k)
+			fmt.Fprintf(cfg.stderr, "Warning: parameter %q is not defined in the bundle\n", k)
 			continue
 		}
-		definition, ok := bundle.Definitions[param.Definition]
+		definition, ok := cfg.bundle.Definitions[param.Definition]
 		if !ok {
-			return fmt.Errorf("invalid bundle: definition not found for parameter %q", k)
+			return nil, fmt.Errorf("invalid bundle: definition not found for parameter %q", k)
 		}
 		value, err := definition.ConvertValue(v)
 		if err != nil {
-			return errors.Wrapf(err, "invalid value for parameter %q", k)
+			return nil, errors.Wrapf(err, "invalid value for parameter %q", k)
 		}
 		valErrors, err := definition.Validate(value)
 		if valErrors != nil {
@@ -141,12 +145,12 @@ func matchAndMergeParametersDefinition(currentValues map[string]interface{}, par
 				errs[i] = v.Error
 			}
 			errMsg := strings.Join(errs, ", ")
-			return errors.Wrapf(fmt.Errorf(errMsg), "invalid value for parameter %q", k)
+			return nil, errors.Wrapf(fmt.Errorf(errMsg), "invalid value for parameter %q", k)
 		}
 		if err != nil {
-			return errors.Wrapf(err, "invalid value for parameter %q", k)
+			return nil, errors.Wrapf(err, "invalid value for parameter %q", k)
 		}
-		currentValues[k] = value
+		mergedValues[k] = value
 	}
-	return nil
+	return mergedValues, nil
 }

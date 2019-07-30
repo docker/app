@@ -1,4 +1,4 @@
-package driver
+package docker
 
 import (
 	"archive/tar"
@@ -22,34 +22,34 @@ import (
 	"github.com/docker/docker/registry"
 )
 
-// DockerDriver is capable of running Docker invocation images using Docker itself.
-type DockerDriver struct {
+// Driver is capable of running Docker invocation images using Docker itself.
+type Driver struct {
 	config map[string]string
 	// If true, this will not actually run Docker
 	Simulate                   bool
 	dockerCli                  command.Cli
-	dockerConfigurationOptions []DockerConfigurationOption
+	dockerConfigurationOptions []ConfigurationOption
 	containerOut               io.Writer
 	containerErr               io.Writer
 }
 
 // Run executes the Docker driver
-func (d *DockerDriver) Run(op *driver.Operation) error {
+func (d *Driver) Run(op *driver.Operation) error {
 	return d.exec(op)
 }
 
 // Handles indicates that the Docker driver supports "docker" and "oci"
-func (d *DockerDriver) Handles(dt string) bool {
+func (d *Driver) Handles(dt string) bool {
 	return dt == driver.ImageTypeDocker || dt == driver.ImageTypeOCI
 }
 
 // AddConfigurationOptions adds configuration callbacks to the driver
-func (d *DockerDriver) AddConfigurationOptions(opts ...DockerConfigurationOption) {
+func (d *Driver) AddConfigurationOptions(opts ...ConfigurationOption) {
 	d.dockerConfigurationOptions = append(d.dockerConfigurationOptions, opts...)
 }
 
 // Config returns the Docker driver configuration options
-func (d *DockerDriver) Config() map[string]string {
+func (d *Driver) Config() map[string]string {
 	return map[string]string{
 		"VERBOSE":             "Increase verbosity. true, false are supported values",
 		"PULL_ALWAYS":         "Always pull image, even if locally available (0|1)",
@@ -58,22 +58,22 @@ func (d *DockerDriver) Config() map[string]string {
 }
 
 // SetConfig sets Docker driver configuration
-func (d *DockerDriver) SetConfig(settings map[string]string) {
+func (d *Driver) SetConfig(settings map[string]string) {
 	d.config = settings
 }
 
 // SetDockerCli makes the driver use an already initialized cli
-func (d *DockerDriver) SetDockerCli(dockerCli command.Cli) {
+func (d *Driver) SetDockerCli(dockerCli command.Cli) {
 	d.dockerCli = dockerCli
 }
 
 // SetContainerOut sets the container output stream
-func (d *DockerDriver) SetContainerOut(w io.Writer) {
+func (d *Driver) SetContainerOut(w io.Writer) {
 	d.containerOut = w
 }
 
 // SetContainerErr sets the container error stream
-func (d *DockerDriver) SetContainerErr(w io.Writer) {
+func (d *Driver) SetContainerErr(w io.Writer) {
 	d.containerErr = w
 }
 
@@ -106,7 +106,7 @@ func pullImage(ctx context.Context, cli command.Cli, image string) error {
 	return jsonmessage.DisplayJSONMessagesStream(responseBody, cli.Out(), cli.Out().FD(), false, nil)
 }
 
-func (d *DockerDriver) initializeDockerCli() (command.Cli, error) {
+func (d *Driver) initializeDockerCli() (command.Cli, error) {
 	if d.dockerCli != nil {
 		return d.dockerCli, nil
 	}
@@ -124,7 +124,7 @@ func (d *DockerDriver) initializeDockerCli() (command.Cli, error) {
 	return cli, nil
 }
 
-func (d *DockerDriver) exec(op *driver.Operation) error {
+func (d *Driver) exec(op *driver.Operation) error {
 	ctx := context.Background()
 
 	cli, err := d.initializeDockerCli()
@@ -262,5 +262,5 @@ func generateTar(files map[string]string) (io.Reader, error) {
 	return r, nil
 }
 
-// DockerConfigurationOption is an option used to customize docker driver container and host config
-type DockerConfigurationOption func(*container.Config, *container.HostConfig) error
+// ConfigurationOption is an option used to customize docker driver container and host config
+type ConfigurationOption func(*container.Config, *container.HostConfig) error

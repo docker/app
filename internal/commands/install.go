@@ -106,10 +106,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err
 	}
 
-	driverImpl, errBuf, err := prepareDriver(dockerCli, bind, nil)
-	if err != nil {
-		return err
-	}
+	driverImpl, errBuf := prepareDriver(dockerCli, bind, nil)
 	installation.Bundle = bndl
 
 	if err := mergeBundleParameters(installation,

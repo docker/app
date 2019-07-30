@@ -8,5 +8,5 @@ type OutputDefinition struct {
 	Definition  string   `json:"definition" mapstructure:"definition"`
 	ApplyTo     []string `json:"applyTo,omitempty" mapstructure:"applyTo,omitempty"`
 	Description string   `json:"description,omitempty" mapstructure:"description"`
-	Path        string   `json:"path,omitemtpty" mapstructure:"path,omitempty"`
+	Path        string   `json:"path" mapstructure:"path"`
 }
