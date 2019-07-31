@@ -271,7 +271,6 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 			return extractAndLoadAppBasedBundle(dockerCli, name)
 		}
 		bndl, err := loadBundleFromFile(name)
-		//bndl, err := loader.NewLoader().Load(name)
 		return bndl, "", err
 	case nameKindDir, nameKindEmpty:
 		if pullRef {
