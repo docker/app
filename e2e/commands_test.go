@@ -82,6 +82,17 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	}
 }
 
+func TestRenderParametersWithSpecialChars(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+	dir := fs.NewDir(t, "")
+	defer dir.Remove()
+
+	appPath := filepath.Join("testdata", "parameters-with-special-chars")
+	cmd.Command = dockerCli.Command("app", "render", filepath.Join(appPath, "my.dockerapp"))
+	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	golden.Assert(t, result.Stdout(), filepath.Join("parameters-with-special-chars", "expected.golden"))
+}
 func TestRenderFormatters(t *testing.T) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()

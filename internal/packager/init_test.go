@@ -52,7 +52,6 @@ services:
     image: image1
     ports:
       - ${ports.service1:-9001}
-
   service2:
     image: image2
     ports:
