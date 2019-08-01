@@ -15,8 +15,7 @@ import (
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/deislabs/cnab-go/driver"
-	duffleDriver "github.com/deislabs/duffle/pkg/driver"
-	"github.com/deislabs/duffle/pkg/loader"
+	dockerDriver "github.com/deislabs/cnab-go/driver/docker"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	appstore "github.com/docker/app/internal/store"
@@ -179,44 +178,37 @@ func getTargetContext(optstargetContext, currentContext string) string {
 }
 
 // prepareDriver prepares a driver per the user's request.
-func prepareDriver(dockerCli command.Cli, bindMount bindMount, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
-	driverImpl, err := duffleDriver.Lookup("docker")
-	if err != nil {
-		return driverImpl, nil, err
-	}
+func prepareDriver(dockerCli command.Cli, bindMount bindMount, stdout io.Writer) (driver.Driver, *bytes.Buffer) {
+	d := &dockerDriver.Driver{}
 	errBuf := bytes.NewBuffer(nil)
-	if d, ok := driverImpl.(*duffleDriver.DockerDriver); ok {
-		d.SetDockerCli(dockerCli)
-		if stdout != nil {
-			d.SetContainerOut(stdout)
-		}
-		d.SetContainerErr(errBuf)
-		if bindMount.required {
-			d.AddConfigurationOptions(func(config *container.Config, hostConfig *container.HostConfig) error {
-				config.User = "0:0"
-				mounts := []mount.Mount{
-					{
-						Type:   mount.TypeBind,
-						Source: bindMount.endpoint,
-						Target: bindMount.endpoint,
-					},
-				}
-				hostConfig.Mounts = mounts
-				return nil
-			})
-		}
+	d.SetDockerCli(dockerCli)
+	if stdout != nil {
+		d.SetContainerOut(stdout)
+	}
+	d.SetContainerErr(errBuf)
+	if bindMount.required {
+		d.AddConfigurationOptions(func(config *container.Config, hostConfig *container.HostConfig) error {
+			config.User = "0:0"
+			mounts := []mount.Mount{
+				{
+					Type:   mount.TypeBind,
+					Source: bindMount.endpoint,
+					Target: bindMount.endpoint,
+				},
+			}
+			hostConfig.Mounts = mounts
+			return nil
+		})
 	}
 
 	// Load any driver-specific config out of the environment.
-	if configurable, ok := driverImpl.(driver.Configurable); ok {
-		driverCfg := map[string]string{}
-		for env := range configurable.Config() {
-			driverCfg[env] = os.Getenv(env)
-		}
-		configurable.SetConfig(driverCfg)
+	driverCfg := map[string]string{}
+	for env := range d.Config() {
+		driverCfg[env] = os.Getenv(env)
 	}
+	d.SetConfig(driverCfg)
 
-	return driverImpl, errBuf, err
+	return d, errBuf
 }
 
 func getAppNameKind(name string) (string, nameKind) {
@@ -251,6 +243,15 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.B
 	return bndl, "", err
 }
 
+func loadBundleFromFile(filename string) (*bundle.Bundle, error) {
+	b := &bundle.Bundle{}
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return b, err
+	}
+	return bundle.Unmarshal(data)
+}
+
 //resolveBundle looks for a CNAB bundle which can be in a Docker App Package format or
 // a bundle stored locally or in the bundle store. It returns a built or found bundle,
 // a reference to the bundle if it is found in the bundlestore, and an error.
@@ -269,7 +270,7 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 		if strings.HasSuffix(name, internal.AppExtension) {
 			return extractAndLoadAppBasedBundle(dockerCli, name)
 		}
-		bndl, err := loader.NewLoader().Load(name)
+		bndl, err := loadBundleFromFile(name)
 		return bndl, "", err
 	case nameKindDir, nameKindEmpty:
 		if pullRef {
@@ -354,10 +355,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	driverImpl, errBuf, err := prepareDriver(dockerCli, bindMount{}, stdout)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	driverImpl, errBuf := prepareDriver(dockerCli, bindMount{}, stdout)
 	bundle, ref, err := resolveBundle(dockerCli, bundleStore, appname, pullOpts.pull, registryOpts.insecureRegistries)
 	if err != nil {
 		return nil, nil, nil, err

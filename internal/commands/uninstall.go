@@ -63,10 +63,7 @@ func runUninstall(dockerCli command.Cli, installationName string, opts uninstall
 	if err != nil {
 		return err
 	}
-	driverImpl, errBuf, err := prepareDriver(dockerCli, bind, nil)
-	if err != nil {
-		return err
-	}
+	driverImpl, errBuf := prepareDriver(dockerCli, bind, nil)
 	creds, err := prepareCredentialSet(installation.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err

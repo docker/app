@@ -5,7 +5,7 @@
 * [Docker Desktop](https://www.docker.com/products/docker-desktop) with Kubernetes enabled or any other Kubernetes cluster
 * Source code from this directory
 * [Helm](https://helm.sh) configured for your Kubernetes cluster
-* A `duffle` [credential set](https://github.com/deislabs/duffle/blob/1847f2f7127f13f62c1377f936cba522e8947dfb/docs/proposal/201-credentialset.md) created
+* A [credential set](https://github.com/deislabs/cnab-spec/blob/master/802-credential-sets.md) created
 
 ### Examples
 
