@@ -218,7 +218,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6bb72d6164ebe63381198527a2f678184b434ecb3bb74e6fd7e9276992e7e026"
+  digest = "1:ddf67ded98d70de6f4ff1ec7487464983a15cc65395414f0e2af36c16317426f"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "action",
@@ -231,7 +231,7 @@
     "utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "4f3db84e6bab52dfbf3ebcd26c3dd08a3bf94893"
+  revision = "44f18fa40b9ce9acd04c73373b9991a7e5b5a9d5"
 
 [[projects]]
   branch = "19.03"
@@ -293,15 +293,15 @@
   revision = "5b38d82aa0767e32f53b5821a9a5044f20eeef29"
 
 [[projects]]
-  branch = "master"
-  digest = "1:c2ab9eddaa3e77cd550fd7430eb20095a86a8a323590dc581332c35e26bc1415"
+  digest = "1:7b52393f0fd17d69c47dd4b2ad76f9bf56bae02764474bc9080eb31e8c2980e6"
   name = "github.com/docker/cnab-to-oci"
   packages = [
     "converter",
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "c9ffda63d51e790034412d57a3eb7c12c23462d3"
+  revision = "4b15ba6eae3ec6aa2a53c03ceeccecf008435392"
+  source = "https://github.com/jcsirot/cnab-to-oci"
 
 [[projects]]
   digest = "1:d29e07dc6fff1d592442bdf6b947f3a89d418ac6d65344d4e048c64a7cdd511c"

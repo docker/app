@@ -56,7 +56,7 @@ func getImageMap(b *bundle.Bundle) ([]byte, error) {
 	return json.Marshal(imgs)
 }
 
-func appliesToAction(action string, parameter bundle.ParameterDefinition) bool {
+func appliesToAction(action string, parameter bundle.Parameter) bool {
 	if len(parameter.ApplyTo) == 0 {
 		return true
 	}
@@ -76,15 +76,13 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 
 	// Quick verification that no params were passed that are not actual legit params.
 	for key := range c.Parameters {
-		if _, ok := c.Bundle.Parameters.Fields[key]; !ok {
+		if _, ok := c.Bundle.Parameters[key]; !ok {
 			return nil, fmt.Errorf("undefined parameter %q", key)
 		}
 	}
 
-	if c.Bundle.Parameters != nil {
-		if err := injectParameters(action, c, env, files); err != nil {
-			return nil, err
-		}
+	if err := injectParameters(action, c, env, files); err != nil {
+		return nil, err
 	}
 
 	imgMap, err := getImageMap(c.Bundle)
@@ -112,15 +110,10 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 }
 
 func injectParameters(action string, c *claim.Claim, env, files map[string]string) error {
-	requiredMap := map[string]struct{}{}
-	for _, key := range c.Bundle.Parameters.Required {
-		requiredMap[key] = struct{}{}
-	}
-	for k, param := range c.Bundle.Parameters.Fields {
+	for k, param := range c.Bundle.Parameters {
 		rawval, ok := c.Parameters[k]
 		if !ok {
-			_, required := requiredMap[k]
-			if required && appliesToAction(action, param) {
+			if param.Required && appliesToAction(action, param) {
 				return fmt.Errorf("missing required parameter %q for action %q", k, action)
 			}
 			continue

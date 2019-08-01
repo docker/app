@@ -52,47 +52,45 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Description: "Share registry credentials with the invocation image",
 		},
 	}
-	parameters := bundle.ParametersDefinition{
-		Fields: map[string]bundle.ParameterDefinition{
-			internal.ParameterOrchestratorName: {
-				Destination: &bundle.Location{
-					EnvironmentVariable: internal.DockerStackOrchestratorEnvVar,
-				},
-				ApplyTo: []string{
-					"install",
-					"upgrade",
-					"uninstall",
-					internal.ActionStatusName,
-				},
-				Definition: internal.ParameterOrchestratorName,
+	parameters := map[string]bundle.Parameter{
+		internal.ParameterOrchestratorName: {
+			Destination: &bundle.Location{
+				EnvironmentVariable: internal.DockerStackOrchestratorEnvVar,
 			},
-			internal.ParameterKubernetesNamespaceName: {
-				Destination: &bundle.Location{
-					EnvironmentVariable: internal.DockerKubernetesNamespaceEnvVar,
-				},
-				ApplyTo: []string{
-					"install",
-					"upgrade",
-					"uninstall",
-					internal.ActionStatusName,
-				},
-				Definition: internal.ParameterKubernetesNamespaceName,
+			ApplyTo: []string{
+				"install",
+				"upgrade",
+				"uninstall",
+				internal.ActionStatusName,
 			},
-			internal.ParameterRenderFormatName: {
-				Destination: &bundle.Location{
-					EnvironmentVariable: internal.DockerRenderFormatEnvVar,
-				},
-				ApplyTo: []string{
-					internal.ActionRenderName,
-				},
-				Definition: internal.ParameterRenderFormatName,
+			Definition: internal.ParameterOrchestratorName,
+		},
+		internal.ParameterKubernetesNamespaceName: {
+			Destination: &bundle.Location{
+				EnvironmentVariable: internal.DockerKubernetesNamespaceEnvVar,
 			},
-			internal.ParameterShareRegistryCredsName: {
-				Destination: &bundle.Location{
-					EnvironmentVariable: "DOCKER_SHARE_REGISTRY_CREDS",
-				},
-				Definition: internal.ParameterShareRegistryCredsName,
+			ApplyTo: []string{
+				"install",
+				"upgrade",
+				"uninstall",
+				internal.ActionStatusName,
 			},
+			Definition: internal.ParameterKubernetesNamespaceName,
+		},
+		internal.ParameterRenderFormatName: {
+			Destination: &bundle.Location{
+				EnvironmentVariable: internal.DockerRenderFormatEnvVar,
+			},
+			ApplyTo: []string{
+				internal.ActionRenderName,
+			},
+			Definition: internal.ParameterRenderFormatName,
+		},
+		internal.ParameterShareRegistryCredsName: {
+			Destination: &bundle.Location{
+				EnvironmentVariable: "DOCKER_SHARE_REGISTRY_CREDS",
+			},
+			Definition: internal.ParameterShareRegistryCredsName,
 		},
 	}
 	for name, envVar := range mapping.ParameterToCNABEnv {
@@ -100,7 +98,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Type:    "string",
 			Default: flatParameters[name],
 		}
-		parameters.Fields[name] = bundle.ParameterDefinition{
+		parameters[name] = bundle.Parameter{
 			Destination: &bundle.Location{
 				EnvironmentVariable: envVar,
 			},
@@ -146,7 +144,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Maintainers: maintainers,
 		Name:        app.Metadata().Name,
 		Version:     app.Metadata().Version,
-		Parameters:  &parameters,
+		Parameters:  parameters,
 		Definitions: definitions,
 		Actions: map[string]bundle.Action{
 			internal.ActionInspectName: {

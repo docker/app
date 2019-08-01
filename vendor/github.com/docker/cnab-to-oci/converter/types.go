@@ -23,7 +23,7 @@ type BundleConfig struct {
 	SchemaVersion string                       `json:"schemaVersion" mapstructure:"schemaVersion"`
 	Actions       map[string]bundle.Action     `json:"actions,omitempty" mapstructure:"actions,omitempty"`
 	Definitions   definition.Definitions       `json:"definitions" mapstructure:"definitions"`
-	Parameters    *bundle.ParametersDefinition `json:"parameters" mapstructure:"parameters"`
+	Parameters    map[string]bundle.Parameter  `json:"parameters" mapstructure:"parameters"`
 	Credentials   map[string]bundle.Credential `json:"credentials" mapstructure:"credentials"`
 	Custom        map[string]interface{}       `json:"custom,omitempty" mapstructure:"custom"`
 }

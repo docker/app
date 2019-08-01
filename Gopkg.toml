@@ -29,7 +29,8 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cnab-to-oci"
-  branch = "master"
+  revision = "4b15ba6eae3ec6aa2a53c03ceeccecf008435392"
+  source = "https://github.com/jcsirot/cnab-to-oci"
 
 [[override]]
   name = "github.com/containerd/containerd"
