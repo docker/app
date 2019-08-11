@@ -21,6 +21,7 @@ You will also need the following tools:
 
 * GNU Make
 * [`dep`](https://github.com/golang/dep)
+* [`gotestsum`](https://github.com/gotestyourself/gotestsum)
 
 ## Build using Go
 
@@ -32,6 +33,12 @@ At this point you can use `go` to checkout `docker-app` in your `GOPATH`:
 
 ```console
 go get github.com/docker/app
+```
+
+Then use `go` to checkout `gotestsum`:
+
+```console
+go get gotest.tools/gotestsum
 ```
 
 You are ready to build `docker-app` yourself!
