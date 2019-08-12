@@ -9,6 +9,7 @@ import (
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -91,6 +92,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if installationName == "" {
 		installationName = bndl.Name
 	}
+	logrus.Debugf(`Looking for a previous installation "%s"`, installationName)
 	if installation, err := installationStore.Read(installationName); err == nil {
 		// A failed installation can be overridden, but with a warning
 		if isInstallationFailed(installation) {
@@ -98,8 +100,10 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		} else {
 			// Return an error in case of successful installation, or even failed upgrade, which means
 			// their was already a successful installation.
-			return fmt.Errorf("Installation %q already exists, use 'docker app upgrade' instead", installationName)
+			return fmt.Errorf("installation %q already exists, use 'docker app upgrade' instead", installationName)
 		}
+	} else {
+		logrus.Debug(err)
 	}
 	installation, err := store.NewInstallation(installationName, ref)
 	if err != nil {
@@ -134,7 +138,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	// so any installation needs a clean uninstallation.
 	err2 := installationStore.Store(installation)
 	if err != nil {
-		return fmt.Errorf("Installation failed: %s\n%s", errBuf, err)
+		return fmt.Errorf("Installation failed: %s\n%s", err, errBuf)
 	}
 	if err2 != nil {
 		return err2

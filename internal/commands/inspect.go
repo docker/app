@@ -39,7 +39,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 		return err
 	}
 	if err := action.Run(&installation.Claim, nil, nil); err != nil {
-		return fmt.Errorf("inspect failed: %s", errBuf)
+		return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
 	}
 	return nil
 }

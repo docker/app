@@ -76,7 +76,7 @@ func runUninstall(dockerCli command.Cli, installationName string, opts uninstall
 	}
 	if err := uninst.Run(&installation.Claim, creds, os.Stdout); err != nil {
 		if err2 := installationStore.Store(installation); err2 != nil {
-			return fmt.Errorf("%s while %s", err2, errBuf)
+			return fmt.Errorf("%s", err2)
 		}
 		return fmt.Errorf("Uninstall failed: %s\n%s", err, errBuf)
 	}

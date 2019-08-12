@@ -83,6 +83,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return err
 	}
 	if retag.shouldRetag {
+		logrus.Debugf(`Retagging invocation image "%s"`, retag.invocationImageRef.String())
 		if err := retagInvocationImage(dockerCli, bndl, retag.invocationImageRef.String()); err != nil {
 			return err
 		}
@@ -112,6 +113,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 }
 
 func pushInvocationImage(dockerCli command.Cli, retag retagResult) error {
+	logrus.Debug("Pushing the invocation image")
 	repoInfo, err := registry.ParseRepositoryInfo(retag.invocationImageRef)
 	if err != nil {
 		return err
@@ -150,6 +152,7 @@ func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, re
 		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
+	logrus.Debug("Pushing the bundle")
 	descriptor, err := remotes.Push(newMuteLogContext(), bndl, retag.cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)

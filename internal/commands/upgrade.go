@@ -90,7 +90,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	err = u.Run(&installation.Claim, creds, os.Stdout)
 	err2 := installationStore.Store(installation)
 	if err != nil {
-		return fmt.Errorf("Upgrade failed: %s", errBuf)
+		return fmt.Errorf("Upgrade failed: %s\n%s", err, errBuf)
 	}
 	if err2 != nil {
 		return err2
