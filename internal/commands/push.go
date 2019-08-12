@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/platforms"
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/app/internal/log"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -153,19 +153,12 @@ func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, re
 	}
 	// push bundle manifest
 	logrus.Debug("Pushing the bundle")
-	descriptor, err := remotes.Push(newMuteLogContext(), bndl, retag.cnabRef, resolver, true, withAppAnnotations)
+	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl, retag.cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
 	}
 	fmt.Fprintf(os.Stdout, "Successfully pushed bundle to %s. Digest is %s.\n", retag.cnabRef.String(), descriptor.Digest)
 	return nil
-}
-
-func newMuteLogContext() context.Context {
-	logger := logrus.New()
-	logger.SetLevel(logrus.ErrorLevel)
-	logger.SetOutput(ioutil.Discard)
-	return log.WithLogger(context.Background(), logrus.NewEntry(logger))
 }
 
 func withAppAnnotations(index *ocischemav1.Index) error {

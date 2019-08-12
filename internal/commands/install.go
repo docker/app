@@ -100,7 +100,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		} else {
 			// Return an error in case of successful installation, or even failed upgrade, which means
 			// their was already a successful installation.
-			return fmt.Errorf("installation %q already exists, use 'docker app upgrade' instead", installationName)
+			return fmt.Errorf("Installation %q already exists, use 'docker app upgrade' instead", installationName)
 		}
 	} else {
 		logrus.Debug(err)

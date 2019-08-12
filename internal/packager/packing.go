@@ -3,7 +3,6 @@ package packager
 import (
 	"archive/tar"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"github.com/docker/app/types"
 	"github.com/docker/cli/cli/command"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
