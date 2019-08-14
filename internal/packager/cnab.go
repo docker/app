@@ -166,7 +166,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 }
 
 func extractBundleImages(composeFiles [][]byte) (map[string]bundle.Image, error) {
-	_, images, err := compose.Load(composeFiles, func(v string) (string, error) { return v, nil })
+	_, images, err := compose.Load(composeFiles)
 	if err != nil {
 		return nil, err
 	}

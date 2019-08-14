@@ -3,7 +3,6 @@ package compose
 import (
 	"testing"
 
-	"github.com/docker/app/internal/renderer"
 	"gotest.tools/assert"
 
 	composetypes "github.com/docker/cli/cli/compose/types"
@@ -54,8 +53,6 @@ services:
 }
 
 func runLoad(composeFile []byte) ([]composetypes.ConfigFile, error) {
-	files, _, err := Load([][]byte{composeFile}, func(data string) (string, error) {
-		return renderer.Apply(data, map[string]interface{}{"image": "nginx"})
-	})
+	files, _, err := Load([][]byte{composeFile})
 	return files, err
 }

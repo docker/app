@@ -5,8 +5,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	"github.com/docker/app/internal/renderer"
 )
 
 var (
@@ -26,7 +24,6 @@ func FullVersion(invocationBaseImage string) string {
 		fmt.Sprintf("Built:                 %s", reformatDate(BuildTime)),
 		fmt.Sprintf("OS/Arch:               %s/%s", runtime.GOOS, runtime.GOARCH),
 		fmt.Sprintf("Experimental:          %s", Experimental),
-		fmt.Sprintf("Renderers:             %s", strings.Join(renderer.Drivers(), ", ")),
 		fmt.Sprintf("Invocation Base Image: %s", invocationBaseImage),
 	}
 	return strings.Join(res, "\n")

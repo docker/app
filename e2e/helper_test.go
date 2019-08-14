@@ -21,17 +21,6 @@ func readFile(t *testing.T, path string) string {
 	return strings.Replace(string(content), "\r", "", -1)
 }
 
-// checkRenderers returns false if appname requires a renderer that is not in enabled
-func checkRenderers(appname string, enabled string) bool {
-	renderers := []string{"gotemplate", "yatee", "mustache"}
-	for _, r := range renderers {
-		if strings.Contains(appname, r) && !strings.Contains(enabled, r) {
-			return false
-		}
-	}
-	return true
-}
-
 // Container represents a docker container
 type Container struct {
 	image           string
