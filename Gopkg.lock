@@ -81,14 +81,6 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:a8e5037a4d69c6ad7f36cc3ef3202c04eaaba0ef0fab1d960affc6452a8edf25"
-  name = "github.com/cbroglie/mustache"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "eb931a9d20042e51d8a3a9ad5a9ba9bc8282c564"
-  version = "v1.0.1"
-
-[[projects]]
   branch = "master"
   digest = "1:fdd135f63857b858859a5a2e361a117622824826a78ce9d8c058144a0f89c7ba"
   name = "github.com/containerd/cgroups"
@@ -559,14 +551,6 @@
   pruneopts = "NUT"
   revision = "7c663266750e7d82587642f65e60bc4083f1f84e"
   version = "v0.2.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:f14d1b50e0075fb00177f12a96dd7addf93d1e2883c25befd17285b779549795"
-  name = "github.com/gopherjs/gopherjs"
-  packages = ["js"]
-  pruneopts = "NUT"
-  revision = "bb2674552d8fc183605e16acbf9e8f0a0b031dee"
 
 [[projects]]
   digest = "1:f03d1f27dee54a6f51200778991db9b7a91e9d9cc42395ba813fc9efc490a9a2"
@@ -1065,7 +1049,7 @@
   source = "https://github.com/simonferquel/yaml"
 
 [[projects]]
-  digest = "1:6ca4b5f65e4431699fc638bdbd9bce46d7426fd2fdba20a375295abd6427e781"
+  digest = "1:9d7d5988129436e49ee34d17bf0229065f9c45e6fc85cad160464bd488dcacca"
   name = "gotest.tools"
   packages = [
     "assert",
@@ -1076,7 +1060,6 @@
     "internal/difflib",
     "internal/format",
     "internal/source",
-    "skip",
     "x/subtest",
   ]
   pruneopts = "NUT"
@@ -1294,7 +1277,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/cbroglie/mustache",
     "github.com/containerd/containerd/log",
     "github.com/containerd/containerd/platforms",
     "github.com/deislabs/cnab-go/action",
@@ -1338,7 +1320,6 @@
     "github.com/docker/docker/pkg/term",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
-    "github.com/gopherjs/gopherjs/js",
     "github.com/imdario/mergo",
     "github.com/morikuni/aec",
     "github.com/opencontainers/go-digest",
@@ -1355,7 +1336,6 @@
     "gotest.tools/fs",
     "gotest.tools/golden",
     "gotest.tools/icmd",
-    "gotest.tools/skip",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/kubernetes/typed/core/v1",

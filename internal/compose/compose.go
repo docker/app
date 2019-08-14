@@ -26,13 +26,10 @@ var (
 )
 
 // Load applies the specified function when loading a slice of compose data
-func Load(composes [][]byte, apply func(string) (string, error)) ([]composetypes.ConfigFile, map[string]string, error) {
+func Load(composes [][]byte) ([]composetypes.ConfigFile, map[string]string, error) {
 	configFiles := []composetypes.ConfigFile{}
 	for _, data := range composes {
-		s, err := apply(string(data))
-		if err != nil {
-			return nil, nil, err
-		}
+		s := string(data)
 		parsed, err := loader.ParseYAML([]byte(s))
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to parse Compose file %s", data)

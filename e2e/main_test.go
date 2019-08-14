@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/deislabs/cnab-go/credentials"
@@ -23,7 +22,6 @@ var (
 	e2ePath         = flag.String("e2e-path", ".", "Set path to the e2e directory")
 	dockerCliPath   = os.Getenv("DOCKERCLI_BINARY")
 	hasExperimental = false
-	renderers       = ""
 	dockerCli       dockerCliCommand
 )
 
@@ -128,8 +126,6 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	hasExperimental = bytes.Contains(output, []byte("Experimental: on"))
-	i := strings.Index(string(output), "Renderers")
-	renderers = string(output)[i+10:]
 	os.Exit(m.Run())
 }
 

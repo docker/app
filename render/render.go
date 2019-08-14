@@ -1,27 +1,16 @@
 package render
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/compose"
-	"github.com/docker/app/internal/renderer"
-	"github.com/docker/app/internal/slices"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/parameters"
 	"github.com/docker/cli/cli/compose/loader"
 	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
-
-	// Register gotemplate renderer
-	_ "github.com/docker/app/internal/renderer/gotemplate"
-	// Register mustache renderer
-	_ "github.com/docker/app/internal/renderer/mustache"
-	// Register yatee renderer
-	_ "github.com/docker/app/internal/renderer/yatee"
 
 	// Register json formatter
 	_ "github.com/docker/app/internal/formatter/json"
@@ -48,20 +37,7 @@ func Render(app *types.App, env map[string]string, imageMap map[string]bundle.Im
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to merge parameters")
 	}
-	// prepend our app compose file to the list
-	renderers := renderer.Drivers()
-	if r, ok := os.LookupEnv("DOCKERAPP_RENDERERS"); ok {
-		rl := strings.Split(r, ",")
-		for _, r := range rl {
-			if !slices.ContainsString(renderer.Drivers(), r) {
-				return nil, fmt.Errorf("renderer '%s' not found", r)
-			}
-		}
-		renderers = rl
-	}
-	configFiles, _, err := compose.Load(app.Composes(), func(data string) (string, error) {
-		return renderer.Apply(data, allParameters, renderers...)
-	})
+	configFiles, _, err := compose.Load(app.Composes())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load composefiles")
 	}
