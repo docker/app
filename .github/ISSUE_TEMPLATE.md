@@ -55,7 +55,7 @@ Briefly describe the problem you are having in a few paragraphs.
 (paste your output here)
 ```
 
-**Output of `docker-app version`:**
+**Output of `docker app version`:**
 
 ```
 (paste your output here)
