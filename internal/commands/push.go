@@ -83,7 +83,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return err
 	}
 	if retag.shouldRetag {
-		logrus.Debugf(`Retagging invocation image "%s"`, retag.invocationImageRef.String())
+		logrus.Debugf(`Retagging invocation image "%q"`, retag.invocationImageRef.String())
 		if err := retagInvocationImage(dockerCli, bndl, retag.invocationImageRef.String()); err != nil {
 			return err
 		}

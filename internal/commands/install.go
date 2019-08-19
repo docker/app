@@ -92,7 +92,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if installationName == "" {
 		installationName = bndl.Name
 	}
-	logrus.Debugf(`Looking for a previous installation "%s"`, installationName)
+	logrus.Debugf(`Looking for a previous installation "%q"`, installationName)
 	if installation, err := installationStore.Read(installationName); err == nil {
 		// A failed installation can be overridden, but with a warning
 		if isInstallationFailed(installation) {
