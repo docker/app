@@ -1,4 +1,4 @@
-FROM dockercore/golang-cross:1.12.6@sha256:5f4272cb7723c6f28e76abfd8b59e46d8f7264b0cf2d000ff49aee1d0577e7d0 AS build
+FROM dockercore/golang-cross:1.12.9@sha256:3ea9dcef4dd2c46d80445c0b22d6177817f4cfce22c523cc12a5a1091cb37705 AS build
 ENV     DISABLE_WARN_OUTSIDE_CONTAINER=1
 
 RUN apt-get install -y -q --no-install-recommends \
