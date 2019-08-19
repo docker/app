@@ -71,7 +71,11 @@ func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error 
 		_, err = dockerCli.Out().Write(bundleBytes)
 		return err
 	}
-	return ioutil.WriteFile(opts.out, bundleBytes, 0644)
+	if err := ioutil.WriteFile(opts.out, bundleBytes, 0644); err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stdout, "Bundle saved in %s\n", opts.out)
+	return nil
 }
 
 func makeBundle(dockerCli command.Cli, appName string, refOverride reference.NamedTagged) (*bundle.Bundle, error) {
