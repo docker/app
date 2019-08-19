@@ -1,4 +1,4 @@
-ARG ALPINE_VERSION=3.10.0
+ARG ALPINE_VERSION=3.10.1
 
 FROM dockercore/golang-cross:1.12.6@sha256:5f4272cb7723c6f28e76abfd8b59e46d8f7264b0cf2d000ff49aee1d0577e7d0 AS build
 
