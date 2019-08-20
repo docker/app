@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/docker/app/internal/log"
 	"github.com/docker/cli/cli/config/configfile"
 
 	"github.com/deislabs/cnab-go/bundle"
@@ -72,7 +73,7 @@ func (b *bundleStore) LookupOrPullBundle(ref reference.Named, pullRef bool, conf
 			return nil, err
 		}
 	}
-	bndl, err := remotes.Pull(context.TODO(), reference.TagNameOnly(ref), remotes.CreateResolver(config, insecureRegistries...))
+	bndl, err := remotes.Pull(log.WithLogContext(context.Background()), reference.TagNameOnly(ref), remotes.CreateResolver(config, insecureRegistries...))
 	if err != nil {
 		return nil, errors.Wrap(err, ref.String())
 	}

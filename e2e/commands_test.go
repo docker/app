@@ -183,7 +183,7 @@ func TestDetectApp(t *testing.T) {
 	cmd.Dir = dir.Join("render")
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
-		Err:      "Error: multiple applications found in current directory, specify the application name on the command line",
+		Err:      "multiple applications found in current directory, specify the application name on the command line",
 	})
 }
 

@@ -22,7 +22,7 @@ import (
 	"github.com/docker/cli/cli/compose/schema"
 	"github.com/docker/cli/opts"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 func prependToFile(filename, text string) error {
@@ -100,7 +100,7 @@ func Init(name string, composeFile string, description string, maintainers []str
 }
 
 func initFromScratch(name string) error {
-	log.Debug("init from scratch")
+	logrus.Debug("Initializing from scratch")
 	composeData, err := composeFileFromScratch()
 	if err != nil {
 		return err
@@ -123,7 +123,7 @@ func checkComposeFileVersion(compose map[string]interface{}) error {
 }
 
 func initFromComposeFile(name string, composeFile string) error {
-	log.Debug("init from compose")
+	logrus.Debugf("Initializing from compose file %s", composeFile)
 
 	dirName := internal.DirNameFromAppName(name)
 

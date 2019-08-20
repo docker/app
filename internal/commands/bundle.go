@@ -20,6 +20,7 @@ import (
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -88,6 +89,7 @@ func makeBundle(dockerCli command.Cli, appName string, refOverride reference.Nam
 }
 
 func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride reference.NamedTagged) (*bundle.Bundle, error) {
+	logrus.Debug("Making app bundle")
 	meta := app.Metadata()
 	invocationImageName, err := makeInvocationImageName(meta, refOverride)
 	if err != nil {
@@ -99,6 +101,7 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride refere
 		return nil, err
 	}
 
+	logrus.Debugf("Building invocation image %s", invocationImageName)
 	buildResp, err := dockerCli.Client().ImageBuild(context.TODO(), buildContext, dockertypes.ImageBuildOptions{
 		Dockerfile: "Dockerfile",
 		Tags:       []string{invocationImageName},

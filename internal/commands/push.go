@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/platforms"
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/app/internal/log"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -83,6 +83,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 		return err
 	}
 	if retag.shouldRetag {
+		logrus.Debugf(`Retagging invocation image "%q"`, retag.invocationImageRef.String())
 		if err := retagInvocationImage(dockerCli, bndl, retag.invocationImageRef.String()); err != nil {
 			return err
 		}
@@ -112,6 +113,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 }
 
 func pushInvocationImage(dockerCli command.Cli, retag retagResult) error {
+	logrus.Debugf("Pushing the invocation image %q", retag.invocationImageRef)
 	repoInfo, err := registry.ParseRepositoryInfo(retag.invocationImageRef)
 	if err != nil {
 		return err
@@ -150,19 +152,13 @@ func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, re
 		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
-	descriptor, err := remotes.Push(newMuteLogContext(), bndl, retag.cnabRef, resolver, true, withAppAnnotations)
+	logrus.Debugf("Pushing the bundle %q", retag.cnabRef)
+	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl, retag.cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
 	}
 	fmt.Fprintf(os.Stdout, "Successfully pushed bundle to %s. Digest is %s.\n", retag.cnabRef.String(), descriptor.Digest)
 	return nil
-}
-
-func newMuteLogContext() context.Context {
-	logger := logrus.New()
-	logger.SetLevel(logrus.ErrorLevel)
-	logger.SetOutput(ioutil.Discard)
-	return log.WithLogger(context.Background(), logrus.NewEntry(logger))
 }
 
 func withAppAnnotations(index *ocischemav1.Index) error {

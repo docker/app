@@ -1,11 +1,14 @@
 package packager
 
 import (
+	"encoding/json"
+
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/types"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -120,7 +123,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		return nil, err
 	}
 
-	return &bundle.Bundle{
+	bndl := &bundle.Bundle{
 		SchemaVersion: CNABVersion1_0_0,
 		Credentials: map[string]bundle.Credential{
 			internal.CredentialDockerContextName: {
@@ -162,7 +165,13 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			},
 		},
 		Images: bundleImages,
-	}, nil
+	}
+
+	if js, err := json.Marshal(bndl); err == nil {
+		logrus.Debugf("App converted to CNAB %q", string(js))
+	}
+
+	return bndl, nil
 }
 
 func extractBundleImages(composeFiles [][]byte) (map[string]bundle.Image, error) {
