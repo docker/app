@@ -167,9 +167,8 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		Images: bundleImages,
 	}
 
-	logrus.Debug("App converted to CNAB")
 	if js, err := json.Marshal(bndl); err == nil {
-		logrus.Debug(string(js))
+		logrus.Debugf("App converted to CNAB %q", string(js))
 	}
 
 	return bndl, nil

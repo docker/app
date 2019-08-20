@@ -113,7 +113,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 }
 
 func pushInvocationImage(dockerCli command.Cli, retag retagResult) error {
-	logrus.Debug("Pushing the invocation image")
+	logrus.Debugf("Pushing the invocation image %q", retag.invocationImageRef)
 	repoInfo, err := registry.ParseRepositoryInfo(retag.invocationImageRef)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, re
 		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
-	logrus.Debug("Pushing the bundle")
+	logrus.Debugf("Pushing the bundle %q", retag.cnabRef)
 	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl, retag.cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
