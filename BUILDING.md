@@ -15,7 +15,7 @@ To build the `docker-app`, at least one of the following build system
 dependencies are required:
 
 * Docker (17.12 or above)
-* Go (1.10.x or above)
+* Go (1.11.x or above)
 
 You will also need the following tools:
 
