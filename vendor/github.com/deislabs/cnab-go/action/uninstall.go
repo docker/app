@@ -24,12 +24,16 @@ func (u *Uninstall) Run(c *claim.Claim, creds credentials.Set, w io.Writer) erro
 	if err != nil {
 		return err
 	}
-	if err := u.Driver.Run(op); err != nil {
+
+	opResult, err := u.Driver.Run(op)
+	outputErrors := setOutputsOnClaim(c, opResult.Outputs)
+
+	if err != nil {
 		c.Update(claim.ActionUninstall, claim.StatusFailure)
 		c.Result.Message = err.Error()
 		return err
 	}
-
 	c.Update(claim.ActionUninstall, claim.StatusSuccess)
-	return nil
+
+	return outputErrors
 }

@@ -23,7 +23,8 @@ type BundleConfig struct {
 	SchemaVersion string                       `json:"schemaVersion" mapstructure:"schemaVersion"`
 	Actions       map[string]bundle.Action     `json:"actions,omitempty" mapstructure:"actions,omitempty"`
 	Definitions   definition.Definitions       `json:"definitions" mapstructure:"definitions"`
-	Parameters    *bundle.ParametersDefinition `json:"parameters" mapstructure:"parameters"`
+	Parameters    map[string]bundle.Parameter  `json:"parameters" mapstructure:"parameters"`
+	Outputs       map[string]bundle.Output     `json:"outputs" mapstructure:"outputs"`
 	Credentials   map[string]bundle.Credential `json:"credentials" mapstructure:"credentials"`
 	Custom        map[string]interface{}       `json:"custom,omitempty" mapstructure:"custom"`
 }
@@ -44,6 +45,7 @@ func CreateBundleConfig(b *bundle.Bundle) *BundleConfig {
 		Actions:       b.Actions,
 		Definitions:   b.Definitions,
 		Parameters:    b.Parameters,
+		Outputs:       b.Outputs,
 		Credentials:   b.Credentials,
 		Custom:        b.Custom,
 	}
@@ -107,14 +109,24 @@ func prepareOCIBundleConfig(mediaType string) bundleConfigPreparer {
 	}
 }
 
+func nonOCIDescriptorOf(blob []byte) distribution.Descriptor {
+	return distribution.Descriptor{
+		MediaType: schema2.MediaTypeImageConfig,
+		Size:      int64(len(blob)),
+		Digest:    digest.FromBytes(blob),
+	}
+}
+
 func prepareNonOCIBundleConfig(blob []byte) (*PreparedBundleConfig, error) {
+	desc := nonOCIDescriptorOf(blob)
 	man, err := schema2.FromStruct(schema2.Manifest{
 		Versioned: schema2.SchemaVersion,
-		Config: distribution.Descriptor{
-			MediaType: schema2.MediaTypeImageConfig,
-			Size:      int64(len(blob)),
-			Digest:    digest.FromBytes(blob),
+		// Add a descriptor for the configuration because some registries
+		// require the layers property to be defined and non-empty
+		Layers: []distribution.Descriptor{
+			desc,
 		},
+		Config: desc,
 	})
 	if err != nil {
 		return nil, err

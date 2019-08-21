@@ -13,50 +13,51 @@ type Definitions map[string]*Schema
 
 // Schema represents a JSON Schema compatible CNAB Definition
 type Schema struct {
-	Comment              string                 `json:"$comment,omitempty" mapstructure:"$comment,omitempty"`
-	ID                   string                 `json:"$id,omitempty" mapstructure:"$ref,omitempty"`
-	Ref                  string                 `json:"$ref,omitempty" mapstructure:"$ref,omitempty"`
-	AdditionalItems      interface{}            `json:"additionalItems,omitempty" mapstructure:"additionalProperties,omitempty"`
-	AdditionalProperties interface{}            `json:"additionalProperties,omitempty" mapstructure:"additionalProperties,omitempty"`
-	AllOf                []*Schema              `json:"allOf,omitempty" mapstructure:"allOf,omitempty"`
-	Const                interface{}            `json:"const,omitempty" mapstructure:"const,omitempty"`
-	Contains             *Schema                `json:"contains,omitempty" mapstructure:"contains,omitempty"`
-	ContentEncoding      string                 `json:"contentEncoding,omitempty" mapstructure:"contentEncoding,omitempty"`
-	ContentMediaType     string                 `json:"contentMediaType,omitempty" mapstructure:"contentMediaType,omitempty"`
-	Default              interface{}            `json:"default,omitempty" mapstructure:"default,omitempty"`
-	Definitions          Definitions            `json:"definitions,omitempty" mapstructure:"definitions,omitempty"`
-	Dependencies         map[string]interface{} `json:"dependencies,omitempty" mapstructure:"dependencies,omitempty"`
-	Description          string                 `json:"description,omitempty" mapstructure:"description,omitempty"`
-	Else                 *Schema                `json:"else,omitempty" mapstructure:"else,omitempty"`
-	Enum                 []interface{}          `json:"enum,omitempty" mapstructure:"enum,omitempty"`
-	Examples             []interface{}          `json:"examples,omitempty" mapstructure:"examples,omitempty"`
-	ExclusiveMaximum     *float64               `json:"exclusiveMaximum,omitempty" mapstructure:"exclusiveMaximum,omitempty"`
-	ExclusiveMinimum     *float64               `json:"exclusiveMinimum,omitempty" mapstructure:"exclusiveMinimum,omitempty"`
-	Format               string                 `json:"format,omitempty" mapstructure:"format,omitempty"`
-	If                   *Schema                `json:"if,omitempty" mapstructure:"if,omitempty"`
+	Schema               string                 `json:"$schema,omitempty" yaml:"$schema,omitempty"`
+	Comment              string                 `json:"$comment,omitempty" yaml:"$comment,omitempty"`
+	ID                   string                 `json:"$id,omitempty" yaml:"$id,omitempty"`
+	Ref                  string                 `json:"$ref,omitempty" yaml:"$ref,omitempty"`
+	AdditionalItems      interface{}            `json:"additionalItems,omitempty" yaml:"additionalItems,omitempty"`
+	AdditionalProperties interface{}            `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`
+	AllOf                []*Schema              `json:"allOf,omitempty" yaml:"allOf,omitempty"`
+	Const                interface{}            `json:"const,omitempty" yaml:"const,omitempty"`
+	Contains             *Schema                `json:"contains,omitempty" yaml:"contains,omitempty"`
+	ContentEncoding      string                 `json:"contentEncoding,omitempty" yaml:"contentEncoding,omitempty"`
+	ContentMediaType     string                 `json:"contentMediaType,omitempty" yaml:"contentMediaType,omitempty"`
+	Default              interface{}            `json:"default,omitempty" yaml:"default,omitempty"`
+	Definitions          Definitions            `json:"definitions,omitempty" yaml:"definitions,omitempty"`
+	Dependencies         map[string]interface{} `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+	Description          string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Else                 *Schema                `json:"else,omitempty" yaml:"else,omitempty"`
+	Enum                 []interface{}          `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Examples             []interface{}          `json:"examples,omitempty" yaml:"examples,omitempty"`
+	ExclusiveMaximum     *float64               `json:"exclusiveMaximum,omitempty" yaml:"exclusiveMaximum,omitempty"`
+	ExclusiveMinimum     *float64               `json:"exclusiveMinimum,omitempty" yaml:"exclusiveMinimum,omitempty"`
+	Format               string                 `json:"format,omitempty" yaml:"format,omitempty"`
+	If                   *Schema                `json:"if,omitempty" yaml:"if,omitempty"`
 	//Items can be a Schema or an Array of Schema :(
-	Items         interface{} `json:"items,omitempty" mapstructure:"items,omitempty"`
-	Maximum       *float64    `json:"maximum,omitempty" mapstructure:"maximum,omitempty"`
-	MaxLength     *float64    `json:"maxLength,omitempty" mapstructure:"maxLength,omitempty"`
-	MinItems      *float64    `json:"minItems,omitempty" mapstructure:"minItems,omitempty"`
-	MinLength     *float64    `json:"minLength,omitempty" mapstructure:"minLength,omitempty"`
-	MinProperties *float64    `json:"minProperties,omitempty" mapstructure:"minProperties,omitempty"`
-	Minimum       *float64    `json:"minimum,omitempty" mapstructure:"minimum,omitempty"`
-	MultipleOf    *float64    `json:"multipleOf,omitempty" mapstructure:"multipleOf,omitempty"`
-	Not           *Schema     `json:"not,omitempty" mapstructure:"not,omitempty"`
-	OneOf         *Schema     `json:"oneOf,omitempty" mapstructure:"oneOf,omitempty"`
+	Items         interface{} `json:"items,omitempty" yaml:"items,omitempty"`
+	Maximum       *float64    `json:"maximum,omitempty" yaml:"maximum,omitempty"`
+	MaxLength     *float64    `json:"maxLength,omitempty" yaml:"maxLength,omitempty"`
+	MinItems      *float64    `json:"minItems,omitempty" yaml:"minItems,omitempty"`
+	MinLength     *float64    `json:"minLength,omitempty" yaml:"minLength,omitempty"`
+	MinProperties *float64    `json:"minProperties,omitempty" yaml:"minProperties,omitempty"`
+	Minimum       *float64    `json:"minimum,omitempty" yaml:"minimum,omitempty"`
+	MultipleOf    *float64    `json:"multipleOf,omitempty" yaml:"multipleOf,omitempty"`
+	Not           *Schema     `json:"not,omitempty" yaml:"not,omitempty"`
+	OneOf         *Schema     `json:"oneOf,omitempty" yaml:"oneOf,omitempty"`
 
-	PatternProperties map[string]*Schema `json:"patternProperties,omitempty" mapstructure:"patternProperties,omitempty"`
+	PatternProperties map[string]*Schema `json:"patternProperties,omitempty" yaml:"patternProperties,omitempty"`
 
-	Properties    map[string]*Schema `json:"properties,omitempty" mapstructure:"properties,omitempty"`
-	PropertyNames *Schema            `json:"propertyNames,omitempty" mapstructure:"propertyNames,omitempty"`
-	ReadOnly      *bool              `json:"readOnly,omitempty" mapstructure:"readOnly,omitempty"`
-	Required      []string           `json:"required,omitempty" mapstructure:"required,omitempty"`
-	Then          *Schema            `json:"then,omitempty" mapstructure:"then,omitempty"`
-	Title         string             `json:"title,omitempty" mapstructure:"title,omitempty"`
-	Type          interface{}        `json:"type,omitempty" mapstructure:"type,omitempty"`
-	UniqueItems   *bool              `json:"uniqueItems,omitempty" mapstructure:"uniqueItems,omitempty"`
-	WriteOnly     *bool              `json:"writeOnly,omitempty" mapstructure:"writeOnly,omitempty"`
+	Properties    map[string]*Schema `json:"properties,omitempty" yaml:"properties,omitempty"`
+	PropertyNames *Schema            `json:"propertyNames,omitempty" yaml:"propertyNames,omitempty"`
+	ReadOnly      *bool              `json:"readOnly,omitempty" yaml:"readOnly,omitempty"`
+	Required      []string           `json:"required,omitempty" yaml:"required,omitempty"`
+	Then          *Schema            `json:"then,omitempty" yaml:"then,omitempty"`
+	Title         string             `json:"title,omitempty" yaml:"title,omitempty"`
+	Type          interface{}        `json:"type,omitempty" yaml:"type,omitempty"`
+	UniqueItems   *bool              `json:"uniqueItems,omitempty" yaml:"uniqueItems,omitempty"`
+	WriteOnly     *bool              `json:"writeOnly,omitempty" yaml:"writeOnly,omitempty"`
 }
 
 // GetType will return the singular type for a given schema and a success boolean. If the

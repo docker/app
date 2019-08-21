@@ -87,6 +87,7 @@ func ConvertOCIIndexToBundle(ix *ocischemav1.Index, config *BundleConfig, origin
 		Credentials:   config.Credentials,
 		Definitions:   config.Definitions,
 		Parameters:    config.Parameters,
+		Outputs:       config.Outputs,
 		Custom:        config.Custom,
 	}
 	if err := parseTopLevelAnnotations(ix.Annotations, b); err != nil {

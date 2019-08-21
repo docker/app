@@ -24,12 +24,16 @@ func (u *Upgrade) Run(c *claim.Claim, creds credentials.Set, w io.Writer) error 
 	if err != nil {
 		return err
 	}
-	if err := u.Driver.Run(op); err != nil {
+
+	opResult, err := u.Driver.Run(op)
+	outputErrors := setOutputsOnClaim(c, opResult.Outputs)
+
+	if err != nil {
 		c.Update(claim.ActionUpgrade, claim.StatusFailure)
 		c.Result.Message = err.Error()
 		return err
 	}
-
 	c.Update(claim.ActionUpgrade, claim.StatusSuccess)
-	return nil
+
+	return outputErrors
 }

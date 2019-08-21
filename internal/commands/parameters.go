@@ -104,15 +104,15 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 	if err != nil {
 		return err
 	}
-	installation.Parameters, err = bundle.ValuesOrDefaults(mergedValues, installation.Parameters, bndl)
+	installation.Parameters, err = bundle.ValuesOrDefaults(mergedValues, bndl)
 	return err
 }
 
-func getParameterFromBundle(name string, bndl *bundle.Bundle) (bundle.ParameterDefinition, bool) {
+func getParameterFromBundle(name string, bndl *bundle.Bundle) (bundle.Parameter, bool) {
 	if bndl.Parameters == nil {
-		return bundle.ParameterDefinition{}, false
+		return bundle.Parameter{}, false
 	}
-	param, found := bndl.Parameters.Fields[name]
+	param, found := bndl.Parameters[name]
 	return param, found
 }
 

@@ -24,5 +24,8 @@ func (i *Status) Run(c *claim.Claim, creds credentials.Set, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	return i.Driver.Run(op)
+
+	// Ignore OperationResult because non-modifying actions don't have outputs to save.
+	_, err = i.Driver.Run(op)
+	return err
 }

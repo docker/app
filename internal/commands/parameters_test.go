@@ -65,20 +65,17 @@ func TestWithCommandLineParameters(t *testing.T) {
 type bundleOperator func(*bundle.Bundle)
 
 func prepareBundleWithParameters(b *bundle.Bundle) {
-	if b.Parameters != nil && len(b.Parameters.Fields) > 0 {
+	if b.Parameters != nil && len(b.Parameters) > 0 {
 		return
 	}
-	b.Parameters = &bundle.ParametersDefinition{
-		Fields:   map[string]bundle.ParameterDefinition{},
-		Required: []string{},
-	}
+	b.Parameters = map[string]bundle.Parameter{}
 	b.Definitions = definition.Definitions{}
 }
 
 func withParameter(name, typ string) bundleOperator {
 	return func(b *bundle.Bundle) {
 		prepareBundleWithParameters(b)
-		b.Parameters.Fields[name] = bundle.ParameterDefinition{
+		b.Parameters[name] = bundle.Parameter{
 			Definition: name,
 		}
 		b.Definitions[name] = &definition.Schema{
@@ -90,7 +87,7 @@ func withParameter(name, typ string) bundleOperator {
 func withParameterAndDefault(name, typ string, def interface{}) bundleOperator {
 	return func(b *bundle.Bundle) {
 		prepareBundleWithParameters(b)
-		b.Parameters.Fields[name] = bundle.ParameterDefinition{
+		b.Parameters[name] = bundle.Parameter{
 			Definition: name,
 		}
 		b.Definitions[name] = &definition.Schema{
@@ -103,7 +100,7 @@ func withParameterAndDefault(name, typ string, def interface{}) bundleOperator {
 func withParameterAndValues(name, typ string, allowedValues []interface{}) bundleOperator {
 	return func(b *bundle.Bundle) {
 		prepareBundleWithParameters(b)
-		b.Parameters.Fields[name] = bundle.ParameterDefinition{
+		b.Parameters[name] = bundle.Parameter{
 			Definition: name,
 		}
 		b.Definitions[name] = &definition.Schema{

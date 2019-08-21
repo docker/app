@@ -46,63 +46,61 @@
 		"io.cnab.status": {}
 	},
 	"parameters": {
-		"fields": {
-			"api_host": {
-				"definition": "api_host",
-				"destination": {
-					"env": "docker_param1"
-				}
-			},
-			"com.docker.app.kubernetes-namespace": {
-				"definition": "com.docker.app.kubernetes-namespace",
-				"applyTo": [
-					"install",
-					"upgrade",
-					"uninstall",
-					"io.cnab.status"
-				],
-				"destination": {
-					"env": "DOCKER_KUBERNETES_NAMESPACE"
-				}
-			},
-			"com.docker.app.orchestrator": {
-				"definition": "com.docker.app.orchestrator",
-				"applyTo": [
-					"install",
-					"upgrade",
-					"uninstall",
-					"io.cnab.status"
-				],
-				"destination": {
-					"env": "DOCKER_STACK_ORCHESTRATOR"
-				}
-			},
-			"com.docker.app.render-format": {
-				"definition": "com.docker.app.render-format",
-				"applyTo": [
-					"com.docker.app.render"
-				],
-				"destination": {
-					"env": "DOCKER_RENDER_FORMAT"
-				}
-			},
-			"com.docker.app.share-registry-creds": {
-				"definition": "com.docker.app.share-registry-creds",
-				"destination": {
-					"env": "DOCKER_SHARE_REGISTRY_CREDS"
-				}
-			},
-			"static_subdir": {
-				"definition": "static_subdir",
-				"destination": {
-					"env": "docker_param2"
-				}
-			},
-			"web_port": {
-				"definition": "web_port",
-				"destination": {
-					"env": "docker_param3"
-				}
+		"api_host": {
+			"definition": "api_host",
+			"destination": {
+				"env": "docker_param1"
+			}
+		},
+		"com.docker.app.kubernetes-namespace": {
+			"definition": "com.docker.app.kubernetes-namespace",
+			"applyTo": [
+				"install",
+				"upgrade",
+				"uninstall",
+				"io.cnab.status"
+			],
+			"destination": {
+				"env": "DOCKER_KUBERNETES_NAMESPACE"
+			}
+		},
+		"com.docker.app.orchestrator": {
+			"definition": "com.docker.app.orchestrator",
+			"applyTo": [
+				"install",
+				"upgrade",
+				"uninstall",
+				"io.cnab.status"
+			],
+			"destination": {
+				"env": "DOCKER_STACK_ORCHESTRATOR"
+			}
+		},
+		"com.docker.app.render-format": {
+			"definition": "com.docker.app.render-format",
+			"applyTo": [
+				"com.docker.app.render"
+			],
+			"destination": {
+				"env": "DOCKER_RENDER_FORMAT"
+			}
+		},
+		"com.docker.app.share-registry-creds": {
+			"definition": "com.docker.app.share-registry-creds",
+			"destination": {
+				"env": "DOCKER_SHARE_REGISTRY_CREDS"
+			}
+		},
+		"static_subdir": {
+			"definition": "static_subdir",
+			"destination": {
+				"env": "docker_param2"
+			}
+		},
+		"web_port": {
+			"definition": "web_port",
+			"destination": {
+				"env": "docker_param3"
 			}
 		}
 	},

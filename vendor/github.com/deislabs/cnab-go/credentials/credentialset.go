@@ -25,7 +25,7 @@ func (s Set) Expand(b *bundle.Bundle, stateless bool) (env, files map[string]str
 	for name, val := range b.Credentials {
 		src, ok := s[name]
 		if !ok {
-			if stateless {
+			if stateless || !val.Required {
 				continue
 			}
 			err = fmt.Errorf("credential %q is missing from the user-supplied credentials", name)
@@ -77,15 +77,15 @@ func Load(path string) (*CredentialSet, error) {
 
 // Validate compares the given credentials with the spec.
 //
-// This will result in an error only if:
-// - a parameter in the spec is not present in the given set
-// - a parameter in the given set does not match the format required by the spec
+// This will result in an error only when the following conditions are true:
+// - a credential in the spec is not present in the given set
+// - the credential is required
 //
 // It is allowed for spec to specify both an env var and a file. In such case, if
-// the givn set provides either, it will be considered valid.
+// the given set provides either, it will be considered valid.
 func Validate(given Set, spec map[string]bundle.Credential) error {
-	for name := range spec {
-		if !isValidCred(given, name) {
+	for name, cred := range spec {
+		if !isValidCred(given, name) && cred.Required {
 			return fmt.Errorf("bundle requires credential for %s", name)
 		}
 	}
