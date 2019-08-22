@@ -34,7 +34,7 @@ func TestRenderMissingValue(t *testing.T) {
 	finalEnv := map[string]string{
 		"imageName": "foo",
 	}
-	_, err := render(configFiles, finalEnv, nil)
+	_, err := render("foo.dockerapp", configFiles, finalEnv, nil)
 	assert.Check(t, err != nil)
 	assert.Check(t, is.ErrorContains(err, "required variable"))
 }
@@ -57,7 +57,7 @@ func TestRender(t *testing.T) {
 		"version": "latest",
 		"foo.bar": "baz",
 	}
-	c, err := render(configFiles, finalEnv, nil)
+	c, err := render("foo.dockerapp", configFiles, finalEnv, nil)
 	assert.NilError(t, err)
 	assert.Check(t, is.Len(c.Services, 1))
 	assert.Check(t, is.Equal(c.Services[0].Image, "busybox:latest"))
@@ -80,7 +80,7 @@ func TestRenderEnabledFalse(t *testing.T) {
 				},
 			},
 		}
-		c, err := render(configs, map[string]string{
+		c, err := render("foo.dockerapp", configs, map[string]string{
 			"myapp.debug": "true",
 		}, nil)
 		assert.NilError(t, err)
@@ -226,7 +226,7 @@ func TestServiceImageOverride(t *testing.T) {
 			},
 		},
 	}
-	c, err := render(configFiles, nil, map[string]bundle.Image{
+	c, err := render("foo.dockerapp", configFiles, nil, map[string]bundle.Image{
 		"foo": {BaseImage: bundle.BaseImage{Image: "test"}},
 	})
 	assert.NilError(t, err)

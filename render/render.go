@@ -41,12 +41,12 @@ func Render(app *types.App, env map[string]string, imageMap map[string]bundle.Im
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load composefiles")
 	}
-	return render(configFiles, allParameters.Flatten(), imageMap)
+	return render(app.Path, configFiles, allParameters.Flatten(), imageMap)
 }
 
-func render(configFiles []composetypes.ConfigFile, finalEnv map[string]string, imageMap map[string]bundle.Image) (*composetypes.Config, error) {
+func render(appPath string, configFiles []composetypes.ConfigFile, finalEnv map[string]string, imageMap map[string]bundle.Image) (*composetypes.Config, error) {
 	rendered, err := loader.Load(composetypes.ConfigDetails{
-		WorkingDir:  ".",
+		WorkingDir:  appPath,
 		ConfigFiles: configFiles,
 		Environment: finalEnv,
 	}, func(opts *loader.Options) {
