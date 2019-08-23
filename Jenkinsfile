@@ -1,5 +1,12 @@
 properties([buildDiscarder(logRotator(numToKeepStr: '20'))])
 
+hubCred = [
+    $class: 'UsernamePasswordMultiBinding',
+    usernameVariable: 'REGISTRY_USERNAME',
+    passwordVariable: 'REGISTRY_PASSWORD',
+    credentialsId: 'orcaeng-hub.docker.com',
+]
+
 pipeline {
     agent {
         label 'linux && x86_64'
@@ -17,25 +24,6 @@ pipeline {
         stage('Build') {
             parallel {
                 stage("Validate") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
-                    steps {
-                        dir('src/github.com/docker/app') {
-                            checkout scm
-                            ansiColor('xterm') {
-                                sh 'make -f docker.Makefile lint'
-                                sh 'make -f docker.Makefile check-vendor'
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            deleteDir()
-                        }
-                    }
-                }
-                stage("License Scan") {
                     environment {
                         FOSSA_API_KEY=credentials('cb07b147-32a4-4400-aaac-21c3f8c9e62e')
                     }
@@ -43,12 +31,21 @@ pipeline {
                         label 'ubuntu-1604-aufs-edge'
                     }
                     steps {
-                        dir('src/github.com/docker/app') {
-                            checkout scm
-                            ansiColor(xterm) {
-                                sh "BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
-                                sh 'make fossa-test'
+                        withCredentials([hubCred]) {
+                            dir('src/github.com/docker/app') {
+                                checkout scm
+                                ansiColor('xterm') {
+                                    sh 'make -f docker.Makefile lint'
+                                    sh 'make -f docker.Makefile check-vendor'
+                                    sh "BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
+                                    sh 'make fossa-test'
+                                }
                             }
+                        }
+                    }
+                    post {
+                        always {
+                            deleteDir()
                         }
                     }
                 }
