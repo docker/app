@@ -35,6 +35,23 @@ pipeline {
                         }
                     }
                 }
+                stage("License Scan") {
+                    environment {
+                        FOSSA_API_KEY=credentials('cb07b147-32a4-4400-aaac-21c3f8c9e62e')
+                    }
+                    agent {
+                        label 'ubuntu-1604-aufs-edge'
+                    }
+                    steps {
+                        dir('src/github.com/docker/app') {
+                            checkout scm
+                            ansiColor(xterm) {
+                                sh "BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
+                                sh 'make fossa-test'
+                            }
+                        }
+                    }
+                }
                 stage("Binaries"){
                     agent {
                         label 'ubuntu-1604-aufs-edge'

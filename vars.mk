@@ -3,6 +3,10 @@ BIN_NAME ?= docker-app
 BIN_STANDALONE_NAME := ${BIN_NAME}-standalone
 E2E_NAME := $(BIN_NAME)-e2e
 
+# Variables for fossa scan
+BUILD_ANALYZER?=dockereng/fossa-analyzer
+FOSSA_OPTS?=--option all-tags:true --option allow-unresolved:true
+
 # Enable experimental features. "on" or "off"
 EXPERIMENTAL := off
 
