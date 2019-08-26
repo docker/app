@@ -65,7 +65,7 @@ func TestWithCommandLineParameters(t *testing.T) {
 type bundleOperator func(*bundle.Bundle)
 
 func prepareBundleWithParameters(b *bundle.Bundle) {
-	if b.Parameters != nil && len(b.Parameters) > 0 {
+	if b.Parameters != nil {
 		return
 	}
 	b.Parameters = map[string]bundle.Parameter{}
