@@ -63,7 +63,6 @@ func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error 
 		return err
 	}
 
-	fmt.Fprintf(os.Stdout, "Invocation image %q successfully built\n", bundle.InvocationImages[0].Image)
 	bundleBytes, err := json.MarshalIndent(bundle, "", "\t")
 	if err != nil {
 		return err
@@ -72,10 +71,11 @@ func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error 
 		_, err = dockerCli.Out().Write(bundleBytes)
 		return err
 	}
+	fmt.Fprintf(os.Stdout, "Invocation image %q successfully built\n", bundle.InvocationImages[0].Image)
 	if err := ioutil.WriteFile(opts.out, bundleBytes, 0644); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stdout, "Bundle saved in %s\n", opts.out)
+	fmt.Fprintf(os.Stdout, "Bundle saved to %s\n", opts.out)
 	return nil
 }
 
