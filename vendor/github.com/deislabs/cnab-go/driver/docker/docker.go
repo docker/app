@@ -34,7 +34,7 @@ type Driver struct {
 }
 
 // Run executes the Docker driver
-func (d *Driver) Run(op *driver.Operation) error {
+func (d *Driver) Run(op *driver.Operation) (driver.OperationResult, error) {
 	return d.exec(op)
 }
 
@@ -54,6 +54,7 @@ func (d *Driver) Config() map[string]string {
 		"VERBOSE":             "Increase verbosity. true, false are supported values",
 		"PULL_ALWAYS":         "Always pull image, even if locally available (0|1)",
 		"DOCKER_DRIVER_QUIET": "Make the Docker driver quiet (only print container stdout/stderr)",
+		"OUTPUTS_MOUNT_PATH":  "Absolute path to where Docker driver can create temporary directories to bundle outputs. Defaults to temp dir.",
 	}
 }
 
@@ -124,20 +125,20 @@ func (d *Driver) initializeDockerCli() (command.Cli, error) {
 	return cli, nil
 }
 
-func (d *Driver) exec(op *driver.Operation) error {
+func (d *Driver) exec(op *driver.Operation) (driver.OperationResult, error) {
 	ctx := context.Background()
 
 	cli, err := d.initializeDockerCli()
 	if err != nil {
-		return err
+		return driver.OperationResult{}, err
 	}
 
 	if d.Simulate {
-		return nil
+		return driver.OperationResult{}, nil
 	}
 	if d.config["PULL_ALWAYS"] == "1" {
 		if err := pullImage(ctx, cli, op.Image); err != nil {
-			return err
+			return driver.OperationResult{}, err
 		}
 	}
 	var env []string
@@ -153,11 +154,10 @@ func (d *Driver) exec(op *driver.Operation) error {
 		AttachStdout: true,
 	}
 
-	hostCfg := &container.HostConfig{AutoRemove: true}
-
+	hostCfg := &container.HostConfig{}
 	for _, opt := range d.dockerConfigurationOptions {
 		if err := opt(cfg, hostCfg); err != nil {
-			return err
+			return driver.OperationResult{}, err
 		}
 	}
 
@@ -166,18 +166,20 @@ func (d *Driver) exec(op *driver.Operation) error {
 	case client.IsErrNotFound(err):
 		fmt.Fprintf(cli.Err(), "Unable to find image '%s' locally\n", op.Image)
 		if err := pullImage(ctx, cli, op.Image); err != nil {
-			return err
+			return driver.OperationResult{}, err
 		}
 		if resp, err = cli.Client().ContainerCreate(ctx, cfg, hostCfg, nil, ""); err != nil {
-			return fmt.Errorf("cannot create container: %v", err)
+			return driver.OperationResult{}, fmt.Errorf("cannot create container: %v", err)
 		}
 	case err != nil:
-		return fmt.Errorf("cannot create container: %v", err)
+		return driver.OperationResult{}, fmt.Errorf("cannot create container: %v", err)
 	}
+
+	defer cli.Client().ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
 
 	tarContent, err := generateTar(op.Files)
 	if err != nil {
-		return fmt.Errorf("error staging files: %s", err)
+		return driver.OperationResult{}, fmt.Errorf("error staging files: %s", err)
 	}
 	options := types.CopyToContainerOptions{
 		AllowOverwriteDirWithFile: false,
@@ -186,7 +188,7 @@ func (d *Driver) exec(op *driver.Operation) error {
 	// path from the given file, starting at the /.
 	err = cli.Client().CopyToContainer(ctx, resp.ID, "/", tarContent, options)
 	if err != nil {
-		return fmt.Errorf("error copying to / in container: %s", err)
+		return driver.OperationResult{}, fmt.Errorf("error copying to / in container: %s", err)
 	}
 
 	attach, err := cli.Client().ContainerAttach(ctx, resp.ID, types.ContainerAttachOptions{
@@ -196,7 +198,7 @@ func (d *Driver) exec(op *driver.Operation) error {
 		Logs:   true,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to retrieve logs: %v", err)
+		return driver.OperationResult{}, fmt.Errorf("unable to retrieve logs: %v", err)
 	}
 	var (
 		stdout io.Writer = os.Stdout
@@ -218,25 +220,88 @@ func (d *Driver) exec(op *driver.Operation) error {
 		}
 	}()
 
-	statusc, errc := cli.Client().ContainerWait(ctx, resp.ID, container.WaitConditionRemoved)
+	statusc, errc := cli.Client().ContainerWait(ctx, resp.ID, container.WaitConditionNextExit)
 	if err = cli.Client().ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return fmt.Errorf("cannot start container: %v", err)
+		return driver.OperationResult{}, fmt.Errorf("cannot start container: %v", err)
 	}
 	select {
 	case err := <-errc:
 		if err != nil {
-			return fmt.Errorf("error in container: %v", err)
+			opResult, fetchErr := d.fetchOutputs(ctx, resp.ID, op)
+			return opResult, containerError("error in container", err, fetchErr)
 		}
 	case s := <-statusc:
 		if s.StatusCode == 0 {
-			return nil
+			return d.fetchOutputs(ctx, resp.ID, op)
 		}
 		if s.Error != nil {
-			return fmt.Errorf("container exit code: %d, message: %v", s.StatusCode, s.Error.Message)
+			opResult, fetchErr := d.fetchOutputs(ctx, resp.ID, op)
+			return opResult, containerError(fmt.Sprintf("container exit code: %d, message", s.StatusCode), err, fetchErr)
 		}
-		return fmt.Errorf("container exit code: %d", s.StatusCode)
+		opResult, fetchErr := d.fetchOutputs(ctx, resp.ID, op)
+		return opResult, containerError(fmt.Sprintf("container exit code: %d, message", s.StatusCode), err, fetchErr)
 	}
-	return err
+	opResult, fetchErr := d.fetchOutputs(ctx, resp.ID, op)
+	if fetchErr != nil {
+		return opResult, fmt.Errorf("fetching outputs failed: %s", fetchErr)
+	}
+	return opResult, err
+}
+
+func containerError(containerMessage string, containerErr, fetchErr error) error {
+	if fetchErr != nil {
+		return fmt.Errorf("%s: %v. fetching outputs failed: %s", containerMessage, containerErr, fetchErr)
+	}
+
+	return fmt.Errorf("%s: %v", containerMessage, containerErr)
+}
+
+// fetchOutputs takes a context and a container ID; it copies the /cnab/app/outputs directory from that container.
+// The goal is to collect all the files in the directory (recursively) and put them in a flat map of path to contents.
+// This map will be inside the OperationResult. When fetchOutputs returns an error, it may also return partial results.
+func (d *Driver) fetchOutputs(ctx context.Context, container string, op *driver.Operation) (driver.OperationResult, error) {
+	opResult := driver.OperationResult{
+		Outputs: map[string]string{},
+	}
+	// The /cnab/app/outputs directory probably only exists if outputs are created. In the
+	// case there are no outputs defined on the operation, there probably are none to copy
+	// and we should return early.
+	if len(op.Outputs) == 0 {
+		return opResult, nil
+	}
+	ioReader, _, err := d.dockerCli.Client().CopyFromContainer(ctx, container, "/cnab/app/outputs")
+	if err != nil {
+		return opResult, fmt.Errorf("error copying outputs from container: %s", err)
+	}
+
+	tarReader := tar.NewReader(ioReader)
+	header, err := tarReader.Next()
+
+	// io.EOF pops us out of loop on successful run.
+	for err == nil {
+		// skip directories because we're gathering file contents
+		if header.FileInfo().IsDir() {
+			header, err = tarReader.Next()
+			continue
+		}
+
+		var contents []byte
+		// CopyFromContainer strips prefix above outputs directory.
+		pathInContainer := unix_path.Join("/cnab", "app", header.Name)
+
+		contents, err = ioutil.ReadAll(tarReader)
+		if err != nil {
+			return opResult, fmt.Errorf("error while reading %q from outputs tar: %s", pathInContainer, err)
+		}
+		opResult.Outputs[pathInContainer] = string(contents)
+		header, err = tarReader.Next()
+	}
+
+	if err != io.EOF {
+		return opResult, err
+	}
+
+	return opResult, nil
 }
 
 func generateTar(files map[string]string) (io.Reader, error) {

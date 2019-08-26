@@ -16,24 +16,25 @@ import (
 
 // Bundle is a CNAB metadata document
 type Bundle struct {
-	SchemaVersion    string                 `json:"schemaVersion" mapstructure:"schemaVersion"`
-	Name             string                 `json:"name" mapstructure:"name"`
-	Version          string                 `json:"version" mapstructure:"version"`
-	Description      string                 `json:"description" mapstructure:"description"`
-	Keywords         []string               `json:"keywords,omitempty" mapstructure:"keywords"`
-	Maintainers      []Maintainer           `json:"maintainers,omitempty" mapstructure:"maintainers"`
-	InvocationImages []InvocationImage      `json:"invocationImages" mapstructure:"invocationImages"`
-	Images           map[string]Image       `json:"images,omitempty" mapstructure:"images"`
-	Actions          map[string]Action      `json:"actions,omitempty" mapstructure:"actions"`
-	Parameters       *ParametersDefinition  `json:"parameters,omitempty" mapstructure:"parameters"`
-	Credentials      map[string]Credential  `json:"credentials,omitempty" mapstructure:"credentials"`
-	Outputs          *OutputsDefinition     `json:"outputs,omitempty" mapstructure:"outputs"`
-	Definitions      definition.Definitions `json:"definitions,omitempty" mapstructure:"definitions"`
-	License          string                 `json:"license,omitempty" mapstructure:"license"`
+	SchemaVersion      string                 `json:"schemaVersion" yaml:"schemaVersion"`
+	Name               string                 `json:"name" yaml:"name"`
+	Version            string                 `json:"version" yaml:"version"`
+	Description        string                 `json:"description" yaml:"description"`
+	Keywords           []string               `json:"keywords,omitempty" yaml:"keywords,omitempty"`
+	Maintainers        []Maintainer           `json:"maintainers,omitempty" yaml:"maintainers,omitempty"`
+	InvocationImages   []InvocationImage      `json:"invocationImages" yaml:"invocationImages"`
+	Images             map[string]Image       `json:"images,omitempty" yaml:"images,omitempty"`
+	Actions            map[string]Action      `json:"actions,omitempty" yaml:"actions,omitempty"`
+	Parameters         map[string]Parameter   `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Credentials        map[string]Credential  `json:"credentials,omitempty" yaml:"credentials,omitempty"`
+	Outputs            map[string]Output      `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	Definitions        definition.Definitions `json:"definitions,omitempty" yaml:"definitions,omitempty"`
+	License            string                 `json:"license,omitempty" yaml:"license,omitempty"`
+	RequiredExtensions []string               `json:"requiredExtensions,omitempty" yaml:"requiredExtensions,omitempty"`
 
 	// Custom extension metadata is a named collection of auxiliary data whose
 	// meaning is defined outside of the CNAB specification.
-	Custom map[string]interface{} `json:"custom,omitempty" mapstructure:"custom"`
+	Custom map[string]interface{} `json:"custom,omitempty" yaml:"custom,omitempty"`
 }
 
 //Unmarshal unmarshals a Bundle that was not signed.
@@ -71,54 +72,49 @@ func (b Bundle) WriteTo(w io.Writer) (int64, error) {
 
 // LocationRef specifies a location within the invocation package
 type LocationRef struct {
-	Path      string `json:"path" mapstructure:"path"`
-	Field     string `json:"field" mapstructure:"field"`
-	MediaType string `json:"mediaType" mapstructure:"mediaType"`
+	Path      string `json:"path" yaml:"path"`
+	Field     string `json:"field" yaml:"field"`
+	MediaType string `json:"mediaType" yaml:"mediaType"`
 }
 
 // BaseImage contains fields shared across image types
 type BaseImage struct {
-	ImageType string            `json:"imageType" mapstructure:"imageType"`
-	Image     string            `json:"image" mapstructure:"image"`
-	Digest    string            `json:"contentDigest,omitempty" mapstructure:"contentDigest"`
-	Size      uint64            `json:"size,omitempty" mapstructure:"size"`
-	Labels    map[string]string `json:"labels,omitempty" mapstructure:"labels"`
-	MediaType string            `json:"mediaType,omitempty" mapstructure:"mediaType"`
+	ImageType string            `json:"imageType" yaml:"imageType"`
+	Image     string            `json:"image" yaml:"image"`
+	Digest    string            `json:"contentDigest,omitempty" yaml:"contentDigest,omitempty"`
+	Size      uint64            `json:"size,omitempty" yaml:"size,omitempty"`
+	Labels    map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	MediaType string            `json:"mediaType,omitempty" yaml:"mediaType,omitempty"`
 }
 
 // Image describes a container image in the bundle
 type Image struct {
-	BaseImage   `mapstructure:",squash"`
-	Description string `json:"description" mapstructure:"description"` //TODO: change? see where it's being used? change to description?
+	BaseImage   `yaml:",inline"`
+	Description string `json:"description" yaml:"description"` //TODO: change? see where it's being used? change to description?
 }
 
 // InvocationImage contains the image type and location for the installation of a bundle
 type InvocationImage struct {
-	BaseImage `mapstructure:",squash"`
+	BaseImage `yaml:",inline"`
 }
-
-// Map that stores the relocated images
-// The key is the Image in bundle.json and the value is the new Image
-// from the relocated registry
-type ImageRelocationMap map[string]string
 
 // Location provides the location where a value should be written in
 // the invocation image.
 //
 // A location may be either a file (by path) or an environment variable.
 type Location struct {
-	Path                string `json:"path,omitempty" mapstructure:"path"`
-	EnvironmentVariable string `json:"env,omitempty" mapstructure:"env"`
+	Path                string `json:"path,omitempty" yaml:"path,omitempty"`
+	EnvironmentVariable string `json:"env,omitempty" yaml:"env,omitempty"`
 }
 
 // Maintainer describes a code maintainer of a bundle
 type Maintainer struct {
 	// Name is a user name or organization name
-	Name string `json:"name" mapstructure:"name"`
+	Name string `json:"name" yaml:"name"`
 	// Email is an optional email address to contact the named maintainer
-	Email string `json:"email,omitempty" mapstructure:"email"`
+	Email string `json:"email,omitempty" yaml:"email,omitempty"`
 	// Url is an optional URL to an address for the named maintainer
-	URL string `json:"url,omitempty" mapstructure:"url"`
+	URL string `json:"url,omitempty" yaml:"url,omitempty"`
 }
 
 // Action describes a custom (non-core) action.
@@ -126,36 +122,24 @@ type Action struct {
 	// Modifies indicates whether this action modifies the release.
 	//
 	// If it is possible that an action modify a release, this must be set to true.
-	Modifies bool `json:"modifies,omitempty" mapstructure:"modifies"`
+	Modifies bool `json:"modifies,omitempty" yaml:"modifies,omitempty"`
 	// Stateless indicates that the action is purely informational, that credentials are not required, and that the runtime should not keep track of its invocation
-	Stateless bool `json:"stateless,omitempty" mapstructure:"stateless"`
+	Stateless bool `json:"stateless,omitempty" yaml:"stateless,omitempty"`
 	// Description describes the action as a user-readable string
-	Description string `json:"description,omitempty" mapstructure:"description"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
 // ValuesOrDefaults returns parameter values or the default parameter values. An error is returned when the parameter value does not pass
-// the schema validation, a required parameter is missing or an immutable parameter is set with a new value.
-func ValuesOrDefaults(vals map[string]interface{}, currentVals map[string]interface{}, b *Bundle) (map[string]interface{}, error) {
+// the schema validation or a required parameter is missing.
+func ValuesOrDefaults(vals map[string]interface{}, b *Bundle) (map[string]interface{}, error) {
 	res := map[string]interface{}{}
 
-	if b.Parameters == nil {
-		return res, nil
-	}
-
-	requiredMap := map[string]struct{}{}
-	for _, key := range b.Parameters.Required {
-		requiredMap[key] = struct{}{}
-	}
-
-	for name, def := range b.Parameters.Fields {
-		s, ok := b.Definitions[def.Definition]
+	for name, param := range b.Parameters {
+		s, ok := b.Definitions[param.Definition]
 		if !ok {
 			return res, fmt.Errorf("unable to find definition for %s", name)
 		}
 		if val, ok := vals[name]; ok {
-			if currentVal, ok := currentVals[name]; def.Immutable && ok && currentVal != val {
-				return res, fmt.Errorf("parameter %s is immutable and cannot be overridden with value %v", name, val)
-			}
 			valErrs, err := s.Validate(val)
 			if err != nil {
 				return res, pkgErrors.Wrapf(err, "encountered an error validating parameter %s", name)
@@ -169,7 +153,7 @@ func ValuesOrDefaults(vals map[string]interface{}, currentVals map[string]interf
 			typedVal := s.CoerceValue(val)
 			res[name] = typedVal
 			continue
-		} else if _, ok := requiredMap[name]; ok {
+		} else if param.Required {
 			return res, fmt.Errorf("parameter %q is required", name)
 		}
 		res[name] = s.Default
@@ -190,6 +174,22 @@ func (b Bundle) Validate() error {
 
 	if b.Version == "latest" {
 		return errors.New("'latest' is not a valid bundle version")
+	}
+
+	reqExt := make(map[string]bool, len(b.RequiredExtensions))
+	for _, requiredExtension := range b.RequiredExtensions {
+		// Verify the custom extension declared as required exists
+		if _, exists := b.Custom[requiredExtension]; !exists {
+			return fmt.Errorf("required extension '%s' is not defined in the Custom section of the bundle", requiredExtension)
+		}
+
+		// Check for duplicate entries
+		if _, exists := reqExt[requiredExtension]; exists {
+			return fmt.Errorf("required extension '%s' is already declared", requiredExtension)
+		}
+
+		// Populate map with required extension, for duplicate check above
+		reqExt[requiredExtension] = true
 	}
 
 	for _, img := range b.InvocationImages {

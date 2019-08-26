@@ -51,51 +51,49 @@
     "io.cnab.status": {}
   },
   "parameters": {
-    "fields": {
-      "com.docker.app.kubernetes-namespace": {
-        "definition": "com.docker.app.kubernetes-namespace",
-        "applyTo": [
-          "install",
-          "upgrade",
-          "uninstall",
-          "io.cnab.status"
-        ],
-        "destination": {
-          "env": "DOCKER_KUBERNETES_NAMESPACE"
-        }
-      },
-      "com.docker.app.orchestrator": {
-        "definition": "com.docker.app.orchestrator",
-        "applyTo": [
-          "install",
-          "upgrade",
-          "uninstall",
-          "io.cnab.status"
-        ],
-        "destination": {
-          "env": "DOCKER_STACK_ORCHESTRATOR"
-        }
-      },
-      "com.docker.app.render-format": {
-        "definition": "com.docker.app.render-format",
-        "applyTo": [
-          "com.docker.app.render"
-        ],
-        "destination": {
-          "env": "DOCKER_RENDER_FORMAT"
-        }
-      },
-      "com.docker.app.share-registry-creds": {
-        "definition": "com.docker.app.share-registry-creds",
-        "destination": {
-          "env": "DOCKER_SHARE_REGISTRY_CREDS"
-        }
-      },
-      "watcher.cmd": {
-        "definition": "watcher.cmd",
-        "destination": {
-          "env": "docker_param1"
-        }
+    "com.docker.app.kubernetes-namespace": {
+      "definition": "com.docker.app.kubernetes-namespace",
+      "applyTo": [
+        "install",
+        "upgrade",
+        "uninstall",
+        "io.cnab.status"
+      ],
+      "destination": {
+        "env": "DOCKER_KUBERNETES_NAMESPACE"
+      }
+    },
+    "com.docker.app.orchestrator": {
+      "definition": "com.docker.app.orchestrator",
+      "applyTo": [
+        "install",
+        "upgrade",
+        "uninstall",
+        "io.cnab.status"
+      ],
+      "destination": {
+        "env": "DOCKER_STACK_ORCHESTRATOR"
+      }
+    },
+    "com.docker.app.render-format": {
+      "definition": "com.docker.app.render-format",
+      "applyTo": [
+        "com.docker.app.render"
+      ],
+      "destination": {
+        "env": "DOCKER_RENDER_FORMAT"
+      }
+    },
+    "com.docker.app.share-registry-creds": {
+      "definition": "com.docker.app.share-registry-creds",
+      "destination": {
+        "env": "DOCKER_SHARE_REGISTRY_CREDS"
+      }
+    },
+    "watcher.cmd": {
+      "definition": "watcher.cmd",
+      "destination": {
+        "env": "docker_param1"
       }
     }
   },

@@ -76,8 +76,10 @@ func pushIndex(ctx context.Context, b *bundle.Bundle, ref reference.Named, resol
 
 	if err := pushPayload(ctx, resolver, ref.String(), indexDescriptor, indexPayload); err != nil {
 		if !allowFallbacks {
+			logger.Debug("Not using fallbacks, giving up")
 			return ocischemav1.Descriptor{}, err
 		}
+		logger.Debugf("Unable to push OCI Index: %v", err)
 		// retry with a docker manifestlist
 		return pushDockerManifestList(ctx, b, ref, resolver, confManifestDescriptor, options...)
 	}
@@ -100,6 +102,7 @@ func pushDockerManifestList(ctx context.Context, b *bundle.Bundle, ref reference
 	logPayload(logger, indexDescriptor)
 
 	if err := pushPayload(ctx, resolver, ref.String(), indexDescriptor, indexPayload); err != nil {
+		logger.Debugf("Unable to push Index with Manifest list: %v", err)
 		return ocischemav1.Descriptor{}, err
 	}
 	return indexDescriptor, nil

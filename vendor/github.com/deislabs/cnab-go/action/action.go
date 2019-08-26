@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/deislabs/cnab-go/driver"
@@ -29,6 +31,129 @@ type Action interface {
 	Run(*claim.Claim, credentials.Set, io.Writer) error
 }
 
+func golangTypeToJSONType(value interface{}) (string, error) {
+	switch v := value.(type) {
+	case nil:
+		return "null", nil
+	case bool:
+		return "boolean", nil
+	case float64:
+		// All numeric values are parsed by JSON into float64s. When a value could be an integer, it could also be a number, so give the more specific answer.
+		if math.Trunc(v) == v {
+			return "integer", nil
+		}
+		return "number", nil
+	case string:
+		return "string", nil
+	case map[string]interface{}:
+		return "object", nil
+	case []interface{}:
+		return "array", nil
+	default:
+		return fmt.Sprintf("%T", value), fmt.Errorf("unsupported type: %T", value)
+	}
+}
+
+// allowedTypes takes an output Schema and returns a map of the allowed types (to true)
+// or an error (if reading the allowed types from the schema failed).
+func allowedTypes(outputSchema definition.Schema) (map[string]bool, error) {
+	var outputTypes []string
+	mapOutputTypes := map[string]bool{}
+
+	// Get list of one or more allowed types for this output
+	outputType, ok, err1 := outputSchema.GetType()
+	if !ok { // there are multiple types
+		var err2 error
+		outputTypes, ok, err2 = outputSchema.GetTypes()
+		if !ok {
+			return mapOutputTypes, fmt.Errorf("Getting a single type errored with %q and getting multiple types errored with %q", err1, err2)
+		}
+	} else {
+		outputTypes = []string{outputType}
+	}
+
+	// Turn allowed outputs into map for easier membership checking
+	for _, v := range outputTypes {
+		mapOutputTypes[v] = true
+	}
+
+	// All integers make acceptable numbers, and our helper function provides the most specific type.
+	if mapOutputTypes["number"] {
+		mapOutputTypes["integer"] = true
+	}
+
+	return mapOutputTypes, nil
+}
+
+// keys takes a map and returns the keys joined into a comma-separate string.
+func keys(stringMap map[string]bool) string {
+	var keys []string
+	for k := range stringMap {
+		keys = append(keys, k)
+	}
+	return strings.Join(keys, ",")
+}
+
+// isTypeOK uses the content and allowedTypes arguments to make sure the content of an output file matches one of the allowed types.
+// The other arguments (name and allowedTypesList) are used when assembling error messages.
+func isTypeOk(name, content string, allowedTypes map[string]bool) error {
+	if !allowedTypes["string"] { // String output types are always passed through as the escape hatch for non-JSON bundle outputs.
+		var value interface{}
+		if err := json.Unmarshal([]byte(content), &value); err != nil {
+			return fmt.Errorf("failed to parse %q: %s", name, err)
+		}
+
+		v, err := golangTypeToJSONType(value)
+		if err != nil {
+			return fmt.Errorf("%q is not a known JSON type. Expected %q to be one of: %s", name, v, keys(allowedTypes))
+		}
+		if !allowedTypes[v] {
+			return fmt.Errorf("%q is not any of the expected types (%s) because it is %q", name, keys(allowedTypes), v)
+		}
+	}
+	return nil
+}
+
+func setOutputsOnClaim(claim *claim.Claim, outputs map[string]string) error {
+	var outputErrors []error
+	claim.Outputs = map[string]interface{}{}
+
+	if claim.Bundle.Outputs == nil {
+		return nil
+	}
+
+	for outputName, v := range claim.Bundle.Outputs {
+		name := v.Definition
+		if name == "" {
+			return fmt.Errorf("invalid bundle: no definition set for output %q", outputName)
+		}
+
+		outputSchema := claim.Bundle.Definitions[name]
+		if outputSchema == nil {
+			return fmt.Errorf("invalid bundle: output %q references definition %q, which was not found", outputName, name)
+		}
+		outputTypes, err := allowedTypes(*outputSchema)
+		if err != nil {
+			return err
+		}
+
+		content := outputs[v.Path]
+		if content != "" {
+			err := isTypeOk(outputName, content, outputTypes)
+			if err != nil {
+				outputErrors = append(outputErrors, err)
+			}
+			claim.Outputs[outputName] = outputs[v.Path]
+		}
+	}
+
+	if len(outputErrors) > 0 {
+		return fmt.Errorf("error: %s", outputErrors)
+	}
+
+	return nil
+}
+
 func selectInvocationImage(d driver.Driver, c *claim.Claim) (bundle.InvocationImage, error) {
 	if len(c.Bundle.InvocationImages) == 0 {
 		return bundle.InvocationImage{}, errors.New("no invocationImages are defined in the bundle")
@@ -36,11 +161,6 @@ func selectInvocationImage(d driver.Driver, c *claim.Claim) (bundle.InvocationIm
 
 	for _, ii := range c.Bundle.InvocationImages {
 		if d.Handles(ii.ImageType) {
-			if c.RelocationMap != nil {
-				if img, ok := c.RelocationMap[ii.Image]; ok {
-					ii.Image = img
-				}
-			}
 			return ii, nil
 		}
 	}
@@ -56,7 +176,7 @@ func getImageMap(b *bundle.Bundle) ([]byte, error) {
 	return json.Marshal(imgs)
 }
 
-func appliesToAction(action string, parameter bundle.ParameterDefinition) bool {
+func appliesToAction(action string, parameter bundle.Parameter) bool {
 	if len(parameter.ApplyTo) == 0 {
 		return true
 	}
@@ -76,15 +196,13 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 
 	// Quick verification that no params were passed that are not actual legit params.
 	for key := range c.Parameters {
-		if _, ok := c.Bundle.Parameters.Fields[key]; !ok {
+		if _, ok := c.Bundle.Parameters[key]; !ok {
 			return nil, fmt.Errorf("undefined parameter %q", key)
 		}
 	}
 
-	if c.Bundle.Parameters != nil {
-		if err := injectParameters(action, c, env, files); err != nil {
-			return nil, err
-		}
+	if err := injectParameters(action, c, env, files); err != nil {
+		return nil, err
 	}
 
 	imgMap, err := getImageMap(c.Bundle)
@@ -98,6 +216,13 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 	env["CNAB_BUNDLE_NAME"] = c.Bundle.Name
 	env["CNAB_BUNDLE_VERSION"] = c.Bundle.Version
 
+	var outputs []string
+	if c.Bundle.Outputs != nil {
+		for _, v := range c.Bundle.Outputs {
+			outputs = append(outputs, v.Path)
+		}
+	}
+
 	return &driver.Operation{
 		Action:       action,
 		Installation: c.Name,
@@ -107,20 +232,16 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 		Revision:     c.Revision,
 		Environment:  env,
 		Files:        files,
+		Outputs:      outputs,
 		Out:          w,
 	}, nil
 }
 
 func injectParameters(action string, c *claim.Claim, env, files map[string]string) error {
-	requiredMap := map[string]struct{}{}
-	for _, key := range c.Bundle.Parameters.Required {
-		requiredMap[key] = struct{}{}
-	}
-	for k, param := range c.Bundle.Parameters.Fields {
+	for k, param := range c.Bundle.Parameters {
 		rawval, ok := c.Parameters[k]
 		if !ok {
-			_, required := requiredMap[k]
-			if required && appliesToAction(action, param) {
+			if param.Required && appliesToAction(action, param) {
 				return fmt.Errorf("missing required parameter %q for action %q", k, action)
 			}
 			continue

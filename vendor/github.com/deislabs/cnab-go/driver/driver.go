@@ -33,6 +33,8 @@ type Operation struct {
 	Environment map[string]string `json:"environment"`
 	// Files contains files that should be injected into the invocation image.
 	Files map[string]string `json:"files"`
+	// Outputs is a list of paths starting with `/cnab/app/outputs` that the driver should return the contents of in the OperationResult.
+	Outputs []string `json:"outputs"`
 	// Output stream for log messages from the driver
 	Out io.Writer `json:"-"`
 }
@@ -44,10 +46,16 @@ type ResolvedCred struct {
 	Value string `json:"value"`
 }
 
+// OperationResult is the output of the Driver running an Operation.
+type OperationResult struct {
+	// Outputs is a map from the container path of an output file to its contents (i.e. /cnab/app/outputs/...).
+	Outputs map[string]string
+}
+
 // Driver is capable of running a invocation image
 type Driver interface {
 	// Run executes the operation inside of the invocation image
-	Run(*Operation) error
+	Run(*Operation) (OperationResult, error)
 	// Handles receives an ImageType* and answers whether this driver supports that type
 	Handles(string) bool
 }
@@ -69,13 +77,13 @@ type DebugDriver struct {
 }
 
 // Run executes the operation on the Debug driver
-func (d *DebugDriver) Run(op *Operation) error {
+func (d *DebugDriver) Run(op *Operation) (OperationResult, error) {
 	data, err := json.MarshalIndent(op, "", "  ")
 	if err != nil {
-		return err
+		return OperationResult{}, err
 	}
 	fmt.Fprintln(op.Out, string(data))
-	return nil
+	return OperationResult{}, nil
 }
 
 // Handles always returns true, effectively claiming to work for any image type

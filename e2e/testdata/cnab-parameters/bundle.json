@@ -23,30 +23,28 @@
     }
   },
   "parameters": {
-    "fields": {
-      "boolParam": {
-        "definition": "boolParam_type",
-        "destination": {
-          "env": "BOOL_PARAM"
-        }
-      },
-      "stringParam": {
-        "definition": "stringParam_type",
-        "destination": {
-          "env": "STRING_PARAM"
-        }
-      },
-      "intParam": {
-        "definition": "intParam_type",
-        "destination": {
-          "env": "INT_PARAM"
-        }
-      },
-      "floatParam": {
-        "definition": "floatParam_type",
-        "destination": {
-          "env": "FLOAT_PARAM"
-        }
+    "boolParam": {
+      "definition": "boolParam_type",
+      "destination": {
+        "env": "BOOL_PARAM"
+      }
+    },
+    "stringParam": {
+      "definition": "stringParam_type",
+      "destination": {
+        "env": "STRING_PARAM"
+      }
+    },
+    "intParam": {
+      "definition": "intParam_type",
+      "destination": {
+        "env": "INT_PARAM"
+      }
+    },
+    "floatParam": {
+      "definition": "floatParam_type",
+      "destination": {
+        "env": "FLOAT_PARAM"
       }
     }
   }

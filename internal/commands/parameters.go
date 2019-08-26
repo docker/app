@@ -104,16 +104,8 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 	if err != nil {
 		return err
 	}
-	installation.Parameters, err = bundle.ValuesOrDefaults(mergedValues, installation.Parameters, bndl)
+	installation.Parameters, err = bundle.ValuesOrDefaults(mergedValues, bndl)
 	return err
-}
-
-func getParameterFromBundle(name string, bndl *bundle.Bundle) (bundle.ParameterDefinition, bool) {
-	if bndl.Parameters == nil {
-		return bundle.ParameterDefinition{}, false
-	}
-	param, found := bndl.Parameters.Fields[name]
-	return param, found
 }
 
 func matchAndMergeParametersDefinition(currentValues map[string]interface{}, cfg *mergeBundleConfig) (map[string]interface{}, error) {
@@ -122,7 +114,7 @@ func matchAndMergeParametersDefinition(currentValues map[string]interface{}, cfg
 		mergedValues[k] = v
 	}
 	for k, v := range cfg.params {
-		param, ok := getParameterFromBundle(k, cfg.bundle)
+		param, ok := cfg.bundle.Parameters[k]
 		if !ok {
 			if cfg.strictMode {
 				return nil, fmt.Errorf("parameter %q is not defined in the bundle", k)

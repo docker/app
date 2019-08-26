@@ -24,13 +24,18 @@ func (i *Install) Run(c *claim.Claim, creds credentials.Set, w io.Writer) error 
 	if err != nil {
 		return err
 	}
-	if err := i.Driver.Run(op); err != nil {
+
+	opResult, err := i.Driver.Run(op)
+
+	// update outputs in claim even if there were errors so users can see the output files.
+	outputErrors := setOutputsOnClaim(c, opResult.Outputs)
+
+	if err != nil {
 		c.Update(claim.ActionInstall, claim.StatusFailure)
 		c.Result.Message = err.Error()
 		return err
 	}
-
-	// Update claim:
 	c.Update(claim.ActionInstall, claim.StatusSuccess)
-	return nil
+
+	return outputErrors
 }
