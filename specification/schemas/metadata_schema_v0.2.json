@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "id": "metadata_schema_v0.2.json",
     "type": "object",
     "properties": {
@@ -10,10 +10,8 @@
             "type": "string"
         },
         "description": {
-            "type": [
-                "string",
-                "null"
-            ]
+            "type": "string",
+            "optional": true
         },
         "maintainers": {
             "type": "array",
@@ -41,11 +39,9 @@
                     "type": "string"
                 },
                 "email": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "format": "email"
+                    "type": "string",
+                    "format": "email",
+                    "optional": true
                 }
             }
         },
