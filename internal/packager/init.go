@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -163,7 +164,6 @@ func initFromComposeFile(name string, composeFile string) error {
 			}
 		}
 	}
-
 	expandedParams, err := parameters.FromFlatten(params)
 	if err != nil {
 		return errors.Wrap(err, "failed to expand parameters")
@@ -172,6 +172,8 @@ func initFromComposeFile(name string, composeFile string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal parameters")
 	}
+	// remove parameter default values from compose before saving
+	composeRaw = removeDefaultValuesFromCompose(composeRaw)
 	err = ioutil.WriteFile(filepath.Join(dirName, internal.ComposeFileName), composeRaw, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write docker-compose.yml")
@@ -184,6 +186,20 @@ func initFromComposeFile(name string, composeFile string) error {
 		fmt.Fprintln(os.Stderr, "You will need to edit parameters.yml to fill in default values.")
 	}
 	return nil
+}
+
+func removeDefaultValuesFromCompose(compose []byte) []byte {
+	// find params with default values/errors enclosed
+	rePattern := regexp.MustCompile(`\$\{[a-zA-Z_]+[a-zA-Z0-9_.]*((:-)|(\-)|(:\?)|(\?))(.*)\}`)
+	matches := rePattern.FindAllSubmatch(compose, -1)
+	//remove default value from compose content
+	for _, groups := range matches {
+		variable := groups[0]
+		separator := groups[1]
+		variableName := bytes.SplitN(variable, separator, 2)[0]
+		compose = bytes.ReplaceAll(compose, variable, []byte(fmt.Sprintf("%s}", variableName)))
+	}
+	return compose
 }
 
 func composeFileFromScratch() ([]byte, error) {
