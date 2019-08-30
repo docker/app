@@ -1,12 +1,10 @@
-properties([buildDiscarder(logRotator(numToKeepStr: '20'))])
-
 pipeline {
-    agent {
-        label 'linux && x86_64'
-    }
+    agent none
 
     options {
         skipDefaultCheckout(true)
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 1, unit: 'HOURS')
     }
 
     environment {
@@ -17,9 +15,7 @@ pipeline {
         stage('Build') {
             parallel {
                 stage("Validate") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
+                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
@@ -36,9 +32,7 @@ pipeline {
                     }
                 }
                 stage("Binaries"){
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
+                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
                     steps  {
                         dir('src/github.com/docker/app') {
                             script {
@@ -74,9 +68,7 @@ pipeline {
                     }
                 }
                 stage('Build Invocation image'){
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
+                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
@@ -108,9 +100,7 @@ pipeline {
         stage('Test') {
             parallel {
                 stage("Coverage") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
+                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
@@ -140,9 +130,7 @@ pipeline {
                     }
                 }
                 stage("Coverage (experimental)") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
+                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
@@ -170,9 +158,7 @@ pipeline {
                     }
                 }
                 stage("Gradle test") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
+                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
                     steps {
                         dir('src/github.com/docker/app') {
                             checkout scm
@@ -191,9 +177,7 @@ pipeline {
                     }
                 }
                 stage("Test Linux") {
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
+                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
                     environment {
                         DOCKERAPP_BINARY = '../docker-app-linux'
                         DOCKERCLI_BINARY = '../docker-linux'
