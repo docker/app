@@ -95,10 +95,11 @@ func runStatus(dockerCli command.Cli, installationName string, opts credentialOp
 
 func displayInstallationStatus(w io.Writer, installation *store.Installation) {
 	printHeader(w, "INSTALLATION")
+
 	tab := tabwriter.NewWriter(w, 0, 0, 1, ' ', 0)
 	printValue(tab, "Name", installation.Name)
-	printValue(tab, "Created", units.HumanDuration(time.Since(installation.Created)))
-	printValue(tab, "Modified", units.HumanDuration(time.Since(installation.Modified)))
+	printValue(tab, "Created", fmt.Sprintf("%s ago", units.HumanDuration(time.Since(installation.Created))))
+	printValue(tab, "Modified", fmt.Sprintf("%s ago", units.HumanDuration(time.Since(installation.Modified))))
 	printValue(tab, "Revision", installation.Revision)
 	printValue(tab, "Last Action", installation.Result.Action)
 	printValue(tab, "Result", strings.ToUpper(installation.Result.Status))

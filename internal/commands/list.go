@@ -29,8 +29,12 @@ var (
 		{"APPLICATION", func(i *store.Installation) string { return fmt.Sprintf("%s (%s)", i.Bundle.Name, i.Bundle.Version) }},
 		{"LAST ACTION", func(i *store.Installation) string { return i.Result.Action }},
 		{"RESULT", func(i *store.Installation) string { return i.Result.Status }},
-		{"CREATED", func(i *store.Installation) string { return units.HumanDuration(time.Since(i.Created)) }},
-		{"MODIFIED", func(i *store.Installation) string { return units.HumanDuration(time.Since(i.Modified)) }},
+		{"CREATED", func(i *store.Installation) string {
+			return fmt.Sprintf("%s ago", units.HumanDuration(time.Since(i.Created)))
+		}},
+		{"MODIFIED", func(i *store.Installation) string {
+			return fmt.Sprintf("%s ago", units.HumanDuration(time.Since(i.Modified)))
+		}},
 		{"REFERENCE", func(i *store.Installation) string { return i.Reference }},
 	}
 )
