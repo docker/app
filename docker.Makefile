@@ -15,7 +15,7 @@ E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
 COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
 SCHEMAS_CTNR_NAME := $(BIN_NAME)-schemas-$(TAG)
 
-BUILD_ARGS=--build-arg=EXPERIMENTAL=$(EXPERIMENTAL) --build-arg=TAG=$(TAG) --build-arg=COMMIT=$(COMMIT) --build-arg=ALPINE_VERSION=$(ALPINE_VERSION)
+BUILD_ARGS=--build-arg=EXPERIMENTAL --build-arg=TAG --build-arg=COMMIT --build-arg=ALPINE_VERSION --build-arg=GOPROXY
 
 PKG_PATH := /go/src/$(PKG_NAME)
 
@@ -128,7 +128,7 @@ vendor: build_dev_image
 	# git bash, mingw and msys by default rewrite args that seems to be linux paths and try to expand that to a meaningful windows path
 	# we don't want that to happen when mounting paths referring to files located in the container. Thus we use the double "//" prefix that works
 	# both on windows, linux and macos
-	docker run -it --name docker-app-vendoring -v docker-app-vendor-cache://dep-cache -e DEPCACHEDIR=//dep-cache $(DEV_IMAGE_NAME) sh -c "rm -rf ./vendor && make vendor DEP_ARGS=\"$(DEP_ARGS)\""	
+	docker run -it --name docker-app-vendoring -v docker-app-vendor-cache://dep-cache -e DEPCACHEDIR=//dep-cache $(DEV_IMAGE_NAME) sh -c "rm -rf ./vendor && make vendor DEP_ARGS=\"$(DEP_ARGS)\""
 	rm -rf ./vendor
 	docker cp docker-app-vendoring:/go/src/github.com/docker/app/vendor .
 	docker cp docker-app-vendoring:/go/src/github.com/docker/app/Gopkg.lock .
