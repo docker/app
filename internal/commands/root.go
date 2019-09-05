@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"github.com/docker/app/internal/store"
@@ -10,6 +11,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
+var (
+	completion string
+)
+
 // NewRootCmd returns the base root command.
 func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
@@ -17,8 +22,25 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 		Long:        `A tool to build and manage Docker Applications.`,
 		Use:         use,
 		Annotations: map[string]string{"experimentalCLI": "true"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			switch completion {
+			case "bash":
+				return cmd.GenBashCompletion(dockerCli.Out())
+			case "zsh":
+				return cmd.GenZshCompletion(dockerCli.Out())
+			case "":
+				// Actually unset
+				return nil
+			default:
+				return fmt.Errorf("%q is not a supported shell", completion)
+			}
+		},
 	}
 	addCommands(cmd, dockerCli)
+
+	cmd.Flags().StringVar(&completion, "completion", "", "Generates completion scripts for the specified shell (bash or zsh)")
+	_ = cmd.Flags().MarkHidden("completion")
+
 	return cmd
 }
 
@@ -36,7 +58,6 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		splitCmd(),
 		validateCmd(),
 		versionCmd(dockerCli),
-		completionCmd(dockerCli, cmd),
 		bundleCmd(dockerCli),
 		pushCmd(dockerCli),
 		pullCmd(dockerCli),

@@ -388,31 +388,6 @@ Commands:
 Run 'docker app COMMAND --help' for more information on a command.
 ```
 
-## Shell completion
-
-### Bash
-
-Load the completion code for bash into the current shell:
-```console
-$ source <(docker app completion bash)
-```
-Set the completion code for bash to autoload on startup in your ~/.bashrc, ~/.profile or ~/.bash_profile:
-```console
-source <(docker app completion bash)
-```
-**Note**: `bash-completion` is needed.
-
-### Zsh
-
-Load the completion code for zsh into the current shell
-```console
-$ source <(docker app completion zsh)
-```
-Set the completion code for zsh to autoload on startup in your ~/.zshrc
-```console
-source <(docker app completion zsh)
-```
-
 ## Experimental
 
 Some commands are flagged as experimental and will remain in this state until
