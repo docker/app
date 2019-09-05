@@ -20,8 +20,6 @@ type AppSourceKind int
 const (
 	// AppSourceSplit represents an Application in multiple file format
 	AppSourceSplit AppSourceKind = iota
-	// AppSourceMerged represents an Application in single file format
-	AppSourceMerged
 	// AppSourceImage represents an Application pulled from an image
 	AppSourceImage
 	// AppSourceArchive represents an Application in an archive format

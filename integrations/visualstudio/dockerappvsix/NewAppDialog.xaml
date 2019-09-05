@@ -34,7 +34,6 @@
         </Grid.RowDefinitions>
         <Label HorizontalAlignment="Right">Name:</Label>
         <TextBox Grid.Column="1" Margin="4" Text="{Binding Name}"/>
-        <CheckBox Grid.Column="2" Margin="4" VerticalAlignment="Center" IsChecked="{Binding SingleFile}">Single File</CheckBox>
         <Label HorizontalAlignment="Right" Grid.Row="1">Description:</Label>
         <TextBox Grid.Row="1" Grid.Column="1" Margin="4" Grid.ColumnSpan="2"
                  TextWrapping="Wrap"

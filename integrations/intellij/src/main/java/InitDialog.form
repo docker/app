@@ -107,14 +107,6 @@
               <toolTipText value="List of maintainers, in format 'name:email'"/>
             </properties>
           </component>
-          <component id="47d49" class="javax.swing.JCheckBox" binding="cSingleFile">
-            <constraints>
-              <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="single file"/>
-            </properties>
-          </component>
         </children>
       </grid>
     </children>

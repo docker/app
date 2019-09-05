@@ -1,0 +1,6 @@
+version: 0.2.0
+name: hello
+description: Sample app for DockerCon EU 2018
+maintainers:
+  - name: garethr
+    email: someone@example.com

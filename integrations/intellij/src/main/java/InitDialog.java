@@ -8,14 +8,12 @@ public class InitDialog extends JDialog {
     private JTextField tName;
     private JTextField tDescription;
     private JTextArea tMaintainers;
-    private JCheckBox cSingleFile;
     private boolean validated;
 
     public class Result {
         public String name;
         public String description;
         public String maintainers;
-        public boolean singleFile;
     }
 
     public boolean wasValidated() { return validated;}
@@ -25,7 +23,6 @@ public class InitDialog extends JDialog {
         r.name = tName.getText();
         r.description = tDescription.getText();
         r.maintainers = tMaintainers.getText();
-        r.singleFile = cSingleFile.isSelected();
         return r;
     }
 

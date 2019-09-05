@@ -29,9 +29,6 @@ public class InitApp extends AnAction {
         cmd.add("docker-app");
         cmd.add("init");
         cmd.add(r.name);
-        if (r.singleFile) {
-          cmd.add("-s");
-        }
         if (!r.description.isEmpty()) {
             cmd.add("-d");
             cmd.add(r.description);

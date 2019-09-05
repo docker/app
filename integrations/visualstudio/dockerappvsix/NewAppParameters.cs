@@ -11,7 +11,6 @@ namespace dockerappvsix
         public string Name { get; set; }
         public string Description { get; set; }
         public string Maintainers { get; set; }
-        public bool SingleFile { get; set; }
 
     }
 }
