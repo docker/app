@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
@@ -39,7 +40,11 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 	addCommands(cmd, dockerCli)
 
 	cmd.Flags().StringVar(&completion, "completion", "", "Generates completion scripts for the specified shell (bash or zsh)")
-	_ = cmd.Flags().MarkHidden("completion")
+	err := cmd.Flags().MarkHidden("completion")
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Failed to register command line options: %v", err.Error())
+		return nil
+	}
 
 	return cmd
 }
