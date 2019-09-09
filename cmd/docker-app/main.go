@@ -22,7 +22,7 @@ func main() {
 			}
 			return nil
 		}
-		cmd.Flags().MarkHidden("")
+		_ = cmd.Flags().MarkHidden("")
 		return cmd
 	}, manager.Metadata{
 		SchemaVersion: "0.1.0",

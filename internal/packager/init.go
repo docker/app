@@ -23,12 +23,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func prependToFile(filename, text string) error {
-	content, _ := ioutil.ReadFile(filename)
-	content = append([]byte(text), content...)
-	return ioutil.WriteFile(filename, content, 0644)
-}
-
 // Init is the entrypoint initialization function.
 // It generates a new application definition based on the provided parameters
 // and returns the path to the created application definition.
