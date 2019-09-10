@@ -32,7 +32,7 @@ services:
 	)
 	defer dir.Remove()
 
-	err := initFromComposeFile(dir.Join(appName), inputDir.Join(internal.ComposeFileName))
+	err := initFromComposeFile(nil, dir.Join(appName), inputDir.Join(internal.ComposeFileName))
 	assert.NilError(t, err)
 
 	manifest := fs.Expected(
@@ -73,7 +73,7 @@ services:
 	)
 	defer dir.Remove()
 
-	err := initFromComposeFile(dir.Join(appName), inputDir.Join(internal.ComposeFileName))
+	err := initFromComposeFile(nil, dir.Join(appName), inputDir.Join(internal.ComposeFileName))
 	assert.NilError(t, err)
 
 	const expectedParameters = `ports:
@@ -108,7 +108,7 @@ services:
 }
 
 func TestInitFromInvalidComposeFile(t *testing.T) {
-	err := initFromComposeFile("my.dockerapp", "doesnotexist")
+	err := initFromComposeFile(nil, "my.dockerapp", "doesnotexist")
 	assert.ErrorContains(t, err, "failed to read")
 }
 
@@ -131,7 +131,7 @@ services:
 	)
 	defer dir.Remove()
 
-	err := initFromComposeFile(dir.Join(appName), inputDir.Join(internal.ComposeFileName))
+	err := initFromComposeFile(nil, dir.Join(appName), inputDir.Join(internal.ComposeFileName))
 	assert.ErrorContains(t, err, "unsupported Compose file version")
 }
 
@@ -151,7 +151,7 @@ nginx:
 	)
 	defer dir.Remove()
 
-	err := initFromComposeFile(dir.Join(appName), inputDir.Join(internal.ComposeFileName))
+	err := initFromComposeFile(nil, dir.Join(appName), inputDir.Join(internal.ComposeFileName))
 	assert.ErrorContains(t, err, "unsupported Compose file version")
 }
 

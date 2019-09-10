@@ -108,6 +108,64 @@ func TestRenderFormatters(t *testing.T) {
 	})
 }
 
+func checkFileWarning(t *testing.T, goldenFile, composeData string) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
+	tmpDir := fs.NewDir(t, "app_input",
+		fs.WithFile(internal.ComposeFileName, composeData),
+	)
+	defer tmpDir.Remove()
+
+	cmd.Dir = tmpDir.Path()
+	cmd.Command = dockerCli.Command("app", "init", "app-test",
+		"--compose-file", tmpDir.Join(internal.ComposeFileName))
+	stdErr := icmd.RunCmd(cmd).Assert(t, icmd.Success).Stderr()
+	golden.Assert(t, stdErr, goldenFile)
+}
+
+func TestInitWarningEnvFiles(t *testing.T) {
+	testCases := []struct {
+		name    string
+		golden  string
+		compose string
+	}{
+		{
+			name:   "initWarningSingleEnvFileTest",
+			golden: "init-output-warning-single-envfile.golden",
+			compose: `version: "3.2"
+services:
+  nginx:
+    image: nginx:latest
+    env_file: myenv1.env`,
+		},
+		{
+			name:   "initWarningMultipleEnvFilesTest",
+			golden: "init-output-warning-multiple-envfiles.golden",
+			compose: `version: "3.2"
+services:
+  nginx:
+    image: nginx:latest
+    env_file:
+     - myenv1.env
+     - myenv2.env`,
+		},
+		{
+			name:   "initNoEnvFilesTest",
+			golden: "init-output-no-envfile.golden",
+			compose: `version: "3.2"
+services:
+  nginx:
+    image: nginx:latest`,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			checkFileWarning(t, test.golden, test.compose)
+		})
+	}
+}
+
 func TestInit(t *testing.T) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
