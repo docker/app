@@ -1,0 +1,3 @@
+WARNING: "env_file: myenv1.env" entry in service "nginx" has been translated to the "environment" section. Note that your environment files will not be copied!
+WARNING: "env_file: myenv2.env" entry in service "nginx" has been translated to the "environment" section. Note that your environment files will not be copied!
+Created "app-test.dockerapp"

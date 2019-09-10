@@ -88,6 +88,58 @@ func TestRenderFormatters(t *testing.T) {
 	})
 }
 
+func checkFileWarning(t *testing.T, goldenFile, composeData string) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
+	tmpDir := fs.NewDir(t, "app_input",
+		fs.WithFile(internal.ComposeFileName, composeData),
+		fs.WithFile("myenv1.env", "FOO=foo\nBAR=bar"),
+		fs.WithFile("myenv2.env", "FOOBAR=foobar\nBAZ=baz"),
+	)
+	defer tmpDir.Remove()
+
+	cmd.Dir = tmpDir.Path()
+	cmd.Command = dockerCli.Command("app", "init", "app-test",
+		"--compose-file", tmpDir.Join(internal.ComposeFileName))
+	stdOut := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
+	golden.Assert(t, stdOut, goldenFile)
+}
+
+func TestInitWarningEnvFiles(t *testing.T) {
+	testCases := []struct {
+		name    string
+		golden  string
+		compose string
+	}{
+		{
+			name:   "initWarningMultipleEnvFilesTest",
+			golden: "init-output-warning-single-envfile.golden",
+			compose: `version: "3.2"
+services:
+  nginx:
+    image: nginx:latest
+    env_file: myenv1.env`,
+		},
+		{
+			name:   "initWarningMultipleEnvFilesTest",
+			golden: "init-output-warning-multiple-envfiles.golden",
+			compose: `version: "3.2"
+services:
+  nginx:
+    image: nginx:latest
+    env_file:
+     - myenv1.env
+     - myenv2.env`,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			checkFileWarning(t, test.golden, test.compose)
+		})
+	}
+}
+
 func TestInit(t *testing.T) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
@@ -101,8 +153,11 @@ func TestInit(t *testing.T) {
 	composeData := `version: "3.2"
 services:
   nginx:
+    command:
+    - nginx
+    - $NGINX_ARGS
+    - ${NGINX_DRY_RUN}
     image: nginx:latest
-    command: nginx $NGINX_ARGS ${NGINX_DRY_RUN}
 `
 	meta := fmt.Sprintf(`# Version of the application
 version: 0.1.0

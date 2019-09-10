@@ -25,8 +25,18 @@ var (
 	ExtrapolationPattern = regexp.MustCompile(patternString)
 )
 
+type Options struct {
+	SkipValidation bool
+}
+
 // Load applies the specified function when loading a slice of compose data
-func Load(composes [][]byte) ([]composetypes.ConfigFile, map[string]string, error) {
+func Load(composes [][]byte, opts ...func(*Options)) ([]composetypes.ConfigFile, map[string]string,
+	error) {
+	opt := &Options{}
+	for _, o := range opts {
+		o(opt)
+	}
+
 	configFiles := []composetypes.ConfigFile{}
 	for _, data := range composes {
 		s := string(data)
@@ -37,12 +47,14 @@ func Load(composes [][]byte) ([]composetypes.ConfigFile, map[string]string, erro
 		configFiles = append(configFiles, composetypes.ConfigFile{Config: parsed})
 	}
 
-	images, err := validateImagesInConfigFiles(configFiles)
-	if err != nil {
-		return nil, nil, err
+	if !opt.SkipValidation {
+		_, err := validateImagesInConfigFiles(configFiles)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
-	return configFiles, images, nil
+	return configFiles, nil, nil
 }
 
 // validateImagesInConfigFiles validates that there is no unsupported variable expensions in service images and returns a map of service name -> image

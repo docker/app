@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -13,12 +14,13 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
+	"github.com/docker/app/internal/formatter"
 	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/app/types/parameters"
 	composeloader "github.com/docker/cli/cli/compose/loader"
-	"github.com/docker/cli/cli/compose/schema"
+	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/cli/opts"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -71,30 +73,7 @@ func initFromScratch(name string) error {
 	return ioutil.WriteFile(filepath.Join(dirName, internal.ParametersFileName), []byte{'\n'}, 0644)
 }
 
-func checkComposeFileVersion(compose map[string]interface{}) error {
-	version, ok := compose["version"]
-	if !ok {
-		return fmt.Errorf("unsupported Compose file version: version 1 is too low")
-	}
-	return schema.Validate(compose, fmt.Sprintf("%v", version))
-}
-
-func initFromComposeFile(name string, composeFile string) error {
-	logrus.Debugf("Initializing from compose file %s", composeFile)
-
-	dirName := internal.DirNameFromAppName(name)
-
-	composeRaw, err := ioutil.ReadFile(composeFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to read compose file")
-	}
-	cfgMap, err := composeloader.ParseYAML(composeRaw)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse compose file")
-	}
-	if err := checkComposeFileVersion(cfgMap); err != nil {
-		return err
-	}
+func getParamsFromDefaultEnvFile(composeFile string, composeRaw []byte) (map[string]string, bool, error) {
 	params := make(map[string]string)
 	envs, err := opts.ParseEnvFile(filepath.Join(filepath.Dir(composeFile), ".env"))
 	if err == nil {
@@ -107,7 +86,7 @@ func initFromComposeFile(name string, composeFile string) error {
 	}
 	vars, err := compose.ExtractVariables(composeRaw, compose.ExtrapolationPattern)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse compose file")
+		return nil, false, errors.Wrap(err, "failed to parse compose file")
 	}
 	needsFilling := false
 	for k, v := range vars {
@@ -120,6 +99,42 @@ func initFromComposeFile(name string, composeFile string) error {
 			}
 		}
 	}
+	return params, needsFilling, nil
+}
+
+func initFromComposeFile(name string, composeFile string) error {
+	logrus.Debugf("Initializing from compose file %s", composeFile)
+
+	dirName := internal.DirNameFromAppName(name)
+
+	composeRaw, err := ioutil.ReadFile(composeFile)
+	if err != nil {
+		return errors.Wrap(err, "failed to read compose file content")
+	}
+	configFiles, _, err := compose.Load([][]byte{composeRaw}, func(o *compose.Options) {
+		o.SkipValidation = true
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to load compose content")
+	}
+	rendered, err := composeloader.Load(composetypes.ConfigDetails{
+		WorkingDir:  path.Dir(composeFile),
+		ConfigFiles: configFiles,
+	}, func(opts *composeloader.Options) {
+		opts.SkipInterpolation = true
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to load Compose file")
+	}
+	warnEnvfileNotCopiedAndDiscardEntry(rendered)
+	res, err := formatter.Format(rendered, "yaml")
+	if err != nil {
+		return err
+	}
+	params, needsFilling, err := getParamsFromDefaultEnvFile(composeFile, composeRaw)
+	if err != nil {
+		return err
+	}
 	expandedParams, err := parameters.FromFlatten(params)
 	if err != nil {
 		return errors.Wrap(err, "failed to expand parameters")
@@ -129,8 +144,8 @@ func initFromComposeFile(name string, composeFile string) error {
 		return errors.Wrap(err, "failed to marshal parameters")
 	}
 	// remove parameter default values from compose before saving
-	composeRaw = removeDefaultValuesFromCompose(composeRaw)
-	err = ioutil.WriteFile(filepath.Join(dirName, internal.ComposeFileName), composeRaw, 0644)
+	composeContent := removeDefaultValuesFromCompose([]byte(res))
+	err = ioutil.WriteFile(filepath.Join(dirName, internal.ComposeFileName), composeContent, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write docker-compose.yml")
 	}
@@ -142,6 +157,18 @@ func initFromComposeFile(name string, composeFile string) error {
 		fmt.Fprintln(os.Stderr, "You will need to edit parameters.yml to fill in default values.")
 	}
 	return nil
+}
+
+func warnEnvfileNotCopiedAndDiscardEntry(config *composetypes.Config) {
+	for i, s := range config.Services {
+		for _, ef := range s.EnvFile {
+			fmt.Printf("WARNING: \"env_file: %s\" entry in service %q has been translated to the "+
+				"\"environment\" section. Note that your environment files will not be copied!\n", ef,
+				s.Name)
+		}
+		s.EnvFile = nil
+		config.Services[i] = s
+	}
 }
 
 func removeDefaultValuesFromCompose(compose []byte) []byte {
