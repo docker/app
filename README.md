@@ -40,13 +40,13 @@ With `docker app` [installed](#installation) let's create an Application Package
 based on this Compose file:
 
 ```console
-$ docker app init --single-file hello
+$ docker app init hello
 $ ls
 docker-compose.yml
 hello.dockerapp
 ```
 
-We created a new file `hello.dockerapp` that contains three YAML documents:
+We created a new folder `hello.dockerapp` that contains three YAML documents:
 - metadata
 - the Compose file
 - parameters for your application
@@ -60,8 +60,9 @@ description: A simple text server
 maintainers:
 - name: yourusername
   email:
+```
 
----
+```yaml
 version: '3.2'
 services:
   hello:
@@ -69,13 +70,9 @@ services:
     command: ["-text", "hello world"]
     ports:
       - 5678:5678
-
----
-{}
 ```
 
-Let's edit the parameters section and add the following default values for our
-application:
+And an empty `parameters.yml. Let's edit and add the following default values for our applicatoin
 
 ```yaml
 port: 5678
