@@ -1,6 +1,8 @@
 package render
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
@@ -8,7 +10,6 @@ import (
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/parameters"
 	"github.com/docker/cli/cli/compose/loader"
-	composetemplate "github.com/docker/cli/cli/compose/template"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
 
@@ -16,6 +17,23 @@ import (
 	_ "github.com/docker/app/internal/formatter/json"
 	// Register yaml formatter
 	_ "github.com/docker/app/internal/formatter/yaml"
+)
+
+// pattern matching for ${text} and $text substrings (characters allowed: 0-9 a-z _ .)
+const (
+	delimiter = `\$`
+	// variable name must start with at least one of the the following: a-z, A-Z or _
+	substitution = `[a-zA-Z_]+([a-zA-Z0-9_]*(([.]{1}[0-9a-zA-Z_]+)|([0-9a-zA-Z_])))*`
+	// compose files may contain variable names followed by default values/error messages with separators ':-', '-', ':?' and '?'.
+	defaultValuePattern = `[a-zA-Z_]+[a-zA-Z0-9_.]*((:-)|(\-)|(:\?)|(\?)){1}(.*)`
+)
+
+var (
+	patternString = fmt.Sprintf(
+		`%s(?i:(?P<named>%s)|(?P<skip>%s{1,})|\{(?P<braced>%s)\}|\{(?P<fail>%s)\})`,
+		delimiter, substitution, delimiter, substitution, defaultValuePattern,
+	)
+	rePattern = regexp.MustCompile(patternString)
 )
 
 // Render renders the Compose file for this app, merging in parameters files, other compose files, and env
@@ -37,20 +55,53 @@ func Render(app *types.App, env map[string]string, imageMap map[string]bundle.Im
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to merge parameters")
 	}
-	configFiles, _, err := compose.Load(app.Composes())
+	composeContent := string(app.Composes()[0])
+	composeContent, err = substituteParams(allParameters.Flatten(), composeContent)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load composefiles")
+		return nil, err
 	}
-	return render(app.Path, configFiles, allParameters.Flatten(), imageMap)
+	return render(app.Path, composeContent, imageMap)
 }
 
-func render(appPath string, configFiles []composetypes.ConfigFile, finalEnv map[string]string, imageMap map[string]bundle.Image) (*composetypes.Config, error) {
+func substituteParams(allParameters map[string]string, composeContent string) (string, error) {
+	matches := rePattern.FindAllStringSubmatch(composeContent, -1)
+	if len(matches) == 0 {
+		return composeContent, nil
+	}
+	for _, match := range matches {
+		groups := make(map[string]string)
+		for i, name := range rePattern.SubexpNames()[1:] {
+			groups[name] = match[i+1]
+		}
+		//fail on default values enclosed within {}
+		if fail := groups["fail"]; fail != "" {
+			return "", errors.New(fmt.Sprintf("Parameters must not have default values set in compose file. Invalid parameter: %s.", match[0]))
+		}
+		if skip := groups["skip"]; skip != "" {
+			continue
+		}
+		varString := match[0]
+		val := groups["named"]
+		if val == "" {
+			val = groups["braced"]
+		}
+		if value, ok := allParameters[val]; ok {
+			composeContent = strings.ReplaceAll(composeContent, varString, value)
+		} else {
+			return "", errors.New(fmt.Sprintf("Failed to set value for %s. Value not found in parameters.", val))
+		}
+	}
+	return composeContent, nil
+}
+
+func render(appPath string, composeContent string, imageMap map[string]bundle.Image) (*composetypes.Config, error) {
+	configFiles, _, err := compose.Load([][]byte{[]byte(composeContent)})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load compose content")
+	}
 	rendered, err := loader.Load(composetypes.ConfigDetails{
 		WorkingDir:  appPath,
 		ConfigFiles: configFiles,
-		Environment: finalEnv,
-	}, func(opts *loader.Options) {
-		opts.Interpolate.Substitute = substitute
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load Compose file")
@@ -65,20 +116,6 @@ func render(appPath string, configFiles []composetypes.ConfigFile, finalEnv map[
 		}
 	}
 	return rendered, nil
-}
-
-func substitute(template string, mapping composetemplate.Mapping) (string, error) {
-	return composetemplate.SubstituteWith(template, mapping, compose.ExtrapolationPattern, errorIfMissing)
-}
-
-func errorIfMissing(substitution string, mapping composetemplate.Mapping) (string, bool, error) {
-	value, found := mapping(substitution)
-	if !found {
-		return "", true, &composetemplate.InvalidTemplateError{
-			Template: "required variable " + substitution + " is missing a value",
-		}
-	}
-	return value, true, nil
 }
 
 func processEnabled(config *composetypes.Config) error {

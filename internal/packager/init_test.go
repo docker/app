@@ -49,14 +49,17 @@ func TestInitFromComposeFileWithFlattenedParams(t *testing.T) {
 version: '3.0'
 services:
   service1:
-    image: image1
     ports:
       - ${ports.service1:-9001}
-
   service2:
-    image: image2
     ports:
-      - ${ports.service2:-9002}
+      - ${ports.service2-9002}
+  service3:
+    ports:
+      - ${ports.service3:?'port is unset or empty in the environment'}
+  service4:
+    ports:
+      - ${ports.service4?'port is unset or empty in the environment'}
 `
 	inputDir := fs.NewDir(t, "app_input_",
 		fs.WithFile(internal.ComposeFileName, composeData),
@@ -75,14 +78,31 @@ services:
 	const expectedParameters = `ports:
   service1: 9001
   service2: 9002
+  service3: FILL ME
+  service4: FILL ME
+`
+	const expectedUpdatedComposeData = `
+version: '3.0'
+services:
+  service1:
+    ports:
+      - ${ports.service1}
+  service2:
+    ports:
+      - ${ports.service2}
+  service3:
+    ports:
+      - ${ports.service3}
+  service4:
+    ports:
+      - ${ports.service4}
 `
 	manifest := fs.Expected(
 		t,
 		fs.WithMode(0755),
-		fs.WithFile(internal.ComposeFileName, composeData, fs.WithMode(0644)),
+		fs.WithFile(internal.ComposeFileName, expectedUpdatedComposeData, fs.WithMode(0644)),
 		fs.WithFile(internal.ParametersFileName, expectedParameters, fs.WithMode(0644)),
 	)
-
 	assert.Assert(t, fs.Equal(dir.Join(appName), manifest))
 }
 

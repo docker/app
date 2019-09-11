@@ -1,13 +1,13 @@
 package render
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/parameters"
-	composetypes "github.com/docker/cli/cli/compose/types"
 	yaml "gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
@@ -18,73 +18,181 @@ const (
 name: my-app`
 )
 
-func TestRenderMissingValue(t *testing.T) {
-	configFiles := []composetypes.ConfigFile{
-		{
-			Config: map[string]interface{}{
-				"version": "3",
-				"services": map[string]interface{}{
-					"foo": map[string]interface{}{
-						"image": "${imageName}:${version}",
-					},
-				},
-			},
-		},
+func TestSubstituteBracedParams(t *testing.T) {
+	composeFile := `
+version: "3.6"
+services:
+  front:
+    ports:
+     - "${front.port}:80"
+`
+	parameters := map[string]string{
+		"front.port": "8080",
 	}
-	finalEnv := map[string]string{
-		"imageName": "foo",
-	}
-	_, err := render("foo.dockerapp", configFiles, finalEnv, nil)
-	assert.Check(t, err != nil)
-	assert.Check(t, is.ErrorContains(err, "required variable"))
+	s, err := substituteParams(parameters, composeFile)
+	assert.NilError(t, err)
+	assert.Equal(t, s, `
+version: "3.6"
+services:
+  front:
+    ports:
+     - "8080:80"
+`)
 }
 
-func TestRender(t *testing.T) {
-	configFiles := []composetypes.ConfigFile{
-		{
-			Config: map[string]interface{}{
-				"version": "3",
-				"services": map[string]interface{}{
-					"foo": map[string]interface{}{
-						"image":   "busybox:${version}",
-						"command": []interface{}{"-text", "${foo.bar}"},
-					},
-				},
-			},
-		},
+func TestSubstituteNamedParams(t *testing.T) {
+	composeFile := `
+version: "3.6"
+services:
+  back:
+    ports:
+     - "$back.port:90"
+`
+	parameters := map[string]string{
+		"back.port": "9000",
 	}
-	finalEnv := map[string]string{
-		"version": "latest",
-		"foo.bar": "baz",
-	}
-	c, err := render("foo.dockerapp", configFiles, finalEnv, nil)
+	s, err := substituteParams(parameters, composeFile)
 	assert.NilError(t, err)
-	assert.Check(t, is.Len(c.Services, 1))
-	assert.Check(t, is.Equal(c.Services[0].Image, "busybox:latest"))
-	assert.Check(t, is.DeepEqual([]string(c.Services[0].Command), []string{"-text", "baz"}))
+	assert.Equal(t, s, `
+version: "3.6"
+services:
+  back:
+    ports:
+     - "9000:90"
+`)
+}
+
+func checkRenderError(t *testing.T, userParameters map[string]string, composeFile string, expectedError string) {
+	metadata := strings.NewReader(validMeta)
+
+	app := &types.App{Path: "my-app"}
+	assert.NilError(t, types.Metadata(metadata)(app))
+	assert.NilError(t, types.WithComposes(strings.NewReader(composeFile))(app))
+	_, err := Render(app, userParameters, nil)
+	assert.ErrorContains(t, err, expectedError)
+}
+
+func TestRenderFailOnDefaultParamValueInCompose(t *testing.T) {
+	composeFile := `
+version: "3.6"
+services:
+  front:
+    ports:
+     - "${front.port:-9090}:80"
+`
+	userParameters := map[string]string{
+		"front.port": "4242",
+	}
+	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port:-9090}.")
+
+	composeFile = `
+version: "3.6"
+services:
+	front:
+	ports:
+		- "${front.port-9090}:80"
+	`
+	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port-9090}.")
+	composeFile = `
+version: "3.6"
+services:
+	front:
+	ports:
+		- "${front.port:?Error}:80"
+	`
+	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port:?Error}.")
+
+	composeFile = `
+version: "3.6"
+services:
+	front:
+	ports:
+		- "${front.port?Error:unset variable}:80"
+	`
+	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port?Error:unset variable}.")
+
+}
+func TestSubstituteMixedParams(t *testing.T) {
+	composeFile := `
+version: "3.6"
+services:
+  front:
+    ports:
+     - "${front.port}:80"
+    deploy:
+      replicas: ${front.deploy.replicas}
+  back:
+    ports:
+     - "$back.port:90"
+`
+	parameters := map[string]string{
+		"front.port":            "8080",
+		"back.port":             "9000",
+		"front.deploy.replicas": "3",
+	}
+	s, err := substituteParams(parameters, composeFile)
+	assert.NilError(t, err)
+	assert.Equal(t, s, `
+version: "3.6"
+services:
+  front:
+    ports:
+     - "8080:80"
+    deploy:
+      replicas: 3
+  back:
+    ports:
+     - "9000:90"
+`)
+}
+
+func TestSkipDoubleDollarCase(t *testing.T) {
+	composeFile := `
+	version: "3.7"
+	services:
+	  front:
+		command: $$dollar
+`
+	s, err := substituteParams(map[string]string{}, composeFile)
+	assert.NilError(t, err)
+	assert.Equal(t, s, `
+	version: "3.7"
+	services:
+	  front:
+		command: $$dollar
+`)
+}
+
+func TestSubstituteMissingParameterValue(t *testing.T) {
+	composeFile := `
+	version: "3.7"
+	services:
+	  front:
+		deploy:
+		  replicas: ${myapp.nginx_replicas}
+	  debug:
+		ports:
+		- $aport
+`
+	parameters := map[string]string{
+		"aport": "10000",
+	}
+	_, err := substituteParams(parameters, composeFile)
+	assert.ErrorContains(t, err, "Failed to set value for myapp.nginx_replicas. Value not found in parameters.")
 }
 
 func TestRenderEnabledFalse(t *testing.T) {
-	for _, tc := range []interface{}{false, "false", "! ${myapp.debug}"} {
-		configs := []composetypes.ConfigFile{
-			{
-				Config: map[string]interface{}{
-					"version": "3.7",
-					"services": map[string]interface{}{
-						"foo": map[string]interface{}{
-							"image":     "busybox",
-							"command":   []interface{}{"-text", "foo"},
-							"x-enabled": tc,
-						},
-					},
-				},
-			},
-		}
-		c, err := render("foo.dockerapp", configs, map[string]string{
-			"myapp.debug": "true",
-		}, nil)
+	for _, tc := range []interface{}{"false", "\"false\"", "\"! true\""} {
+		composeFile := fmt.Sprintf(`
+version: "3.7"
+services:
+  foo:
+    image: busybox
+    "x-enabled": %s
+`, tc)
+		c, err := render("foo.dockerapp", composeFile, nil)
 		assert.NilError(t, err)
-		assert.Check(t, is.Len(c.Services, 0))
+		assert.Check(t, is.Len(c.Services, 0), fmt.Sprintf("Failed for %s", tc))
 	}
 }
 
@@ -214,19 +322,13 @@ services:
 }
 
 func TestServiceImageOverride(t *testing.T) {
-	configFiles := []composetypes.ConfigFile{
-		{
-			Config: map[string]interface{}{
-				"version": "3",
-				"services": map[string]interface{}{
-					"foo": map[string]interface{}{
-						"image": "busybox",
-					},
-				},
-			},
-		},
-	}
-	c, err := render("foo.dockerapp", configFiles, nil, map[string]bundle.Image{
+	composeFile := `
+version: "3.6"
+services:
+  foo:
+    image: busybox,
+`
+	c, err := render("foo.dockerapp", composeFile, map[string]bundle.Image{
 		"foo": {BaseImage: bundle.BaseImage{Image: "test"}},
 	})
 	assert.NilError(t, err)
