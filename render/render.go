@@ -21,9 +21,11 @@ import (
 
 // pattern matching for ${text} and $text substrings (characters allowed: 0-9 a-z _ .)
 const (
-	delimiter           = `\$`
-	substitution        = `[a-zA-Z_]+([a-zA-Z0-9_]*(([.]{1}[0-9a-zA-Z_]+)|([0-9a-zA-Z_])))*`
-	defaultValuePattern = `[a-zA-Z_]+[a-zA-Z0-9_.]*((:-)|(\-)|(:\?)|(\?))(.*)`
+	delimiter = `\$`
+	// variable name must start with at least one of the the following: a-z, A-Z or _
+	substitution = `[a-zA-Z_]+([a-zA-Z0-9_]*(([.]{1}[0-9a-zA-Z_]+)|([0-9a-zA-Z_])))*`
+	// compose files may contain variable names followed by default values/error messages with separators ':-', '-', ':?' and '?'.
+	defaultValuePattern = `[a-zA-Z_]+[a-zA-Z0-9_.]*((:-)|(\-)|(:\?)|(\?)){1}(.*)`
 )
 
 var (

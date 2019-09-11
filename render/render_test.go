@@ -62,25 +62,56 @@ services:
 `)
 }
 
-func TestRenderFailOnDefaultParamValueInCompose(t *testing.T) {
+func checkRenderError(t *testing.T, userParameters map[string]string, composeFile string, expectedError string) {
 	metadata := strings.NewReader(validMeta)
-	composeFile := strings.NewReader(`
+
+	app := &types.App{Path: "my-app"}
+	assert.NilError(t, types.Metadata(metadata)(app))
+	assert.NilError(t, types.WithComposes(strings.NewReader(composeFile))(app))
+	_, err := Render(app, userParameters, nil)
+	assert.ErrorContains(t, err, expectedError)
+}
+
+func TestRenderFailOnDefaultParamValueInCompose(t *testing.T) {
+	composeFile := `
 version: "3.6"
 services:
   front:
     ports:
      - "${front.port:-9090}:80"
-`)
-	app := &types.App{Path: "my-app"}
-	assert.NilError(t, types.Metadata(metadata)(app))
-	assert.NilError(t, types.WithComposes(composeFile)(app))
+`
 	userParameters := map[string]string{
 		"front.port": "4242",
 	}
-	_, err := Render(app, userParameters, nil)
-	assert.ErrorContains(t, err, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port:-9090}.")
-}
+	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port:-9090}.")
 
+	composeFile = `
+version: "3.6"
+services:
+	front:
+	ports:
+		- "${front.port-9090}:80"
+	`
+	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port-9090}.")
+	composeFile = `
+version: "3.6"
+services:
+	front:
+	ports:
+		- "${front.port:?Error}:80"
+	`
+	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port:?Error}.")
+
+	composeFile = `
+version: "3.6"
+services:
+	front:
+	ports:
+		- "${front.port?Error:unset variable}:80"
+	`
+	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port?Error:unset variable}.")
+
+}
 func TestSubstituteMixedParams(t *testing.T) {
 	composeFile := `
 version: "3.6"

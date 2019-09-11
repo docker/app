@@ -189,7 +189,7 @@ func initFromComposeFile(name string, composeFile string) error {
 }
 
 func removeDefaultValuesFromCompose(compose []byte) []byte {
-	// find params with default values/errors enclosed
+	// find variable names followed by default values/error messages with ':-', '-', ':?' and '?' as separators.
 	rePattern := regexp.MustCompile(`\$\{[a-zA-Z_]+[a-zA-Z0-9_.]*((:-)|(\-)|(:\?)|(\?))(.*)\}`)
 	matches := rePattern.FindAllSubmatch(compose, -1)
 	//remove default value from compose content

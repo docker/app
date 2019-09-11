@@ -59,7 +59,7 @@ services:
       - ${ports.service3:?'port is unset or empty in the environment'}
   service4:
     ports:
-      - ${ports.service4:?'port is unset or empty in the environment'}
+      - ${ports.service4?'port is unset or empty in the environment'}
 `
 	inputDir := fs.NewDir(t, "app_input_",
 		fs.WithFile(internal.ComposeFileName, composeData),
