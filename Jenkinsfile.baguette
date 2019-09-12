@@ -1,12 +1,5 @@
 properties([buildDiscarder(logRotator(numToKeepStr: '20'))])
 
-hubCred = [
-    $class: 'UsernamePasswordMultiBinding',
-    usernameVariable: 'REGISTRY_USERNAME',
-    passwordVariable: 'REGISTRY_PASSWORD',
-    credentialsId: 'orcaeng-hub.docker.com',
-]
-
 pipeline {
     agent {
         label 'ubuntu-1804'
@@ -71,7 +64,10 @@ pipeline {
                         label 'ubuntu-1604-aufs-edge'
                     }
                     steps {
-                        withCredentials([hubCred]) {
+                        withCredentials([
+                            usernamePassword(credentialsId: 'orcaeng-hub.docker.com', usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD'),
+                            string(credentialsId: 'fossa-api-key', variable: 'FOSSA_API_KEY')
+                        ]) {
                             dir('src/github.com/docker/app') {
                                 checkout scm
                                 ansiColor('xterm') {
