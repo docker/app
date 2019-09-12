@@ -57,9 +57,6 @@ pipeline {
                     }
                 }
                 stage("License Scan") {
-                    environment {
-                        FOSSA_API_KEY=credentials('cb07b147-32a4-4400-aaac-21c3f8c9e62e')
-                    }
                     agent {
                         label 'ubuntu-1604-aufs-edge'
                     }
@@ -72,8 +69,8 @@ pipeline {
                                 checkout scm
                                 ansiColor('xterm') {
                                     sh "docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD"
-                                    sh "BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
-                                    sh 'make fossa-test'
+                                    sh "FOSSA_API_KEY=$FOSSA_API_KEY BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
+                                    sh "FOSSA_API_KEY=$FOSSA_API_KEY make fossa-test"
                                 }
                             }
                         }
