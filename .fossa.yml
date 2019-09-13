@@ -20,11 +20,3 @@ analyze:
     type: go
     target: github.com/docker/app/cmd/docker-app-standalone
     path: cmd/docker-app-standalone
-  - name: github.com/docker/app/pkg/yatee/gopher
-    type: go
-    target: github.com/docker/app/pkg/yatee/gopher
-    path: pkg/yatee/gopher
-  - name: github.com/docker/app/pkg/yatee/samples
-    type: go
-    target: github.com/docker/app/pkg/yatee/samples
-    path: pkg/yatee/samples
