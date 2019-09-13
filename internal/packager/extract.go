@@ -72,16 +72,10 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 		)
 		return loader.LoadFromDirectory(appname, appOpts...)
 	}
-	// not a dir: single-file or a tarball package, extract that in a temp dir
+	// not a dir: a tarball package, extract that in a temp dir
 	app, err := loader.LoadFromTar(appname, ops...)
 	if err != nil {
-		f, err := os.Open(appname)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		ops = append(ops, types.WithSource(types.AppSourceMerged))
-		return loader.LoadFromSingleFile(appname, f, ops...)
+		return nil, err
 	}
 	app.Source = types.AppSourceArchive
 	return app, nil

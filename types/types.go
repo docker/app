@@ -20,21 +20,11 @@ type AppSourceKind int
 const (
 	// AppSourceSplit represents an Application in multiple file format
 	AppSourceSplit AppSourceKind = iota
-	// AppSourceMerged represents an Application in single file format
-	AppSourceMerged
 	// AppSourceImage represents an Application pulled from an image
 	AppSourceImage
 	// AppSourceArchive represents an Application in an archive format
 	AppSourceArchive
 )
-
-// YamlSingleFileSeparator returns the separator used in single-file app, depending detected CRLF
-func YamlSingleFileSeparator(hasCRLF bool) []byte {
-	if hasCRLF {
-		return []byte("\r\n---\r\n")
-	}
-	return []byte("\n---\n")
-}
 
 // ShouldRunInsideDirectory returns whether the package is run from a directory on disk
 func (a AppSourceKind) ShouldRunInsideDirectory() bool {

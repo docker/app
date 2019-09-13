@@ -3,7 +3,6 @@ package packager
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -15,7 +14,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/yaml"
-	"github.com/docker/app/loader"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/app/types/parameters"
@@ -26,16 +24,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func prependToFile(filename, text string) error {
-	content, _ := ioutil.ReadFile(filename)
-	content = append([]byte(text), content...)
-	return ioutil.WriteFile(filename, content, 0644)
-}
-
 // Init is the entrypoint initialization function.
 // It generates a new application definition based on the provided parameters
 // and returns the path to the created application definition.
-func Init(name string, composeFile string, description string, maintainers []string, singleFile bool) (string, error) {
+func Init(name string, composeFile string, description string, maintainers []string) (string, error) {
 	if err := internal.ValidateAppName(name); err != nil {
 		return "", err
 	}
@@ -66,38 +58,7 @@ func Init(name string, composeFile string, description string, maintainers []str
 	if err != nil {
 		return "", err
 	}
-	if !singleFile {
-		return dirName, nil
-	}
-	// Merge as a single file
-	// Add some helfpful comments to distinguish the sections
-	if err := prependToFile(filepath.Join(dirName, internal.ComposeFileName), "# This section contains the Compose file that describes your application services.\n"); err != nil {
-		return "", err
-	}
-	if err := prependToFile(filepath.Join(dirName, internal.ParametersFileName), "# This section contains the default values for your application parameters.\n"); err != nil {
-		return "", err
-	}
-	if err := prependToFile(filepath.Join(dirName, internal.MetadataFileName), "# This section contains your application metadata.\n"); err != nil {
-		return "", err
-	}
-
-	temp := "_temp_dockerapp__.dockerapp"
-	err = os.Rename(dirName, temp)
-	if err != nil {
-		return "", err
-	}
-	defer os.RemoveAll(temp)
-	var target io.Writer
-	target, err = os.Create(dirName)
-	if err != nil {
-		return "", err
-	}
-	defer target.(io.WriteCloser).Close()
-	app, err := loader.LoadFromDirectory(temp)
-	if err != nil {
-		return "", err
-	}
-	return dirName, Merge(app, target)
+	return dirName, nil
 }
 
 func initFromScratch(name string) error {

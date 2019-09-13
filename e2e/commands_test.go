@@ -1,11 +1,9 @@
 package e2e
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -130,27 +128,6 @@ maintainers:
 	cmd.Command = dockerCli.Command("app", "validate", testAppName)
 	stdOut = icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
 	golden.Assert(t, stdOut, "validate-output.golden")
-
-	// test single-file init
-	cmd.Command = dockerCli.Command("app",
-		"init", "myapp",
-		"--compose-file", tmpDir.Join(internal.ComposeFileName),
-		"--description", "some description",
-		"--maintainer", "dev1",
-		"--maintainer", "dev2:dev2@example.com",
-		"--single-file",
-	)
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	appData, err := ioutil.ReadFile(tmpDir.Join("myapp.dockerapp"))
-	assert.NilError(t, err)
-	golden.Assert(t, string(appData), "init-singlefile.dockerapp")
-	// Check various commands work on single-file app package
-	cmd.Command = dockerCli.Command("app", "inspect", "myapp")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	cmd.Command = dockerCli.Command("app", "render", "myapp")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
 func TestDetectApp(t *testing.T) {
@@ -185,82 +162,6 @@ func TestDetectApp(t *testing.T) {
 		ExitCode: 1,
 		Err:      "multiple applications found in current directory, specify the application name on the command line",
 	})
-}
-
-func patchEndOfLine(t *testing.T, eol []byte, name, fromDir, toDir string) {
-	buf := golden.Get(t, filepath.Join(fromDir, name))
-	bytes.ReplaceAll(buf, []byte{'\n'}, eol)
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(toDir, name), buf, 0644))
-}
-
-func TestSplitMerge(t *testing.T) {
-	testCases := []struct {
-		name       string
-		lineEnding []byte
-	}{
-		{
-			name:       "without-crlf",
-			lineEnding: []byte{'\n'},
-		},
-		{
-			name:       "with-crlf",
-			lineEnding: []byte{'\r', '\n'},
-		},
-	}
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, cleanup := dockerCli.createTestCmd()
-			defer cleanup()
-
-			tmpDir := fs.NewDir(t, "split_merge", fs.WithDir("my.dockerapp"))
-			defer tmpDir.Remove()
-
-			inputDir := filepath.Join("render", "envvariables", "my.dockerapp")
-			testDataDir := tmpDir.Join("my.dockerapp")
-
-			// replace the line ending from the versioned test data files and put them to a temp dir
-			for _, name := range internal.FileNames {
-				patchEndOfLine(t, test.lineEnding, name, inputDir, testDataDir)
-			}
-
-			// Merge a multi-files app to a single-file app
-			cmd.Command = dockerCli.Command("app", "merge", testDataDir, "--output", tmpDir.Join("remerged.dockerapp"))
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-			cmd.Dir = tmpDir.Path()
-
-			// test that inspect works on single-file
-			cmd.Command = dockerCli.Command("app", "inspect", "remerged")
-			result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-			golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
-
-			// split it
-			cmd.Command = dockerCli.Command("app", "split", "remerged", "--output", "split.dockerapp")
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-			// test that inspect still works
-			cmd.Command = dockerCli.Command("app", "inspect", "remerged")
-			result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
-			golden.Assert(t, result.Combined(), "envvariables-inspect.golden")
-
-			// the split app must be the same as the original one
-			manifest := fs.Expected(
-				t,
-				fs.WithMode(0755),
-				fs.WithFile(internal.MetadataFileName, string(golden.Get(t, path.Join(testDataDir, internal.MetadataFileName))), fs.WithMode(0644)),
-				fs.WithFile(internal.ComposeFileName, string(golden.Get(t, path.Join(testDataDir, internal.ComposeFileName))), fs.WithMode(0644)),
-				fs.WithFile(internal.ParametersFileName, string(golden.Get(t, path.Join(testDataDir, internal.ParametersFileName))), fs.WithMode(0644)),
-			)
-			assert.Assert(t, fs.Equal(tmpDir.Join("split.dockerapp"), manifest))
-
-			// test inplace
-			cmd.Command = dockerCli.Command("app", "merge", "split")
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-			cmd.Command = dockerCli.Command("app", "split", "split")
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		})
-	}
 }
 
 func TestBundle(t *testing.T) {

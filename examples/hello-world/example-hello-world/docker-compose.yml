@@ -1,0 +1,8 @@
+version: "3.6"
+services:
+  hello:
+    image: hashicorp/http-echo
+    command: ["-text", "${text}"]
+    ports:
+      - ${port}:5678
+

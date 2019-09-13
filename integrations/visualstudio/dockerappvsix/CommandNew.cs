@@ -73,8 +73,6 @@ namespace dockerappvsix
                     argsBuilder.Append($" --maintainer {m.QuoteAndStripCarriageReturns()}");
                 }
             }
-            if (s.SingleFile)
-                argsBuilder.Append(" -s");
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             proc.StartInfo.FileName = "docker-app";
             proc.StartInfo.UseShellExecute = false;

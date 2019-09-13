@@ -5,18 +5,14 @@
 In this example, we will create a single service application that deploys a web
 server with a configurable text message.
 
-First, we will initialize the project using the single file format. A single
-file application contains three sections: `metadata` which corresponds to
-`metadata.yml`, `parameters` which corresponds to `parameters.yml` and
-`services` which corresponds to `docker-compose.yml`.
+First, we will initialize the project.
 
 ```console
-$ docker app init --single-file hello-world
+$ docker app init hello-world
 $ ls -l
 -rw-r--r-- 1 README.md
--rw-r--r-- 1 example-hello-world.dockerapp
-$ cat hello-world.dockerapp
-# This section contains your application metadata.
+drw-r--r-- 1 example-hello-world.dockerapp
+$ cat hello-world.dockerapp/metadata.yml
 # Version of the application
 version: 0.1.0
 # Name of the application
@@ -28,13 +24,12 @@ maintainers:
   - name: user
     email:
 
----
+$ cat hello-world.dockerapp/services.yml
 # This section contains the Compose file that describes your application services.
 version: "3.6"
 services: {}
 
----
-# This section contains the default values for your application parameters.
+$ cat hello-world.dockerapp/parameters.yml
 ```
 
 Open `hello-world.dockerapp` with your favorite text editor.
@@ -49,8 +44,6 @@ Add a service `hello` to the `services` section.
 
 ```yaml
 [...]
----
-# This section contains the Compose file that describes your application services.
 version: "3.6"
 services:
   hello:
@@ -59,7 +52,6 @@ services:
     ports:
       - ${port}:5678
 
----
 [...]
 ```
 
@@ -70,8 +62,6 @@ e.g.:
 
 ```yaml
 [...]
----
-# This section contains the default values for your application parameters.
 port: 8080
 text: Hello, World!
 ```

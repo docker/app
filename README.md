@@ -40,13 +40,13 @@ With `docker app` [installed](#installation) let's create an Application Package
 based on this Compose file:
 
 ```console
-$ docker app init --single-file hello
+$ docker app init hello
 $ ls
 docker-compose.yml
 hello.dockerapp
 ```
 
-We created a new file `hello.dockerapp` that contains three YAML documents:
+We created a new folder `hello.dockerapp` that contains three YAML documents:
 - metadata
 - the Compose file
 - parameters for your application
@@ -60,8 +60,9 @@ description: A simple text server
 maintainers:
 - name: yourusername
   email:
+```
 
----
+```yaml
 version: '3.2'
 services:
   hello:
@@ -69,13 +70,9 @@ services:
     command: ["-text", "hello world"]
     ports:
       - 5678:5678
-
----
-{}
 ```
 
-Let's edit the parameters section and add the following default values for our
-application:
+And an empty `parameters.yml. Let's edit and add the following default values for our applicatoin
 
 ```yaml
 port: 5678
@@ -287,19 +284,6 @@ New-Item -ItemType Directory -Path ~/.docker/cli-plugins -ErrorAction SilentlyCo
 cp docker-app-plugin-windows.exe ~/.docker/cli-plugins/docker-app.exe
 ```
 
-## Single file or directory representation
-
-If you prefer having the three core documents in separate YAML files, omit the
-`--single-file` option to the `docker app init` command. This will create a
-directory instead of a single file, containing `metadata.yml`,
-`docker-compose.yml` and `parameters.yml`.
-
-Converting between the two formats can be achieved by using the
-`docker app split` and `docker app merge` commands.
-
-**Note**: You cannot store attachments in the single file format. If you want to
-use attachments you should use the directory format.
-
 ## Attachments (Storing additional files)
 
 If you want to store additional files in the application package, such as
@@ -374,11 +358,9 @@ Commands:
   inspect     Shows metadata, parameters and a summary of the Compose file for a given application
   install     Install an application
   list        List the installations and their last known installation result
-  merge       Merge a directory format Docker Application definition into a single file
   pull        Pull an application package from a registry
   push        Push an application package to a registry
   render      Render the Compose file for an Application Package
-  split       Split a single-file Docker Application definition into the directory format
   status      Get the installation status of an application
   uninstall   Uninstall an application
   upgrade     Upgrade an installed application
