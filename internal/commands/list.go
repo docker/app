@@ -51,7 +51,6 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 			return runList(dockerCli, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.targetContext, "target-context", "", "List running Apps on this context")
 
 	return cmd
 }

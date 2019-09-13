@@ -140,7 +140,6 @@ type credentialOptions struct {
 }
 
 func (o *credentialOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringVar(&o.targetContext, "target-context", "", "Context on which the application is installed (default: <current-context>)")
 	flags.StringArrayVar(&o.credentialsets, "credential-set", []string{}, "Use a YAML file containing a credential set or a credential set present in the credential store")
 	flags.StringArrayVar(&o.credentials, "credential", nil, "Add a single credential, additive ontop of any --credential-set used")
 	flags.BoolVar(&o.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")

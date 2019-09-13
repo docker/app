@@ -188,23 +188,6 @@ $ docker app inspect myrepo/hello:0.1.0
 **Note**: Commands like `install`, `upgrade`, `render`, etc. can also be used
 directly on Application Packages that are in a registry.
 
-You can specify the Docker endpoint where an application is installed using a
-context and the `--target-context` option. If you do not specify one, it will
-use the currently active context.
-
-```console
-$ docker context create remote --description "remote cluster" --docker host=tcp://<remote-ip>:<remote-port>
-Successfully created context "remote"
-
-$ docker context ls
-NAME                DESCRIPTION                               DOCKER ENDPOINT               KUBERNETES ENDPOINT                ORCHESTRATOR
-default *           Current DOCKER_HOST based configuration   unix:///var/run/docker.sock   https://localhost:6443 (default)   swarm
-remote              remote cluster                            tcp://<remote-ip>:<remote-port>
-
-$ docker app install myrepo/hello:0.1.0 --target-context remote
-...
-```
-
 More examples are available in the [examples](examples) directory.
 
 ## CNAB
