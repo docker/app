@@ -122,7 +122,7 @@ fossa-test:
 	docker run -i --rm -e FOSSA_API_KEY=$(FOSSA_API_KEY) \
 	-v $(CURDIR)/$*:/go/src/github.com/docker/app \
 	-w /go/src/github.com/docker/app \
-	$(BUILD_ANALYZER) test --debug
+	$(BUILD_ANALYZER) test
 
 clean: ## clean build artifacts
 	$(call rmdir,bin)
