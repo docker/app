@@ -10,6 +10,7 @@ WORKDIR /go/src/github.com/docker/cli
 
 RUN git clone https://github.com/docker/cli . && git checkout a1b83ffd2cbeefc0752e5aa7a543d49c1ddfd2cb
 
+ARG GOPROXY
 RUN make binary-osx binary-windows binary && \
  cp build/docker-linux-amd64 /usr/bin/docker
 
@@ -22,6 +23,7 @@ ARG DEP_VERSION=v0.5.1
 RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
     chmod +x /usr/bin/dep
 ARG GOTESTSUM_VERSION=v0.3.4
+ARG GOPROXY
 RUN mkdir $GOPATH/src/gotest.tools && \
     git clone -q https://github.com/gotestyourself/gotestsum $GOPATH/src/gotest.tools/gotestsum && \
     cd $GOPATH/src/gotest.tools/gotestsum && \
