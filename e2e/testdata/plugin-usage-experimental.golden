@@ -1,7 +1,10 @@
 
-Usage:	docker app COMMAND
+Usage:	docker app [OPTIONS] COMMAND
 
 A tool to build and manage Docker Applications.
+
+Options:
+      --version   Print version information
 
 Commands:
   bundle      Create a CNAB invocation image and `bundle.json` for the application
@@ -16,6 +19,5 @@ Commands:
   uninstall   Uninstall an application
   upgrade     Upgrade an installed application
   validate    Checks the rendered application is syntactically correct
-  version     Print version information
 
 Run 'docker app COMMAND --help' for more information on a command.

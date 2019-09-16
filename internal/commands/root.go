@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/docker/app/internal"
+
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
@@ -13,7 +15,8 @@ import (
 )
 
 var (
-	completion string
+	completion  string
+	showVersion bool
 )
 
 // NewRootCmd returns the base root command.
@@ -24,6 +27,11 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 		Use:         use,
 		Annotations: map[string]string{"experimentalCLI": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if showVersion {
+				fmt.Fprintln(os.Stdout, internal.FullVersion()) //nolint:errcheck
+				return nil
+			}
+
 			switch completion {
 			case "bash":
 				return cmd.GenBashCompletion(dockerCli.Out())
@@ -41,10 +49,11 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 
 	cmd.Flags().StringVar(&completion, "completion", "", "Generates completion scripts for the specified shell (bash or zsh)")
 	if err := cmd.Flags().MarkHidden("completion"); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Failed to register command line options: %v", err.Error())
+		fmt.Fprintf(os.Stderr, "Failed to register command line options: %v", err.Error()) //nolint:errcheck
 		return nil
 	}
 
+	cmd.Flags().BoolVar(&showVersion, "version", false, "Print version information")
 	return cmd
 }
 
@@ -59,7 +68,6 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		inspectCmd(dockerCli),
 		renderCmd(dockerCli),
 		validateCmd(),
-		versionCmd(dockerCli),
 		bundleCmd(dockerCli),
 		pushCmd(dockerCli),
 		pullCmd(dockerCli),
