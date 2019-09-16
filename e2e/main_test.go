@@ -120,7 +120,7 @@ func TestMain(m *testing.M) {
 
 	dockerCli = dockerCliCommand{path: dockerCliPath, cliPluginDir: cliPluginDir}
 
-	cmd := exec.Command(dockerApp, "app", "version")
+	cmd := exec.Command(dockerApp, "app", "--version")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		panic(err)

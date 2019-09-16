@@ -365,7 +365,6 @@ Commands:
   uninstall   Uninstall an application
   upgrade     Upgrade an installed application
   validate    Checks the rendered application is syntactically correct
-  version     Print version information
 
 Run 'docker app COMMAND --help' for more information on a command.
 ```
