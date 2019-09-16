@@ -15,10 +15,9 @@ import (
 )
 
 type mergeBundleConfig struct {
-	bundle     *bundle.Bundle
-	params     map[string]string
-	strictMode bool
-	stderr     io.Writer
+	bundle *bundle.Bundle
+	params map[string]string
+	stderr io.Writer
 }
 
 type mergeBundleOpt func(c *mergeBundleConfig) error
@@ -78,12 +77,6 @@ func withErrorWriter(w io.Writer) mergeBundleOpt {
 	}
 }
 
-func withStrictMode(strict bool) mergeBundleOpt {
-	return func(c *mergeBundleConfig) error {
-		c.strictMode = strict
-		return nil
-	}
-}
 func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleOpt) error {
 	bndl := installation.Bundle
 	if installation.Parameters == nil {
@@ -116,9 +109,6 @@ func matchAndMergeParametersDefinition(currentValues map[string]interface{}, cfg
 	for k, v := range cfg.params {
 		param, ok := cfg.bundle.Parameters[k]
 		if !ok {
-			if cfg.strictMode {
-				return nil, fmt.Errorf("parameter %q is not defined in the bundle", k)
-			}
 			fmt.Fprintf(cfg.stderr, "Warning: parameter %q is not defined in the bundle\n", k)
 			continue
 		}

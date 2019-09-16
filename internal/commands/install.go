@@ -118,7 +118,6 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		withCommandLineParameters(opts.overrides),
 		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
 		withSendRegistryAuth(opts.sendRegistryAuth),
-		withStrictMode(opts.strictMode),
 	); err != nil {
 		return err
 	}

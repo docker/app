@@ -67,7 +67,6 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
 		withSendRegistryAuth(opts.sendRegistryAuth),
-		withStrictMode(opts.strictMode),
 	); err != nil {
 		return err
 	}

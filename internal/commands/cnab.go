@@ -369,7 +369,6 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err := mergeBundleParameters(installation,
 		withFileParameters(paramsOpts.parametersFiles),
 		withCommandLineParameters(paramsOpts.overrides),
-		withStrictMode(paramsOpts.strictMode),
 	); err != nil {
 		return nil, nil, nil, err
 	}
