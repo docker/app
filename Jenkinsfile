@@ -158,25 +158,6 @@ pipeline {
                         }
                     }
                 }
-                stage("Gradle test") {
-                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
-                    steps {
-                        dir('src/github.com/docker/app') {
-                            checkout scm
-                            dir("bin") {
-                                unstash "binaries"
-                            }
-                            ansiColor('xterm') {
-                                sh 'make -f docker.Makefile gradle-test'
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            deleteDir()
-                        }
-                    }
-                }
                 stage("Test Linux") {
                     agent { label 'ubuntu-1804 && x86_64 && overlay2' }
                     environment {
