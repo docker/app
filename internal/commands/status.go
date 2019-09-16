@@ -31,6 +31,7 @@ func statusCmd(dockerCli command.Cli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "status INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
+		Aliases: []string{"ps"},
 		Short:   "Get the installation status of an application",
 		Long:    "Get the installation status of an application. If the installation is a Docker Application, the status shows the stack services.",
 		Example: "$ docker app status myinstallation --target-context=mycontext",
