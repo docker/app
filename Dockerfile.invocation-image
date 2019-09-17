@@ -1,8 +1,8 @@
 ARG ALPINE_VERSION=3.10.1
 
-FROM dockercore/golang-cross:1.12.9@sha256:3ea9dcef4dd2c46d80445c0b22d6177817f4cfce22c523cc12a5a1091cb37705 AS build
+FROM golang:1.13.0 AS build
 
-RUN apt-get install -y -q --no-install-recommends \
+RUN apt-get update -qq && apt-get install -y -q --no-install-recommends \
     coreutils \
     util-linux \
     uuid-runtime
