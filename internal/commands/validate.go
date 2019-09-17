@@ -22,10 +22,11 @@ type validateOptions struct {
 func validateCmd() *cobra.Command {
 	var opts validateOptions
 	cmd := &cobra.Command{
-		Use:     "validate [OPTIONS] APP_DEFINITION",
-		Short:   "Check that an App definition (.dockerapp) is syntactically correct",
-		Example: `$ docker app validate myapp.dockerapp --set key=value --parameters-file myparam.yml`,
-		Args:    cli.RequiresMaxArgs(1),
+		Use:         "validate [OPTIONS] APP_DEFINITION",
+		Short:       "Check that an App definition (.dockerapp) is syntactically correct",
+		Example:     `$ docker app validate myapp.dockerapp --set key=value --parameters-file myparam.yml`,
+		Args:        cli.RequiresMaxArgs(1),
+		Annotations: map[string]string{"experimental": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runValidate(args, opts)
 		},

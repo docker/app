@@ -48,7 +48,7 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 }
 
 func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
-	cmd.AddCommand(
+	listOfCommands := []*cobra.Command{
 		runCmd(dockerCli),
 		updateCmd(dockerCli),
 		removeCmd(dockerCli),
@@ -59,8 +59,19 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		pullCmd(dockerCli),
 		image.Cmd(dockerCli),
 		build.Cmd(dockerCli),
-		inspectCmd(dockerCli),
-	)
+	}
+
+	isExperimentalMode := dockerCli.ClientInfo().HasExperimental
+	for _, ccmd := range listOfCommands {
+		switch ccmd.Annotations["experimental"] {
+		case "true":
+			if isExperimentalMode {
+				cmd.AddCommand(ccmd)
+			}
+		default:
+			cmd.AddCommand(ccmd)
+		}
+	}
 }
 
 func firstOrEmpty(list []string) string {
