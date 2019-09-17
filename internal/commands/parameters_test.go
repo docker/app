@@ -225,15 +225,21 @@ func TestMergeBundleParameters(t *testing.T) {
 		assert.Assert(t, strings.Contains(buf.String(), "is not defined in the bundle"))
 	})
 
-	t.Run("Undefined parameter with strict mode is rejected", func(t *testing.T) {
+	t.Run("Warn on undefined parameter", func(t *testing.T) {
 		withUndefined := func(c *mergeBundleConfig) error {
 			c.params["param"] = "1"
 			return nil
 		}
+		w := bytes.NewBuffer(nil)
+		withStdErr := func(c *mergeBundleConfig) error {
+			c.stderr = w
+			return nil
+		}
 		bundle := prepareBundle()
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i, withUndefined, withStrictMode(true))
-		assert.ErrorContains(t, err, "is not defined in the bundle")
+		err := mergeBundleParameters(i, withUndefined, withStdErr)
+		assert.NilError(t, err)
+		assert.Equal(t, w.String(), "Warning: parameter \"param\" is not defined in the bundle\n")
 	})
 
 	t.Run("Invalid type is rejected", func(t *testing.T) {
