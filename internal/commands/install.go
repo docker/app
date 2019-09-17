@@ -62,7 +62,7 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	opts.registryOptions.addFlags(cmd.Flags())
 	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
-	cmd.Flags().StringVar(&opts.kubeNamespace, "kubernetes-namespace", "default", "Kubernetes namespace to install into")
+	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Installation name (defaults to application name)")
 
 	return cmd
