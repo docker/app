@@ -67,8 +67,8 @@ pipeline {
                             dir('src/github.com/docker/app') {
                                 checkout scm
                                 ansiColor('xterm') {
-                                    sh "FOSSA_API_KEY=$FOSSA_API_KEY BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
-                                    sh "FOSSA_API_KEY=$FOSSA_API_KEY make fossa-test"
+                                    sh "BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
+                                    sh "make fossa-test"
                                 }
                             }
                         }
