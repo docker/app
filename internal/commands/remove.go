@@ -20,9 +20,10 @@ func uninstallCmd(dockerCli command.Cli) *cobra.Command {
 	var opts uninstallOptions
 
 	cmd := &cobra.Command{
-		Use:     "uninstall INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
-		Short:   "Uninstall an application",
-		Example: `$ docker app uninstall myinstallation --target-context=mycontext`,
+		Use:     "rm INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
+		Short:   "Remove an application",
+		Aliases: []string{"remove"},
+		Example: `$ docker app rm myinstallation --target-context=mycontext`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runUninstall(dockerCli, args[0], opts)

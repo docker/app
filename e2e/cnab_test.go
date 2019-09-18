@@ -55,7 +55,7 @@ func TestCallCustomStatusAction(t *testing.T) {
 
 			// docker app uninstall
 			defer func() {
-				cmd.Command = dockerCli.Command("app", "uninstall", testCase.name)
+				cmd.Command = dockerCli.Command("app", "rm", testCase.name)
 				icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			}()
 
@@ -79,7 +79,7 @@ func TestCnabParameters(t *testing.T) {
 
 	// docker app uninstall
 	defer func() {
-		cmd.Command = dockerCli.Command("app", "uninstall", "cnab-parameters")
+		cmd.Command = dockerCli.Command("app", "rm", "cnab-parameters")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	}()
 

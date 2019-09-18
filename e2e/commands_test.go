@@ -362,7 +362,7 @@ STATUS
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: "8081"})
 
 	// Uninstall the application
-	cmd.Command = dockerCli.Command("app", "uninstall", appName)
+	cmd.Command = dockerCli.Command("app", "rm", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
 			fmt.Sprintf("Removing service %s_api", appName),

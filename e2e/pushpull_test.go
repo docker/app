@@ -258,7 +258,7 @@ func TestPushInstallBundle(t *testing.T) {
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
 
 			// ensure it doesn't confuse the next test
-			cmd.Command = dockerCli.Command("app", "uninstall", name)
+			cmd.Command = dockerCli.Command("app", "rm", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			cmd.Command = dockerCli.Command("service", "ls")
