@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type uninstallOptions struct {
+type removeOptions struct {
 	credentialOptions
 	force bool
 }
 
-func uninstallCmd(dockerCli command.Cli) *cobra.Command {
-	var opts uninstallOptions
+func removeCmd(dockerCli command.Cli) *cobra.Command {
+	var opts removeOptions
 
 	cmd := &cobra.Command{
 		Use:     "rm INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
@@ -26,7 +26,7 @@ func uninstallCmd(dockerCli command.Cli) *cobra.Command {
 		Example: `$ docker app rm myinstallation --target-context=mycontext`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runUninstall(dockerCli, args[0], opts)
+			return runRemove(dockerCli, args[0], opts)
 		},
 	}
 	opts.addFlags(cmd.Flags())
@@ -35,7 +35,7 @@ func uninstallCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runUninstall(dockerCli command.Cli, installationName string, opts uninstallOptions) (mainErr error) {
+func runRemove(dockerCli command.Cli, installationName string, opts removeOptions) (mainErr error) {
 	defer muteDockerCli(dockerCli)()
 	opts.SetDefaultTargetContext(dockerCli)
 
@@ -79,7 +79,7 @@ func runUninstall(dockerCli command.Cli, installationName string, opts uninstall
 		if err2 := installationStore.Store(installation); err2 != nil {
 			return fmt.Errorf("%s while %s", err2, errBuf)
 		}
-		return fmt.Errorf("Uninstall failed: %s\n%s", err, errBuf)
+		return fmt.Errorf("Remove failed: %s\n%s", err, errBuf)
 	}
 	if err := installationStore.Delete(installationName); err != nil {
 		return fmt.Errorf("Failed to delete installation %q from the installation store: %s", installationName, err)
