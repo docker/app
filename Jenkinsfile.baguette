@@ -68,7 +68,7 @@ pipeline {
                             dir('src/github.com/docker/app') {
                                 checkout scm
                                 ansiColor('xterm') {
-                                    sh "docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD"
+                                    sh 'echo "${REGISTRY_PASSWORD}" | docker login -u "${REGISTRY_USERNAME}" --password-stdin'
                                     sh "FOSSA_API_KEY=$FOSSA_API_KEY BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
                                     sh "FOSSA_API_KEY=$FOSSA_API_KEY make fossa-test"
                                 }
@@ -284,7 +284,7 @@ pipeline {
             }
             steps{
                 echo "Pushing Base Invocation Image"
-                sh 'docker login --username "${DOCKERHUB_CREDS_USR}" --password "${DOCKERHUB_CREDS_PSW}"'
+                sh 'echo "${DOCKERHUB_CREDS_PSW}" | docker login --username "${DOCKERHUB_CREDS_USR}" --password-stdin'
                 dir('src/github.com/docker/app') {
                     checkout scm
                     dir('_build') {
