@@ -6,7 +6,6 @@ BIN_IMAGE_NAME := $(BIN_NAME)-bin:$(BUILD_TAG)
 CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(BUILD_TAG)
 CLI_IMAGE_NAME := $(BIN_NAME)-cli:$(BUILD_TAG)
 E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(BUILD_TAG)
-GRADLE_IMAGE_NAME := $(BIN_NAME)-gradle:$(BUILD_TAG)
 
 BIN_CTNR_NAME := $(BIN_NAME)-bin-$(TAG)
 CLI_CNTR_NAME := $(BIN_NAME)-cli-$(TAG)
@@ -113,10 +112,6 @@ coverage-results:
 # coverage is split in two like this so that CI can extract the results even on failure (which will be detected via the junit) using the individual steps, but for end users running we want the overall failure.
 coverage: coverage-run coverage-results
 
-gradle-test:
-	tar cf - Dockerfile.gradle bin/docker-app-linux integrations/gradle | docker build -t $(GRADLE_IMAGE_NAME) -f Dockerfile.gradle -
-	docker run --rm $(GRADLE_IMAGE_NAME) bash -c "./gradlew --stacktrace build && cd example && gradle renderIt"
-
 lint: ## run linter(s)
 	$(info Linting...)
 	docker build -t $(LINT_IMAGE_NAME) -f Dockerfile.lint .
@@ -168,4 +163,4 @@ push-invocation-image:
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage coverage-run coverage-results gradle-test shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
+.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage coverage-run coverage-results shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
