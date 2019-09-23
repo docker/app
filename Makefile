@@ -35,7 +35,7 @@ GO_BUILD = $(STATIC_FLAGS) go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 GO_TEST = $(STATIC_FLAGS) go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 GO_TESTSUM = $(STATIC_FLAGS) gotestsum --junitfile $(TEST_RESULTS_DIR)/$(TEST_RESULTS_PREFIX)$(1) -- -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 
-all: bin/$(BIN_NAME) test
+all: bin/$(BIN_NAME) build-invocation-image test
 
 check_go_env:
 	@test $$(go list) = "$(PKG_NAME)" || \
@@ -71,6 +71,12 @@ bin/$(BIN_NAME)-%.exe bin/$(BIN_NAME)-%: cmd/$(BIN_NAME) check_go_env
 
 bin/%: cmd/% check_go_env
 	$(GO_BUILD) -o $@$(EXEC_EXT) ./$<
+
+build-invocation-image: ## build invocation image if not present (internal usage, not diplayed in help)
+	@echo "Build invocation image if needed"
+	$(if $(shell docker images -q docker/cnab-app-base:$(TAG)),, \
+		$(MAKE) -f ./docker.Makefile invocation-image \
+	)
 
 check: lint test
 
