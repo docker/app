@@ -90,7 +90,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ea483229ebc7e8aada30debed694367b74c6f1944c9e3f6a1bdba46ec6fb4165"
+  digest = "1:da4daad2ec1737eec4ebeeed7afedb631711f96bbac0c361a17a4d0369d00c6d"
+  name = "github.com/containerd/console"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "0650fd9eeb50bab4fc99dceb9f2e14cf58f36e7f"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4bda9967609021b43808181e8606bf60e15fd19500f9a0b2bbf74e4c6e4114c5"
   name = "github.com/containerd/containerd"
   packages = [
     ".",
@@ -112,6 +120,7 @@
     "cio",
     "containers",
     "content",
+    "content/local",
     "content/proxy",
     "defaults",
     "diff",
@@ -139,6 +148,7 @@
     "rootfs",
     "runtime/linux/runctypes",
     "runtime/v2/runc/options",
+    "services/content/contentserver",
     "snapshots",
     "snapshots/proxy",
     "sys",
@@ -224,6 +234,22 @@
   pruneopts = "NUT"
   revision = "0ce7659aab8dbd37cc912ea64cb78f403534de42"
   version = "v0.3.2-beta1"
+
+[[projects]]
+  digest = "1:162a3782e735c729799103d985d27676be93f15bca018038e08b06eed014afc0"
+  name = "github.com/docker/buildx"
+  packages = [
+    "bake",
+    "build",
+    "driver",
+    "driver/docker",
+    "util/imagetools",
+    "util/platformutil",
+    "util/progress",
+  ]
+  pruneopts = "NUT"
+  revision = "c967f1d570fb393b4475c01efea58781608d093c"
+  version = "v0.3.0"
 
 [[projects]]
   digest = "1:bc88d135d4f5d9a0968a213b3b2d786d1e216b9f10c30720f4d0d4976346732b"
@@ -340,7 +366,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:315760c1c8784622f910cee4dbf9e9e670188f8b13971d839bca75b926fe52dd"
+  digest = "1:dfdaff443a9f534cf1d95490e8c51f0eda6024fd4839656504b6a70c08e3ab3c"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -379,6 +405,7 @@
     "pkg/tarsum",
     "pkg/term",
     "pkg/term/windows",
+    "pkg/urlutil",
     "registry",
     "registry/resumable",
   ]
@@ -476,6 +503,14 @@
   version = "v5.0.1"
 
 [[projects]]
+  digest = "1:2dcc32af5bf38c37286c96f0077efa98007f67946b690fce98a3e07b9659bdf1"
+  name = "github.com/gofrs/flock"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "392e7fae8f1b0bdbd67dad7237d23f618feb6dbb"
+  version = "v0.7.1"
+
+[[projects]]
   digest = "1:c6f5a29fce208cb102ad1e356d3a3a361be54604549063943613058a377dd0d0"
   name = "github.com/gogo/googleapis"
   packages = ["google/rpc"]
@@ -561,6 +596,14 @@
   version = "v1.7.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:7b760aa6dbe426378f54934270dde1b176fda379111da2154748f030fffe4d3f"
+  name = "github.com/grpc-ecosystem/grpc-opentracing"
+  packages = ["go/otgrpc"]
+  pruneopts = "NUT"
+  revision = "8e809c8a86450a29b90dcc9efbf062d0fe6d9746"
+
+[[projects]]
   digest = "1:c7d9de42b661ba85788f5f631cbac165795a2ff7dc1c59a4241d6228b129c3e4"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
@@ -580,6 +623,24 @@
   version = "v0.5.1"
 
 [[projects]]
+  digest = "1:39f543569bf189e228c84a294c50aca8ea56c82b3d9df5c9b788249907d7049a"
+  name = "github.com/hashicorp/hcl"
+  packages = [
+    ".",
+    "hcl/ast",
+    "hcl/parser",
+    "hcl/scanner",
+    "hcl/strconv",
+    "hcl/token",
+    "json/parser",
+    "json/scanner",
+    "json/token",
+  ]
+  pruneopts = "NUT"
+  revision = "8cb6e5b959231cc1119e43259c4a608f9c51a241"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:540beef439752cdfa8b640253dd8b3e1b5ec7223052d8e56d35a62bb8b1aa94c"
   name = "github.com/imdario/mergo"
@@ -594,6 +655,14 @@
   pruneopts = "NUT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  digest = "1:fbfb539de947ebc48768d413ee811e3ff34d32636ff0965a517e7786e559f66b"
+  name = "github.com/jaguilar/vt100"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ad4c4a5743050fb7f88ce968dca9422f72a0e3f2"
+  source = "github.com/tonistiigi/vt100"
 
 [[projects]]
   digest = "1:4e903242fe176238aaa469f59d7035f5abf2aa9acfefb8964ddd203651b574e9"
@@ -642,6 +711,45 @@
   pruneopts = "NUT"
   revision = "3536a929edddb9a5b34bd6861dc4a9647cb459fe"
   version = "v1.1.2"
+
+[[projects]]
+  digest = "1:4c3f5dc296bad571948333726a115427bab9caeeb732828d8f8f684a005557aa"
+  name = "github.com/moby/buildkit"
+  packages = [
+    "api/services/control",
+    "api/types",
+    "client",
+    "client/buildid",
+    "client/connhelper",
+    "client/llb",
+    "client/ociindex",
+    "frontend/gateway/client",
+    "frontend/gateway/grpcclient",
+    "frontend/gateway/pb",
+    "identity",
+    "session",
+    "session/auth",
+    "session/auth/authprovider",
+    "session/content",
+    "session/filesync",
+    "session/grpchijack",
+    "session/secrets",
+    "session/secrets/secretsprovider",
+    "session/sshforward",
+    "session/sshforward/sshprovider",
+    "session/upload",
+    "session/upload/uploadprovider",
+    "solver/pb",
+    "util/apicaps",
+    "util/apicaps/pb",
+    "util/appcontext",
+    "util/appdefaults",
+    "util/entitlements",
+    "util/progress/progressui",
+    "util/system",
+  ]
+  pruneopts = "NUT"
+  revision = "f238f1efb04f00bf0cc147141fda9ddb55c8bc49"
 
 [[projects]]
   digest = "1:2f42fa12d6911c7b7659738758631bec870b7e9b4c6be5444f963cdcfccc191f"
@@ -712,6 +820,18 @@
   packages = ["specs-go"]
   pruneopts = "NUT"
   revision = "29686dbc5559d93fb1ef402eeda3e35c38d75af4"
+
+[[projects]]
+  digest = "1:6846140b3f116579680eefdc17145f2bcf064b68deb9febf86b4419a454049af"
+  name = "github.com/opentracing/opentracing-go"
+  packages = [
+    ".",
+    "ext",
+    "log",
+  ]
+  pruneopts = "NUT"
+  revision = "659c90643e714681897ec2521c60567dd21da733"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"
@@ -829,6 +949,25 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:9270a47b35b3d3da1f134d9e9f3e67c55d7bdc86e12e08b3d9bb5e0921e18672"
+  name = "github.com/tonistiigi/fsutil"
+  packages = [
+    ".",
+    "types",
+  ]
+  pruneopts = "NUT"
+  revision = "7f9f9232dd24c4c9c68ab3c8030c4edcaeac1c32"
+
+[[projects]]
+  branch = "master"
+  digest = "1:763762a9a2bdf23e7367de85122859b150530111aa34fc75ce959b125a4b36a9"
+  name = "github.com/tonistiigi/units"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "6950e57a87eaf136bbe44ef2ec8e75b9e3569de2"
+
+[[projects]]
+  branch = "master"
   digest = "1:b70423ea2ca23eb78d7729c3c98fbdf33a22059ce9ea06640066cddbbeb0006d"
   name = "github.com/wadey/gocovmerge"
   packages = ["."]
@@ -860,10 +999,18 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:35ce874cf16f78a2da908ab28b0277497e36603d289db00d39da5200bc8ace08"
+  digest = "1:6dee84e5bcda6faf688814d39c82912d1939a9b2ea4b589f4629d7b9169be05e"
   name = "golang.org/x/crypto"
   packages = [
+    "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "internal/chacha20",
+    "internal/subtle",
     "pbkdf2",
+    "poly1305",
+    "ssh",
+    "ssh/agent",
     "ssh/terminal",
   ]
   pruneopts = "NUT"
@@ -915,9 +1062,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:27de45f3a245d407b62b2d4fb48b9e6e6dd45d06168c2168f8ffc9cd9a57b033"
+  digest = "1:a26ebff2301ac8a4c8cedfec085e8190b035a7eec6b5614b7501f4714138a679"
   name = "golang.org/x/sys"
   packages = [
+    "cpu",
     "unix",
     "windows",
   ]
@@ -992,7 +1140,7 @@
   revision = "64821d5d210748c883cd2b809589555ae4654203"
 
 [[projects]]
-  digest = "1:8a18c430e5ba1a3a04d09d34e605af6dd58546b2236701bd1a40c333ea637a1a"
+  digest = "1:0b1629e326b8754726e94f2c3acc87fbc6669a6c1e36ab059bdde62462ccd1a2"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -1007,6 +1155,7 @@
     "encoding",
     "encoding/proto",
     "grpclog",
+    "health",
     "health/grpc_health_v1",
     "internal",
     "internal/backoff",
@@ -1287,6 +1436,11 @@
     "github.com/deislabs/cnab-go/driver",
     "github.com/deislabs/cnab-go/driver/docker",
     "github.com/deislabs/cnab-go/utils/crud",
+    "github.com/docker/buildx/bake",
+    "github.com/docker/buildx/build",
+    "github.com/docker/buildx/driver",
+    "github.com/docker/buildx/driver/docker",
+    "github.com/docker/buildx/util/progress",
     "github.com/docker/cli/cli",
     "github.com/docker/cli/cli-plugins/manager",
     "github.com/docker/cli/cli-plugins/plugin",
@@ -1322,6 +1476,7 @@
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/imdario/mergo",
+    "github.com/moby/buildkit/util/appcontext",
     "github.com/morikuni/aec",
     "github.com/opencontainers/go-digest",
     "github.com/opencontainers/image-spec/specs-go/v1",
