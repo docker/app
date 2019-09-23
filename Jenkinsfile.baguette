@@ -288,6 +288,16 @@ pipeline {
             }
         }
     }
+    post {
+        failure {
+            script {
+                if (env.BRANCH_NAME == 'master') {
+                    slackSend channel: '#app-def-team', color: 'danger',
+                              message: "Build #${env.BUILD_NUMBER} failed: ${env.BUILD_URL}"
+                }
+            }
+        }
+    }
 }
 
 def release(repo) {
