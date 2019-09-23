@@ -65,7 +65,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/prometheus/client_golang"
-  revision = "v0.8.0"
+  version = "^1.1.0"
 
 [[override]]
   name = "github.com/docker/distribution"
