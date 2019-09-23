@@ -21,6 +21,19 @@
 
 required = ["github.com/wadey/gocovmerge"]
 
+[[constraint]]
+  name = "github.com/docker/buildx"
+  version = "=v0.3.0"
+
+[[override]]
+  name = "github.com/moby/buildkit"
+  revision = "f238f1efb04f00bf0cc147141fda9ddb55c8bc49"
+
+[[override]]
+  name = "github.com/jaguilar/vt100"
+  source = "github.com/tonistiigi/vt100"
+  revision = "ad4c4a5743050fb7f88ce968dca9422f72a0e3f2"
+
 # We need runc at least 0.0.9 to get otherwise missing stubs for non-linux platforms.
 # We need > 0.1.1 as it depends on uppercase Sirupsen/logrus.
 [[override]]
