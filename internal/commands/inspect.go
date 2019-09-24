@@ -11,7 +11,6 @@ import (
 
 type inspectOptions struct {
 	parametersOptions
-	registryOptions
 	pullOptions
 }
 
@@ -27,14 +26,13 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
-	opts.registryOptions.addFlags(cmd.Flags())
 	opts.pullOptions.addFlags(cmd.Flags())
 	return cmd
 }
 
 func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
 	defer muteDockerCli(dockerCli)()
-	action, installation, errBuf, err := prepareCustomAction(internal.ActionInspectName, dockerCli, appname, nil, opts.registryOptions, opts.pullOptions, opts.parametersOptions)
+	action, installation, errBuf, err := prepareCustomAction(internal.ActionInspectName, dockerCli, appname, nil, opts.pullOptions, opts.parametersOptions)
 	if err != nil {
 		return err
 	}
