@@ -357,7 +357,7 @@ Commands:
   init        Initialize Docker Application definition
   inspect     Shows metadata, parameters and a summary of the Compose file for a given application
   install     Install an application
-  list        List the installations and their last known installation result
+  ls          List the installations and their last known installation result
   pull        Pull an application package from a registry
   push        Push an application package to a registry
   render      Render the Compose file for an Application Package
