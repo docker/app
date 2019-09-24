@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +12,7 @@ import (
 
 	"github.com/docker/buildx/util/progress"
 
+	cnab "github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal"
 	"github.com/docker/buildx/bake"
 	"github.com/docker/buildx/build"
@@ -26,6 +29,7 @@ type buildOptions struct {
 	noCache  bool
 	progress string
 	pull     bool
+	tag      string
 }
 
 func buildCmd(dockerCli command.Cli) *cobra.Command {
@@ -44,40 +48,57 @@ func buildCmd(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
+	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Name and optionally a tag in the 'name:tag' format")
 
 	return cmd
 }
 
 func runBuild(dockerCli command.Cli, application string, opt buildOptions) error {
-	f := application + "/" + internal.ComposeFileName
+	appname := internal.DirNameFromAppName(application)
+	f := "./" + appname + "/" + internal.ComposeFileName
 	if _, err := os.Stat(f); err != nil {
 		if os.IsNotExist(errors.Cause(err)) {
 			return fmt.Errorf("no compose file at %s, did you selected the right docker app folder ?", f)
 		}
 	}
 
-	ctx := appcontext.Context()
-	cfg, err := bake.ParseFile(f)
+	bundle, err := makeBundle(dockerCli, application, nil)
 	if err != nil {
 		return err
 	}
-	for k, t := range cfg.Target {
+
+	ctx := appcontext.Context()
+	targets, err := bake.ReadTargets(ctx, []string{f}, []string{"default"}, nil)
+	if err != nil {
+		return err
+	}
+
+	for k, t := range targets {
 		if strings.HasPrefix(*t.Context, ".") {
-			path, err := filepath.Abs(application + "/" + (*t.Context)[1:])
+			// Relative path in compose file under x.dockerapp refers to parent folder
+			// FIXME docker app init should maybe udate them ?
+			path, err := filepath.Abs(appname + "/../" + (*t.Context)[1:])
 			if err != nil {
 				return err
 			}
 			t.Context = &path
-			cfg.Target[k] = t
+			t.Tags = []string{fmt.Sprintf("%s:%s", bundle.Name, bundle.Version)}
+			targets[k] = t
 		}
 	}
 
-	buildopts, err := bake.TargetsToBuildOpt(cfg.Target, opt.noCache, opt.pull)
+	// -- debug
+	dt, err := json.MarshalIndent(map[string]map[string]bake.Target{"target": targets}, "", "   ")
 	if err != nil {
 		return err
 	}
+	fmt.Fprintln(dockerCli.Out(), string(dt))
+	// -- debug
 
-	pw := progress.NewPrinter(ctx, os.Stderr, opt.progress)
+	buildopts, err := bake.TargetsToBuildOpt(targets, opt.noCache, opt.pull)
+	if err != nil {
+		return err
+	}
 
 	d, err := driver.GetDriver(ctx, "buildx_buildkit_default", nil, dockerCli.Client(), nil, "", nil)
 	if err != nil {
@@ -90,8 +111,49 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 		},
 	}
 
-	_, err = build.Build(ctx, driverInfo, buildopts, dockerAPI(dockerCli), dockerCli.ConfigFile(), pw)
-	return err
+	ctx2, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	// FIXME add invocation image as another build target
+
+	pw := progress.NewPrinter(ctx2, os.Stderr, opt.progress)
+	resp, err := build.Build(ctx2, driverInfo, buildopts, dockerAPI(dockerCli), dockerCli.ConfigFile(), pw)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Successfully built service images")
+	for k, r := range resp {
+		digest := r.ExporterResponse["containerimage.digest"]
+		image := bundle.Images[k]
+		image.ImageType = cnab.ImageTypeDocker
+		image.Digest = digest
+		bundle.Images[k] = image
+		fmt.Printf("    - %s : %s\n", k, image.Digest)
+	}
+
+	// -- debug
+	dt, err = json.MarshalIndent(resp, "", "   ")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(dockerCli.Out(), string(dt))
+	// -- debug
+
+	if opt.tag == "" {
+		opt.tag = bundle.Name + ":" + bundle.Version
+	}
+
+	ref, err := getNamedTagged(opt.tag)
+	if err != nil {
+		return err
+	}
+
+	if err := persistInBundleStore(ref, bundle); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /// FIXME copy from vendor/github.com/docker/buildx/commands/util.go:318 could probably be made public
