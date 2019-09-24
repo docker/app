@@ -12,7 +12,7 @@ WORKDIR /go/src/github.com/docker/app/
 COPY . .
 ARG EXPERIMENTAL="off"
 ARG TAG="unknown"
-RUN make EXPERIMENTAL=${EXPERIMENTAL} BUILD_TAG=${BUILD_TAG} TAG=${TAG} bin/cnab-run
+RUN make EXPERIMENTAL=${EXPERIMENTAL} IMAGE_TAG=${IMAGE_TAG} TAG=${TAG} bin/cnab-run
 
  # local cnab invocation image
 FROM alpine:${ALPINE_VERSION} as invocation

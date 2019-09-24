@@ -56,8 +56,7 @@ pipeline {
                                         archiveArtifacts 'bin/*.tar.gz'
                                     }
                                 } finally {
-                                    def clean_images = /docker image ls --format="{{.Repository}}:{{.Tag}}" '*$BUILD_TAG*' | xargs docker image rm -f/
-                                    sh clean_images
+                                    sh 'make -f docker.Makefile clean_images'
                                 }
                             }
                         }

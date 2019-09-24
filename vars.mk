@@ -34,12 +34,12 @@ endif
 ifeq ($(COMMIT),)
   COMMIT := $(shell git rev-parse --short HEAD 2> $(NULL))
 endif
-ifeq ($(BUILD_TAG),)
-  BUILD_TAG := $(shell git describe --always --dirty --abbrev=10 2> $(NULL))
+ifeq ($(IMAGE_TAG),)
+  IMAGE_TAG := $(shell git describe --always --dirty --abbrev=10 2> $(NULL))
 endif
 ifeq ($(TAG),)
   ifeq ($(TAG_NAME),)
-    TAG := $(BUILD_TAG)
+    TAG := $(IMAGE_TAG)
   else
     TAG := $(TAG_NAME)
   endif

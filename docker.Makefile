@@ -1,11 +1,11 @@
 include vars.mk
 
-LINT_IMAGE_NAME := $(BIN_NAME)-lint:$(BUILD_TAG)
-DEV_IMAGE_NAME := $(BIN_NAME)-dev:$(BUILD_TAG)
-BIN_IMAGE_NAME := $(BIN_NAME)-bin:$(BUILD_TAG)
-CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(BUILD_TAG)
-CLI_IMAGE_NAME := $(BIN_NAME)-cli:$(BUILD_TAG)
-E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(BUILD_TAG)
+LINT_IMAGE_NAME := $(BIN_NAME)-lint:$(IMAGE_TAG)
+DEV_IMAGE_NAME := $(BIN_NAME)-dev:$(IMAGE_TAG)
+BIN_IMAGE_NAME := $(BIN_NAME)-bin:$(IMAGE_TAG)
+CROSS_IMAGE_NAME := $(BIN_NAME)-cross:$(IMAGE_TAG)
+CLI_IMAGE_NAME := $(BIN_NAME)-cli:$(IMAGE_TAG)
+E2E_CROSS_IMAGE_NAME := $(BIN_NAME)-e2e-cross:$(IMAGE_TAG)
 
 BIN_CTNR_NAME := $(BIN_NAME)-bin-$(TAG)
 CLI_CNTR_NAME := $(BIN_NAME)-cli-$(TAG)
@@ -160,7 +160,10 @@ push-invocation-image:
 	docker tag $(CNAB_BASE_INVOCATION_IMAGE_NAME) $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)
 	docker push $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)
 
+clean_images:
+    docker image ls --format="{{.Repository}}:{{.Tag}}" '*$IMAGE_TAG*' | xargs docker image rm -f
+
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage coverage-run coverage-results shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
+.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage coverage-run coverage-results shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image clean_images
