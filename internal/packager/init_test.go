@@ -1,10 +1,11 @@
 package packager
 
 import (
+	"fmt"
+	"os/user"
 	"testing"
 
 	"github.com/docker/app/internal"
-	"github.com/docker/app/types/metadata"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )
@@ -159,10 +160,16 @@ func TestWriteMetadataFile(t *testing.T) {
 	tmpdir := fs.NewDir(t, appName)
 	defer tmpdir.Remove()
 
-	err := writeMetadataFile(appName, tmpdir.Path(), "", []string{"dev:dev@example.com"})
+	err := writeMetadataFile(appName, tmpdir.Path())
 	assert.NilError(t, err)
 
-	data := `# Version of the application
+	userData, _ := user.Current()
+	currentUser := ""
+	if userData != nil {
+		currentUser = userData.Username
+	}
+
+	data := fmt.Sprintf(`# Version of the application
 version: 0.1.0
 # Name of the application
 name: writemetadata_test
@@ -170,35 +177,12 @@ name: writemetadata_test
 description: 
 # List of application maintainers with name and email for each
 maintainers:
-  - name: dev
-    email: dev@example.com
-`
+  - name: %s
+    email: 
+`, currentUser)
 
 	manifest := fs.Expected(t,
 		fs.WithFile(internal.MetadataFileName, data, fs.WithMode(0644)),
 	)
 	assert.Assert(t, fs.Equal(tmpdir.Path(), manifest))
-}
-
-func TestParseMaintainersData(t *testing.T) {
-	input := []string{
-		"sakuya:sakuya.izayoi@touhou.jp",
-		"marisa.kirisame",
-		"Reimu Hakurei",
-		"Hong Meiling:kurenai.misuzu@touhou.jp",
-		"    :    ",
-		"perfect:cherry:blossom",
-	}
-
-	expectedOutput := []metadata.Maintainer{
-		{Name: "sakuya", Email: "sakuya.izayoi@touhou.jp"},
-		{Name: "marisa.kirisame", Email: ""},
-		{Name: "Reimu Hakurei", Email: ""},
-		{Name: "Hong Meiling", Email: "kurenai.misuzu@touhou.jp"},
-		{Name: "    ", Email: "    "},
-		{Name: "perfect", Email: "cherry:blossom"},
-	}
-	output := parseMaintainersData(input)
-
-	assert.DeepEqual(t, output, expectedOutput)
 }

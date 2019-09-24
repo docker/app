@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -76,25 +77,30 @@ func TestInit(t *testing.T) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
 
+	userData, _ := user.Current()
+	currentUser := ""
+	if userData != nil {
+		currentUser = userData.Username
+	}
+
 	composeData := `version: "3.2"
 services:
   nginx:
     image: nginx:latest
     command: nginx $NGINX_ARGS ${NGINX_DRY_RUN}
 `
-	meta := `# Version of the application
+	meta := fmt.Sprintf(`# Version of the application
 version: 0.1.0
 # Name of the application
 name: app-test
 # A short description of the application
-description: my cool app
+description: 
 # List of application maintainers with name and email for each
 maintainers:
-  - name: dev1
+  - name: %s
     email: 
-  - name: dev2
-    email: dev2@example.com
-`
+`, currentUser)
+
 	envData := "# some comment\nNGINX_DRY_RUN=-t"
 	tmpDir := fs.NewDir(t, "app_input",
 		fs.WithFile(internal.ComposeFileName, composeData),
@@ -108,10 +114,7 @@ maintainers:
 	cmd.Dir = tmpDir.Path()
 	cmd.Command = dockerCli.Command("app",
 		"init", testAppName,
-		"--compose-file", tmpDir.Join(internal.ComposeFileName),
-		"--description", "my cool app",
-		"--maintainer", "dev1",
-		"--maintainer", "dev2:dev2@example.com")
+		"--compose-file", tmpDir.Join(internal.ComposeFileName))
 	stdOut := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
 	golden.Assert(t, stdOut, "init-output.golden")
 
