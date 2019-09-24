@@ -27,7 +27,7 @@ import (
 // Init is the entrypoint initialization function.
 // It generates a new application definition based on the provided parameters
 // and returns the path to the created application definition.
-func Init(name string, composeFile string, description string, maintainers []string) (string, error) {
+func Init(name string, composeFile string) (string, error) {
 	if err := internal.ValidateAppName(name); err != nil {
 		return "", err
 	}
@@ -41,7 +41,7 @@ func Init(name string, composeFile string, description string, maintainers []str
 			os.RemoveAll(dirName)
 		}
 	}()
-	if err = writeMetadataFile(name, dirName, description, maintainers); err != nil {
+	if err = writeMetadataFile(name, dirName); err != nil {
 		return "", err
 	}
 
@@ -183,8 +183,8 @@ description: {{ .Description }}
 #    email: john@doe.com
 {{ end }}`
 
-func writeMetadataFile(name, dirName string, description string, maintainers []string) error {
-	meta := newMetadata(name, description, maintainers)
+func writeMetadataFile(name, dirName string) error {
+	meta := newMetadata(name)
 	tmpl, err := template.New("metadata").Parse(metaTemplate)
 	if err != nil {
 		return errors.Wrap(err, "internal error parsing metadata template")
@@ -196,34 +196,14 @@ func writeMetadataFile(name, dirName string, description string, maintainers []s
 	return ioutil.WriteFile(filepath.Join(dirName, internal.MetadataFileName), resBuf.Bytes(), 0644)
 }
 
-// parseMaintainersData parses user-provided data through the maintainers flag and returns
-// a slice of Maintainer instances
-func parseMaintainersData(maintainers []string) []metadata.Maintainer {
-	var res []metadata.Maintainer
-	for _, m := range maintainers {
-		ne := strings.SplitN(m, ":", 2)
-		var email string
-		if len(ne) > 1 {
-			email = ne[1]
-		}
-		res = append(res, metadata.Maintainer{Name: ne[0], Email: email})
-	}
-	return res
-}
-
-func newMetadata(name string, description string, maintainers []string) metadata.AppMetadata {
+func newMetadata(name string) metadata.AppMetadata {
 	res := metadata.AppMetadata{
-		Version:     "0.1.0",
-		Name:        name,
-		Description: description,
+		Version: "0.1.0",
+		Name:    name,
 	}
-	if len(maintainers) == 0 {
-		userData, _ := user.Current()
-		if userData != nil && userData.Username != "" {
-			res.Maintainers = []metadata.Maintainer{{Name: userData.Username}}
-		}
-	} else {
-		res.Maintainers = parseMaintainersData(maintainers)
+	userData, _ := user.Current()
+	if userData != nil && userData.Username != "" {
+		res.Maintainers = []metadata.Maintainer{{Name: userData.Username}}
 	}
 	return res
 }
