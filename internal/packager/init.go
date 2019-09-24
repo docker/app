@@ -46,11 +46,6 @@ func Init(name string, composeFile string) (string, error) {
 	}
 
 	if composeFile == "" {
-		if _, err := os.Stat(internal.ComposeFileName); err == nil {
-			composeFile = internal.ComposeFileName
-		}
-	}
-	if composeFile == "" {
 		err = initFromScratch(name)
 	} else {
 		err = initFromComposeFile(name, composeFile)
