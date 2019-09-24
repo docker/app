@@ -215,7 +215,7 @@ func getAppNameKind(name string) (string, nameKind) {
 	if name == "" {
 		return name, nameKindEmpty
 	}
-	// name can be a bundle.json or bundle.cnab file, a single dockerapp file, or a dockerapp directory
+	// name can be a bundle.json or bundle.cnab file, or a dockerapp directory
 	st, err := os.Stat(name)
 	if os.IsNotExist(err) {
 		// try with .dockerapp extension
