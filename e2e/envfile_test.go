@@ -20,7 +20,5 @@ services:
       COMPANY: mycompany
       SOME_FILE: /some/file
       USER: myuser
-    env_file:
-    - myvars.env
     image: busybox:1.30.1`})
 }
