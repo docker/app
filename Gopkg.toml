@@ -57,7 +57,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/xeipuuv/gojsonschema"
-  revision = "93e72a773fade158921402d6a24c819b48aba29d"
+  version = "^1.1.0"
 
 [[override]]
   name = "github.com/docker/go-metrics"
