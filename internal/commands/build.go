@@ -73,7 +73,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 		return err
 	}
 
-	for k, t := range targets {
+	for service, t := range targets {
 		if strings.HasPrefix(*t.Context, ".") {
 			// Relative path in compose file under x.dockerapp refers to parent folder
 			// FIXME docker app init should maybe udate them ?
@@ -82,8 +82,8 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 				return err
 			}
 			t.Context = &path
-			t.Tags = []string{fmt.Sprintf("%s:%s", bundle.Name, bundle.Version)}
-			targets[k] = t
+			t.Tags = []string{fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)}
+			targets[service] = t
 		}
 	}
 
@@ -117,21 +117,22 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 	// FIXME add invocation image as another build target
 
 	pw := progress.NewPrinter(ctx2, os.Stderr, opt.progress)
-	resp, err := build.Build(ctx2, driverInfo, buildopts, dockerAPI(dockerCli), dockerCli.ConfigFile(), pw)
+	_, err = build.Build(ctx2, driverInfo, buildopts, dockerAPI(dockerCli), dockerCli.ConfigFile(), pw)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Successfully built service images")
-	for k, r := range resp {
-		digest := r.ExporterResponse["containerimage.digest"]
-		image := bundle.Images[k]
-		image.ImageType = cnab.ImageTypeDocker
-		image.Digest = digest
-		bundle.Images[k] = image
-		fmt.Printf("    - %s : %s\n", k, image.Digest)
-	}
 
+	/* FIXME Build should tell us everything we need to know about digests https://github.com/docker/buildx/issues/149
+	for service, r := range resp {
+		digest := r.ExporterResponse["containerimage.digest"]
+		image := bundle.Images[service]
+		image.ImageType = cnab.ImageTypeDocker
+		image.Image = fmt.Sprintf("%s@%s", bundle.Name, digest)
+		bundle.Images[service] = image
+		fmt.Printf("    - %s : %s\n", service, image.Digest)
+	}
 	// -- debug
 	dt, err = json.MarshalIndent(resp, "", "   ")
 	if err != nil {
@@ -139,6 +140,22 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 	}
 	fmt.Fprintln(dockerCli.Out(), string(dt))
 	// -- debug
+    */
+	// FIXME as a workaround, inspect image we've just built to get digest
+	for service, _ := range targets {
+		ref := fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
+		inspect, _, err := dockerCli.Client().ImageInspectWithRaw(ctx, ref)
+		if err != nil {
+			return err
+		}
+		image := bundle.Images[service]
+		image.ImageType = cnab.ImageTypeDocker
+		image.Image = fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
+		image.Digest = inspect.ID
+		bundle.Images[service] = image
+		fmt.Printf("    - %s : %s:%s-%s (%s)\n", service, bundle.Name, bundle.Version, service, inspect.ID)
+	}
+
 
 	if opt.tag == "" {
 		opt.tag = bundle.Name + ":" + bundle.Version
