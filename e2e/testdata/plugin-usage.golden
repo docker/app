@@ -6,6 +6,9 @@ A tool to build and manage Docker Applications.
 Options:
       --version   Print version information
 
+Management Commands:
+  image       Manage application images
+
 Commands:
   bundle      Create a CNAB invocation image and `bundle.json` for the application
   init        Initialize Docker Application definition

@@ -156,3 +156,80 @@ func TestStorePath(t *testing.T) {
 		})
 	}
 }
+
+func TestPathToReference(t *testing.T) {
+	bundleStore := &bundleStore{path: "base-dir"}
+
+	for _, tc := range []struct {
+		Name          string
+		Path          string
+		ExpectedError string
+		ExpectedName  string
+	}{
+		{
+			Name:          "error on invalid path",
+			Path:          "invalid",
+			ExpectedError: `invalid path "invalid" in the bundle store`,
+		}, {
+			Name:          "error if file is not json",
+			Path:          "registry/repo/name/_tags/file.xml",
+			ExpectedError: `invalid path "registry/repo/name/_tags/file.xml", not referencing a CNAB bundle in json format`,
+		}, {
+			Name:         "return a reference from tagged",
+			Path:         "docker.io/library/foo/_tags/latest.json",
+			ExpectedName: "docker.io/library/foo",
+		}, {
+			Name:         "return a reference from digested",
+			Path:         "docker.io/library/foo/_digests/sha256/" + testSha + ".json",
+			ExpectedName: "docker.io/library/foo",
+		},
+	} {
+		t.Run(tc.Name, func(t *testing.T) {
+			ref, err := bundleStore.pathToReference(tc.Path)
+
+			if tc.ExpectedError != "" {
+				assert.Equal(t, err.Error(), tc.ExpectedError)
+			} else {
+				assert.NilError(t, err)
+			}
+
+			if tc.ExpectedName != "" {
+				assert.Equal(t, ref.Name(), tc.ExpectedName)
+			}
+		})
+	}
+}
+
+func TestList(t *testing.T) {
+	dockerConfigDir := fs.NewDir(t, t.Name(), fs.WithMode(0755))
+	defer dockerConfigDir.Remove()
+	appstore, err := NewApplicationStore(dockerConfigDir.Path())
+	assert.NilError(t, err)
+	bundleStore, err := appstore.BundleStore()
+	assert.NilError(t, err)
+
+	refs := []reference.Named{
+		parseRefOrDie(t, "my-repo/a-bundle:my-tag"),
+		parseRefOrDie(t, "my-repo/b-bundle@sha256:"+testSha),
+	}
+
+	t.Run("returns 0 bundles on empty store", func(t *testing.T) {
+		bundles, err := bundleStore.List()
+		assert.NilError(t, err)
+		assert.Equal(t, len(bundles), 0)
+	})
+
+	bndl := &bundle.Bundle{Name: "bundle-name"}
+	for _, ref := range refs {
+		err = bundleStore.Store(ref, bndl)
+		assert.NilError(t, err)
+	}
+
+	t.Run("Returns the bundles sorted by name", func(t *testing.T) {
+		bundles, err := bundleStore.List()
+		assert.NilError(t, err)
+		assert.Equal(t, len(bundles), 2)
+		assert.Equal(t, bundles[0].String(), "docker.io/my-repo/a-bundle:my-tag")
+		assert.Equal(t, bundles[1].String(), "docker.io/my-repo/b-bundle@sha256:"+testSha)
+	})
+}
