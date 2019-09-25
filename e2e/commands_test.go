@@ -277,7 +277,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	})
 
 	// List the installation and check the failed status
-	cmd.Command = dockerCli.Command("app", "list")
+	cmd.Command = dockerCli.Command("app", "ls")
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
 			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
@@ -337,7 +337,7 @@ STATUS
 		})
 
 	// List the installed application
-	cmd.Command = dockerCli.Command("app", "list")
+	cmd.Command = dockerCli.Command("app", "ls")
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
 			`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,

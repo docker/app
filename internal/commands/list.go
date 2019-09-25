@@ -43,9 +43,9 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 	var opts listOptions
 
 	cmd := &cobra.Command{
-		Use:     "list [OPTIONS]",
+		Use:     "ls [OPTIONS]",
 		Short:   "List the installations and their last known installation result",
-		Aliases: []string{"ls"},
+		Aliases: []string{"list"},
 		Args:    cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runList(dockerCli, opts)

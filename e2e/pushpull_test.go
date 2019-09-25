@@ -221,7 +221,7 @@ func TestPushPullInstall(t *testing.T) {
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
 
 		// listing the installed application shows the pulled application reference
-		cmd.Command = dockerCli.Command("app", "list")
+		cmd.Command = dockerCli.Command("app", "ls")
 		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 			[]string{
 				fmt.Sprintf(`%s\s+push-pull \(1.1.0-beta1\)\s+install\s+success\s+.+second[s]?\sago\s+.+second[s]?\sago\s+%s`, t.Name(), ref+tag),
