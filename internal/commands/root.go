@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/docker/app/internal"
-
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
@@ -37,12 +36,21 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 				return cmd.GenBashCompletion(dockerCli.Out())
 			case "zsh":
 				return cmd.GenZshCompletion(dockerCli.Out())
-			case "":
-				// Actually unset
-				return nil
 			default:
-				return fmt.Errorf("%q is not a supported shell", completion)
+				if completion != "" {
+					fmt.Printf("%q is not a supported shell", completion)
+					cmd.HelpFunc()(cmd, args)
+					os.Exit(1)
+				}
 			}
+
+			if len(args) != 0 {
+				fmt.Printf("%q is not a docker app command", args[0])
+				cmd.HelpFunc()(cmd, args)
+				os.Exit(1)
+			}
+			cmd.HelpFunc()(cmd, args)
+			return nil
 		},
 	}
 	addCommands(cmd, dockerCli)

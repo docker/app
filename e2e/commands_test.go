@@ -20,6 +20,17 @@ import (
 	"gotest.tools/icmd"
 )
 
+func TestExitErrorCode(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
+	cmd.Command = dockerCli.Command("app", "unknown_command")
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Out:      "\"unknown_command\" is not a docker app command",
+	})
+}
+
 func TestRender(t *testing.T) {
 	appsPath := filepath.Join("testdata", "render")
 	apps, err := ioutil.ReadDir(appsPath)
