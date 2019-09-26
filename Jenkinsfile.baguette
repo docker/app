@@ -57,6 +57,12 @@ pipeline {
                     }
                 }
                 stage("License Scan") {
+                    when {
+                        anyOf {
+                            changeset "Gopkg.lock"
+                            branch "master"
+                        }
+                    }
                     agent {
                         label 'ubuntu-1604-aufs-edge'
                     }
@@ -313,7 +319,7 @@ def release(repo) {
 
 def tag() {
     if (env.TAG_NAME != null) {
-        return env.TAG_NAME 
+        return env.TAG_NAME
     } else {
         return env.BUILD_TAG
     }
