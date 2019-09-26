@@ -3,17 +3,12 @@ package commands
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
-
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
-	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
@@ -21,72 +16,8 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
+	"io/ioutil"
 )
-
-type bundleOptions struct {
-	out string
-	tag string
-}
-
-func bundleCmd(dockerCli command.Cli) *cobra.Command {
-	var opts bundleOptions
-	cmd := &cobra.Command{
-		Use:     "bundle [APP_NAME] [--output OUTPUT_FILE]",
-		Short:   "Create a CNAB invocation image and `bundle.json` for the application",
-		Example: `$ docker app bundle myapp.dockerapp`,
-		Args:    cli.RequiresMaxArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runBundle(dockerCli, firstOrEmpty(args), opts)
-		},
-	}
-
-	cmd.Flags().StringVarP(&opts.out, "output", "o", "bundle.json", "Output file (- for stdout)")
-	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Name and optionally a tag in the 'name:tag' format")
-	return cmd
-}
-
-func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error {
-	ref, err := getNamedTagged(opts.tag)
-	if err != nil {
-		return err
-	}
-
-	bundle, err := makeBundle(dockerCli, appName, ref)
-	if err != nil {
-		return err
-	}
-	if bundle == nil || len(bundle.InvocationImages) == 0 {
-		return fmt.Errorf("failed to create bundle %q", appName)
-	}
-	if err := persistInBundleStore(ref, bundle); err != nil {
-		return err
-	}
-
-	bundleBytes, err := json.MarshalIndent(bundle, "", "\t")
-	if err != nil {
-		return err
-	}
-	if opts.out == "-" {
-		_, err = dockerCli.Out().Write(bundleBytes)
-		return err
-	}
-	fmt.Fprintf(os.Stdout, "Invocation image %q successfully built\n", bundle.InvocationImages[0].Image)
-	if err := ioutil.WriteFile(opts.out, bundleBytes, 0644); err != nil {
-		return err
-	}
-	fmt.Fprintf(os.Stdout, "Bundle saved to %s\n", opts.out)
-	return nil
-}
-
-func makeBundle(dockerCli command.Cli, appName string, refOverride reference.NamedTagged) (*bundle.Bundle, error) {
-	app, err := packager.Extract(appName)
-	if err != nil {
-		return nil, err
-	}
-	defer app.Cleanup()
-	return makeBundleFromApp(dockerCli, app, refOverride)
-}
 
 func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride reference.NamedTagged) (*bundle.Bundle, error) {
 	logrus.Debug("Making app bundle")
@@ -101,6 +32,7 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride refere
 		return nil, err
 	}
 
+	// TODO This should be managed by buildx at same time we build service images
 	logrus.Debugf("Building invocation image %s", invocationImageName)
 	buildResp, err := dockerCli.Client().ImageBuild(context.TODO(), buildContext, dockertypes.ImageBuildOptions{
 		Dockerfile: "Dockerfile",

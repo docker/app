@@ -11,7 +11,6 @@ Management Commands:
 
 Commands:
   build       Build service images for the application
-  bundle      Create a CNAB invocation image and `bundle.json` for the application
   init        Initialize Docker Application definition
   inspect     Shows metadata, parameters and a summary of the Compose file for a given application
   install     Install an application
