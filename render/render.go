@@ -102,7 +102,7 @@ func render(appPath string, composeContent string, imageMap map[string]bundle.Im
 	rendered, err := loader.Load(composetypes.ConfigDetails{
 		WorkingDir:  appPath,
 		ConfigFiles: configFiles,
-	})
+	}, loader.WithDiscardEnvFiles)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load Compose file")
 	}
