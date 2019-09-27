@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/packager"
@@ -12,11 +10,8 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
-	dockertypes "github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 )
 
 func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride reference.NamedTagged) (*bundle.Bundle, error) {
@@ -27,38 +22,7 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride refere
 		return nil, err
 	}
 
-	buildContext := bytes.NewBuffer(nil)
-	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
-		return nil, err
-	}
-
-	// TODO This should be managed by buildx at same time we build service images
-	logrus.Debugf("Building invocation image %s", invocationImageName)
-	buildResp, err := dockerCli.Client().ImageBuild(context.TODO(), buildContext, dockertypes.ImageBuildOptions{
-		Dockerfile: "Dockerfile",
-		Tags:       []string{invocationImageName},
-		BuildArgs:  map[string]*string{},
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer buildResp.Body.Close()
-
-	if err := jsonmessage.DisplayJSONMessagesStream(buildResp.Body, ioutil.Discard, 0, false, func(jsonmessage.JSONMessage) {}); err != nil {
-		// If the invocation image can't be found we will get an error of the form:
-		// manifest for docker/cnab-app-base:v0.6.0-202-gbaf0b246c7 not found
-		if err.Error() == fmt.Sprintf("manifest for %s not found", packager.BaseInvocationImage(dockerCli)) {
-			return nil, fmt.Errorf("unable to resolve Docker App base image: %s", packager.BaseInvocationImage(dockerCli))
-		}
-		return nil, err
-	}
-
-	inspect, _, err := dockerCli.Client().ImageInspectWithRaw(context.TODO(), invocationImageName)
-	if err != nil {
-		return nil, err
-	}
-
-	return packager.ToCNAB(app, invocationImageName, inspect.ID)
+	return packager.ToCNAB(app, invocationImageName)
 }
 
 func makeInvocationImageName(meta metadata.AppMetadata, refOverride reference.NamedTagged) (string, error) {

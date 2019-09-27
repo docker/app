@@ -23,7 +23,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[constraint]]
   name = "github.com/docker/buildx"
-  version = "=v0.3.0"
+  revision = "96fb17b71125d4a11c904bd8a4298bac3b9e11e9"
 
 [[override]]
   name = "github.com/moby/buildkit"
