@@ -255,7 +255,7 @@ func loadBundleFromFile(filename string) (*bundle.Bundle, error) {
 //resolveBundle looks for a CNAB bundle which can be in a Docker App Package format or
 // a bundle stored locally or in the bundle store. It returns a built or found bundle,
 // a reference to the bundle if it is found in the bundlestore, and an error.
-func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool, insecureRegistries []string) (*bundle.Bundle, string, error) {
+func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool) (*bundle.Bundle, string, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
 	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
@@ -286,6 +286,10 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 			return nil, "", errors.Wrap(err, name)
 		}
 		tagRef := reference.TagNameOnly(ref)
+		insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
+		if err != nil {
+			return nil, "", fmt.Errorf("could not retrieve insecure registries: %v", err)
+		}
 		bndl, err := bundleStore.LookupOrPullBundle(tagRef, pullRef, dockerCli.ConfigFile(), insecureRegistries)
 		return bndl, tagRef.String(), err
 	}
@@ -346,7 +350,7 @@ func isDockerHostLocal(host string) bool {
 }
 
 func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
-	registryOpts registryOptions, pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
+	pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err
@@ -356,7 +360,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 		return nil, nil, nil, err
 	}
 	driverImpl, errBuf := prepareDriver(dockerCli, bindMount{}, stdout)
-	bundle, ref, err := resolveBundle(dockerCli, bundleStore, appname, pullOpts.pull, registryOpts.insecureRegistries)
+	bundle, ref, err := resolveBundle(dockerCli, bundleStore, appname, pullOpts.pull)
 	if err != nil {
 		return nil, nil, nil, err
 	}

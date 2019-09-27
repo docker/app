@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -169,18 +171,31 @@ func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli, credentialS
 	}
 }
 
-type registryOptions struct {
-	insecureRegistries []string
-}
-
-func (o *registryOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringSliceVar(&o.insecureRegistries, "insecure-registries", nil, "Use HTTP instead of HTTPS when pulling from/pushing to those registries")
-}
-
 type pullOptions struct {
 	pull bool
 }
 
 func (o *pullOptions) addFlags(flags *pflag.FlagSet) {
 	flags.BoolVar(&o.pull, "pull", false, "Pull the bundle")
+}
+
+// insecureRegistriesFromEngine reads the registry configuration from the daemon and returns
+// a list of all insecure ones.
+func insecureRegistriesFromEngine(dockerCli command.Cli) ([]string, error) {
+	registries := []string{}
+
+	info, err := dockerCli.Client().Info(context.Background())
+	if err != nil {
+		return registries, fmt.Errorf("could not get docker info: %v", err)
+	}
+
+	for _, reg := range info.RegistryConfig.IndexConfigs {
+		if !reg.Secure {
+			registries = append(registries, reg.Name)
+		}
+	}
+
+	logrus.Debugf("insecure registries: %v", registries)
+
+	return registries, nil
 }

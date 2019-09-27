@@ -16,7 +16,6 @@ import (
 type installOptions struct {
 	parametersOptions
 	credentialOptions
-	registryOptions
 	pullOptions
 	orchestrator  string
 	kubeNamespace string
@@ -59,7 +58,6 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.registryOptions.addFlags(cmd.Flags())
 	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
@@ -81,7 +79,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err
 	}
 
-	bndl, ref, err := resolveBundle(dockerCli, bundleStore, appname, opts.pull, opts.insecureRegistries)
+	bndl, ref, err := resolveBundle(dockerCli, bundleStore, appname, opts.pull)
 	if err != nil {
 		return err
 	}

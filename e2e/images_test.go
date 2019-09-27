@@ -27,7 +27,7 @@ func TestImageList(t *testing.T) {
 		defer dir.Remove()
 
 		// Push an application so that we can later pull it by digest
-		cmd.Command = dockerCli.Command("app", "push", "--tag", info.registryAddress+"/c-myapp", "--insecure-registries="+info.registryAddress, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		cmd.Command = dockerCli.Command("app", "push", "--tag", info.registryAddress+"/c-myapp", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 		r := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		// Get the digest from the output of the pull command
@@ -36,7 +36,7 @@ func TestImageList(t *testing.T) {
 		digest := matches[0][1]
 
 		// Pull the app by digest
-		cmd.Command = dockerCli.Command("app", "pull", "--insecure-registries="+info.registryAddress, info.registryAddress+"/c-myapp@"+digest)
+		cmd.Command = dockerCli.Command("app", "pull", info.registryAddress+"/c-myapp@"+digest)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "b-simple-app", "--output", dir.Join("simple-bundle.json"))

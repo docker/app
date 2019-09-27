@@ -14,21 +14,19 @@ import (
 )
 
 func pullCmd(dockerCli command.Cli) *cobra.Command {
-	var opts registryOptions
 	cmd := &cobra.Command{
 		Use:     "pull NAME:TAG [OPTIONS]",
 		Short:   "Pull an application package from a registry",
 		Example: `$ docker app pull docker/app-example:0.1.0`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runPull(dockerCli, args[0], opts)
+			return runPull(dockerCli, args[0])
 		},
 	}
-	opts.addFlags(cmd.Flags())
 	return cmd
 }
 
-func runPull(dockerCli command.Cli, name string, opts registryOptions) error {
+func runPull(dockerCli command.Cli, name string) error {
 	appstore, err := store.NewApplicationStore(config.Dir())
 	if err != nil {
 		return err
@@ -42,7 +40,11 @@ func runPull(dockerCli command.Cli, name string, opts registryOptions) error {
 	if err != nil {
 		return errors.Wrap(err, name)
 	}
-	bndl, err := bundleStore.LookupOrPullBundle(reference.TagNameOnly(ref), true, dockerCli.ConfigFile(), opts.insecureRegistries)
+	insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
+	if err != nil {
+		return errors.Wrap(err, "could not retrieve insecure registries")
+	}
+	bndl, err := bundleStore.LookupOrPullBundle(reference.TagNameOnly(ref), true, dockerCli.ConfigFile(), insecureRegistries)
 	if err != nil {
 		return errors.Wrap(err, name)
 	}

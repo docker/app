@@ -42,7 +42,6 @@ const ( // Docker specific annotations and values
 )
 
 type pushOptions struct {
-	registry     registryOptions
 	tag          string
 	platforms    []string
 	allPlatforms bool
@@ -66,7 +65,6 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default: <name>:<version> from metadata)")
 	flags.StringSliceVar(&opts.platforms, "platform", []string{"linux/amd64"}, "For multi-arch service images, push the specified platforms")
 	flags.BoolVar(&opts.allPlatforms, "all-platforms", false, "If present, push all platforms")
-	opts.registry.addFlags(flags)
 	return cmd
 }
 
@@ -102,7 +100,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 		return nil, "", err
 	}
 
-	bndl, ref, err := resolveBundle(dockerCli, bundleStore, name, false, nil)
+	bndl, ref, err := resolveBundle(dockerCli, bundleStore, name, false)
 	if err != nil {
 		return nil, "", err
 	}
@@ -136,7 +134,11 @@ func pushInvocationImage(dockerCli command.Cli, retag retagResult) error {
 }
 
 func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, retag retagResult) error {
-	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), opts.registry.insecureRegistries...)
+	insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
+	if err != nil {
+		return errors.Wrap(err, "could not retrive insecure registries")
+	}
+	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...)
 	var display fixupDisplay = &plainDisplay{out: os.Stdout}
 	if term.IsTerminal(os.Stdout.Fd()) {
 		display = &interactiveDisplay{out: os.Stdout}
