@@ -14,7 +14,7 @@ import (
 )
 
 func TestPackInvocationImageContext(t *testing.T) {
-	app, err := types.NewAppFromDefaultFiles("testdata/packages/packing.dockerapp")
+	app, err := types.NewAppFromDefaultFiles("testdata/packages")
 	assert.NilError(t, err)
 	buf := bytes.NewBuffer(nil)
 	dockerCli, err := command.NewDockerCli()
@@ -23,12 +23,12 @@ func TestPackInvocationImageContext(t *testing.T) {
 	assert.NilError(t, hasExpectedFiles(buf, map[string]bool{
 		"Dockerfile":                                              true,
 		".dockerignore":                                           true,
-		"packing.dockerapp/metadata.yml":                          true,
-		"packing.dockerapp/docker-compose.yml":                    true,
-		"packing.dockerapp/parameters.yml":                        true,
-		"packing.dockerapp/config.cfg":                            true,
-		"packing.dockerapp/nesteddir/config2.cfg":                 true,
-		"packing.dockerapp/nesteddir/nested2/nested3/config3.cfg": true,
+		"metadata.yml":                          true,
+		"docker-compose.yml":                    true,
+		"parameters.yml":                        true,
+		"config.cfg":                            true,
+		"nesteddir/config2.cfg":                 true,
+		"nesteddir/nested2/nested3/config3.cfg": true,
 	}))
 }
 

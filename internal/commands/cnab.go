@@ -215,15 +215,8 @@ func getAppNameKind(name string) (string, nameKind) {
 	if name == "" {
 		return name, nameKindEmpty
 	}
-	// name can be a bundle.json or bundle.cnab file, a single dockerapp file, or a dockerapp directory
+	// name can be a bundle.json or bundle.cnab file, or a dockerapp directory
 	st, err := os.Stat(name)
-	if os.IsNotExist(err) {
-		// try with .dockerapp extension
-		st, err = os.Stat(name + internal.AppExtension)
-		if err == nil {
-			name += internal.AppExtension
-		}
-	}
 	if err != nil {
 		return name, nameKindReference
 	}
@@ -267,10 +260,11 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 		if pullRef {
 			return nil, "", errors.Errorf("%s: cannot pull when referencing a file based app", name)
 		}
-		if strings.HasSuffix(name, internal.AppExtension) {
+		// Can be an archived app _or_ a bundle.json
+		bndl, err := loadBundleFromFile(name)
+		if err != nil {
 			return extractAndLoadAppBasedBundle(dockerCli, name)
 		}
-		bndl, err := loadBundleFromFile(name)
 		return bndl, "", err
 	case nameKindDir, nameKindEmpty:
 		if pullRef {

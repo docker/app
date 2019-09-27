@@ -49,7 +49,6 @@ func PackInvocationImageContext(cli command.Cli, app *types.App, target io.Write
 	logrus.Debug("Packing invocation image context")
 	tarout := tar.NewWriter(target)
 	defer tarout.Close()
-	prefix := fmt.Sprintf("%s%s/", app.Metadata().Name, internal.AppExtension)
 	if len(app.Composes()) != 1 {
 		return errors.New("app should have one and only one compose file")
 	}
@@ -62,18 +61,18 @@ func PackInvocationImageContext(cli command.Cli, app *types.App, target io.Write
 	if err := tarAddBytes(tarout, ".dockerignore", []byte(dockerIgnore)); err != nil {
 		return errors.Wrap(err, "failed to add .dockerignore to the invocation image build context")
 	}
-	if err := tarAddBytes(tarout, prefix+internal.MetadataFileName, app.MetadataRaw()); err != nil {
-		return errors.Wrapf(err, "failed to add %q to the invocation image build context", prefix+internal.MetadataFileName)
+	if err := tarAddBytes(tarout, internal.MetadataFileName, app.MetadataRaw()); err != nil {
+		return errors.Wrapf(err, "failed to add %q to the invocation image build context", internal.MetadataFileName)
 	}
-	if err := tarAddBytes(tarout, prefix+internal.ComposeFileName, app.Composes()[0]); err != nil {
-		return errors.Wrapf(err, "failed to add %q to the invocation image build context", prefix+internal.ComposeFileName)
+	if err := tarAddBytes(tarout, internal.ComposeFileName, app.Composes()[0]); err != nil {
+		return errors.Wrapf(err, "failed to add %q to the invocation image build context", internal.ComposeFileName)
 	}
-	if err := tarAddBytes(tarout, prefix+internal.ParametersFileName, app.ParametersRaw()[0]); err != nil {
-		return errors.Wrapf(err, "failed to add %q to the invocation image build context", prefix+internal.ParametersFileName)
+	if err := tarAddBytes(tarout, internal.ParametersFileName, app.ParametersRaw()[0]); err != nil {
+		return errors.Wrapf(err, "failed to add %q to the invocation image build context", internal.ParametersFileName)
 	}
 	for _, attachment := range app.Attachments() {
-		if err := tarAdd(tarout, prefix+attachment.Path(), filepath.Join(app.Path, attachment.Path())); err != nil {
-			return errors.Wrapf(err, "failed to add attachment %q to the invocation image build context", prefix+attachment.Path())
+		if err := tarAdd(tarout, attachment.Path(), filepath.Join(app.Path, attachment.Path())); err != nil {
+			return errors.Wrapf(err, "failed to add attachment %q to the invocation image build context", attachment.Path())
 		}
 	}
 	return nil

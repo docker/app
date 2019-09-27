@@ -3,18 +3,14 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os/user"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/yaml"
 	"gotest.tools/assert"
-	is "gotest.tools/assert/cmp"
 	"gotest.tools/fs"
 	"gotest.tools/golden"
 	"gotest.tools/icmd"
@@ -29,59 +25,6 @@ func TestExitErrorCode(t *testing.T) {
 		ExitCode: 1,
 		Out:      "\"unknown_command\" is not a docker app command",
 	})
-}
-
-func TestRender(t *testing.T) {
-	appsPath := filepath.Join("testdata", "render")
-	apps, err := ioutil.ReadDir(appsPath)
-	assert.NilError(t, err, "unable to get apps")
-	for _, app := range apps {
-		appPath := filepath.Join(appsPath, app.Name())
-		t.Run(app.Name(), testRenderApp(appPath))
-	}
-}
-
-func testRenderApp(appPath string, env ...string) func(*testing.T) {
-	return func(t *testing.T) {
-		cmd, cleanup := dockerCli.createTestCmd()
-		defer cleanup()
-		dir := fs.NewDir(t, "")
-		defer dir.Remove()
-
-		envParameters := map[string]string{}
-		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
-		assert.NilError(t, err)
-		assert.NilError(t, yaml.Unmarshal(data, &envParameters))
-		args := dockerCli.Command("app", "render", filepath.Join(appPath, "my.dockerapp"), "--parameters-file", filepath.Join(appPath, "parameters-0.yml"))
-		for k, v := range envParameters {
-			args = append(args, "--set", fmt.Sprintf("%s=%s", k, v))
-		}
-		cmd.Command = args
-		cmd.Env = append(cmd.Env, env...)
-		t.Run("stdout", func(t *testing.T) {
-			result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), result.Stdout()), "rendering mismatch")
-		})
-		t.Run("file", func(t *testing.T) {
-			cmd.Command = append(cmd.Command, "--output="+dir.Join("actual.yaml"))
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), readFile(t, dir.Join("actual.yaml"))), "rendering mismatch")
-		})
-	}
-}
-
-func TestRenderFormatters(t *testing.T) {
-	cmd, cleanup := dockerCli.createTestCmd()
-	defer cleanup()
-
-	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
-	cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
-	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	golden.Assert(t, result.Stdout(), "expected-json-render.golden")
-
-	cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", appPath)
-	result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
 }
 
 func TestInit(t *testing.T) {
@@ -120,7 +63,7 @@ maintainers:
 	defer tmpDir.Remove()
 
 	testAppName := "app-test"
-	dirName := internal.DirNameFromAppName(testAppName)
+	dirName := testAppName
 
 	cmd.Dir = tmpDir.Path()
 	cmd.Command = dockerCli.Command("app",
@@ -142,120 +85,6 @@ maintainers:
 	cmd.Command = dockerCli.Command("app", "validate", testAppName)
 	stdOut = icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
 	golden.Assert(t, stdOut, "validate-output.golden")
-}
-
-func TestDetectApp(t *testing.T) {
-	cmd, cleanup := dockerCli.createTestCmd()
-	defer cleanup()
-
-	// cwd = e2e
-	dir := fs.NewDir(t, "detect-app-binary",
-		fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")),
-		fs.WithDir("render",
-			fs.WithDir("app1.dockerapp", fs.FromDir("testdata/render/envvariables/my.dockerapp")),
-			fs.WithDir("app2.dockerapp", fs.FromDir("testdata/render/envvariables/my.dockerapp")),
-		),
-	)
-	defer dir.Remove()
-
-	cmd.Command = dockerCli.Command("app", "inspect")
-	cmd.Dir = dir.Path()
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	cmd.Command = dockerCli.Command("app", "inspect")
-	cmd.Dir = dir.Join("attachments.dockerapp")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	cmd.Command = dockerCli.Command("app", "inspect", ".")
-	cmd.Dir = dir.Join("attachments.dockerapp")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	cmd.Command = dockerCli.Command("app", "inspect")
-	cmd.Dir = dir.Join("render")
-	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
-		ExitCode: 1,
-		Err:      "multiple applications found in current directory, specify the application name on the command line",
-	})
-}
-
-func TestBundle(t *testing.T) {
-	cmd, cleanup := dockerCli.createTestCmd()
-	defer cleanup()
-
-	tmpDir := fs.NewDir(t, t.Name())
-	defer tmpDir.Remove()
-
-	// Running a docker in docker to bundle the application
-	dind := NewContainer("docker:18.09-dind", 2375)
-	dind.Start(t)
-	defer dind.Stop(t)
-
-	// Create a build context
-	cmd.Command = dockerCli.Command("context", "create", "build-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, dind.GetAddress(t)))
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	// The dind doesn't have the cnab-app-base image so we save it in order to load it later
-	cmd.Command = dockerCli.Command("save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "--output", tmpDir.Join("cnab-app-base.tar.gz"))
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=build-context")
-	cmd.Command = dockerCli.Command("load", "-i", tmpDir.Join("cnab-app-base.tar.gz"))
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	testCases := []struct {
-		name           string
-		cmd            []string
-		invocImage     string
-		expectedBundle string
-	}{
-		{
-			name:           "simple-bundle",
-			cmd:            dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--output", tmpDir.Join("simple-bundle.json")),
-			invocImage:     "simple:1.1.0-beta1-invoc",
-			expectedBundle: "simple-bundle.json.golden",
-		},
-		{
-			name:           "bundle-with-tag",
-			cmd:            dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "myimage:mytag", "--output", tmpDir.Join("bundle-with-tag.json")),
-			invocImage:     "myimage:mytag-invoc",
-			expectedBundle: "bundle-with-tag.json.golden",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			testDir := fs.NewDir(t, "")
-			defer testDir.Remove()
-
-			// Bundle the docker application package to a CNAB bundle, using the build-context.
-			cmd.Command = tc.cmd
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-			// Check the resulting CNAB bundle.json
-			golden.Assert(t, string(golden.Get(t, tmpDir.Join(tc.name+".json"))), tc.expectedBundle)
-
-			// List the images on the build context daemon and checks the invocation image is there
-			cmd.Command = dockerCli.Command("image", "ls", "--format", "{{.Repository}}:{{.Tag}}")
-			icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 0, Out: tc.invocImage})
-
-			// Copy all the files from the invocation image and check them
-			cmd.Command = dockerCli.Command("create", "--name", "invocation", tc.invocImage)
-			id := strings.TrimSpace(icmd.RunCmd(cmd).Assert(t, icmd.Success).Stdout())
-			cmd.Command = dockerCli.Command("cp", "invocation:/cnab/app/simple.dockerapp", testDir.Join("simple.dockerapp"))
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-			cmd.Command = dockerCli.Command("rm", "--force", id)
-			icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-			appDir := filepath.Join("testdata", "simple", "simple.dockerapp")
-			manifest := fs.Expected(
-				t,
-				fs.WithMode(0755),
-				fs.WithFile(internal.MetadataFileName, readFile(t, filepath.Join(appDir, internal.MetadataFileName)), fs.WithMode(0644)),
-				fs.WithFile(internal.ComposeFileName, readFile(t, filepath.Join(appDir, internal.ComposeFileName)), fs.WithMode(0644)),
-				fs.WithFile(internal.ParametersFileName, readFile(t, filepath.Join(appDir, internal.ParametersFileName)), fs.WithMode(0644)),
-			)
-			assert.Assert(t, fs.Equal(testDir.Join("simple.dockerapp"), manifest))
-		})
-	}
 }
 
 func TestDockerAppLifecycle(t *testing.T) {

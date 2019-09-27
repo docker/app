@@ -11,7 +11,7 @@ import (
 )
 
 func TestToCNAB(t *testing.T) {
-	app, err := types.NewAppFromDefaultFiles("testdata/packages/packing.dockerapp")
+	app, err := types.NewAppFromDefaultFiles("testdata/packages")
 	assert.NilError(t, err)
 	actual, err := ToCNAB(app, "test-image")
 	assert.NilError(t, err)

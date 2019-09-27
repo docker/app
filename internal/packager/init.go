@@ -31,7 +31,7 @@ func Init(name string, composeFile string) (string, error) {
 	if err := internal.ValidateAppName(name); err != nil {
 		return "", err
 	}
-	dirName := internal.DirNameFromAppName(name)
+	dirName := name
 	if err := os.Mkdir(dirName, 0755); err != nil {
 		return "", errors.Wrap(err, "failed to create application directory")
 	}
@@ -63,7 +63,7 @@ func initFromScratch(name string) error {
 		return err
 	}
 
-	dirName := internal.DirNameFromAppName(name)
+	dirName := name
 
 	if err := ioutil.WriteFile(filepath.Join(dirName, internal.ComposeFileName), composeData, 0644); err != nil {
 		return err
@@ -82,7 +82,7 @@ func checkComposeFileVersion(compose map[string]interface{}) error {
 func initFromComposeFile(name string, composeFile string) error {
 	logrus.Debugf("Initializing from compose file %s", composeFile)
 
-	dirName := internal.DirNameFromAppName(name)
+	dirName := name
 
 	composeRaw, err := ioutil.ReadFile(composeFile)
 	if err != nil {

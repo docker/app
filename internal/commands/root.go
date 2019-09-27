@@ -74,7 +74,6 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		statusCmd(dockerCli),
 		initCmd(dockerCli),
 		inspectCmd(dockerCli),
-		renderCmd(dockerCli),
 		validateCmd(),
 		bundleCmd(dockerCli),
 		pushCmd(dockerCli),

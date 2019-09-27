@@ -2,9 +2,7 @@ package internal
 
 import (
 	"fmt"
-	"path/filepath"
 	"regexp"
-	"strings"
 )
 
 const (
@@ -73,20 +71,6 @@ var (
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
 
-// AppNameFromDir takes a path to an app directory and returns
-// the application's name
-func AppNameFromDir(dirName string) string {
-	return strings.TrimSuffix(filepath.Base(dirName), AppExtension)
-}
-
-// DirNameFromAppName takes an application name and returns the
-// corresponding directory name
-func DirNameFromAppName(appName string) string {
-	if strings.HasSuffix(strings.TrimSuffix(appName, "/"), AppExtension) {
-		return appName
-	}
-	return appName + AppExtension
-}
 
 // ValidateAppName takes an app name and returns an error if it doesn't
 // match the expected format
