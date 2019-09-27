@@ -43,10 +43,11 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	// Solution found is: fix the port of the registry to be the same internally and externally
 	// and run the dind container in the same network namespace: this way 127.0.0.1:<registry-port> both resolves to the registry from the client and from dind
 
-	swarm := NewContainer("docker:18.09-dind", 2375, "--insecure-registry", fmt.Sprintf("127.0.0.1:%d", registryPort))
+	swarm := NewContainer("docker:19.03.2-dind", 2375, "--insecure-registry", fmt.Sprintf("127.0.0.1:%d", registryPort))
 	swarm.Start(t, "--expose", strconv.FormatInt(int64(registryPort), 10),
 		"-p", fmt.Sprintf("%d:%d", registryPort, registryPort),
-		"-p", "2375")
+		"-p", "2375",
+		"-e", "DOCKER_TLS_CERTDIR=") // Disable certificate generate on DinD startup
 	defer swarm.Stop(t)
 
 	registry := NewContainer("registry:2", registryPort)
@@ -74,6 +75,9 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	// Load the needed base cnab image into the swarm docker engine
 	cmd.Command = dockerCli.Command("load", "-i", tmpDir.Join("cnab-app-base.tar.gz"))
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Command = dockerCli.Command("pull", "busybox:1.30.1")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 	info := dindSwarmAndRegistryInfo{
