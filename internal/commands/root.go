@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
@@ -79,6 +80,7 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		bundleCmd(dockerCli),
 		pushCmd(dockerCli),
 		pullCmd(dockerCli),
+		image.Cmd(dockerCli),
 	)
 }
 

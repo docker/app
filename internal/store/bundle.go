@@ -3,9 +3,11 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/docker/app/internal/log"
@@ -21,6 +23,7 @@ import (
 type BundleStore interface {
 	Store(ref reference.Named, bndle *bundle.Bundle) error
 	Read(ref reference.Named) (*bundle.Bundle, error)
+	List() ([]reference.Named, error)
 
 	LookupOrPullBundle(ref reference.Named, pullRef bool, config *configfile.ConfigFile, insecureRegistries []string) (*bundle.Bundle, error)
 }
@@ -57,6 +60,41 @@ func (b *bundleStore) Read(ref reference.Named) (*bundle.Bundle, error) {
 		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
 	}
 	return &bndle, nil
+}
+
+// Returns the list of all bundles present in the bundle store
+func (b *bundleStore) List() ([]reference.Named, error) {
+	var references []reference.Named
+	if err := filepath.Walk(b.path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		if !strings.HasSuffix(info.Name(), ".json") {
+			return fmt.Errorf("unknown file %q in bundle store", path)
+		}
+
+		ref, err := b.pathToReference(path)
+		if err != nil {
+			return err
+		}
+
+		references = append(references, ref)
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	sort.Slice(references, func(i, j int) bool {
+		return references[i].Name() < references[j].Name()
+	})
+
+	return references, nil
 }
 
 // LookupOrPullBundle will fetch the given bundle from the local
@@ -109,4 +147,52 @@ func (b *bundleStore) storePath(ref reference.Named) (string, error) {
 	}
 
 	return storeDir + ".json", nil
+}
+
+func (b *bundleStore) pathToReference(path string) (reference.Named, error) {
+	// Clean the path and remove the local bundle store path
+	cleanpath := filepath.ToSlash(path)
+	cleanpath = strings.TrimPrefix(cleanpath, filepath.ToSlash(b.path)+"/")
+
+	// get the hierarchy of directories, so we can get digest algorithm or tag
+	paths := strings.Split(cleanpath, "/")
+	if len(paths) < 3 {
+		return nil, fmt.Errorf("invalid path %q in the bundle store", path)
+	}
+
+	// path must point to a json file
+	if !strings.Contains(paths[len(paths)-1], ".json") {
+		return nil, fmt.Errorf("invalid path %q, not referencing a CNAB bundle in json format", path)
+	}
+
+	// remove the json suffix from the filename
+	paths[len(paths)-1] = strings.TrimSuffix(paths[len(paths)-1], ".json")
+
+	name, err := reconstructNamedReference(path, paths)
+	if err != nil {
+		return nil, err
+	}
+
+	return reference.ParseNamed(name)
+}
+
+func reconstructNamedReference(path string, paths []string) (string, error) {
+	name, paths := strings.Replace(paths[0], "_", ":", 1), paths[1:]
+	for i, p := range paths {
+		switch p {
+		case "_tags":
+			if i != len(paths)-2 {
+				return "", fmt.Errorf("invalid path %q in the bundle store", path)
+			}
+			return fmt.Sprintf("%s:%s", name, paths[i+1]), nil
+		case "_digests":
+			if i != len(paths)-3 {
+				return "", fmt.Errorf("invalid path %q in the bundle store", path)
+			}
+			return fmt.Sprintf("%s@%s:%s", name, paths[i+1], paths[i+2]), nil
+		default:
+			name += "/" + p
+		}
+	}
+	return name, nil
 }
