@@ -1,10 +1,13 @@
 package commands
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/docker/app/internal/packager"
+	"github.com/moby/buildkit/session"
+	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -102,7 +105,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(dockerCli.Out(), string(dt))
+		logrus.Debug(string(dt))
 	}
 
 	buildopts, err := bake.TargetsToBuildOpt(targets, opt.noCache, opt.pull)
@@ -110,8 +113,6 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 		return err
 	}
 
-	/**
-	// FIXME it seems there's no way to setup a build.Options without a plain DockerContext path
 	buildContext := bytes.NewBuffer(nil)
 	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
 		return err
@@ -120,11 +121,11 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 	buildopts["invocation-image"] = build.Options{
 		Inputs:      build.Inputs{
 			InStream: buildContext,
+			ContextPath: "-",
 		},
 		Tags:        []string{ fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, "-invoc") },
 		Session:     []session.Attachable{authprovider.NewDockerAuthProvider(os.Stderr)},
 	}
-	*/
 
 	d, err := driver.GetDriver(ctx, "buildx_buildkit_default", nil, dockerCli.Client(), nil, "", nil)
 	if err != nil {
@@ -140,48 +141,35 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 	ctx2, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	// FIXME add invocation image as another build target
-
 	pw := progress.NewPrinter(ctx2, os.Stderr, opt.progress)
-	_, err = build.Build(ctx2, driverInfo, buildopts, dockerAPI(dockerCli), dockerCli.ConfigFile(), pw)
+	resp, err := build.Build(ctx2, driverInfo, buildopts, dockerAPI(dockerCli), dockerCli.ConfigFile(), pw)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Successfully built service images")
 
-	/* FIXME Build should tell us everything we need to know about digests https://github.com/docker/buildx/issues/149
 	for service, r := range resp {
 		digest := r.ExporterResponse["containerimage.digest"]
-		image := bundle.Images[service]
-		image.ImageType = cnab.ImageTypeDocker
-		image.Image = fmt.Sprintf("%s@%s", bundle.Name, digest)
-		bundle.Images[service] = image
-		fmt.Printf("    - %s : %s\n", service, image.Digest)
+		if service == "invocation-image" {
+			bundle.InvocationImages[0].Digest = digest
+		} else {
+			image := bundle.Images[service]
+			image.Image = fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
+			image.ImageType = cnab.ImageTypeDocker
+			image.Digest = digest
+			bundle.Images[service] = image
+		}
+		fmt.Printf("    - %s : %s\n", service, digest)
 	}
-	// -- debug
-	dt, err = json.MarshalIndent(resp, "", "   ")
-	if err != nil {
-		return err
-	}
-	fmt.Fprintln(dockerCli.Out(), string(dt))
-	// -- debug
-    */
-	// FIXME as a workaround, inspect image we've just built to get digest
-	for service, _ := range targets {
-		ref := fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
-		inspect, _, err := dockerCli.Client().ImageInspectWithRaw(ctx, ref)
+
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		dt, err := json.MarshalIndent(resp, "", "   ")
 		if err != nil {
 			return err
 		}
-		image := bundle.Images[service]
-		image.ImageType = cnab.ImageTypeDocker
-		image.Image = fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
-		image.Digest = inspect.ID // Content Digest
-		bundle.Images[service] = image
-		fmt.Printf("    - %s : %s:%s-%s (%s)\n", service, bundle.Name, bundle.Version, service, inspect.ID)
+		logrus.Debug(string(dt))
 	}
-
 
 	if opt.tag == "" {
 		opt.tag = bundle.Name + ":" + bundle.Version

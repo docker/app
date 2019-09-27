@@ -13,7 +13,7 @@ import (
 func TestToCNAB(t *testing.T) {
 	app, err := types.NewAppFromDefaultFiles("testdata/packages/packing.dockerapp")
 	assert.NilError(t, err)
-	actual, err := ToCNAB(app, "test-image", "")
+	actual, err := ToCNAB(app, "test-image")
 	assert.NilError(t, err)
 	actualJSON, err := json.MarshalIndent(actual, "", "  ")
 	assert.NilError(t, err)

@@ -236,7 +236,7 @@
   version = "v0.3.2-beta1"
 
 [[projects]]
-  digest = "1:162a3782e735c729799103d985d27676be93f15bca018038e08b06eed014afc0"
+  digest = "1:fc67ad7796e9571f4b9986e7ef73160304e69c3157929518a9ddfe9735322459"
   name = "github.com/docker/buildx"
   packages = [
     "bake",
@@ -248,8 +248,7 @@
     "util/progress",
   ]
   pruneopts = "NUT"
-  revision = "c967f1d570fb393b4475c01efea58781608d093c"
-  version = "v0.3.0"
+  revision = "96fb17b71125d4a11c904bd8a4298bac3b9e11e9"
 
 [[projects]]
   digest = "1:bc88d135d4f5d9a0968a213b3b2d786d1e216b9f10c30720f4d0d4976346732b"
@@ -1476,6 +1475,8 @@
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/imdario/mergo",
+    "github.com/moby/buildkit/session",
+    "github.com/moby/buildkit/session/auth/authprovider",
     "github.com/moby/buildkit/util/appcontext",
     "github.com/morikuni/aec",
     "github.com/opencontainers/go-digest",

@@ -541,7 +541,7 @@ func Build(ctx context.Context, drivers []DriverInfo, opt map[string]Options, do
 	multiTarget := len(opt) > 1
 
 	for k, opt := range opt {
-		err := func() error {
+		err := func(k string) error {
 			opt := opt
 			dps := m[k]
 			multiDriver := len(m[k]) > 1
@@ -685,7 +685,7 @@ func Build(ctx context.Context, drivers []DriverInfo, opt map[string]Options, do
 			}
 
 			return nil
-		}()
+		}(k)
 		if err != nil {
 			return nil, err
 		}
@@ -735,7 +735,7 @@ func LoadInputs(inp Inputs, target *client.SolveOpt) (func(), error) {
 			return nil, errStdinConflict
 		}
 
-		buf := bufio.NewReader(os.Stdin)
+		buf := bufio.NewReader(inp.InStream)
 		magic, err := buf.Peek(archiveHeaderSize * 2)
 		if err != nil && err != io.EOF {
 			return nil, errors.Wrap(err, "failed to peek context header from STDIN")
@@ -761,7 +761,7 @@ func LoadInputs(inp Inputs, target *client.SolveOpt) (func(), error) {
 		target.LocalDirs["context"] = inp.ContextPath
 		switch inp.DockerfilePath {
 		case "-":
-			dockerfileReader = os.Stdin
+			dockerfileReader = inp.InStream
 		case "":
 			dockerfileDir = inp.ContextPath
 		default:
@@ -784,6 +784,7 @@ func LoadInputs(inp Inputs, target *client.SolveOpt) (func(), error) {
 			return nil, err
 		}
 		toRemove = append(toRemove, dockerfileDir)
+		dockerfileName = "Dockerfile"
 	}
 
 	if dockerfileName == "" {

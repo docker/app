@@ -17,7 +17,7 @@ const (
 )
 
 // ToCNAB creates a CNAB bundle from an app package
-func ToCNAB(app *types.App, invocationImageName string, digest string) (*bundle.Bundle, error) {
+func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) {
 	mapping := ExtractCNABParameterMapping(app.Parameters())
 	flatParameters := app.Parameters().Flatten()
 	definitions := definition.Definitions{
@@ -160,7 +160,6 @@ func ToCNAB(app *types.App, invocationImageName string, digest string) (*bundle.
 				BaseImage: bundle.BaseImage{
 					Image:     invocationImageName,
 					ImageType: "docker",
-					Digest: digest,
 				},
 			},
 		},
