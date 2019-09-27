@@ -32,29 +32,6 @@ Application "hellohelm" installed on context "default"
 **Note**: When using Docker Desktop, you will need to change the IP address in
 your Kubernetes configuration file from `127.0.0.1` to its internal IP address.
 
-Check the status of the Helm-based application:
-
-```console
-$ docker app status --credential-set creds.yaml hellohelm
-INSTALLATION
-------------
-Name:        hellohelm
-Created:     39 seconds
-Modified:    36 seconds
-Revision:    01DD3JM99WRGVAV7T56RMAW13E
-Last Action: install
-Result:      SUCCESS
-
-APPLICATION
------------
-Name:      hellohelm
-Version:   0.1.0
-Reference:
-
-PARAMETERS
-----------
-port: 8080
-```
 
 Uninstall the Helm-based application:
 
