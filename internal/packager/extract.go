@@ -1,10 +1,11 @@
 package packager
 
 import (
+	"os"
+
 	"github.com/docker/app/loader"
 	"github.com/docker/app/types"
 	"github.com/pkg/errors"
-	"os"
 )
 
 // Extract extracts the app content if argument is an archive, or does nothing if a dir.

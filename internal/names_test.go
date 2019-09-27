@@ -7,7 +7,6 @@ import (
 	"gotest.tools/assert"
 )
 
-
 func TestValidateAppName(t *testing.T) {
 	validNames := []string{
 		"app", "app1", "my-app", "their_app", "app_01_02_-",

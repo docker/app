@@ -71,7 +71,6 @@ var (
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
 
-
 // ValidateAppName takes an app name and returns an error if it doesn't
 // match the expected format
 func ValidateAppName(appName string) error {

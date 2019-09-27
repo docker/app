@@ -21,8 +21,8 @@ func TestPackInvocationImageContext(t *testing.T) {
 	assert.NilError(t, err)
 	assert.NilError(t, PackInvocationImageContext(dockerCli, app, buf))
 	assert.NilError(t, hasExpectedFiles(buf, map[string]bool{
-		"Dockerfile":                                              true,
-		".dockerignore":                                           true,
+		"Dockerfile":                            true,
+		".dockerignore":                         true,
 		"metadata.yml":                          true,
 		"docker-compose.yml":                    true,
 		"parameters.yml":                        true,

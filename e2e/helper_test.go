@@ -2,24 +2,13 @@ package e2e
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"gotest.tools/assert"
 	"gotest.tools/icmd"
 )
-
-// readFile returns the content of the file at the designated path normalizing
-// line endings by removing any \r.
-func readFile(t *testing.T, path string) string {
-	t.Helper()
-	content, err := ioutil.ReadFile(path)
-	assert.NilError(t, err, "missing '"+path+"' file")
-	return strings.Replace(string(content), "\r", "", -1)
-}
 
 // Container represents a docker container
 type Container struct {
