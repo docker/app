@@ -75,6 +75,9 @@ func TestRenderFormatters(t *testing.T) {
 	defer cleanup()
 
 	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
+	cmd.Command = dockerCli.Command("app", "build", appPath)
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
 	cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	golden.Assert(t, result.Stdout(), "expected-json-render.golden")

@@ -11,6 +11,7 @@ import (
 	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,6 +36,7 @@ type buildOptions struct {
 	progress string
 	pull     bool
 	tag      string
+	out		 string
 }
 
 func buildCmd(dockerCli command.Cli) *cobra.Command {
@@ -57,7 +59,8 @@ func buildCmd(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
-	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Name and optionally a tag in the 'name:tag' format")
+	flags.StringVarP(&opts.out, "output", "o", "", "Dump generated bundle into a file")
+	flags.StringVarP(&opts.tag, "tag", "t", "", "Name and optionally a tag in the 'name:tag' format")
 
 	return cmd
 }
@@ -76,6 +79,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	}
 
 	ctx := appcontext.Context()
+
 	compose, err := bake.ParseCompose(app.Composes()[0]) // Fixme can have > 1 composes ?
 	if err != nil {
 		return nil, err
@@ -106,7 +110,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	}
 
 	if logrus.IsLevelEnabled(logrus.DebugLevel)	{
-		dt, err := json.MarshalIndent(map[string]map[string]bake.Target{"target": targets}, "", "   ")
+		dt, err := json.MarshalIndent(targets, "", "   ")
 		if err != nil {
 			return nil, err
 		}
@@ -152,6 +156,13 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	}
 
 	fmt.Println("Successfully built service images")
+	if logrus.IsLevelEnabled(logrus.DebugLevel)	{
+		dt, err := json.MarshalIndent(resp, "", "   ")
+		if err != nil {
+			return nil, err
+		}
+		logrus.Debug(string(dt))
+	}
 
 	for service, r := range resp {
 		digest := r.ExporterResponse["containerimage.digest"]
@@ -189,8 +200,23 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		digest := digest.SHA256.FromBytes(b.Bytes())
 		ref	= sha{digest}
 	}
+
+
+	if opt.out != "" {
+		b, err := json.MarshalIndent(bundle, "", "  ")
+		if err != nil {
+			return ref, err
+		}
+		if opt.out == "-" {
+			_, err = os.Stdout.Write(b)
+		} else {
+			err = ioutil.WriteFile(opt.out, b, 0644)
+		}
+		return ref, err
+	}
+
 	if err := persistInBundleStore(ref, bundle); err != nil {
-		return nil, err
+		return ref, err
 	}
 
 	return ref, nil
