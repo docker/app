@@ -136,7 +136,7 @@ func pushInvocationImage(dockerCli command.Cli, retag retagResult) error {
 func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, retag retagResult) error {
 	insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
 	if err != nil {
-		return errors.Wrap(err, "could not retrive insecure registries")
+		return errors.Wrap(err, "could not retrieve insecure registries")
 	}
 	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...)
 	var display fixupDisplay = &plainDisplay{out: os.Stdout}

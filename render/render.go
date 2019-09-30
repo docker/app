@@ -25,13 +25,15 @@ const (
 	// variable name must start with at least one of the the following: a-z, A-Z or _
 	substitution = `[a-zA-Z_]+([a-zA-Z0-9_]*(([.]{1}[0-9a-zA-Z_]+)|([0-9a-zA-Z_])))*`
 	// compose files may contain variable names followed by default values/error messages with separators ':-', '-', ':?' and '?'.
-	defaultValuePattern = `[a-zA-Z_]+[a-zA-Z0-9_.]*((:-)|(\-)|(:\?)|(\?)){1}(.*)`
+	defaultValuePattern = `[a-zA-Z_]+[a-zA-Z0-9_.]*((:-)|(\-)){1}(.*)`
+	// compose files may contain variable names followed by default values/error messages with separators ':-', '-', ':?' and '?'.
+	errorMessagePattern = `[a-zA-Z_]+[a-zA-Z0-9_.]*((:\?)|(\?)){1}(.*)`
 )
 
 var (
 	patternString = fmt.Sprintf(
-		`%s(?i:(?P<named>%s)|(?P<skip>%s{1,})|\{(?P<braced>%s)\}|\{(?P<fail>%s)\})`,
-		delimiter, substitution, delimiter, substitution, defaultValuePattern,
+		`%s(?i:(?P<named>%s)|(?P<skip>%s{1,})|\{(?P<braced>%s)\}|\{(?P<defvals>%s)\}|\{(?P<errormsg>%s)\})`,
+		delimiter, substitution, delimiter, substitution, defaultValuePattern, errorMessagePattern,
 	)
 	rePattern = regexp.MustCompile(patternString)
 )
@@ -74,8 +76,13 @@ func substituteParams(allParameters map[string]string, composeContent string) (s
 			groups[name] = match[i+1]
 		}
 		//fail on default values enclosed within {}
-		if fail := groups["fail"]; fail != "" {
-			return "", errors.New(fmt.Sprintf("Parameters must not have default values set in compose file. Invalid parameter: %s.", match[0]))
+		if fail := groups["defvals"]; fail != "" {
+			return "", errors.Errorf("The default value syntax of compose file is not supported in Docker App. "+
+				"The characters ':' and '-' are not allowed in parameter names. Invalid parameter: %s.", match[0])
+		}
+		if fail := groups["errormsg"]; fail != "" {
+			return "", errors.Errorf("The custom error message syntax of compose file is not supported in Docker App. "+
+				"The characters ':' and '?' are not allowed in parameter names. Invalid parameter: %s.", match[0])
 		}
 		if skip := groups["skip"]; skip != "" {
 			continue
@@ -88,7 +95,7 @@ func substituteParams(allParameters map[string]string, composeContent string) (s
 		if value, ok := allParameters[val]; ok {
 			composeContent = strings.ReplaceAll(composeContent, varString, value)
 		} else {
-			return "", errors.New(fmt.Sprintf("Failed to set value for %s. Value not found in parameters.", val))
+			return "", errors.Errorf("Failed to set value for %s. Value not found in parameters.", val)
 		}
 	}
 	return composeContent, nil
