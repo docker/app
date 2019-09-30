@@ -3,15 +3,17 @@ package commands
 import (
 	"fmt"
 
+	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
+	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config"
 	"github.com/spf13/cobra"
 )
 
 type inspectOptions struct {
-	parametersOptions
-	pullOptions
+	pretty bool
 }
 
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
@@ -19,24 +21,49 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "inspect [APP_NAME] [OPTIONS]",
 		Short:   "Shows metadata, parameters and a summary of the Compose file for a given application",
-		Example: `$ docker app inspect myapp.dockerapp`,
+		Example: `$ docker app inspect my-app`,
 		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInspect(dockerCli, firstOrEmpty(args), opts)
 		},
 	}
-	opts.parametersOptions.addFlags(cmd.Flags())
-	opts.pullOptions.addFlags(cmd.Flags())
+	cmd.Flags().BoolVar(&opts.pretty, "pretty", false, "Pretty print the output")
+
 	return cmd
 }
 
 func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
 	defer muteDockerCli(dockerCli)()
-	action, installation, errBuf, err := prepareCustomAction(internal.ActionInspectName, dockerCli, appname, nil, opts.pullOptions, opts.parametersOptions)
+	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return err
 	}
-	if err := action.Run(&installation.Claim, nil, nil); err != nil {
+	bundleStore, err := s.BundleStore()
+	if err != nil {
+		return err
+	}
+	bundle, ref, err := getLocalBundle(dockerCli, bundleStore, appname, false)
+	if err != nil {
+		return err
+	}
+	installation, err := appstore.NewInstallation("custom-action", ref.String())
+	if err != nil {
+		return err
+	}
+	installation.Bundle = bundle
+
+	driverImpl, errBuf := prepareDriver(dockerCli, bindMount{}, nil)
+	a := &action.RunCustom{
+		Action: internal.ActionInspectName,
+		Driver: driverImpl,
+	}
+
+	format := "json"
+	if opts.pretty {
+		format = "pretty"
+	}
+	installation.Parameters[internal.ParameterInspectFormatName] = format
+	if err := a.Run(&installation.Claim, nil, nil); err != nil {
 		return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
 	}
 	return nil

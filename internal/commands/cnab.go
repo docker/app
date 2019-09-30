@@ -281,19 +281,24 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 		}
 		return extractAndLoadAppBasedBundle(dockerCli, name)
 	case nameKindReference:
-		ref, err := reference.ParseNormalizedNamed(name)
-		if err != nil {
-			return nil, "", errors.Wrap(err, name)
-		}
-		tagRef := reference.TagNameOnly(ref)
-		insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
-		if err != nil {
-			return nil, "", fmt.Errorf("could not retrieve insecure registries: %v", err)
-		}
-		bndl, err := bundleStore.LookupOrPullBundle(tagRef, pullRef, dockerCli.ConfigFile(), insecureRegistries)
+		bndl, tagRef, err := getLocalBundle(dockerCli, bundleStore, name, pullRef)
 		return bndl, tagRef.String(), err
 	}
 	return nil, "", fmt.Errorf("could not resolve bundle %q", name)
+}
+
+func getLocalBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool) (*bundle.Bundle, reference.Named, error) {
+	ref, err := reference.ParseNormalizedNamed(name)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, name)
+	}
+	tagRef := reference.TagNameOnly(ref)
+	insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
+	if err != nil {
+		return nil, tagRef, fmt.Errorf("could not retrieve insecure registries: %v", err)
+	}
+	bndl, err := bundleStore.LookupOrPullBundle(tagRef, pullRef, dockerCli.ConfigFile(), insecureRegistries)
+	return bndl, tagRef, err
 }
 
 func requiredClaimBindMount(c claim.Claim, targetContextName string, dockerCli command.Cli) (bindMount, error) {
@@ -359,7 +364,6 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	driverImpl, errBuf := prepareDriver(dockerCli, bindMount{}, stdout)
 	bundle, ref, err := resolveBundle(dockerCli, bundleStore, appname, pullOpts.pull)
 	if err != nil {
 		return nil, nil, nil, err
@@ -377,6 +381,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 		return nil, nil, nil, err
 	}
 
+	driverImpl, errBuf := prepareDriver(dockerCli, bindMount{}, stdout)
 	a := &action.RunCustom{
 		Action: actionName,
 		Driver: driverImpl,

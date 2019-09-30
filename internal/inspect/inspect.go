@@ -1,104 +1,123 @@
 package inspect
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/app/internal"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
+	"github.com/docker/app/types/metadata"
 	"github.com/docker/app/types/parameters"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	units "github.com/docker/go-units"
 )
 
+type service struct {
+	Name     string
+	Image    string
+	Replicas int
+	Mode     string
+	Ports    string
+}
+
+type attachment struct {
+	Path string
+	Size int64
+}
+
+type appInfo struct {
+	Metadata       metadata.AppMetadata
+	Services       []service
+	Networks       []string
+	Volumes        []string
+	Secrets        []string
+	parametersKeys []string
+	Parameters     map[string]string
+	Attachments    []attachment
+}
+
 // Inspect dumps the metadata of an app
 func Inspect(out io.Writer, app *types.App, argParameters map[string]string, imageMap map[string]bundle.Image) error {
+	outputFormat := os.Getenv(internal.DockerInspectFormatEnvVar)
+
 	// Render the compose file
 	config, err := render.Render(app, argParameters, imageMap)
 	if err != nil {
 		return err
 	}
 
-	// Extract all the parameters
-	parametersKeys, allParameters, err := extractParameters(app, argParameters)
+	appInfo, err := getAppInfo(app, config, argParameters)
 	if err != nil {
 		return err
 	}
 
+	if outputFormat == "json" {
+		js, err := json.MarshalIndent(appInfo, "", "    ")
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(out, string(js))
+		return nil
+	}
+
 	// Add Meta data
-	printMetadata(out, app)
+	printMetadata(out, appInfo)
 
 	// Add Service section
 	printSection(out, len(config.Services), func(w io.Writer) {
-		sort.Slice(config.Services, func(i, j int) bool {
-			return config.Services[i].Name < config.Services[j].Name
-		})
-		for _, service := range config.Services {
-			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, getReplicas(service), getPorts(service.Ports), service.Image)
+		for _, service := range appInfo.Services {
+			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, service.Replicas, service.Ports, service.Image)
 		}
 	}, "Service", "Replicas", "Ports", "Image")
 
 	// Add Network section
 	printSection(out, len(config.Networks), func(w io.Writer) {
-		names := make([]string, 0, len(config.Networks))
-		for name := range config.Networks {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
+		for _, name := range appInfo.Networks {
 			fmt.Fprintln(w, name)
 		}
 	}, "Network")
 
 	// Add Volume section
 	printSection(out, len(config.Volumes), func(w io.Writer) {
-		names := make([]string, 0, len(config.Volumes))
-		for name := range config.Volumes {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
+		for _, name := range appInfo.Volumes {
 			fmt.Fprintln(w, name)
 		}
 	}, "Volume")
 
 	// Add Secret section
-	printSection(out, len(config.Secrets), func(w io.Writer) {
-		names := make([]string, 0, len(config.Secrets))
-		for name := range config.Secrets {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
+	printSection(out, len(appInfo.Secrets), func(w io.Writer) {
+		for _, name := range appInfo.Secrets {
 			fmt.Fprintln(w, name)
 		}
 	}, "Secret")
 
 	// Add Parameter section
-	printSection(out, len(parametersKeys), func(w io.Writer) {
-		for _, k := range parametersKeys {
-			fmt.Fprintf(w, "%s\t%s\n", k, allParameters[k])
+	printSection(out, len(appInfo.parametersKeys), func(w io.Writer) {
+		for _, k := range appInfo.parametersKeys {
+			fmt.Fprintf(w, "%s\t%s\n", k, appInfo.Parameters[k])
 		}
 	}, "Parameter", "Value")
 
-	// Add Attachments section
-	attachments := app.Attachments()
-	printSection(out, len(attachments), func(w io.Writer) {
-		for _, file := range attachments {
-			sizeString := units.HumanSize(float64(file.Size()))
-			fmt.Fprintf(w, "%s\t%s\n", file.Path(), sizeString)
+	// // Add Attachments section
+	printSection(out, len(appInfo.Attachments), func(w io.Writer) {
+		for _, attachment := range appInfo.Attachments {
+			sizeString := units.HumanSize(float64(attachment.Size))
+			fmt.Fprintf(w, "%s\t%s\n", attachment.Path, sizeString)
 		}
 	}, "Attachment", "Size")
 
 	return nil
 }
 
-func printMetadata(out io.Writer, app *types.App) {
-	meta := app.Metadata()
+func printMetadata(out io.Writer, app appInfo) {
+	meta := app.Metadata
 	fmt.Fprintln(out, meta.Name, meta.Version)
 	if maintainers := meta.Maintainers.String(); maintainers != "" {
 		fmt.Fprintln(out)
@@ -133,6 +152,65 @@ func printHeaders(w io.Writer, headers ...string) {
 		dashes[i] = strings.Repeat("-", len(h))
 	}
 	fmt.Fprintln(w, strings.Join(dashes, "\t"))
+}
+
+func getAppInfo(app *types.App, config *composetypes.Config, argParameters map[string]string) (appInfo, error) {
+	services := []service{}
+	for _, s := range config.Services {
+		services = append(services, service{
+			Name:     s.Name,
+			Image:    s.Image,
+			Replicas: getReplicas(s),
+			Ports:    getPorts(s.Ports),
+		})
+	}
+	sort.SliceStable(services, func(i, j int) bool {
+		return services[i].Name < services[j].Name
+	})
+
+	networks := []string{}
+	for n := range config.Networks {
+		networks = append(networks, n)
+	}
+	sort.Strings(networks)
+
+	volumes := []string{}
+	for v := range config.Volumes {
+		volumes = append(volumes, v)
+	}
+	sort.Strings(volumes)
+
+	secrets := []string{}
+	for s := range config.Secrets {
+		secrets = append(secrets, s)
+	}
+	sort.Strings(secrets)
+
+	// Extract all the parameters
+	parametersKeys, allParameters, err := extractParameters(app, argParameters)
+	if err != nil {
+		return appInfo{}, err
+	}
+
+	attachments := []attachment{}
+	appAttachments := app.Attachments()
+	for _, file := range appAttachments {
+		attachments = append(attachments, attachment{
+			Path: file.Path(),
+			Size: file.Size(),
+		})
+	}
+
+	return appInfo{
+		Metadata:       app.Metadata(),
+		Services:       services,
+		Networks:       networks,
+		Volumes:        volumes,
+		Secrets:        secrets,
+		parametersKeys: parametersKeys,
+		Parameters:     allParameters,
+		Attachments:    attachments,
+	}, nil
 }
 
 func getReplicas(service composetypes.ServiceConfig) int {

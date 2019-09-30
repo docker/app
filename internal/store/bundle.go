@@ -119,12 +119,7 @@ func (b *bundleStore) Remove(ref reference.Named) error {
 func (b *bundleStore) LookupOrPullBundle(ref reference.Named, pullRef bool, config *configfile.ConfigFile, insecureRegistries []string) (*bundle.Bundle, error) {
 	if !pullRef {
 		bndl, err := b.Read(ref)
-		if err == nil {
-			return bndl, nil
-		}
-		if !os.IsNotExist(errors.Cause(err)) {
-			return nil, err
-		}
+		return bndl, errors.Wrapf(err, "bundle not found")
 	}
 	bndl, err := remotes.Pull(log.WithLogContext(context.Background()), reference.TagNameOnly(ref), remotes.CreateResolver(config, insecureRegistries...))
 	if err != nil {

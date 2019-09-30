@@ -8,7 +8,6 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -36,15 +35,7 @@ func runPull(dockerCli command.Cli, name string) error {
 		return err
 	}
 
-	ref, err := reference.ParseNormalizedNamed(name)
-	if err != nil {
-		return errors.Wrap(err, name)
-	}
-	insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
-	if err != nil {
-		return errors.Wrap(err, "could not retrieve insecure registries")
-	}
-	bndl, err := bundleStore.LookupOrPullBundle(reference.TagNameOnly(ref), true, dockerCli.ConfigFile(), insecureRegistries)
+	bndl, ref, err := getLocalBundle(dockerCli, bundleStore, name, true)
 	if err != nil {
 		return errors.Wrap(err, name)
 	}

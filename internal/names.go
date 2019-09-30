@@ -52,6 +52,8 @@ const (
 	ParameterKubernetesNamespaceName = Namespace + "kubernetes-namespace"
 	// ParameterRenderFormatName is the name of the parameter containing the kubernetes namespace
 	ParameterRenderFormatName = Namespace + "render-format"
+	// ParameterRenderFormatName is the name of the parameter containing the kubernetes namespace
+	ParameterInspectFormatName = Namespace + "inspect-format"
 	// ParameterShareRegistryCredsName is the name of the parameter which indicates if credentials should be shared
 	ParameterShareRegistryCredsName = Namespace + "share-registry-creds"
 
@@ -64,6 +66,8 @@ const (
 	// DockerRenderFormatEnvVar is the environment variable set by the CNAB runtime to select
 	// the render output format.
 	DockerRenderFormatEnvVar = "DOCKER_RENDER_FORMAT"
+	// DockerInspectFormatEnvVar ...
+	DockerInspectFormatEnvVar = "DOCKER_INSPECT_FORMAT"
 )
 
 var (

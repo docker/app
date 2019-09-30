@@ -48,6 +48,16 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Title:       "Render format",
 			Description: "Output format for the render command",
 		},
+		internal.ParameterInspectFormatName: {
+			Type: "string",
+			Enum: []interface{}{
+				"json",
+				"pretty",
+			},
+			Default:     "json",
+			Title:       "Inspect format",
+			Description: "Output format for the inspect command",
+		},
 		internal.ParameterShareRegistryCredsName: {
 			Type:        "boolean",
 			Default:     false,
@@ -88,6 +98,15 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 				internal.ActionRenderName,
 			},
 			Definition: internal.ParameterRenderFormatName,
+		},
+		internal.ParameterInspectFormatName: {
+			Destination: &bundle.Location{
+				EnvironmentVariable: internal.DockerInspectFormatEnvVar,
+			},
+			ApplyTo: []string{
+				internal.ActionInspectName,
+			},
+			Definition: internal.ParameterInspectFormatName,
 		},
 		internal.ParameterShareRegistryCredsName: {
 			Destination: &bundle.Location{
