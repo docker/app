@@ -75,7 +75,7 @@ func (b *bundleStore) List() ([]reference.Named, error) {
 		}
 
 		if !strings.HasSuffix(info.Name(), ".json") {
-			return fmt.Errorf("unknown file %q in bundle store", path)
+			return nil
 		}
 
 		ref, err := b.pathToReference(path)
