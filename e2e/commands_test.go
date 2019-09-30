@@ -27,7 +27,7 @@ func TestExitErrorCode(t *testing.T) {
 	cmd.Command = dockerCli.Command("app", "unknown_command")
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
-		Out:      "\"unknown_command\" is not a docker app command",
+		Err:      "\"unknown_command\" is not a docker app command\nSee 'docker app --help'",
 	})
 }
 

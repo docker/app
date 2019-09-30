@@ -41,16 +41,12 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 				return cmd.GenZshCompletion(dockerCli.Out())
 			default:
 				if completion != "" {
-					fmt.Printf("%q is not a supported shell", completion)
-					cmd.HelpFunc()(cmd, args)
-					os.Exit(1)
+					return fmt.Errorf("%q is not a supported shell\nSee 'docker app --help'", completion)
 				}
 			}
 
 			if len(args) != 0 {
-				fmt.Printf("%q is not a docker app command", args[0])
-				cmd.HelpFunc()(cmd, args)
-				os.Exit(1)
+				return fmt.Errorf("%q is not a docker app command\nSee 'docker app --help'", args[0])
 			}
 			cmd.HelpFunc()(cmd, args)
 			return nil
