@@ -126,10 +126,10 @@ func TestPushInsecureRegistry(t *testing.T) {
 		ref := info.registryAddress + "/test/push-insecure"
 
 		// create a command outside of the dind context so without the insecure registry configured
-		cmd2, cleanup2 := dockerCli.createTestCmd()
-		defer cleanup2()
-		cmd2.Command = dockerCli.Command("app", "push", "--tag", ref, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
-		icmd.RunCmd(cmd2).Assert(t, icmd.Expected{ExitCode: 1})
+		cmdNoInsecureRegistry, cleanupNoInsecureRegistryCommand := dockerCli.createTestCmd()
+		defer cleanupNoInsecureRegistryCommand()
+		cmdNoInsecureRegistry.Command = dockerCli.Command("app", "push", "--tag", ref, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		icmd.RunCmd(cmdNoInsecureRegistry).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// run the push with the command inside dind context configured to allow access to the insecure registry
 		cmd := info.configuredCmd
@@ -234,21 +234,21 @@ func TestPushInstallBundle(t *testing.T) {
 			name := strings.Replace(t.Name(), "/", "_", 1)
 			ref2 := ref + ":v0.42"
 			// Create a new command so the bundle store can be trashed before installing the app
-			cmd2, cleanup2 := dockerCli.createTestCmd()
+			cmdIsolatedStore, cleanupIsolatedStore := dockerCli.createTestCmd()
 
 			// Enter the same context as `cmd` to run commands within the same environment
-			cmd2.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, info.swarmAddress))
-			icmd.RunCmd(cmd2).Assert(t, icmd.Success)
-			cmd2.Env = append(cmd2.Env, "DOCKER_CONTEXT=swarm-context")
+			cmdIsolatedStore.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, info.swarmAddress))
+			icmd.RunCmd(cmdIsolatedStore).Assert(t, icmd.Success)
+			cmdIsolatedStore.Env = append(cmdIsolatedStore.Env, "DOCKER_CONTEXT=swarm-context")
 
 			// bundle the app again but this time with a tag to store it into the bundle store
-			cmd2.Command = dockerCli.Command("app", "bundle", "--tag", ref2, "-o", bundleFile, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
-			icmd.RunCmd(cmd2).Assert(t, icmd.Success)
+			cmdIsolatedStore.Command = dockerCli.Command("app", "bundle", "--tag", ref2, "-o", bundleFile, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+			icmd.RunCmd(cmdIsolatedStore).Assert(t, icmd.Success)
 			// Push the app without tagging it explicitly
-			cmd2.Command = dockerCli.Command("app", "push", ref2)
-			icmd.RunCmd(cmd2).Assert(t, icmd.Success)
+			cmdIsolatedStore.Command = dockerCli.Command("app", "push", ref2)
+			icmd.RunCmd(cmdIsolatedStore).Assert(t, icmd.Success)
 			// remove the bundle from the bundle store to be sure it won't be used instead of registry
-			cleanup2()
+			cleanupIsolatedStore()
 			// install from the registry
 			cmd.Command = dockerCli.Command("app", "install", ref2, "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
