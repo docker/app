@@ -2,6 +2,7 @@ package store
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -231,5 +232,15 @@ func TestList(t *testing.T) {
 		assert.Equal(t, len(bundles), 2)
 		assert.Equal(t, bundles[0].String(), "docker.io/my-repo/a-bundle:my-tag")
 		assert.Equal(t, bundles[1].String(), "docker.io/my-repo/b-bundle@sha256:"+testSha)
+	})
+
+	t.Run("Ignores unknown files in the bundle store", func(t *testing.T) {
+		p := path.Join(dockerConfigDir.Path(), AppConfigDirectory, BundleStoreDirectory)
+		//nolint:errcheck
+		os.OpenFile(path.Join(p, "filename"), os.O_CREATE, 06444)
+
+		bundles, err := bundleStore.List()
+		assert.NilError(t, err)
+		assert.Equal(t, len(bundles), 2)
 	})
 }
