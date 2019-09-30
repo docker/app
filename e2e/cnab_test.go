@@ -58,12 +58,6 @@ func TestCallCustomStatusAction(t *testing.T) {
 				cmd.Command = dockerCli.Command("app", "rm", testCase.name)
 				icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			}()
-
-			// docker app status
-			cmd.Command = dockerCli.Command("app", "status", testCase.name)
-			result := icmd.RunCmd(cmd)
-			result.Assert(t, icmd.Expected{ExitCode: testCase.exitCode})
-			assert.Assert(t, is.Contains(result.Combined(), testCase.expectedOutput))
 		})
 	}
 }

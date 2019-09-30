@@ -361,7 +361,6 @@ Commands:
   pull        Pull an application package from a registry
   push        Push an application package to a registry
   render      Render the Compose file for an Application Package
-  status      Get the installation status of an application
   rm          Remove an application
   upgrade     Upgrade an installed application
   validate    Checks the rendered application is syntactically correct

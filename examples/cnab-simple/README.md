@@ -33,12 +33,6 @@ Install the application:
 $ docker app install
 ```
 
-Show the details of the installation:
-
-```console
-$ docker app status hello
-```
-
 Upgrade the installation, demonstrating setting parameters:
 
 ```console
