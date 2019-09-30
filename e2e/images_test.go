@@ -12,12 +12,7 @@ import (
 )
 
 var (
-	reg      = regexp.MustCompile("Digest is (.*).")
-	expected = `APP IMAGE                                                                                      APP NAME
-%s push-pull
-a-simple-app:latest                                                                            simple
-b-simple-app:latest                                                                            simple
-`
+	reg = regexp.MustCompile("Digest is (.*).")
 )
 
 func insertBundles(t *testing.T, cmd icmd.Cmd, dir *fs.Dir, info dindSwarmAndRegistryInfo) string {
@@ -42,6 +37,12 @@ func insertBundles(t *testing.T, cmd icmd.Cmd, dir *fs.Dir, info dindSwarmAndReg
 	return digest
 }
 
+func expectImageListOutput(t *testing.T, cmd icmd.Cmd, output string) {
+	cmd.Command = dockerCli.Command("app", "image", "ls")
+	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	assert.Equal(t, result.Stdout(), output)
+}
+
 func TestImageList(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
@@ -50,10 +51,13 @@ func TestImageList(t *testing.T) {
 
 		digest := insertBundles(t, cmd, dir, info)
 
+		expected := `APP IMAGE                                                                                      APP NAME
+%s push-pull
+a-simple-app:latest                                                                            simple
+b-simple-app:latest                                                                            simple
+`
 		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp@"+digest)
-		cmd.Command = dockerCli.Command("app", "image", "ls")
-		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		assert.Equal(t, result.Stdout(), expectedOutput)
+		expectImageListOutput(t, cmd, expectedOutput)
 	})
 }
 
@@ -85,8 +89,101 @@ Deleted: b-simple-app:latest`,
 		})
 
 		expectedOutput := "APP IMAGE APP NAME\n"
-		cmd.Command = dockerCli.Command("app", "image", "ls")
-		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		assert.Equal(t, result.Stdout(), expectedOutput)
+		expectImageListOutput(t, cmd, expectedOutput)
+	})
+}
+
+func TestImageTag(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		dir := fs.NewDir(t, "")
+		defer dir.Remove()
+
+		// given a first available image
+		cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app", "--output", dir.Join("simple-bundle.json"))
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		singleImageExpectation := `APP IMAGE           APP NAME
+a-simple-app:latest simple
+`
+		expectImageListOutput(t, cmd, singleImageExpectation)
+
+		// with no argument
+		cmd.Command = dockerCli.Command("app", "bundle", "tag")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
+
+		// with one argument
+		cmd.Command = dockerCli.Command("app", "bundle", "tag", "a-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
+
+		// with invalid src reference
+		cmd.Command = dockerCli.Command("app", "bundle", "tag", "a-simple-app$2", "b-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
+
+		// with invalid target reference
+		cmd.Command = dockerCli.Command("app", "bundle", "tag", "a-simple-app", "b@simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
+
+		// tag image with only names
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "b-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
+a-simple-app:latest simple
+b-simple-app:latest simple
+`)
+
+		// target tag
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "a-simple-app:0.1")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
+a-simple-app:0.1    simple
+a-simple-app:latest simple
+b-simple-app:latest simple
+`)
+
+		// source tag
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app:0.1", "c-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
+a-simple-app:0.1    simple
+a-simple-app:latest simple
+b-simple-app:latest simple
+c-simple-app:latest simple
+`)
+
+		// source and target tags
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app:0.1", "b-simple-app:0.2")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
+a-simple-app:0.1    simple
+a-simple-app:latest simple
+b-simple-app:0.2    simple
+b-simple-app:latest simple
+c-simple-app:latest simple
+`)
+
+		// given a new application
+		cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "--tag", "push-pull", "--output", dir.Join("push-pull-bundle.json"))
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
+a-simple-app:0.1    simple
+a-simple-app:latest simple
+b-simple-app:0.2    simple
+b-simple-app:latest simple
+c-simple-app:latest simple
+push-pull:latest    push-pull
+`)
+
+		// can be tagged to an existing tag
+		cmd.Command = dockerCli.Command("app", "image", "tag", "push-pull", "b-simple-app:0.2")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
+a-simple-app:0.1    simple
+a-simple-app:latest simple
+b-simple-app:0.2    push-pull
+b-simple-app:latest simple
+c-simple-app:latest simple
+push-pull:latest    push-pull
+`)
 	})
 }
