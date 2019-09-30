@@ -244,3 +244,49 @@ func TestList(t *testing.T) {
 		assert.Equal(t, len(bundles), 2)
 	})
 }
+
+func TestRemove(t *testing.T) {
+	dockerConfigDir := fs.NewDir(t, t.Name(), fs.WithMode(0755))
+	defer dockerConfigDir.Remove()
+	appstore, err := NewApplicationStore(dockerConfigDir.Path())
+	assert.NilError(t, err)
+	bundleStore, err := appstore.BundleStore()
+	assert.NilError(t, err)
+
+	refs := []reference.Named{
+		parseRefOrDie(t, "my-repo/a-bundle:my-tag"),
+		parseRefOrDie(t, "my-repo/b-bundle@sha256:"+testSha),
+	}
+
+	bndl := &bundle.Bundle{Name: "bundle-name"}
+	for _, ref := range refs {
+		err = bundleStore.Store(ref, bndl)
+		assert.NilError(t, err)
+	}
+
+	t.Run("error on unknown", func(t *testing.T) {
+		err := bundleStore.Remove(parseRefOrDie(t, "my-repo/some-bundle:1.0.0"))
+		assert.Equal(t, err.Error(), "no such image docker.io/my-repo/some-bundle:1.0.0")
+	})
+
+	t.Run("remove tagged and digested", func(t *testing.T) {
+		bundles, err := bundleStore.List()
+		assert.NilError(t, err)
+		assert.Equal(t, len(bundles), 2)
+
+		err = bundleStore.Remove(refs[0])
+
+		// Once removed there should be none left
+		assert.NilError(t, err)
+		bundles, err = bundleStore.List()
+		assert.NilError(t, err)
+		assert.Equal(t, len(bundles), 1)
+
+		err = bundleStore.Remove(refs[1])
+		assert.NilError(t, err)
+
+		bundles, err = bundleStore.List()
+		assert.NilError(t, err)
+		assert.Equal(t, len(bundles), 0)
+	})
+}

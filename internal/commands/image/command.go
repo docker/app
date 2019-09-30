@@ -12,7 +12,10 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 		Use:   "image",
 	}
 
-	cmd.AddCommand(listCmd(dockerCli))
+	cmd.AddCommand(
+		listCmd(dockerCli),
+		rmCmd(),
+	)
 
 	return cmd
 }

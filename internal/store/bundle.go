@@ -24,6 +24,7 @@ type BundleStore interface {
 	Store(ref reference.Named, bndle *bundle.Bundle) error
 	Read(ref reference.Named) (*bundle.Bundle, error)
 	List() ([]reference.Named, error)
+	Remove(ref reference.Named) error
 
 	LookupOrPullBundle(ref reference.Named, pullRef bool, config *configfile.ConfigFile, insecureRegistries []string) (*bundle.Bundle, error)
 }
@@ -95,6 +96,20 @@ func (b *bundleStore) List() ([]reference.Named, error) {
 	})
 
 	return references, nil
+}
+
+// Remove removes a bundle from the bundle store.
+func (b *bundleStore) Remove(ref reference.Named) error {
+	path, err := b.storePath(ref)
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return errors.New("no such image " + ref.String())
+	}
+
+	return os.Remove(path)
 }
 
 // LookupOrPullBundle will fetch the given bundle from the local
