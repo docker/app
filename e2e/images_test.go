@@ -66,10 +66,23 @@ func TestImageRm(t *testing.T) {
 		digest := insertBundles(t, cmd, dir, info)
 
 		cmd.Command = dockerCli.Command("app", "image", "rm", info.registryAddress+"/c-myapp@"+digest)
-		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 0,
+			Out:      "Deleted: " + info.registryAddress + "/c-myapp@" + digest,
+		})
 
-		cmd.Command = dockerCli.Command("app", "image", "rm", "a-simple-app:latest", "b-simple-app:latest")
-		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		cmd.Command = dockerCli.Command("app", "image", "rm", "a-simple-app", "b-simple-app:latest")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 0,
+			Out: `Deleted: a-simple-app:latest
+Deleted: b-simple-app:latest`,
+		})
+
+		cmd.Command = dockerCli.Command("app", "image", "rm", "b-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `Error: no such image b-simple-app:latest`,
+		})
 
 		expectedOutput := "REPOSITORY TAG APP NAME\n"
 		cmd.Command = dockerCli.Command("app", "image", "ls")

@@ -17,6 +17,9 @@ func rmCmd() *cobra.Command {
 		Use:   "rm [APP_IMAGE] [APP_IMAGE...]",
 		Short: "Remove an application image",
 		Args:  cli.RequiresMinArgs(1),
+		Example: `$ docker app image rm myapp
+$ docker app image rm myapp:1.0.0
+$ docker app image rm docker.io/library/myapp@sha256:beef...`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appstore, err := store.NewApplicationStore(config.Dir())
 			if err != nil {
@@ -48,11 +51,11 @@ func runRm(bundleStore store.BundleStore, app string) error {
 		return err
 	}
 
-	err = bundleStore.Remove(ref)
-	if err != nil {
+	tagged := reference.TagNameOnly(ref)
+	if err := bundleStore.Remove(tagged); err != nil {
 		return err
 	}
 
-	fmt.Println("Deleted: " + ref.String())
+	fmt.Println("Deleted: " + reference.FamiliarString(tagged))
 	return nil
 }
