@@ -181,7 +181,7 @@ func insecureRegistriesFromEngine(dockerCli command.Cli) ([]string, error) {
 
 	info, err := dockerCli.Client().Info(context.Background())
 	if err != nil {
-		return registries, fmt.Errorf("could not get docker info: %v", err)
+		return nil, fmt.Errorf("could not get docker info: %v", err)
 	}
 
 	for _, reg := range info.RegistryConfig.IndexConfigs {
