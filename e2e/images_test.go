@@ -78,6 +78,12 @@ func TestImageRm(t *testing.T) {
 Deleted: b-simple-app:latest`,
 		})
 
+		cmd.Command = dockerCli.Command("app", "image", "rm", "b-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `Error: no such image b-simple-app:latest`,
+		})
+
 		expectedOutput := "REPOSITORY TAG APP NAME\n"
 		cmd.Command = dockerCli.Command("app", "image", "ls")
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
