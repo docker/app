@@ -64,10 +64,6 @@ func getPackages(bundleStore store.BundleStore, references []reference.Named) ([
 			ref:    ref,
 		}
 
-		if r, ok := ref.(reference.NamedTagged); ok {
-			pk.taggedRef = r
-		}
-
 		packages[i] = pk
 	}
 
@@ -106,14 +102,8 @@ var (
 		header string
 		value  func(p pkg) string
 	}{
-		{"REPOSITORY", func(p pkg) string {
-			return reference.FamiliarName(p.ref)
-		}},
-		{"TAG", func(p pkg) string {
-			if p.taggedRef != nil {
-				return p.taggedRef.Tag()
-			}
-			return ""
+		{"APP IMAGE", func(p pkg) string {
+			return reference.FamiliarString(p.ref)
 		}},
 		{"APP NAME", func(p pkg) string {
 			return p.bundle.Name
@@ -122,7 +112,6 @@ var (
 )
 
 type pkg struct {
-	ref       reference.Named
-	taggedRef reference.NamedTagged
-	bundle    *bundle.Bundle
+	ref    reference.Named
+	bundle *bundle.Bundle
 }
