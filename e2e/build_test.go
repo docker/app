@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"github.com/deislabs/cnab-go/bundle"
 	"gotest.tools/assert"
+	"gotest.tools/fs"
 	"io/ioutil"
-	"os"
 	"path"
 	"testing"
 
@@ -17,10 +17,9 @@ func TestBuild(t *testing.T) {
 	defer cleanup()
 
 	testDir := path.Join("testdata", "build")
-	tmp, err := ioutil.TempDir("","")
-	assert.NilError(t, err)
-	defer os.Remove(tmp)
-	f := path.Join(tmp, "bundle.json")
+	dir := fs.NewDir(t, "test-name")
+	defer dir.Remove()
+	f := dir.Join("bundle.json")
 	cmd.Command = dockerCli.Command("app", "build", path.Join(testDir, "single"), "--output", f)
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 

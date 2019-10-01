@@ -239,7 +239,7 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.B
 		return nil, "", err
 	}
 	defer app.Cleanup()
-	bndl, err := makeBundleFromApp(dockerCli, app, nil)
+	bndl, err := packager.MakeBundleFromApp(dockerCli, app, nil)
 	return bndl, "", err
 }
 
