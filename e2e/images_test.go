@@ -13,10 +13,10 @@ import (
 
 var (
 	reg      = regexp.MustCompile("Digest is (.*).")
-	expected = `REPOSITORY             TAG    APP NAME
-%s        push-pull
-a-simple-app           latest simple
-b-simple-app           latest simple
+	expected = `APP IMAGE                                                                                      APP NAME
+%s push-pull
+a-simple-app:latest                                                                            simple
+b-simple-app:latest                                                                            simple
 `
 )
 
@@ -48,9 +48,9 @@ func TestImageList(t *testing.T) {
 		dir := fs.NewDir(t, "")
 		defer dir.Remove()
 
-		insertBundles(t, cmd, dir, info)
+		digest := insertBundles(t, cmd, dir, info)
 
-		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp")
+		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp@"+digest)
 		cmd.Command = dockerCli.Command("app", "image", "ls")
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		assert.Equal(t, result.Stdout(), expectedOutput)
@@ -84,7 +84,7 @@ Deleted: b-simple-app:latest`,
 			Err:      `Error: no such image b-simple-app:latest`,
 		})
 
-		expectedOutput := "REPOSITORY TAG APP NAME\n"
+		expectedOutput := "APP IMAGE APP NAME\n"
 		cmd.Command = dockerCli.Command("app", "image", "ls")
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		assert.Equal(t, result.Stdout(), expectedOutput)
