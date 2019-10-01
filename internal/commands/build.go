@@ -5,8 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/types"
 	"github.com/docker/distribution/reference"
+	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/opencontainers/go-digest"
@@ -26,7 +29,6 @@ import (
 	_ "github.com/docker/buildx/driver/docker" // required to get default driver registered, see driver/docker/factory.go:14
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	dockerclient "github.com/docker/docker/client"
 	"github.com/moby/buildkit/util/appcontext"
 	"github.com/spf13/cobra"
 )
@@ -45,7 +47,7 @@ func buildCmd(dockerCli command.Cli) *cobra.Command {
 		Use:     "build [APPLICATION]",
 		Short:   "Build service images for the application",
 		Example: `$ docker app build myapp.dockerapp`,
-		Args:    cli.RequiresRangeArgs(1, 1),
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			tag, err := runBuild(dockerCli, args[0], opts)
 			if err == nil {
@@ -73,33 +75,20 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	defer app.Cleanup()
 	appname := app.Name
 
-	bundle, err := makeBundleFromApp(dockerCli, app, nil)
+	bundle, err := packager.MakeBundleFromApp(dockerCli, app, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx := appcontext.Context()
-
-	compose, err := bake.ParseCompose(app.Composes()[0]) // Fixme can have > 1 composes ?
+	targets, err := parseCompose(app)
 	if err != nil {
 		return nil, err
-	}
-
-	targets := map[string]bake.Target{}
-	for _, n := range compose.ResolveGroup("default") {
-		t, err := compose.ResolveTarget(n)
-		if err != nil {
-			return nil, err
-		}
-		if t != nil {
-			targets[n] = *t
-		}
 	}
 
 	for service, t := range targets {
 		if strings.HasPrefix(*t.Context, ".") {
 			// Relative path in compose file under x.dockerapp refers to parent folder
-			// FIXME docker app init should maybe udate them ?
+			// FIXME docker app init should maybe update them ?
 			path, err := filepath.Abs(appname + "/../" + (*t.Context)[1:])
 			if err != nil {
 				return nil, err
@@ -108,33 +97,19 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 			targets[service] = t
 		}
 	}
-
-	if logrus.IsLevelEnabled(logrus.DebugLevel)	{
-		dt, err := json.MarshalIndent(targets, "", "   ")
-		if err != nil {
-			return nil, err
-		}
-		logrus.Debug(string(dt))
-	}
+	debugTargets(targets)
 
 	buildopts, err := bake.TargetsToBuildOpt(targets, opt.noCache, opt.pull)
 	if err != nil {
 		return nil, err
 	}
 
-	buildContext := bytes.NewBuffer(nil)
-	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
+	buildopts["invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app)
+	if err != nil {
 		return nil, err
 	}
 
-	buildopts["invocation-image"] = build.Options{
-		Inputs:      build.Inputs{
-			InStream: buildContext,
-			ContextPath: "-",
-		},
-		Session:     []session.Attachable{authprovider.NewDockerAuthProvider(os.Stderr)},
-	}
-
+	ctx := appcontext.Context()
 	d, err := driver.GetDriver(ctx, "buildx_buildkit_default", nil, dockerCli.Client(), nil, "", nil)
 	if err != nil {
 		return nil, err
@@ -146,23 +121,19 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		},
 	}
 
-	ctx2, cancel := context.WithCancel(context.TODO())
+	ctx2, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	pw := progress.NewPrinter(ctx2, os.Stderr, opt.progress)
-	resp, err := build.Build(ctx2, driverInfo, buildopts, dockerAPI(dockerCli), dockerCli.ConfigFile(), pw)
+
+	// We rely on buildx "docker" builder integrated in docker engine, so don't nee a DockerAPI here
+	resp, err := build.Build(ctx2, driverInfo, buildopts, nil, dockerCli.ConfigFile(), pw)
 	if err != nil {
 		return nil, err
 	}
 
 	fmt.Println("Successfully built service images")
-	if logrus.IsLevelEnabled(logrus.DebugLevel)	{
-		dt, err := json.MarshalIndent(resp, "", "   ")
-		if err != nil {
-			return nil, err
-		}
-		logrus.Debug(string(dt))
-	}
+	debugSolveResponses(resp)
 
 	for service, r := range resp {
 		digest := r.ExporterResponse["containerimage.digest"]
@@ -175,32 +146,20 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 			image.Digest = digest
 			bundle.Images[service] = image
 		}
-		fmt.Printf("    - %s : %s\n", service, digest)
+		fmt.Fprintf(dockerCli.Out(), "    - %s : %s\n", service, digest)
 	}
-
-	if logrus.IsLevelEnabled(logrus.DebugLevel) {
-		dt, err := json.MarshalIndent(resp, "", "   ")
-		if err != nil {
-			return nil, err
-		}
-		logrus.Debug(string(dt))
-	}
+	debugBundle(bundle)
 
 	var ref reference.Named
-	ref, err = getNamedTagged(opt.tag)
+	ref, err = packager.GetNamedTagged(opt.tag)
 	if err != nil {
 		return nil, err
 	}
 	if ref == nil {
-		b := bytes.Buffer{}
-		_, err := bundle.WriteTo(&b)
-		if err != nil {
+		if ref, err = computeDigest(bundle); err != nil {
 			return nil, err
 		}
-		digest := digest.SHA256.FromBytes(b.Bytes())
-		ref	= sha{digest}
 	}
-
 
 	if opt.out != "" {
 		b, err := json.MarshalIndent(bundle, "", "  ")
@@ -215,45 +174,110 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		return ref, err
 	}
 
-	if err := persistInBundleStore(ref, bundle); err != nil {
+	if err := packager.PersistInBundleStore(ref, bundle); err != nil {
 		return ref, err
 	}
 
 	return ref, nil
 }
 
+func computeDigest(bundle *bundle.Bundle) (reference.Named, error) {
+	b := bytes.Buffer{}
+	_, err := bundle.WriteTo(&b)
+	if err != nil {
+		return nil, err
+	}
+	digest := digest.SHA256.FromBytes(b.Bytes())
+	ref := sha{digest}
+	return ref, nil
+}
+
+func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (build.Options, error) {
+	buildContext := bytes.NewBuffer(nil)
+	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
+		return build.Options{}, err
+	}
+	return build.Options{
+		Inputs: build.Inputs{
+			InStream:    buildContext,
+			ContextPath: "-",
+		},
+		Session: []session.Attachable{authprovider.NewDockerAuthProvider(os.Stderr)},
+	}, nil
+}
+
+func debugTargets(targets map[string]bake.Target) {
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		dt, err := json.MarshalIndent(targets, "", "   ")
+		if err != nil {
+			logrus.Debugf("Failed to marshal Buildx response: %s", err.Error())
+		} else {
+			logrus.Debug(string(dt))
+		}
+	}
+}
+
+func debugBundle(bundle *bundle.Bundle) {
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		dt, err := json.MarshalIndent(bundle, "", "   ")
+		if err != nil {
+			logrus.Debugf("Failed to marshal Bundle: %s", err.Error())
+		} else {
+			logrus.Debug(string(dt))
+		}
+	}
+}
+
+func debugSolveResponses(resp map[string]*client.SolveResponse) {
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		dt, err := json.MarshalIndent(resp, "", "   ")
+		if err != nil {
+			logrus.Debugf("Failed to marshal Buildx response: %s", err.Error())
+		} else {
+			logrus.Debug(string(dt))
+		}
+	}
+}
+
+// parseCompose do parse app compose file and extract buildx targets
+func parseCompose(app *types.App) (map[string]bake.Target, error) {
+	compose, err := bake.ParseCompose(app.Composes()[0])
+	// Fixme can have > 1 composes ?
+	if err != nil {
+		return nil, err
+	}
+	targets := map[string]bake.Target{}
+	for _, n := range compose.ResolveGroup("default") {
+		t, err := compose.ResolveTarget(n)
+		if err != nil {
+			return nil, err
+		}
+		if t != nil {
+			targets[n] = *t
+		}
+	}
+	return targets, nil
+}
+
+
 type sha struct {
 	d digest.Digest
 }
+var _ reference.Named = sha{""}
+var _ reference.Digested = sha{""}
 
+// Digest implement Digested.Digest()
 func (s sha) Digest() digest.Digest {
 	return s.d
 }
 
+// Digest implement Named.String()
 func (s sha) String() string {
 	return s.d.String()
 }
 
+// Digest implement Named.Name()
 func (s sha) Name() string {
 	return s.d.String()
 }
 
-var _ reference.Named = sha{""}
-var _ reference.Digested = sha{""}
-
-
-/// FIXME copy from vendor/github.com/docker/buildx/commands/util.go:318 could probably be made public
-func dockerAPI(dockerCli command.Cli) *api {
-	return &api{dockerCli: dockerCli}
-}
-
-type api struct {
-	dockerCli command.Cli
-}
-
-func (a *api) DockerAPI(name string) (dockerclient.APIClient, error) {
-	if name == "" {
-		name = a.dockerCli.CurrentContext()
-	}
-	return nil, fmt.Errorf("Only support default context in this prototype")
-}

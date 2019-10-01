@@ -1,4 +1,4 @@
-package commands
+package packager
 
 import (
 	"testing"
@@ -34,9 +34,9 @@ func TestMakeInvocationImage(t *testing.T) {
 	}
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			ref, err := getNamedTagged(c.tag)
+			ref, err := GetNamedTagged(c.tag)
 			assert.NilError(t, err)
-			actual, err := makeInvocationImageName(c.meta, ref)
+			actual, err := MakeInvocationImageName(c.meta, ref)
 			if c.err != "" {
 				assert.ErrorContains(t, err, c.err)
 				assert.Equal(t, actual, "", "On "+c.meta.Name)

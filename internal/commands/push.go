@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/docker/app/internal/packager"
 	"io"
 	"io/ioutil"
 	"os"
@@ -202,7 +203,7 @@ func shouldRetagInvocationImage(meta metadata.AppMetadata, bndl *bundle.Bundle, 
 	imgName := tagOverride
 	var err error
 	if imgName == "" {
-		imgName, err = makeCNABImageName(meta.Name, meta.Version, "")
+		imgName, err = packager.MakeCNABImageName(meta.Name, meta.Version, "")
 		if err != nil {
 			return retagResult{}, err
 		}

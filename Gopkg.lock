@@ -236,7 +236,7 @@
   version = "v0.3.2-beta1"
 
 [[projects]]
-  digest = "1:fc67ad7796e9571f4b9986e7ef73160304e69c3157929518a9ddfe9735322459"
+  digest = "1:6093483b2ea90f1c0c5ec0fd75778650031bc3da75526b1bd87309d22e1e7d6b"
   name = "github.com/docker/buildx"
   packages = [
     "bake",
@@ -248,7 +248,8 @@
     "util/progress",
   ]
   pruneopts = "NUT"
-  revision = "96fb17b71125d4a11c904bd8a4298bac3b9e11e9"
+  revision = "6db68d029599c6710a32aa7adcba8e5a344795a7"
+  version = "v0.3.1"
 
 [[projects]]
   digest = "1:bc88d135d4f5d9a0968a213b3b2d786d1e216b9f10c30720f4d0d4976346732b"
@@ -712,7 +713,7 @@
   version = "v1.1.2"
 
 [[projects]]
-  digest = "1:4c3f5dc296bad571948333726a115427bab9caeeb732828d8f8f684a005557aa"
+  digest = "1:31d7e51628b4f5ed783d6923bac666dad0cad3ab6767477efc9c01c642a61f61"
   name = "github.com/moby/buildkit"
   packages = [
     "api/services/control",
@@ -748,7 +749,8 @@
     "util/system",
   ]
   pruneopts = "NUT"
-  revision = "f238f1efb04f00bf0cc147141fda9ddb55c8bc49"
+  revision = "ae10b292fefb00e0fbf9fecd1419c5f252e58895"
+  version = "v0.6.2"
 
 [[projects]]
   digest = "1:2f42fa12d6911c7b7659738758631bec870b7e9b4c6be5444f963cdcfccc191f"
@@ -1459,10 +1461,11 @@
     "github.com/docker/cli/cli/context/kubernetes",
     "github.com/docker/cli/cli/context/store",
     "github.com/docker/cli/cli/flags",
+    "github.com/docker/cli/cli/streams",
     "github.com/docker/cli/opts",
     "github.com/docker/cnab-to-oci/converter",
     "github.com/docker/cnab-to-oci/remotes",
-    "github.com/docker/distribution/manifest/manifestlist",
+    "github.com/docker/distribution/manifest/schema2",
     "github.com/docker/distribution/reference",
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/api/types/container",

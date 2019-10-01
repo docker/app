@@ -1,11 +1,10 @@
-package commands
+package packager
 
 import (
 	"bytes"
 	"context"
 	"fmt"
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
@@ -19,16 +18,16 @@ import (
 	"io/ioutil"
 )
 
-func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride reference.NamedTagged) (*bundle.Bundle, error) {
+func MakeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride reference.NamedTagged) (*bundle.Bundle, error) {
 	logrus.Debug("Making app bundle")
 	meta := app.Metadata()
-	invocationImageName, err := makeInvocationImageName(meta, refOverride)
+	invocationImageName, err := MakeInvocationImageName(meta, refOverride)
 	if err != nil {
 		return nil, err
 	}
 
 	buildContext := bytes.NewBuffer(nil)
-	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
+	if err := PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
 			return nil, err
 		}
 
@@ -46,23 +45,23 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride refere
 	if err := jsonmessage.DisplayJSONMessagesStream(buildResp.Body, ioutil.Discard, 0, false, func(jsonmessage.JSONMessage) {}); err != nil {
 		// If the invocation image can't be found we will get an error of the form:
 		// manifest for docker/cnab-app-base:v0.6.0-202-gbaf0b246c7 not found
-		if err.Error() == fmt.Sprintf("manifest for %s not found", packager.BaseInvocationImage(dockerCli)) {
-			return nil, fmt.Errorf("unable to resolve Docker App base image: %s", packager.BaseInvocationImage(dockerCli))
+		if err.Error() == fmt.Sprintf("manifest for %s not found", BaseInvocationImage(dockerCli)) {
+			return nil, fmt.Errorf("unable to resolve Docker App base image: %s", BaseInvocationImage(dockerCli))
 		}
 		return nil, err
 	}
 
-	return packager.ToCNAB(app, invocationImageName)
+	return ToCNAB(app, invocationImageName)
 }
 
-func makeInvocationImageName(meta metadata.AppMetadata, refOverride reference.NamedTagged) (string, error) {
+func MakeInvocationImageName(meta metadata.AppMetadata, refOverride reference.NamedTagged) (string, error) {
 	if refOverride != nil {
-		return makeCNABImageName(reference.FamiliarName(refOverride), refOverride.Tag(), "-invoc")
+		return MakeCNABImageName(reference.FamiliarName(refOverride), refOverride.Tag(), "-invoc")
 	}
-	return makeCNABImageName(meta.Name, meta.Version, "-invoc")
+	return MakeCNABImageName(meta.Name, meta.Version, "-invoc")
 }
 
-func makeCNABImageName(appName, appVersion, suffix string) (string, error) {
+func MakeCNABImageName(appName, appVersion, suffix string) (string, error) {
 	name := fmt.Sprintf("%s:%s%s", appName, appVersion, suffix)
 	if _, err := reference.ParseNormalizedNamed(name); err != nil {
 		return "", errors.Wrapf(err, "image name %q is invalid, please check name and version fields", name)
@@ -70,7 +69,7 @@ func makeCNABImageName(appName, appVersion, suffix string) (string, error) {
 	return name, nil
 }
 
-func persistInBundleStore(ref reference.Named, bndle *bundle.Bundle) error {
+func PersistInBundleStore(ref reference.Named, bndle *bundle.Bundle) error {
 	if ref == nil {
 		return nil
 	}
@@ -85,7 +84,7 @@ func persistInBundleStore(ref reference.Named, bndle *bundle.Bundle) error {
 	return bundleStore.Store(ref, bndle)
 }
 
-func getNamedTagged(tag string) (reference.NamedTagged, error) {
+func GetNamedTagged(tag string) (reference.NamedTagged, error) {
 	if tag == "" {
 		return nil, nil
 	}
