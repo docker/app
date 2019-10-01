@@ -266,7 +266,7 @@ func TestRemove(t *testing.T) {
 
 	t.Run("error on unknown", func(t *testing.T) {
 		err := bundleStore.Remove(parseRefOrDie(t, "my-repo/some-bundle:1.0.0"))
-		assert.Equal(t, err.Error(), "no such image docker.io/my-repo/some-bundle:1.0.0")
+		assert.Equal(t, err.Error(), "no such image my-repo/some-bundle:1.0.0")
 	})
 
 	t.Run("remove tagged and digested", func(t *testing.T) {

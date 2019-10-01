@@ -106,7 +106,7 @@ func (b *bundleStore) Remove(ref reference.Named) error {
 	}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return errors.New("no such image " + ref.String())
+		return errors.New("no such image " + reference.FamiliarString(ref))
 	}
 
 	return os.Remove(path)
