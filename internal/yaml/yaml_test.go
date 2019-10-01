@@ -21,7 +21,7 @@ h: &h [*g,*g,*g,*g,*g,*g,*g,*g,*g]
 i: &i [*h,*h,*h,*h,*h,*h,*h,*h,*h]`)
 	d := NewDecoder(bytes.NewBuffer(data))
 	err := d.Decode(&v)
-	assert.ErrorContains(t, err, "yaml: exceeded max number of decoded values (1000000)")
+	assert.ErrorContains(t, err, "yaml: document contains excessive aliasing")
 }
 
 func TestUnmarshalYamlBomb(t *testing.T) {
@@ -37,5 +37,5 @@ g: &g [*f,*f,*f,*f,*f,*f,*f,*f,*f]
 h: &h [*g,*g,*g,*g,*g,*g,*g,*g,*g]
 i: &i [*h,*h,*h,*h,*h,*h,*h,*h,*h]`)
 	err := Unmarshal(data, &v)
-	assert.ErrorContains(t, err, "yaml: exceeded max number of decoded values (1000000)")
+	assert.ErrorContains(t, err, "yaml: document contains excessive aliasing")
 }

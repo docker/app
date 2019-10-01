@@ -7,16 +7,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	maxDecodedValues = 1000000
-)
-
 // Unmarshal decodes the first document found within the in byte slice
 // and assigns decoded values into the out value.
 //
 // See gopkg.in/yaml.v2 documentation
 func Unmarshal(in []byte, out interface{}) error {
-	d := yaml.NewDecoder(bytes.NewBuffer(in), yaml.WithLimitDecodedValuesCount(maxDecodedValues))
+	d := yaml.NewDecoder(bytes.NewBuffer(in))
 	err := d.Decode(out)
 	if err == io.EOF {
 		return nil
@@ -37,5 +33,5 @@ func Marshal(in interface{}) ([]byte, error) {
 //
 // See gopkg.in/yaml.v2 documentation
 func NewDecoder(r io.Reader) *yaml.Decoder {
-	return yaml.NewDecoder(r, yaml.WithLimitDecodedValuesCount(maxDecodedValues))
+	return yaml.NewDecoder(r)
 }

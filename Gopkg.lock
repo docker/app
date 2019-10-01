@@ -226,7 +226,7 @@
   version = "v0.3.2-beta1"
 
 [[projects]]
-  digest = "1:5f5253dd1a588922925933e105c1de2d1a221cf0aa42d5c08549a12d93493024"
+  digest = "1:bc88d135d4f5d9a0968a213b3b2d786d1e216b9f10c30720f4d0d4976346732b"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -281,7 +281,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "83751b978155dc889c35e0e49654f76e7cf8d951"
+  revision = "d83cd90464377d4164c8f70248d064b979e5ca98"
 
 [[projects]]
   digest = "1:47edc537d608c0ad4ef8e9cebfec7c74ccc0986af115ff53ea26b18b4605a878"
@@ -340,7 +340,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:83ede099909456cf1f5d6de21e5108b1ea593d5d33859799bfa7d8e575281a3c"
+  digest = "1:315760c1c8784622f910cee4dbf9e9e670188f8b13971d839bca75b926fe52dd"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -1041,12 +1041,12 @@
   version = "v0.9.1"
 
 [[projects]]
-  digest = "1:62a00229c3bc24945de91bc7050e8bc8d19fce15e6fdc29760c8d2fff4790d74"
+  digest = "1:c0ce856ee6874fc944d5ee7ceb6c374321e027287c73a33b4c5fad666aedb3ea"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c86e64ed9581b7588e736f0c3e6ecc02cc22996e"
-  source = "https://github.com/simonferquel/yaml"
+  revision = "bb4e33bf68bf89cad44d386192cbed201f35b241"
+  version = "v2.2.3"
 
 [[projects]]
   digest = "1:9d7d5988129436e49ee34d17bf0229065f9c45e6fc85cad160464bd488dcacca"
