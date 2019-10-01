@@ -9,6 +9,7 @@ import (
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -61,7 +62,7 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
-	cmd.Flags().StringVar(&opts.stackName, "name", "", "Installation name (defaults to application name)")
+	cmd.Flags().StringVar(&opts.stackName, "name", "", "Assign a name to the installation")
 
 	return cmd
 }
@@ -88,7 +89,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	}
 	installationName := opts.stackName
 	if installationName == "" {
-		installationName = bndl.Name
+		installationName = namesgenerator.GetRandomName(0)
 	}
 	logrus.Debugf(`Looking for a previous installation "%q"`, installationName)
 	if installation, err := installationStore.Read(installationName); err == nil {
