@@ -48,11 +48,11 @@ func runRm(bundleStore store.BundleStore, app string) error {
 		return err
 	}
 
-	err = bundleStore.Remove(ref)
-	if err != nil {
+	tagged := reference.TagNameOnly(ref)
+	if err := bundleStore.Remove(tagged); err != nil {
 		return err
 	}
 
-	fmt.Println("Deleted: " + ref.String())
+	fmt.Println("Deleted: " + reference.FamiliarString(tagged))
 	return nil
 }
