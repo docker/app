@@ -77,11 +77,11 @@ func substituteParams(allParameters map[string]string, composeContent string) (s
 		}
 		//fail on default values enclosed within {}
 		if fail := groups["defvals"]; fail != "" {
-			return "", errors.Errorf("The default value syntax of compose file is not supported in Docker App. "+
+			return "", errors.Errorf("The default value syntax of Compose files is not supported in Docker App. "+
 				"The characters ':' and '-' are not allowed in parameter names. Invalid parameter: %s.", match[0])
 		}
 		if fail := groups["errormsg"]; fail != "" {
-			return "", errors.Errorf("The custom error message syntax of compose file is not supported in Docker App. "+
+			return "", errors.Errorf("The custom error message syntax of Compose files is not supported in Docker App. "+
 				"The characters ':' and '?' are not allowed in parameter names. Invalid parameter: %s.", match[0])
 		}
 		if skip := groups["skip"]; skip != "" {
