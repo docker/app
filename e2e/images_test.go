@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"gotest.tools/assert"
@@ -11,11 +10,7 @@ import (
 	"gotest.tools/icmd"
 )
 
-var (
-	reg = regexp.MustCompile("Digest is (.*).")
-)
-
-func insertBundles(t *testing.T, cmd icmd.Cmd, dir *fs.Dir, info dindSwarmAndRegistryInfo) {
+func insertBundles(t *testing.T, cmd icmd.Cmd, info dindSwarmAndRegistryInfo) {
 	// Push an application so that we can later pull it by digest
 	cmd.Command = dockerCli.Command("app", "build", "--tag", info.registryAddress+"/c-myapp", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -37,7 +32,7 @@ func TestImageList(t *testing.T) {
 		dir := fs.NewDir(t, "")
 		defer dir.Remove()
 
-		insertBundles(t, cmd, dir, info)
+		insertBundles(t, cmd, info)
 
 		expected := `APP IMAGE                     APP NAME
 %s push-pull
@@ -55,7 +50,7 @@ func TestImageRm(t *testing.T) {
 		dir := fs.NewDir(t, "")
 		defer dir.Remove()
 
-		insertBundles(t, cmd, dir, info)
+		insertBundles(t, cmd, info)
 
 		cmd.Command = dockerCli.Command("app", "image", "rm", info.registryAddress+"/c-myapp:latest")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{

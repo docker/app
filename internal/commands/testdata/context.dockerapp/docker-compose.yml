@@ -1,0 +1,6 @@
+version: "3.6"
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.custom
