@@ -110,19 +110,31 @@ a-simple-app:latest simple
 
 		// with no argument
 		cmd.Command = dockerCli.Command("app", "bundle", "tag")
-		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `"docker app image tag" requires exactly 2 arguments.`,
+		})
 
 		// with one argument
-		cmd.Command = dockerCli.Command("app", "bundle", "tag", "a-simple-app")
-		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `"docker app image tag" requires exactly 2 arguments.`,
+		})
 
 		// with invalid src reference
-		cmd.Command = dockerCli.Command("app", "bundle", "tag", "a-simple-app$2", "b-simple-app")
-		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app$2", "b-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `could not parse 'a-simple-app$2' as a valid reference: invalid reference format`,
+		})
 
 		// with invalid target reference
-		cmd.Command = dockerCli.Command("app", "bundle", "tag", "a-simple-app", "b@simple-app")
-		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "b@simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `could not parse 'b@simple-app' as a valid reference: invalid reference format`,
+		})
 
 		// tag image with only names
 		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "b-simple-app")
