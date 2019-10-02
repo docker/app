@@ -99,6 +99,11 @@ func TestImageTag(t *testing.T) {
 		dir := fs.NewDir(t, "")
 		defer dir.Remove()
 
+		dockerAppImageTag := func(args ...string) {
+			cmdArgs := append([]string{"app", "image", "tag"}, args...)
+			cmd.Command = dockerCli.Command(cmdArgs...)
+		}
+
 		// given a first available image
 		cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app", "--output", dir.Join("simple-bundle.json"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -109,35 +114,35 @@ a-simple-app:latest simple
 		expectImageListOutput(t, cmd, singleImageExpectation)
 
 		// with no argument
-		cmd.Command = dockerCli.Command("app", "bundle", "tag")
+		dockerAppImageTag()
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
 			Err:      `"docker app image tag" requires exactly 2 arguments.`,
 		})
 
 		// with one argument
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app")
+		dockerAppImageTag("a-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
 			Err:      `"docker app image tag" requires exactly 2 arguments.`,
 		})
 
 		// with invalid src reference
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app$2", "b-simple-app")
+		dockerAppImageTag("a-simple-app$2", "b-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
 			Err:      `could not parse 'a-simple-app$2' as a valid reference: invalid reference format`,
 		})
 
 		// with invalid target reference
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "b@simple-app")
+		dockerAppImageTag("a-simple-app", "b@simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
 			Err:      `could not parse 'b@simple-app' as a valid reference: invalid reference format`,
 		})
 
 		// tag image with only names
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "b-simple-app")
+		dockerAppImageTag("a-simple-app", "b-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
 a-simple-app:latest simple
@@ -145,7 +150,7 @@ b-simple-app:latest simple
 `)
 
 		// target tag
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "a-simple-app:0.1")
+		dockerAppImageTag("a-simple-app", "a-simple-app:0.1")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
 a-simple-app:0.1    simple
@@ -154,7 +159,7 @@ b-simple-app:latest simple
 `)
 
 		// source tag
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app:0.1", "c-simple-app")
+		dockerAppImageTag("a-simple-app:0.1", "c-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
 a-simple-app:0.1    simple
@@ -164,7 +169,7 @@ c-simple-app:latest simple
 `)
 
 		// source and target tags
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app:0.1", "b-simple-app:0.2")
+		dockerAppImageTag("a-simple-app:0.1", "b-simple-app:0.2")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
 a-simple-app:0.1    simple
@@ -187,7 +192,7 @@ push-pull:latest    push-pull
 `)
 
 		// can be tagged to an existing tag
-		cmd.Command = dockerCli.Command("app", "image", "tag", "push-pull", "b-simple-app:0.2")
+		dockerAppImageTag("push-pull", "b-simple-app:0.2")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
 a-simple-app:0.1    simple
