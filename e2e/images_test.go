@@ -15,26 +15,14 @@ var (
 	reg = regexp.MustCompile("Digest is (.*).")
 )
 
-func insertBundles(t *testing.T, cmd icmd.Cmd, dir *fs.Dir, info dindSwarmAndRegistryInfo) string {
+func insertBundles(t *testing.T, cmd icmd.Cmd, dir *fs.Dir, info dindSwarmAndRegistryInfo) {
 	// Push an application so that we can later pull it by digest
-	cmd.Command = dockerCli.Command("app", "push", "--tag", info.registryAddress+"/c-myapp", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
-	r := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	// Get the digest from the output of the pull command
-	out := r.Stdout()
-	matches := reg.FindAllStringSubmatch(out, 1)
-	digest := matches[0][1]
-
-	// Pull the app by digest
-	cmd.Command = dockerCli.Command("app", "pull", info.registryAddress+"/c-myapp@"+digest)
+	cmd.Command = dockerCli.Command("app", "build", "--tag", info.registryAddress+"/c-myapp", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "b-simple-app", "--output", dir.Join("simple-bundle.json"))
+	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "b-simple-app")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app", "--output", dir.Join("simple-bundle.json"))
+	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	return digest
 }
 
 func expectImageListOutput(t *testing.T, cmd icmd.Cmd, output string) {
@@ -49,14 +37,14 @@ func TestImageList(t *testing.T) {
 		dir := fs.NewDir(t, "")
 		defer dir.Remove()
 
-		digest := insertBundles(t, cmd, dir, info)
+		insertBundles(t, cmd, dir, info)
 
 		expected := `APP IMAGE                                                                                      APP NAME
 %s push-pull
-a-simple-app:latest                                                                            simple
-b-simple-app:latest                                                                            simple
+a-simple-app:latest           simple
+b-simple-app:latest           simple
 `
-		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp@"+digest)
+		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp:latest")
 		expectImageListOutput(t, cmd, expectedOutput)
 	})
 }
@@ -67,12 +55,12 @@ func TestImageRm(t *testing.T) {
 		dir := fs.NewDir(t, "")
 		defer dir.Remove()
 
-		digest := insertBundles(t, cmd, dir, info)
+		insertBundles(t, cmd, dir, info)
 
-		cmd.Command = dockerCli.Command("app", "image", "rm", info.registryAddress+"/c-myapp@"+digest)
+		cmd.Command = dockerCli.Command("app", "image", "rm", info.registryAddress+"/c-myapp:latest")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 0,
-			Out:      "Deleted: " + info.registryAddress + "/c-myapp@" + digest,
+			Out:      "Deleted: " + info.registryAddress + "/c-myapp:latest",
 		})
 
 		cmd.Command = dockerCli.Command("app", "image", "rm", "a-simple-app", "b-simple-app:latest")
@@ -96,8 +84,6 @@ Deleted: b-simple-app:latest`,
 func TestImageTag(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
-		dir := fs.NewDir(t, "")
-		defer dir.Remove()
 
 		dockerAppImageTag := func(args ...string) {
 			cmdArgs := append([]string{"app", "image", "tag"}, args...)
@@ -105,7 +91,7 @@ func TestImageTag(t *testing.T) {
 		}
 
 		// given a first available image
-		cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app", "--output", dir.Join("simple-bundle.json"))
+		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		singleImageExpectation := `APP IMAGE           APP NAME
@@ -119,6 +105,8 @@ a-simple-app:latest simple
 			ExitCode: 1,
 			Err:      `"docker app image tag" requires exactly 2 arguments.`,
 		})
+		cmd.Command = dockerCli.Command("app", "image", "tag")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// with one argument
 		dockerAppImageTag("a-simple-app")
@@ -126,6 +114,8 @@ a-simple-app:latest simple
 			ExitCode: 1,
 			Err:      `"docker app image tag" requires exactly 2 arguments.`,
 		})
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// with invalid src reference
 		dockerAppImageTag("a-simple-app$2", "b-simple-app")
@@ -133,6 +123,8 @@ a-simple-app:latest simple
 			ExitCode: 1,
 			Err:      `could not parse 'a-simple-app$2' as a valid reference: invalid reference format`,
 		})
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app$2", "b-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// with invalid target reference
 		dockerAppImageTag("a-simple-app", "b@simple-app")
@@ -154,6 +146,8 @@ a-simple-app:latest simple
 			ExitCode: 1,
 			Err:      `could not tag 'a-simple-app:not-a-tag': no such application image`,
 		})
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "b@simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// tag image with only names
 		dockerAppImageTag("a-simple-app", "b-simple-app")
@@ -194,7 +188,7 @@ c-simple-app:latest simple
 `)
 
 		// given a new application
-		cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "--tag", "push-pull", "--output", dir.Join("push-pull-bundle.json"))
+		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "--tag", "push-pull")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
 a-simple-app:0.1    simple
