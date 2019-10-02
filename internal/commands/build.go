@@ -5,30 +5,28 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+
 	"github.com/deislabs/cnab-go/bundle"
+	cnab "github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types"
+	"github.com/docker/buildx/build"
 	"github.com/docker/buildx/driver"
+	_ "github.com/docker/buildx/driver/docker" // required to get default driver registered, see driver/docker/factory.go:14
 	"github.com/docker/buildx/util/progress"
+	"github.com/docker/cli/cli"
+	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/distribution/reference"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/auth/authprovider"
+	"github.com/moby/buildkit/util/appcontext"
 	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
-
-	cnab "github.com/deislabs/cnab-go/driver"
-	"github.com/docker/buildx/build"
-	_ "github.com/docker/buildx/driver/docker" // required to get default driver registered, see driver/docker/factory.go:14
-	"github.com/docker/cli/cli"
-	"github.com/docker/cli/cli/command"
-	composetypes "github.com/docker/cli/cli/compose/types"
-	"github.com/moby/buildkit/util/appcontext"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +35,7 @@ type buildOptions struct {
 	progress string
 	pull     bool
 	tag      string
-	out		 string
+	out      string
 }
 
 func buildCmd(dockerCli command.Cli) *cobra.Command {
@@ -83,7 +81,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		return nil, err
 	}
 
-	_, err = createInvocationImageBuildOptions(dockerCli, app)
+	buildopts["invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +218,8 @@ func debugSolveResponses(resp map[string]*client.SolveResponse) {
 	}
 }
 
-// parseCompose do parse app compose file and extract buildx targets
+// parseCompose do parse app compose file and extract buildx Options
+// We don't rely on bake's ReadTargets + TargetsToBuildOpt here as we have to skip environment variable interpolation
 func parseCompose(app *types.App, options buildOptions) (map[string]build.Options, error) {
 
 	// Fixme can have > 1 composes ?
@@ -228,38 +227,59 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 	if err != nil {
 		return nil, err
 	}
-	compose, err := loader.Load(composetypes.ConfigDetails{
-		ConfigFiles: []composetypes.ConfigFile{
-			{
-				Config: parsed,
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
+
+	services, ok := parsed["services"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Invalid compose file: 'services' should be a map")
 	}
 
 	opts := map[string]build.Options{}
-	for _, service := range compose.Services {
-		b := service.Build
-		if b.Context == "" {
+	for name, cfg := range services {
+		config, ok := cfg.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Invalid compose file: service %s isn't a map", name)
+		}
+		bc, ok := config["build"]
+		if !ok {
 			continue
 		}
-
-		if b.Context, err = filepath.Abs(b.Context); err != nil {
-			return nil, err
-		}
+		var buildContext string
 		dockerfilePath := "Dockerfile"
-		if b.Dockerfile != "" {
-			dockerfilePath = b.Dockerfile
+		buildargs := map[string]string{}
+		switch bc.(type) {
+		case string:
+			buildContext = bc.(string)
+		case map[string]interface{}:
+			buildconfig := bc.(map[string]interface{})
+			buildContext = buildconfig["context"].(string)
+			if dockerfile, ok := buildconfig["dockerfile"]; ok {
+				dockerfilePath = dockerfile.(string)
+			}
+			if a, ok := buildconfig["args"]; ok {
+				switch a.(type) {
+				case map[string]interface{}:
+					for k, v := range a.(map[string]interface{}) {
+						buildargs[k] = v.(string)
+					}
+				// FIXME also support the list-style syntax
+				default:
+					return nil, fmt.Errorf("Invalid compose file: service %s build args is invalid", name)
+				}
+			}
+		default:
+			return nil, fmt.Errorf("Invalid compose file: service %s build is invalid", name)
 		}
-		dockerfilePath = path.Join(b.Context, dockerfilePath)
-		opts[service.Name] = build.Options{
+
+		// FIXME the compose file we build from x.dockerapp refers to docker context in parent folder.
+		// Maybe docker app init should update such relative paths accordingly ?
+		buildContext = path.Join(app.Path, "..", buildContext)
+		dockerfilePath = path.Join(buildContext, dockerfilePath)
+		opts[name] = build.Options{
 			Inputs: build.Inputs{
-				ContextPath:    b.Context,
+				ContextPath:    buildContext,
 				DockerfilePath: dockerfilePath,
 			},
-			// BuildArgs: t.Args, //FIXME introduce build args support in docker app build
+			BuildArgs: buildargs,
 			NoCache:   options.noCache,
 			Pull:      options.pull,
 		}
@@ -267,10 +287,10 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 	return opts, nil
 }
 
-
 type sha struct {
 	d digest.Digest
 }
+
 var _ reference.Named = sha{""}
 var _ reference.Digested = sha{""}
 
@@ -288,4 +308,3 @@ func (s sha) String() string {
 func (s sha) Name() string {
 	return s.d.String()
 }
-

@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/docker/app/internal/packager"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/docker/app/internal/packager"
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/deislabs/cnab-go/bundle"

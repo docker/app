@@ -39,7 +39,7 @@ func TestImageList(t *testing.T) {
 
 		insertBundles(t, cmd, dir, info)
 
-		expected := `APP IMAGE                                                                                      APP NAME
+		expected := `APP IMAGE                     APP NAME
 %s push-pull
 a-simple-app:latest           simple
 b-simple-app:latest           simple
