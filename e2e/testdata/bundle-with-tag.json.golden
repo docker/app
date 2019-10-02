@@ -16,7 +16,8 @@
 	"invocationImages": [
 		{
 			"imageType": "docker",
-			"image": "myimage:mytag-invoc"
+			"image": "myimage:mytag-invoc",
+			"contentDigest": "sha256:***"
 		}
 	],
 	"images": {
