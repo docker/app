@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types"
@@ -15,7 +17,6 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 )
 
 func MakeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride reference.NamedTagged) (*bundle.Bundle, error) {
@@ -28,15 +29,15 @@ func MakeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride refere
 
 	buildContext := bytes.NewBuffer(nil)
 	if err := PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
-			return nil, err
-		}
+		return nil, err
+	}
 
 	logrus.Debugf("Building invocation image %s", invocationImageName)
 	buildResp, err := dockerCli.Client().ImageBuild(context.TODO(), buildContext, dockertypes.ImageBuildOptions{
-			Dockerfile: "Dockerfile",
-			Tags:       []string{invocationImageName},
-			BuildArgs:  map[string]*string{},
-		})
+		Dockerfile: "Dockerfile",
+		Tags:       []string{invocationImageName},
+		BuildArgs:  map[string]*string{},
+	})
 	if err != nil {
 		return nil, err
 	}
