@@ -3,6 +3,8 @@ services:
   web:
     build:
       context: ./web
+    port:
+      ${services.web.port}:8080
   worker:
     build:
       context: ./worker
