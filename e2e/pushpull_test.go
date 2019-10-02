@@ -194,7 +194,7 @@ func TestPushInstallBundle(t *testing.T) {
 		bundleFile := tmpDir.Join("bundle.json")
 
 		// render the app to a bundle, we use the app from the push pull test above.
-		cmd.Command = dockerCli.Command("app", "bundle", "-o", bundleFile, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		cmd.Command = dockerCli.Command("app", "build", "-o", bundleFile, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		// push it and install to check it is available
@@ -242,7 +242,7 @@ func TestPushInstallBundle(t *testing.T) {
 			cmdIsolatedStore.Env = append(cmdIsolatedStore.Env, "DOCKER_CONTEXT=swarm-context")
 
 			// bundle the app again but this time with a tag to store it into the bundle store
-			cmdIsolatedStore.Command = dockerCli.Command("app", "bundle", "--tag", ref2, "-o", bundleFile, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+			cmdIsolatedStore.Command = dockerCli.Command("app", "build", "--tag", ref2, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 			icmd.RunCmd(cmdIsolatedStore).Assert(t, icmd.Success)
 			// Push the app without tagging it explicitly
 			cmdIsolatedStore.Command = dockerCli.Command("app", "push", ref2)
