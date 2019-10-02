@@ -37,7 +37,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cli"
-  revision = "83751b978155dc889c35e0e49654f76e7cf8d951"
+  revision = "d83cd90464377d4164c8f70248d064b979e5ca98"
 
 [[override]]
   name = "github.com/deislabs/cnab-go"
@@ -95,13 +95,6 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "k8s.io/client-go"
   revision = "kubernetes-1.14.1"
-
-# This is using a fork waiting for go-yaml/yaml#375 to be merged
-# This PR allows to set a max decoded value, thus not being exposed to yaml bombs
-[[override]]
-  name = "gopkg.in/yaml.v2"
-  source = "https://github.com/simonferquel/yaml"
-  revision = "c86e64ed9581b7588e736f0c3e6ecc02cc22996e"
 
 [[override]]
   name = "github.com/opencontainers/runtime-spec"

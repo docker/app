@@ -224,13 +224,15 @@ func (p *parser) mapping() *node {
 // Decoder, unmarshals a node into a provided value.
 
 type decoder struct {
-	doc           *node
-	aliases       map[*node]bool
-	mapType       reflect.Type
-	terrors       []string
-	strict        bool
-	maxValues     int
-	decodedValues int
+	doc     *node
+	aliases map[*node]bool
+	mapType reflect.Type
+	terrors []string
+	strict  bool
+
+	decodeCount int
+	aliasCount  int
+	aliasDepth  int
 }
 
 var (
@@ -317,6 +319,13 @@ func (d *decoder) prepare(n *node, out reflect.Value) (newout reflect.Value, unm
 }
 
 func (d *decoder) unmarshal(n *node, out reflect.Value) (good bool) {
+	d.decodeCount++
+	if d.aliasDepth > 0 {
+		d.aliasCount++
+	}
+	if d.aliasCount > 100 && d.decodeCount > 1000 && float64(d.aliasCount)/float64(d.decodeCount) > 0.99 {
+		failf("document contains excessive aliasing")
+	}
 	switch n.kind {
 	case documentNode:
 		return d.document(n, out)
@@ -337,11 +346,6 @@ func (d *decoder) unmarshal(n *node, out reflect.Value) (good bool) {
 	default:
 		panic("internal error: unknown node kind: " + strconv.Itoa(n.kind))
 	}
-	d.decodedValues++
-	if d.maxValues != 0 && d.decodedValues > d.maxValues {
-		good = false
-		failf("exceeded max number of decoded values (%d)", d.maxValues)
-	}
 	return good
 }
 
@@ -360,7 +364,9 @@ func (d *decoder) alias(n *node, out reflect.Value) (good bool) {
 		failf("anchor '%s' value contains itself", n.value)
 	}
 	d.aliases[n] = true
+	d.aliasDepth++
 	good = d.unmarshal(n.alias, out)
+	d.aliasDepth--
 	delete(d.aliases, n)
 	return good
 }
