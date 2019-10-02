@@ -8,6 +8,9 @@ import (
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types"
+	"github.com/docker/buildx/driver"
+	"github.com/docker/buildx/util/progress"
+	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/distribution/reference"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/session"
@@ -16,19 +19,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
-	"strings"
-
-	"github.com/docker/buildx/driver"
-
-	"github.com/docker/buildx/util/progress"
 
 	cnab "github.com/deislabs/cnab-go/driver"
-	"github.com/docker/buildx/bake"
 	"github.com/docker/buildx/build"
 	_ "github.com/docker/buildx/driver/docker" // required to get default driver registered, see driver/docker/factory.go:14
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/moby/buildkit/util/appcontext"
 	"github.com/spf13/cobra"
 )
@@ -73,41 +72,23 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		return nil, err
 	}
 	defer app.Cleanup()
-	appname := app.Name
 
 	bundle, err := packager.MakeBundleFromApp(dockerCli, app, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	targets, err := parseCompose(app)
+	buildopts, err := parseCompose(app, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	for service, t := range targets {
-		if strings.HasPrefix(*t.Context, ".") {
-			// Relative path in compose file under x.dockerapp refers to parent folder
-			// FIXME docker app init should maybe update them ?
-			path, err := filepath.Abs(appname + "/../" + (*t.Context)[1:])
-			if err != nil {
-				return nil, err
-			}
-			t.Context = &path
-			targets[service] = t
-		}
-	}
-	debugTargets(targets)
-
-	buildopts, err := bake.TargetsToBuildOpt(targets, opt.noCache, opt.pull)
+	_, err = createInvocationImageBuildOptions(dockerCli, app)
 	if err != nil {
 		return nil, err
 	}
 
-	buildopts["invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app)
-	if err != nil {
-		return nil, err
-	}
+	debugBuildOpts(buildopts)
 
 	ctx := appcontext.Context()
 	d, err := driver.GetDriver(ctx, "buildx_buildkit_default", nil, dockerCli.Client(), nil, "", nil)
@@ -206,11 +187,11 @@ func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (b
 	}, nil
 }
 
-func debugTargets(targets map[string]bake.Target) {
+func debugBuildOpts(opts map[string]build.Options) {
 	if logrus.IsLevelEnabled(logrus.DebugLevel) {
-		dt, err := json.MarshalIndent(targets, "", "   ")
+		dt, err := json.MarshalIndent(opts, "  > ", "   ")
 		if err != nil {
-			logrus.Debugf("Failed to marshal Buildx response: %s", err.Error())
+			logrus.Debugf("Failed to marshal Bundle: %s", err.Error())
 		} else {
 			logrus.Debug(string(dt))
 		}
@@ -219,7 +200,7 @@ func debugTargets(targets map[string]bake.Target) {
 
 func debugBundle(bundle *bundle.Bundle) {
 	if logrus.IsLevelEnabled(logrus.DebugLevel) {
-		dt, err := json.MarshalIndent(bundle, "", "   ")
+		dt, err := json.MarshalIndent(bundle, "  > ", "   ")
 		if err != nil {
 			logrus.Debugf("Failed to marshal Bundle: %s", err.Error())
 		} else {
@@ -230,7 +211,7 @@ func debugBundle(bundle *bundle.Bundle) {
 
 func debugSolveResponses(resp map[string]*client.SolveResponse) {
 	if logrus.IsLevelEnabled(logrus.DebugLevel) {
-		dt, err := json.MarshalIndent(resp, "", "   ")
+		dt, err := json.MarshalIndent(resp, "  > ", "   ")
 		if err != nil {
 			logrus.Debugf("Failed to marshal Buildx response: %s", err.Error())
 		} else {
@@ -240,23 +221,50 @@ func debugSolveResponses(resp map[string]*client.SolveResponse) {
 }
 
 // parseCompose do parse app compose file and extract buildx targets
-func parseCompose(app *types.App) (map[string]bake.Target, error) {
-	compose, err := bake.ParseCompose(app.Composes()[0])
+func parseCompose(app *types.App, options buildOptions) (map[string]build.Options, error) {
+
 	// Fixme can have > 1 composes ?
+	parsed, err := loader.ParseYAML(app.Composes()[0])
 	if err != nil {
 		return nil, err
 	}
-	targets := map[string]bake.Target{}
-	for _, n := range compose.ResolveGroup("default") {
-		t, err := compose.ResolveTarget(n)
-		if err != nil {
+	compose, err := loader.Load(composetypes.ConfigDetails{
+		ConfigFiles: []composetypes.ConfigFile{
+			{
+				Config: parsed,
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	opts := map[string]build.Options{}
+	for _, service := range compose.Services {
+		b := service.Build
+		if b.Context == "" {
+			continue
+		}
+
+		if b.Context, err = filepath.Abs(b.Context); err != nil {
 			return nil, err
 		}
-		if t != nil {
-			targets[n] = *t
+		dockerfilePath := "Dockerfile"
+		if b.Dockerfile != "" {
+			dockerfilePath = b.Dockerfile
+		}
+		dockerfilePath = path.Join(b.Context, dockerfilePath)
+		opts[service.Name] = build.Options{
+			Inputs: build.Inputs{
+				ContextPath:    b.Context,
+				DockerfilePath: dockerfilePath,
+			},
+			// BuildArgs: t.Args, //FIXME introduce build args support in docker app build
+			NoCache:   options.noCache,
+			Pull:      options.pull,
 		}
 	}
-	return targets, nil
+	return opts, nil
 }
 
 
