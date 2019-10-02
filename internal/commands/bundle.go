@@ -120,7 +120,13 @@ func makeBundleFromApp(dockerCli command.Cli, app *types.App, refOverride refere
 		}
 		return nil, err
 	}
-	return packager.ToCNAB(app, invocationImageName)
+
+	inspect, _, err := dockerCli.Client().ImageInspectWithRaw(context.TODO(), invocationImageName)
+	if err != nil {
+		return nil, err
+	}
+
+	return packager.ToCNAB(app, invocationImageName, inspect.ID)
 }
 
 func makeInvocationImageName(meta metadata.AppMetadata, refOverride reference.NamedTagged) (string, error) {

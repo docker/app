@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/app/internal/packager"
+	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +15,6 @@ import (
 	"github.com/docker/buildx/util/progress"
 
 	cnab "github.com/deislabs/cnab-go/driver"
-	"github.com/docker/app/internal"
 	"github.com/docker/buildx/bake"
 	"github.com/docker/buildx/build"
 	_ "github.com/docker/buildx/driver/docker" // required to get default driver registered, see driver/docker/factory.go:14
@@ -21,7 +22,6 @@ import (
 	"github.com/docker/cli/cli/command"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/moby/buildkit/util/appcontext"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -54,23 +54,33 @@ func buildCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runBuild(dockerCli command.Cli, application string, opt buildOptions) error {
-	appname := internal.DirNameFromAppName(application)
-	f := "./" + appname + "/" + internal.ComposeFileName
-	if _, err := os.Stat(f); err != nil {
-		if os.IsNotExist(errors.Cause(err)) {
-			return fmt.Errorf("no compose file at %s, did you selected the right docker app folder ?", f)
-		}
+	app, err := packager.Extract(application)
+	if err != nil {
+		return err
 	}
+	defer app.Cleanup()
+	appname := app.Name
 
-	bundle, err := makeBundle(dockerCli, application, nil)
+	bundle, err := makeBundleFromApp(dockerCli, app, nil)
 	if err != nil {
 		return err
 	}
 
 	ctx := appcontext.Context()
-	targets, err := bake.ReadTargets(ctx, []string{f}, []string{"default"}, nil)
+	compose, err := bake.ParseCompose(app.Composes()[0]) // Fixme can have > 1 composes ?
 	if err != nil {
 		return err
+	}
+
+	targets := map[string]bake.Target{}
+	for _, n := range compose.ResolveGroup("default") {
+		t, err := compose.ResolveTarget(n)
+		if err != nil {
+			return nil
+		}
+		if t != nil {
+			targets[n] = *t
+		}
 	}
 
 	for service, t := range targets {
@@ -87,18 +97,34 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 		}
 	}
 
-	// -- debug
-	dt, err := json.MarshalIndent(map[string]map[string]bake.Target{"target": targets}, "", "   ")
-	if err != nil {
-		return err
+	if logrus.IsLevelEnabled(logrus.DebugLevel)	{
+		dt, err := json.MarshalIndent(map[string]map[string]bake.Target{"target": targets}, "", "   ")
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(dockerCli.Out(), string(dt))
 	}
-	fmt.Fprintln(dockerCli.Out(), string(dt))
-	// -- debug
 
 	buildopts, err := bake.TargetsToBuildOpt(targets, opt.noCache, opt.pull)
 	if err != nil {
 		return err
 	}
+
+	/**
+	// FIXME it seems there's no way to setup a build.Options without a plain DockerContext path
+	buildContext := bytes.NewBuffer(nil)
+	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
+		return err
+	}
+
+	buildopts["invocation-image"] = build.Options{
+		Inputs:      build.Inputs{
+			InStream: buildContext,
+		},
+		Tags:        []string{ fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, "-invoc") },
+		Session:     []session.Attachable{authprovider.NewDockerAuthProvider(os.Stderr)},
+	}
+	*/
 
 	d, err := driver.GetDriver(ctx, "buildx_buildkit_default", nil, dockerCli.Client(), nil, "", nil)
 	if err != nil {
@@ -151,7 +177,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) error
 		image := bundle.Images[service]
 		image.ImageType = cnab.ImageTypeDocker
 		image.Image = fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
-		image.Digest = inspect.ID
+		image.Digest = inspect.ID // Content Digest
 		bundle.Images[service] = image
 		fmt.Printf("    - %s : %s:%s-%s (%s)\n", service, bundle.Name, bundle.Version, service, inspect.ID)
 	}
