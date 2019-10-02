@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -160,7 +161,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	return ref, nil
 }
 
-func computeDigest(bundle *bundle.Bundle) (reference.Named, error) {
+func computeDigest(bundle io.WriterTo) (reference.Named, error) {
 	b := bytes.Buffer{}
 	_, err := bundle.WriteTo(&b)
 	if err != nil {
@@ -245,7 +246,7 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 		}
 		var buildContext string
 		dockerfilePath := "Dockerfile"
-		buildargs := map[string]string{}
+		var buildargs map[string]string
 		switch bc.(type) {
 		case string:
 			buildContext = bc.(string)
@@ -258,6 +259,7 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 			if a, ok := buildconfig["args"]; ok {
 				switch a.(type) {
 				case map[string]interface{}:
+					buildargs = make(map[string]string)
 					for k, v := range a.(map[string]interface{}) {
 						buildargs[k] = v.(string)
 					}
