@@ -71,20 +71,21 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 }
 
 func TestRenderFormatters(t *testing.T) {
-	cmd, cleanup := dockerCli.createTestCmd()
-	defer cleanup()
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
 
-	appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
-	cmd.Command = dockerCli.Command("app", "build", appPath)
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
+		cmd.Command = dockerCli.Command("app", "build", appPath)
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-	cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
-	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	golden.Assert(t, result.Stdout(), "expected-json-render.golden")
+		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
+		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 
-	cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", appPath)
-	result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
+		cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", appPath)
+		result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
+	})
 }
 
 func TestInit(t *testing.T) {
