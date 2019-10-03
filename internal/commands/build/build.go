@@ -65,17 +65,15 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runBuild(dockerCli command.Cli, application string, opt buildOptions) (reference.Named, error) {
-	ctx := appcontext.Context()
-	info, err := dockerCli.Client().Info(ctx)
+	err := checkMinimalEngineVersion(dockerCli)
 	if err != nil {
 		return nil, err
 	}
-	majorVersion, err := strconv.Atoi(info.ServerVersion[:strings.IndexRune(info.ServerVersion, '.')])
+
+	var ref reference.Named
+	ref, err = packager.GetNamedTagged(opt.tag)
 	if err != nil {
 		return nil, err
-	}
-	if majorVersion < 19 {
-		return nil, errors.New("'build' require docker engine 19.03 or later")
 	}
 
 	app, err := packager.Extract(application)
@@ -101,6 +99,8 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 
 	debugBuildOpts(buildopts)
 
+	ctx, cancel := context.WithCancel(appcontext.Context())
+	defer cancel()
 	d, err := driver.GetDriver(ctx, "buildx_buildkit_default", nil, dockerCli.Client(), nil, "", nil)
 	if err != nil {
 		return nil, err
@@ -112,13 +112,10 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		},
 	}
 
-	ctx2, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	pw := progress.NewPrinter(ctx2, os.Stderr, opt.progress)
+	pw := progress.NewPrinter(ctx, os.Stderr, opt.progress)
 
 	// We rely on buildx "docker" builder integrated in docker engine, so don't nee a DockerAPI here
-	resp, err := build.Build(ctx2, driverInfo, buildopts, nil, dockerCli.ConfigFile(), pw)
+	resp, err := build.Build(ctx, driverInfo, buildopts, nil, dockerCli.ConfigFile(), pw)
 	if err != nil {
 		return nil, err
 	}
@@ -126,11 +123,6 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	fmt.Println("Successfully built service images")
 	updateBundle(bundle, resp)
 
-	var ref reference.Named
-	ref, err = packager.GetNamedTagged(opt.tag)
-	if err != nil {
-		return nil, err
-	}
 	if ref == nil {
 		if ref, err = computeDigest(bundle); err != nil {
 			return nil, err
@@ -141,6 +133,21 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		return nil, err
 	}
 	return ref, nil
+}
+
+func checkMinimalEngineVersion(dockerCli command.Cli) error {
+	info, err := dockerCli.Client().Info(appcontext.Context())
+	if err != nil {
+		return err
+	}
+	majorVersion, err := strconv.Atoi(info.ServerVersion[:strings.IndexRune(info.ServerVersion, '.')])
+	if err != nil {
+		return err
+	}
+	if majorVersion < 19 {
+		return errors.New("'build' require docker engine 19.03 or later")
+	}
+	return nil
 }
 
 func updateBundle(bundle *bundle.Bundle, resp map[string]*client.SolveResponse) {
