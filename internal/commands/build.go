@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
 	cnab "github.com/deislabs/cnab-go/driver"
@@ -66,6 +69,19 @@ func buildCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runBuild(dockerCli command.Cli, application string, opt buildOptions) (reference.Named, error) {
+	ctx := appcontext.Context()
+	info, err := dockerCli.Client().Info(ctx)
+	if err != nil {
+		return nil, err
+	}
+	majorVersion, err := strconv.Atoi(info.ServerVersion[:strings.IndexRune(info.ServerVersion, '.')])
+	if err != nil {
+		return nil, err
+	}
+	if majorVersion < 19 {
+		return nil, errors.New("'build' require docker engine 19.03 or later")
+	}
+
 	app, err := packager.Extract(application)
 	if err != nil {
 		return nil, err
@@ -89,7 +105,6 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 
 	debugBuildOpts(buildopts)
 
-	ctx := appcontext.Context()
 	d, err := driver.GetDriver(ctx, "buildx_buildkit_default", nil, dockerCli.Client(), nil, "", nil)
 	if err != nil {
 		return nil, err
