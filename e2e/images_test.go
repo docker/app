@@ -141,6 +141,20 @@ a-simple-app:latest simple
 			Err:      `could not parse 'b@simple-app' as a valid reference: invalid reference format`,
 		})
 
+		// with unexisting source image
+		dockerAppImageTag("b-simple-app", "target")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `could not tag 'b-simple-app': no such application image`,
+		})
+
+		// with unexisting source tag
+		dockerAppImageTag("a-simple-app:not-a-tag", "target")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `could not tag 'a-simple-app:not-a-tag': no such application image`,
+		})
+
 		// tag image with only names
 		dockerAppImageTag("a-simple-app", "b-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
