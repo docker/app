@@ -26,7 +26,7 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 		return nil, fmt.Errorf("Failed to parse compose file: %s", err)
 	}
 
-	var zeroBuildConfig BuildConfig
+	var zeroBuildConfig ImageBuildConfig
 	opts := map[string]build.Options{}
 	for _, service := range services {
 		if reflect.DeepEqual(service.Build, zeroBuildConfig) {
