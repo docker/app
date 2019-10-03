@@ -1,4 +1,4 @@
-package commands
+package build
 
 import (
 	"bytes"
@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 
@@ -23,13 +21,11 @@ import (
 	"github.com/docker/buildx/util/progress"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/distribution/reference"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/moby/buildkit/util/appcontext"
-	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -42,7 +38,7 @@ type buildOptions struct {
 	out      string
 }
 
-func buildCmd(dockerCli command.Cli) *cobra.Command {
+func BuildCmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
 		Use:     "build [APPLICATION]",
@@ -176,17 +172,6 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	return ref, nil
 }
 
-func computeDigest(bundle io.WriterTo) (reference.Named, error) {
-	b := bytes.Buffer{}
-	_, err := bundle.WriteTo(&b)
-	if err != nil {
-		return nil, err
-	}
-	digest := digest.SHA256.FromBytes(b.Bytes())
-	ref := sha{digest}
-	return ref, nil
-}
-
 func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (build.Options, error) {
 	buildContext := bytes.NewBuffer(nil)
 	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
@@ -232,96 +217,4 @@ func debugSolveResponses(resp map[string]*client.SolveResponse) {
 			logrus.Debug(string(dt))
 		}
 	}
-}
-
-// parseCompose do parse app compose file and extract buildx Options
-// We don't rely on bake's ReadTargets + TargetsToBuildOpt here as we have to skip environment variable interpolation
-func parseCompose(app *types.App, options buildOptions) (map[string]build.Options, error) {
-
-	// Fixme can have > 1 composes ?
-	parsed, err := loader.ParseYAML(app.Composes()[0])
-	if err != nil {
-		return nil, err
-	}
-
-	services, ok := parsed["services"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("Invalid compose file: 'services' should be a map")
-	}
-
-	opts := map[string]build.Options{}
-	for name, cfg := range services {
-		config, ok := cfg.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("Invalid compose file: service %s isn't a map", name)
-		}
-		bc, ok := config["build"]
-		if !ok {
-			continue
-		}
-		var buildContext string
-		dockerfilePath := "Dockerfile"
-		var buildargs map[string]string
-		switch bc.(type) {
-		case string:
-			buildContext = bc.(string)
-		case map[string]interface{}:
-			buildconfig := bc.(map[string]interface{})
-			buildContext = buildconfig["context"].(string)
-			if dockerfile, ok := buildconfig["dockerfile"]; ok {
-				dockerfilePath = dockerfile.(string)
-			}
-			if a, ok := buildconfig["args"]; ok {
-				switch a.(type) {
-				case map[string]interface{}:
-					buildargs = make(map[string]string)
-					for k, v := range a.(map[string]interface{}) {
-						buildargs[k] = v.(string)
-					}
-				// FIXME also support the list-style syntax
-				default:
-					return nil, fmt.Errorf("Invalid compose file: service %s build args is invalid", name)
-				}
-			}
-		default:
-			return nil, fmt.Errorf("Invalid compose file: service %s build is invalid", name)
-		}
-
-		// FIXME the compose file we build from x.dockerapp refers to docker context in parent folder.
-		// Maybe docker app init should update such relative paths accordingly ?
-		buildContext = path.Join(app.Path, "..", buildContext)
-		dockerfilePath = path.Join(buildContext, dockerfilePath)
-		opts[name] = build.Options{
-			Inputs: build.Inputs{
-				ContextPath:    buildContext,
-				DockerfilePath: dockerfilePath,
-			},
-			BuildArgs: buildargs,
-			NoCache:   options.noCache,
-			Pull:      options.pull,
-		}
-	}
-	return opts, nil
-}
-
-type sha struct {
-	d digest.Digest
-}
-
-var _ reference.Named = sha{""}
-var _ reference.Digested = sha{""}
-
-// Digest implement Digested.Digest()
-func (s sha) Digest() digest.Digest {
-	return s.d
-}
-
-// Digest implement Named.String()
-func (s sha) String() string {
-	return s.d.String()
-}
-
-// Digest implement Named.Name()
-func (s sha) Name() string {
-	return s.d.String()
 }

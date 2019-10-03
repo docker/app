@@ -2,3 +2,5 @@ version: "3.6"
 services:
   web:
     build: ./web
+  dontwant:
+    image: postgres:9.3
