@@ -44,6 +44,7 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 			BuildArgs: flatten(service.Build.Args),
 			NoCache:   options.noCache,
 			Pull:      options.pull,
+			Tags:      []string{fmt.Sprintf("%s:%s-%s", app.Metadata().Name, app.Metadata().Version, service.Name)},
 		}
 	}
 	return opts, nil

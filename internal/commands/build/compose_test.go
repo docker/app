@@ -24,6 +24,7 @@ func Test_parseCompose(t *testing.T) {
 					ContextPath:    "testdata/web",
 					DockerfilePath: "testdata/web/Dockerfile",
 				},
+				Tags: []string{"simple:1.1.0-beta1-web"},
 			},
 		},
 		{
@@ -34,6 +35,7 @@ func Test_parseCompose(t *testing.T) {
 					ContextPath:    "testdata/web",
 					DockerfilePath: "testdata/web/Dockerfile.custom",
 				},
+				Tags: []string{"context:1.1.0-beta1-web"},
 			},
 		},
 		{
@@ -45,6 +47,7 @@ func Test_parseCompose(t *testing.T) {
 					DockerfilePath: "testdata/web/Dockerfile",
 				},
 				BuildArgs: map[string]string{"foo": "bar"},
+				Tags:      []string{"withargs:1.1.0-beta1-web"},
 			},
 		},
 	}
