@@ -19,10 +19,11 @@ type inspectOptions struct {
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	var opts inspectOptions
 	cmd := &cobra.Command{
-		Use:     "inspect [APP_NAME] [OPTIONS]",
-		Short:   "Shows metadata, parameters and a summary of the Compose file for a given application",
-		Example: `$ docker app inspect my-app`,
-		Args:    cli.RequiresMaxArgs(1),
+		Use:   "inspect [APP_NAME] [OPTIONS]",
+		Short: "Shows metadata, parameters and a summary of the Compose file for a given application",
+		Example: `$ docker app inspect my-installed-app
+$docker app inspect my-app:1.0.0`,
+		Args: cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInspect(dockerCli, firstOrEmpty(args), opts)
 		},
@@ -42,7 +43,8 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if err != nil {
 		return err
 	}
-	bundle, ref, err := getLocalBundle(dockerCli, bundleStore, appname, false)
+	bndl, ref, err := getLocalBundle(dockerCli, bundleStore, appname, false)
+
 	if err != nil {
 		return err
 	}
@@ -50,7 +52,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if err != nil {
 		return err
 	}
-	installation.Bundle = bundle
+	installation.Bundle = bndl
 
 	driverImpl, errBuf := prepareDriver(dockerCli, bindMount{}, nil)
 	a := &action.RunCustom{
@@ -62,7 +64,9 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if opts.pretty {
 		format = "pretty"
 	}
-	installation.Parameters[internal.ParameterInspectFormatName] = format
+
+	installation.SetParameter(internal.ParameterInspectFormatName, format)
+
 	if err := a.Run(&installation.Claim, nil, nil); err != nil {
 		return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
 	}

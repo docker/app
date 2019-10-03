@@ -8,11 +8,5 @@
                 "email": "dev@example.com"
             }
         ]
-    },
-    "Services": [],
-    "Networks": [],
-    "Volumes": [],
-    "Secrets": [],
-    "Parameters": {},
-    "Attachments": []
+    }
 }

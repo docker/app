@@ -15,14 +15,12 @@
             "Name": "web1",
             "Image": "nginx:latest",
             "Replicas": 2,
-            "Mode": "",
             "Ports": "8080-8100"
         },
         {
             "Name": "web2",
             "Image": "nginx:latest",
             "Replicas": 2,
-            "Mode": "",
             "Ports": "9080-9100"
         }
     ],

@@ -18,22 +18,17 @@
         {
             "Name": "api",
             "Image": "python:3.6",
-            "Replicas": 1,
-            "Mode": "",
-            "Ports": ""
+            "Replicas": 1
         },
         {
             "Name": "db",
             "Image": "postgres:9.3",
-            "Replicas": 1,
-            "Mode": "",
-            "Ports": ""
+            "Replicas": 1
         },
         {
             "Name": "web",
             "Image": "nginx:latest",
             "Replicas": 1,
-            "Mode": "",
             "Ports": "8082"
         }
     ],
@@ -44,11 +39,9 @@
     "Volumes": [
         "static"
     ],
-    "Secrets": [],
     "Parameters": {
         "api_host": "example.com",
         "static_subdir": "data/static",
         "web_port": "8082"
-    },
-    "Attachments": []
+    }
 }

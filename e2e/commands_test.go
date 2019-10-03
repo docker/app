@@ -170,9 +170,7 @@ func TestInspectApp(t *testing.T) {
 	cmd.Command = dockerCli.Command("app", "inspect", "simple-app:1.0.0")
 	cmd.Dir = dir.Path()
 	output := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
-	fmt.Println(output)
 	golden.Assert(t, output, "app-inspect.golden")
-
 }
 
 func TestBundle(t *testing.T) {

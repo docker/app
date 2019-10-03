@@ -2,11 +2,5 @@
     "Metadata": {
         "version": "0.1.0",
         "name": "myapp"
-    },
-    "Services": [],
-    "Networks": [],
-    "Volumes": [],
-    "Secrets": [],
-    "Parameters": {},
-    "Attachments": []
+    }
 }

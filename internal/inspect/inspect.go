@@ -20,72 +20,87 @@ import (
 )
 
 type service struct {
-	Name     string
-	Image    string
-	Replicas int
-	Mode     string
-	Ports    string
+	Name     string `json:",omitempty"`
+	Image    string `json:",omitempty"`
+	Replicas int    `json:",omitempty"`
+	Mode     string `json:",omitempty"`
+	Ports    string `json:",omitempty"`
 }
 
 type attachment struct {
-	Path string
-	Size int64
+	Path string `json:",omitempty"`
+	Size int64  `json:",omitempty"`
 }
 
 type appInfo struct {
-	Metadata       metadata.AppMetadata
-	Services       []service
-	Networks       []string
-	Volumes        []string
-	Secrets        []string
+	Metadata       metadata.AppMetadata `json:",omitempty"`
+	Services       []service            `json:",omitempty"`
+	Networks       []string             `json:",omitempty"`
+	Volumes        []string             `json:",omitempty"`
+	Secrets        []string             `json:",omitempty"`
 	parametersKeys []string
-	Parameters     map[string]string
-	Attachments    []attachment
+	Parameters     map[string]string `json:",omitempty"`
+	Attachments    []attachment      `json:",omitempty"`
 }
 
 // Inspect dumps the metadata of an app
 func Inspect(out io.Writer, app *types.App, argParameters map[string]string, imageMap map[string]bundle.Image) error {
-	outputFormat := os.Getenv(internal.DockerInspectFormatEnvVar)
-
 	// Render the compose file
 	config, err := render.Render(app, argParameters, imageMap)
 	if err != nil {
 		return err
 	}
 
+	// Collect all the relevant information about the application
 	appInfo, err := getAppInfo(app, config, argParameters)
 	if err != nil {
 		return err
 	}
 
-	if outputFormat == "json" {
-		js, err := json.MarshalIndent(appInfo, "", "    ")
-		if err != nil {
-			return err
-		}
-		fmt.Fprintln(out, string(js))
-		return nil
-	}
+	outputFormat := os.Getenv(internal.DockerInspectFormatEnvVar)
+	return printAppInfo(out, appInfo, outputFormat)
+}
 
+func printAppInfo(out io.Writer, app appInfo, format string) error {
+	switch format {
+	case "pretty":
+		return printTable(out, app)
+	case "json":
+		return printJSON(out, app)
+	default:
+		return fmt.Errorf("unknown format %q", format)
+	}
+}
+
+func printJSON(out io.Writer, appInfo appInfo) error {
+	js, err := json.MarshalIndent(appInfo, "", "    ")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(out, string(js))
+	return nil
+}
+
+func printTable(out io.Writer, appInfo appInfo) error {
 	// Add Meta data
 	printMetadata(out, appInfo)
 
 	// Add Service section
-	printSection(out, len(config.Services), func(w io.Writer) {
+	printSection(out, len(appInfo.Services), func(w io.Writer) {
 		for _, service := range appInfo.Services {
 			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, service.Replicas, service.Ports, service.Image)
 		}
 	}, "Service", "Replicas", "Ports", "Image")
 
 	// Add Network section
-	printSection(out, len(config.Networks), func(w io.Writer) {
+	printSection(out, len(appInfo.Networks), func(w io.Writer) {
 		for _, name := range appInfo.Networks {
 			fmt.Fprintln(w, name)
 		}
 	}, "Network")
 
 	// Add Volume section
-	printSection(out, len(config.Volumes), func(w io.Writer) {
+	printSection(out, len(appInfo.Volumes), func(w io.Writer) {
 		for _, name := range appInfo.Volumes {
 			fmt.Fprintln(w, name)
 		}
@@ -105,14 +120,13 @@ func Inspect(out io.Writer, app *types.App, argParameters map[string]string, ima
 		}
 	}, "Parameter", "Value")
 
-	// // Add Attachments section
+	// Add Attachments section
 	printSection(out, len(appInfo.Attachments), func(w io.Writer) {
 		for _, attachment := range appInfo.Attachments {
 			sizeString := units.HumanSize(float64(attachment.Size))
 			fmt.Fprintf(w, "%s\t%s\n", attachment.Path, sizeString)
 		}
 	}, "Attachment", "Size")
-
 	return nil
 }
 
