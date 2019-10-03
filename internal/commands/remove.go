@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
@@ -54,10 +53,10 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 				return
 			}
 			if err := installationStore.Delete(installationName); err != nil {
-				fmt.Fprintf(os.Stderr, "failed to force deletion of installation %q: %s\n", installationName, err)
+				fmt.Fprintf(dockerCli.Err(), "failed to force deletion of installation %q: %s\n", installationName, err)
 				return
 			}
-			fmt.Fprintf(os.Stderr, "deletion forced for installation %q\n", installationName)
+			fmt.Fprintf(dockerCli.Err(), "deletion forced for installation %q\n", installationName)
 		}()
 	}
 	bind, err := requiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
@@ -75,7 +74,7 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 	uninst := &action.Uninstall{
 		Driver: driverImpl,
 	}
-	if err := uninst.Run(&installation.Claim, creds, os.Stdout); err != nil {
+	if err := uninst.Run(&installation.Claim, creds, dockerCli.Out()); err != nil {
 		if err2 := installationStore.Store(installation); err2 != nil {
 			return fmt.Errorf("%s while %s", err2, errBuf)
 		}
@@ -84,6 +83,6 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 	if err := installationStore.Delete(installationName); err != nil {
 		return fmt.Errorf("Failed to delete installation %q from the installation store: %s", installationName, err)
 	}
-	fmt.Fprintf(os.Stdout, "Application %q uninstalled on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(dockerCli.Out(), "Application %q uninstalled on context %q\n", installationName, opts.targetContext)
 	return nil
 }

@@ -14,7 +14,7 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 
 	cmd.AddCommand(
 		listCmd(dockerCli),
-		rmCmd(),
+		rmCmd(dockerCli),
 		tagCmd(),
 	)
 

@@ -7,12 +7,13 @@ import (
 
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
+	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
 	"github.com/spf13/cobra"
 )
 
-func rmCmd() *cobra.Command {
+func rmCmd(dockerCli command.Cli) *cobra.Command {
 	return &cobra.Command{
 		Short:   "Remove an application image",
 		Use:     "rm [APP_IMAGE] [APP_IMAGE...]",
@@ -34,7 +35,7 @@ $ docker app image rm docker.io/library/myapp@sha256:beef...`,
 
 			errs := []string{}
 			for _, arg := range args {
-				if err := runRm(bundleStore, arg); err != nil {
+				if err := runRm(dockerCli, bundleStore, arg); err != nil {
 					errs = append(errs, fmt.Sprintf("Error: %s", err))
 				}
 			}
@@ -46,7 +47,7 @@ $ docker app image rm docker.io/library/myapp@sha256:beef...`,
 	}
 }
 
-func runRm(bundleStore store.BundleStore, app string) error {
+func runRm(dockerCli command.Cli, bundleStore store.BundleStore, app string) error {
 	ref, err := reference.ParseNormalizedNamed(app)
 	if err != nil {
 		return err
@@ -57,6 +58,6 @@ func runRm(bundleStore store.BundleStore, app string) error {
 		return err
 	}
 
-	fmt.Println("Deleted: " + reference.FamiliarString(tagged))
+	_, _ = fmt.Fprintln(dockerCli.Out(), "Deleted:", reference.FamiliarString(tagged))
 	return nil
 }

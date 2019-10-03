@@ -42,14 +42,16 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 func runRender(dockerCli command.Cli, appname string, opts renderOptions) error {
 	defer muteDockerCli(dockerCli)()
 
-	var w io.Writer = os.Stdout
-	if opts.renderOutput != "-" {
+	var w io.Writer
+	if opts.renderOutput == "-" {
 		f, err := os.Create(opts.renderOutput)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
 		w = f
+	} else {
+		w = dockerCli.Out()
 	}
 
 	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts.pullOptions, opts.parametersOptions)

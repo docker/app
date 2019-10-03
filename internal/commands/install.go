@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
@@ -95,7 +94,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	if installation, err := installationStore.Read(installationName); err == nil {
 		// A failed installation can be overridden, but with a warning
 		if isInstallationFailed(installation) {
-			fmt.Fprintf(os.Stderr, "WARNING: installing over previously failed installation %q\n", installationName)
+			fmt.Fprintf(dockerCli.Err(), "WARNING: installing over previously failed installation %q\n", installationName)
 		} else {
 			// Return an error in case of successful installation, or even failed upgrade, which means
 			// their was already a successful installation.
@@ -131,7 +130,7 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	inst := &action.Install{
 		Driver: driverImpl,
 	}
-	err = inst.Run(&installation.Claim, creds, os.Stdout)
+	err = inst.Run(&installation.Claim, creds, dockerCli.Out())
 	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.
 	err2 := installationStore.Store(installation)
@@ -142,6 +141,6 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err2
 	}
 
-	fmt.Fprintf(os.Stdout, "Application %q installed on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(dockerCli.Out(), "Application %q installed on context %q\n", installationName, opts.targetContext)
 	return nil
 }

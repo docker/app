@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/commands/image"
@@ -29,7 +28,7 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 		Annotations: map[string]string{"experimentalCLI": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if showVersion {
-				fmt.Fprintln(os.Stdout, internal.FullVersion()) //nolint:errcheck
+				fmt.Fprintln(dockerCli.Out(), internal.FullVersion()) //nolint:errcheck
 				return nil
 			}
 
@@ -55,7 +54,7 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		initCmd(dockerCli),
 		inspectCmd(dockerCli),
 		renderCmd(dockerCli),
-		validateCmd(),
+		validateCmd(dockerCli),
 		bundleCmd(dockerCli),
 		pushCmd(dockerCli),
 		pullCmd(dockerCli),

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
@@ -84,7 +83,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	u := &action.Upgrade{
 		Driver: driverImpl,
 	}
-	err = u.Run(&installation.Claim, creds, os.Stdout)
+	err = u.Run(&installation.Claim, creds, dockerCli.Out())
 	err2 := installationStore.Store(installation)
 	if err != nil {
 		return fmt.Errorf("Upgrade failed: %s\n%s", err, errBuf)
@@ -92,6 +91,6 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	if err2 != nil {
 		return err2
 	}
-	fmt.Fprintf(os.Stdout, "Application %q upgraded on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(dockerCli.Out(), "Application %q upgraded on context %q\n", installationName, opts.targetContext)
 	return nil
 }

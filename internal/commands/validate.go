@@ -2,12 +2,12 @@ package commands
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
+	"github.com/docker/cli/cli/command"
 	cliopts "github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +16,7 @@ type validateOptions struct {
 	parametersOptions
 }
 
-func validateCmd() *cobra.Command {
+func validateCmd(dockerCli command.Cli) *cobra.Command {
 	var opts validateOptions
 	cmd := &cobra.Command{
 		Use:   "validate [APP_NAME] [--set KEY=VALUE ...] [--parameters-file PARAMETERS_FILE]",
@@ -35,7 +35,7 @@ func validateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(os.Stdout, "Validated %q\n", app.Path)
+			fmt.Fprintf(dockerCli.Out(), "Validated %q\n", app.Path)
 			return nil
 		},
 	}

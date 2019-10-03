@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/packager"
@@ -71,11 +70,11 @@ func runBundle(dockerCli command.Cli, appName string, opts bundleOptions) error 
 		_, err = dockerCli.Out().Write(bundleBytes)
 		return err
 	}
-	fmt.Fprintf(os.Stdout, "Invocation image %q successfully built\n", bundle.InvocationImages[0].Image)
+	fmt.Fprintf(dockerCli.Out(), "Invocation image %q successfully built\n", bundle.InvocationImages[0].Image)
 	if err := ioutil.WriteFile(opts.out, bundleBytes, 0644); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stdout, "Bundle saved to %s\n", opts.out)
+	fmt.Fprintf(dockerCli.Out(), "Bundle saved to %s\n", opts.out)
 	return nil
 }
 
