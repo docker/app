@@ -1,5 +1,5 @@
 version: 1.1.0-beta1
-name: simple
+name: withargs
 description: "new fancy webapp with microservices"
 maintainers:
   - name: John Developer
