@@ -100,8 +100,6 @@ a-simple-app:latest simple
 			ExitCode: 1,
 			Err:      `"docker app image tag" requires exactly 2 arguments.`,
 		})
-		cmd.Command = dockerCli.Command("app", "image", "tag")
-		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// with one argument
 		dockerAppImageTag("a-simple-app")
@@ -109,8 +107,6 @@ a-simple-app:latest simple
 			ExitCode: 1,
 			Err:      `"docker app image tag" requires exactly 2 arguments.`,
 		})
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app")
-		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// with invalid src reference
 		dockerAppImageTag("a-simple-app$2", "b-simple-app")
@@ -118,8 +114,6 @@ a-simple-app:latest simple
 			ExitCode: 1,
 			Err:      `could not parse 'a-simple-app$2' as a valid reference: invalid reference format`,
 		})
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app$2", "b-simple-app")
-		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// with invalid target reference
 		dockerAppImageTag("a-simple-app", "b@simple-app")
@@ -141,8 +135,6 @@ a-simple-app:latest simple
 			ExitCode: 1,
 			Err:      `could not tag 'a-simple-app:not-a-tag': no such application image`,
 		})
-		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "b@simple-app")
-		icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1})
 
 		// tag image with only names
 		dockerAppImageTag("a-simple-app", "b-simple-app")
