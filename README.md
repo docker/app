@@ -353,7 +353,6 @@ A tool to build and manage Docker Applications.
 
 Commands:
   bundle      Create a CNAB invocation image and `bundle.json` for the application
-  completion  Generates completion scripts for the specified shell (bash or zsh)
   init        Initialize Docker Application definition
   inspect     Shows metadata, parameters and a summary of the Compose file for a given application
   install     Install an application
