@@ -1,4 +1,4 @@
-package commands
+package build
 
 import (
 	"reflect"
@@ -57,6 +57,10 @@ func Test_parseCompose(t *testing.T) {
 			got, err := parseCompose(app, buildOptions{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseCompose() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if _, ok := got["dontwant"]; ok {
+				t.Errorf("parseCompose() should have excluded 'dontwant' service")
 				return
 			}
 			opt, ok := got[tt.service]

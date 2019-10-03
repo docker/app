@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/docker/app/internal/commands/build"
+
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
@@ -59,7 +61,7 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		pushCmd(dockerCli),
 		pullCmd(dockerCli),
 		image.Cmd(dockerCli),
-		buildCmd(dockerCli),
+		build.BuildCmd(dockerCli),
 	)
 }
 
