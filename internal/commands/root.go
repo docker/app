@@ -17,7 +17,6 @@ import (
 )
 
 var (
-	completion  string
 	showVersion bool
 )
 
@@ -34,17 +33,6 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 				return nil
 			}
 
-			switch completion {
-			case "bash":
-				return cmd.GenBashCompletion(dockerCli.Out())
-			case "zsh":
-				return cmd.GenZshCompletion(dockerCli.Out())
-			default:
-				if completion != "" {
-					return fmt.Errorf("%q is not a supported shell\nSee 'docker app --help'", completion)
-				}
-			}
-
 			if len(args) != 0 {
 				return fmt.Errorf("%q is not a docker app command\nSee 'docker app --help'", args[0])
 			}
@@ -53,12 +41,6 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	addCommands(cmd, dockerCli)
-
-	cmd.Flags().StringVar(&completion, "completion", "", "Generates completion scripts for the specified shell (bash or zsh)")
-	if err := cmd.Flags().MarkHidden("completion"); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to register command line options: %v", err.Error()) //nolint:errcheck
-		return nil
-	}
 
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Print version information")
 	return cmd
