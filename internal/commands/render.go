@@ -26,6 +26,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 		Short:   "Render the Compose file for an Application Package",
 		Example: `$ docker app render myapp.dockerapp --set key=value`,
 		Args:    cli.RequiresMaxArgs(1),
+		Hidden:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRender(dockerCli, firstOrEmpty(args), opts)
 		},
