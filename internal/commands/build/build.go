@@ -38,7 +38,7 @@ type buildOptions struct {
 	out      string
 }
 
-func BuildCmd(dockerCli command.Cli) *cobra.Command {
+func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
 		Use:     "build [APPLICATION]",
@@ -124,22 +124,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	}
 
 	fmt.Println("Successfully built service images")
-	debugSolveResponses(resp)
-
-	for service, r := range resp {
-		digest := r.ExporterResponse["containerimage.digest"]
-		if service == "invocation-image" {
-			bundle.InvocationImages[0].Digest = digest
-		} else {
-			image := bundle.Images[service]
-			image.Image = fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
-			image.ImageType = cnab.ImageTypeDocker
-			image.Digest = digest
-			bundle.Images[service] = image
-		}
-		fmt.Fprintf(dockerCli.Out(), "    - %s : %s\n", service, digest)
-	}
-	debugBundle(bundle)
+	updateBundle(bundle, resp)
 
 	var ref reference.Named
 	ref, err = packager.GetNamedTagged(opt.tag)
@@ -152,24 +137,52 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		}
 	}
 
+	if err = persistBundle(opt, bundle, ref); err != nil {
+		return nil, err
+	}
+	return ref, nil
+}
+
+func updateBundle(bundle *bundle.Bundle, resp map[string]*client.SolveResponse) {
+	debugSolveResponses(resp)
+	for service, r := range resp {
+		digest := r.ExporterResponse["containerimage.digest"]
+		if service == "invocation-image" {
+			bundle.InvocationImages[0].Digest = digest
+		} else {
+			image := bundle.Images[service]
+			image.Image = fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
+			image.ImageType = cnab.ImageTypeDocker
+			image.Digest = digest
+			bundle.Images[service] = image
+		}
+	}
+	debugBundle(bundle)
+}
+
+func persistBundle(opt buildOptions, bndl *bundle.Bundle, ref reference.Named) error {
 	if opt.out != "" {
-		b, err := json.MarshalIndent(bundle, "", "  ")
+		b, err := json.MarshalIndent(bndl, "", "  ")
 		if err != nil {
-			return ref, err
+			return err
 		}
 		if opt.out == "-" {
 			_, err = os.Stdout.Write(b)
+			if err != nil {
+				return err
+			}
 		} else {
 			err = ioutil.WriteFile(opt.out, b, 0644)
+			if err != nil {
+				return err
+			}
 		}
-		return ref, err
+	} else {
+		if err := packager.PersistInBundleStore(ref, bndl); err != nil {
+			return err
+		}
 	}
-
-	if err := packager.PersistInBundleStore(ref, bundle); err != nil {
-		return ref, err
-	}
-
-	return ref, nil
+	return nil
 }
 
 func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (build.Options, error) {

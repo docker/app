@@ -14,10 +14,10 @@ import (
 type ServiceConfig struct {
 	Name string `yaml:"-" json:"-"`
 
-	Build BuildConfig
+	Build ImageBuildConfig
 }
 
-type BuildConfig struct {
+type ImageBuildConfig struct {
 	Context    string                    `yaml:",omitempty" json:"context,omitempty"`
 	Dockerfile string                    `yaml:",omitempty" json:"dockerfile,omitempty"`
 	Args       compose.MappingWithEquals `yaml:",omitempty" json:"args,omitempty"`
@@ -51,7 +51,7 @@ func LoadServices(servicesDict map[string]interface{}) ([]ServiceConfig, error) 
 func LoadService(name string, serviceDict map[string]interface{}) (*ServiceConfig, error) {
 	serviceConfig := &ServiceConfig{}
 	if err := loader.Transform(serviceDict, serviceConfig, loader.Transformer{
-		TypeOf: reflect.TypeOf(BuildConfig{}),
+		TypeOf: reflect.TypeOf(ImageBuildConfig{}),
 		Func:   transformBuildConfig,
 	}); err != nil {
 		return nil, err
