@@ -236,15 +236,13 @@
   version = "v0.3.2-beta1"
 
 [[projects]]
-  digest = "1:6093483b2ea90f1c0c5ec0fd75778650031bc3da75526b1bd87309d22e1e7d6b"
+  digest = "1:fdf76ff539694e8aba8e9c60e7cc1dead88d21c9dc09e5a330104adad0887440"
   name = "github.com/docker/buildx"
   packages = [
-    "bake",
     "build",
     "driver",
     "driver/docker",
     "util/imagetools",
-    "util/platformutil",
     "util/progress",
   ]
   pruneopts = "NUT"
@@ -621,24 +619,6 @@
   pruneopts = "NUT"
   revision = "7087cb70de9f7a8bc0a10c375cb0d2280a8edf9c"
   version = "v0.5.1"
-
-[[projects]]
-  digest = "1:39f543569bf189e228c84a294c50aca8ea56c82b3d9df5c9b788249907d7049a"
-  name = "github.com/hashicorp/hcl"
-  packages = [
-    ".",
-    "hcl/ast",
-    "hcl/parser",
-    "hcl/scanner",
-    "hcl/strconv",
-    "hcl/token",
-    "json/parser",
-    "json/scanner",
-    "json/token",
-  ]
-  pruneopts = "NUT"
-  revision = "8cb6e5b959231cc1119e43259c4a608f9c51a241"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -1437,7 +1417,6 @@
     "github.com/deislabs/cnab-go/driver",
     "github.com/deislabs/cnab-go/driver/docker",
     "github.com/deislabs/cnab-go/utils/crud",
-    "github.com/docker/buildx/bake",
     "github.com/docker/buildx/build",
     "github.com/docker/buildx/driver",
     "github.com/docker/buildx/driver/docker",
@@ -1461,11 +1440,10 @@
     "github.com/docker/cli/cli/context/kubernetes",
     "github.com/docker/cli/cli/context/store",
     "github.com/docker/cli/cli/flags",
-    "github.com/docker/cli/cli/streams",
     "github.com/docker/cli/opts",
     "github.com/docker/cnab-to-oci/converter",
     "github.com/docker/cnab-to-oci/remotes",
-    "github.com/docker/distribution/manifest/schema2",
+    "github.com/docker/distribution/manifest/manifestlist",
     "github.com/docker/distribution/reference",
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/api/types/container",
@@ -1478,6 +1456,7 @@
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/imdario/mergo",
+    "github.com/moby/buildkit/client",
     "github.com/moby/buildkit/session",
     "github.com/moby/buildkit/session/auth/authprovider",
     "github.com/moby/buildkit/util/appcontext",
