@@ -14,9 +14,10 @@ import (
 
 func rmCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "rm [APP_IMAGE] [APP_IMAGE...]",
-		Short: "Remove an application image",
-		Args:  cli.RequiresMinArgs(1),
+		Short:   "Remove an application image",
+		Use:     "rm [APP_IMAGE] [APP_IMAGE...]",
+		Aliases: []string{"remove"},
+		Args:    cli.RequiresMinArgs(1),
 		Example: `$ docker app image rm myapp
 $ docker app image rm myapp:1.0.0
 $ docker app image rm docker.io/library/myapp@sha256:beef...`,
