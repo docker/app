@@ -14,7 +14,6 @@ import (
 // parseCompose do parse app compose file and extract buildx Options
 // We don't rely on bake's ReadTargets + TargetsToBuildOpt here as we have to skip environment variable interpolation
 func parseCompose(app *types.App, options buildOptions) (map[string]build.Options, error) {
-
 	// Fixme can have > 1 composes ?
 	parsed, err := loader.ParseYAML(app.Composes()[0])
 	if err != nil {
