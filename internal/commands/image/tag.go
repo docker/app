@@ -49,7 +49,11 @@ func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, err
 		return nil, err
 	}
 
-	return bundleStore.Read(cnabRef)
+	bundle, err := bundleStore.Read(cnabRef)
+	if err != nil {
+		return nil, fmt.Errorf("could not tag '%s': no such application image", name)
+	}
+	return bundle, nil
 }
 
 func storeBundle(bundle *bundle.Bundle, name string, bundleStore store.BundleStore) error {
