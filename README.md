@@ -234,17 +234,18 @@ Removing network hello_default
 
 ## Installation
 
-**Note**: This requires a pre-release version (19.03.0 beta 1 or later) of the
-[Docker CLI](https://download.docker.com).
+**Note**: Docker app is a _command line_ plugin (not be confused with docker _engine_ plugins), extending the `docker` command with `app` sub-commands. 
+It requires [Docker CLI](https://download.docker.com) 19.03.0 or later with experimental features enabled. 
+Either set environment variable `DOCKER_CLI_EXPERIMENTAL=enabled` 
+or update your [docker CLI configuration](https://docs.docker.com/engine/reference/commandline/cli/#experimental-features).
+
+**Note**: Docker-app can't be installed using the `docker plugin install` command (yet)
+
 
 Pre-built static binaries are available on
 [GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and
 macOS. Each tarball contains two binaries:
 * `docker-app-plugin-{linux|darwin|windows.exe}` which is a [Docker CLI plugin](https://github.com/docker/cli/issues/1534). **Note**: This requires a pre-release version of the Docker CLI
-* `docker-app-standalone-{linux|darwin|windows.exe}` which is a standalone utility
-
-To use the standalone version, use `docker-app` instead of `docker app` and all
-the examples will work the same way.
 
 ### Linux or macOS
 
@@ -255,12 +256,7 @@ curl -fsSL --output "/tmp/docker-app-${OSTYPE}.tar.gz" "https://github.com/docke
 tar xf "/tmp/docker-app-${OSTYPE}.tar.gz" -C /tmp/
 ```
 
-To install as standalone:
-```console
-install -b "/tmp/docker-app-standalone-${OSTYPE}" /usr/local/bin/docker-app
-```
-
-To install as a Docker CLI plugin:
+Install as a Docker CLI plugin:
 ```console
 mkdir -p ~/.docker/cli-plugins && cp "/tmp/docker-app-plugin-${OSTYPE}" ~/.docker/cli-plugins/docker-app
 ```
@@ -273,12 +269,7 @@ Invoke-WebRequest -Uri https://github.com/docker/app/releases/download/v0.8.0/do
 tar xf "docker-app.tar.gz"
 ```
 
-To install as standalone, copy it somewhere in your path:
-```powershell
-cp docker-app-standalone-windows.exe PATH/docker-app.exe
-```
-
-To install as a Docker CLI plugin:
+Install as a Docker CLI plugin:
 ```powershell
 New-Item -ItemType Directory -Path ~/.docker/cli-plugins -ErrorAction SilentlyContinue
 cp docker-app-plugin-windows.exe ~/.docker/cli-plugins/docker-app.exe

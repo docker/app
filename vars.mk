@@ -1,6 +1,5 @@
 PKG_NAME := github.com/docker/app
 BIN_NAME ?= docker-app
-BIN_STANDALONE_NAME := ${BIN_NAME}-standalone
 E2E_NAME := $(BIN_NAME)-e2e
 
 # Variables for fossa scan
