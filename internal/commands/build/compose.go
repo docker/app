@@ -28,6 +28,12 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 		if service.Build == nil {
 			continue
 		}
+
+		var tags []string
+		if service.Image != nil {
+			tags = []string{*service.Image}
+		}
+
 		// FIXME docker app init should update relative paths
 		// compose file has been copied to x.dockerapp, so the relative path to build context get broken
 		contextPath := path.Join(app.Path, "..", service.Build.Context)
@@ -43,7 +49,7 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 			BuildArgs: flatten(service.Build.Args),
 			NoCache:   options.noCache,
 			Pull:      options.pull,
-			Tags:      []string{fmt.Sprintf("%s:%s-%s", app.Metadata().Name, app.Metadata().Version, service.Name)},
+			Tags:      tags,
 		}
 	}
 	return opts, nil
