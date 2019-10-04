@@ -98,7 +98,8 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 
 	ctx, cancel := context.WithCancel(appcontext.Context())
 	defer cancel()
-	d, err := driver.GetDriver(ctx, "buildx_buildkit_default", nil, dockerCli.Client(), nil, "", nil)
+	const drivername = "buildx_buildkit_default"
+	d, err := driver.GetDriver(ctx, drivername, nil, dockerCli.Client(), nil, "", nil)
 	if err != nil {
 		return nil, err
 	}

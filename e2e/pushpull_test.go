@@ -18,7 +18,6 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
 	"gotest.tools/assert/cmp"
-	"gotest.tools/fs"
 	"gotest.tools/icmd"
 )
 
@@ -189,18 +188,14 @@ func TestPushInstallBundle(t *testing.T) {
 		cmd := info.configuredCmd
 		ref := info.registryAddress + "/test/push-bundle"
 
-		tmpDir := fs.NewDir(t, t.Name())
-		defer tmpDir.Remove()
-		bundleFile := tmpDir.Join("bundle.json")
-
 		// render the app to a bundle, we use the app from the push pull test above.
-		cmd.Command = dockerCli.Command("app", "build", "-o", bundleFile, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "a-simple-app")
+		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "a-simple-app:1.0.0")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		// push it and install to check it is available
 		t.Run("push-bundle", func(t *testing.T) {
 			name := strings.Replace(t.Name(), "/", "_", 1)
-			cmd.Command = dockerCli.Command("app", "push", "--tag", ref, bundleFile)
+			cmd.Command = dockerCli.Command("app", "push", "--tag", ref, "a-simple-app:1.0.0")
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			cmd.Command = dockerCli.Command("app", "install", ref, "--pull", "--name", name)
