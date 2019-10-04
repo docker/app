@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -35,7 +34,6 @@ type buildOptions struct {
 	progress string
 	pull     bool
 	tag      string
-	out      string
 }
 
 func Cmd(dockerCli command.Cli) *cobra.Command {
@@ -59,10 +57,6 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
-
-	// For diagnostic and testing only
-	flags.StringVarP(&opts.out, "output", "o", "", "Dump generated bundle into a file")
-	flags.MarkHidden("output") //nolint:errcheck
 
 	return cmd
 }
@@ -136,7 +130,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		}
 	}
 
-	if err = persistBundle(opt, bundle, ref); err != nil {
+	if err = packager.PersistInBundleStore(ref, bundle); err != nil {
 		return nil, err
 	}
 	return ref, nil
@@ -172,21 +166,6 @@ func updateBundle(bundle *bundle.Bundle, resp map[string]*client.SolveResponse) 
 		}
 	}
 	debugBundle(bundle)
-}
-
-func persistBundle(opt buildOptions, bndl *bundle.Bundle, ref reference.Named) error {
-	if opt.out != "" {
-		b, err := json.MarshalIndent(bndl, "", "  ")
-		if err != nil {
-			return err
-		}
-		if opt.out == "-" {
-			_, err = os.Stdout.Write(b)
-			return err
-		}
-		return ioutil.WriteFile(opt.out, b, 0644)
-	}
-	return packager.PersistInBundleStore(ref, bndl)
 }
 
 func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (build.Options, error) {
