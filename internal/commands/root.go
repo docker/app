@@ -9,6 +9,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
+	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
 	"github.com/sirupsen/logrus"
@@ -43,6 +44,7 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 	addCommands(cmd, dockerCli)
 
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Print version information")
+	cmd.SetFlagErrorFunc(flagErrorFunc)
 	return cmd
 }
 
@@ -175,4 +177,18 @@ func insecureRegistriesFromEngine(dockerCli command.Cli) ([]string, error) {
 	logrus.Debugf("insecure registries: %v", registries)
 
 	return registries, nil
+}
+
+func flagErrorFunc(cmd *cobra.Command, err error) error {
+	if err == nil {
+		return nil
+	}
+	cmdName := cmd.Name()
+	if cmdName != "app" {
+		cmdName = fmt.Sprintf("app %s", cmdName)
+	}
+	return cli.StatusError{
+		Status:     fmt.Sprintf("%s\nSee 'docker %s --help'", err, cmdName),
+		StatusCode: 125,
+	}
 }

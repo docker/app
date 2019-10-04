@@ -29,6 +29,20 @@ func TestExitErrorCode(t *testing.T) {
 		ExitCode: 1,
 		Err:      "\"unknown_command\" is not a docker app command\nSee 'docker app --help'",
 	})
+
+	cmd.Command = dockerCli.Command("app", "--unknown_flag")
+	output := icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 125,
+	}).Combined()
+	// Need to check the exact error output to be sure we don't have the usage message
+	assert.Equal(t, output, "unknown flag: --unknown_flag\nSee 'docker app --help'\n")
+
+	cmd.Command = dockerCli.Command("app", "install", "--unknown_flag")
+	output = icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 125,
+	}).Combined()
+	// Need to check the exact error output to be sure we don't have the usage message
+	assert.Equal(t, output, "unknown flag: --unknown_flag\nSee 'docker app install --help'\n")
 }
 
 func TestRender(t *testing.T) {
