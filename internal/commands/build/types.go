@@ -15,6 +15,7 @@ type ServiceConfig struct {
 	Name string `yaml:"-" json:"-"`
 
 	Build *ImageBuildConfig
+	Image *string
 }
 
 type ImageBuildConfig struct {

@@ -159,7 +159,6 @@ func updateBundle(bundle *bundle.Bundle, resp map[string]*client.SolveResponse) 
 			bundle.InvocationImages[0].Digest = digest
 		} else {
 			image := bundle.Images[service]
-			image.Image = fmt.Sprintf("%s:%s-%s", bundle.Name, bundle.Version, service)
 			image.ImageType = cnab.ImageTypeDocker
 			image.Digest = digest
 			bundle.Images[service] = image
