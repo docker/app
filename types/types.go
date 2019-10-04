@@ -9,9 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	composeloader "github.com/docker/cli/cli/compose/loader"
+	composetypes "github.com/docker/cli/cli/compose/types"
+
 	"github.com/docker/app/internal"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/app/types/parameters"
+	"github.com/docker/app/types/secrets"
 )
 
 // AppSourceKind represents what format the app was in when read
@@ -41,6 +45,7 @@ type App struct {
 	composesContent   [][]byte
 	parametersContent [][]byte
 	parameters        parameters.Parameters
+	secrets           secrets.Secrets
 	metadataContent   []byte
 	metadata          metadata.AppMetadata
 	attachments       []Attachment
@@ -91,6 +96,11 @@ func (a *App) Metadata() metadata.AppMetadata {
 // Attachments returns the external files list
 func (a *App) Attachments() []Attachment {
 	return a.attachments
+}
+
+// Secrets returns a map of secrets
+func (a *App) Secrets() secrets.Secrets {
+	return a.secrets
 }
 
 func (a *App) HasCRLF() bool {
@@ -288,8 +298,34 @@ func composeLoader(f func() ([][]byte, error)) func(app *App) error {
 			return err
 		}
 		app.composesContent = append(app.composesContent, composesContent...)
+		app.secrets = secrets.New()
+		for _, c := range app.composesContent {
+			parsedCompose, err := composeloader.ParseYAML(c)
+			if err != nil {
+				return err
+			}
+			cfg, err := composeloader.Load(composetypes.ConfigDetails{
+				ConfigFiles: []composetypes.ConfigFile{
+					{Filename: "docker-compose.yml", Config: parsedCompose},
+				},
+			}, withSkipInterpolation)
+			if err != nil {
+				return err
+			}
+			for name, secret := range cfg.Secrets {
+				app.secrets[name] = secrets.Secret{
+					Name:     secret.Name,
+					Path:     secret.File,
+					External: secret.External.External,
+				}
+			}
+		}
 		return nil
 	}
+}
+
+func withSkipInterpolation(opts *composeloader.Options) {
+	opts.SkipInterpolation = true
 }
 
 func readReaders(readers ...io.Reader) ([][]byte, error) {
