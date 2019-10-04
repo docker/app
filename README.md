@@ -245,7 +245,7 @@ or update your [docker CLI configuration](https://docs.docker.com/engine/referen
 Pre-built static binaries are available on
 [GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and
 macOS. Each tarball contains two binaries:
-* `docker-app-plugin-{linux|darwin|windows.exe}` which is a [Docker CLI plugin](https://github.com/docker/cli/issues/1534). **Note**: This requires a pre-release version of the Docker CLI
+* `docker-app-plugin-{linux|darwin|windows.exe}` which is a [Docker CLI plugin](https://github.com/docker/cli/issues/1534).
 
 ### Linux or macOS
 
