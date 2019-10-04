@@ -21,7 +21,7 @@ func TestBuild(t *testing.T) {
 		dir := fs.NewDir(t, "test-name")
 		defer dir.Remove()
 		f := dir.Join("bundle.json")
-		cmd.Command = dockerCli.Command("app", "build", path.Join(testDir, "single"), "--output", f)
+		cmd.Command = dockerCli.Command("app", "build", path.Join(testDir, "single"), "a-simple-tag", "--output", f)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		data, err := ioutil.ReadFile(f)

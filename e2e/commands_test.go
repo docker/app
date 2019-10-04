@@ -75,7 +75,7 @@ func TestRenderFormatters(t *testing.T) {
 		cmd := info.configuredCmd
 
 		appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
-		cmd.Command = dockerCli.Command("app", "build", appPath)
+		cmd.Command = dockerCli.Command("app", "build", appPath, "a-simple-tag")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)

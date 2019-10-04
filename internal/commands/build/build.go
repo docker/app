@@ -41,11 +41,12 @@ type buildOptions struct {
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
-		Use:     "build [APPLICATION]",
+		Use:     "build [APPLICATION] [TAG]",
 		Short:   "Build service images for the application",
 		Example: `$ docker app build myapp.dockerapp`,
-		Args:    cli.ExactArgs(1),
+		Args:    cli.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.tag = args[1]
 			tag, err := runBuild(dockerCli, args[0], opts)
 			if err == nil {
 				fmt.Printf("Successfully build %s\n", tag.String())
@@ -58,8 +59,10 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
+
+	// For diagnostic and testing only
 	flags.StringVarP(&opts.out, "output", "o", "", "Dump generated bundle into a file")
-	flags.StringVarP(&opts.tag, "tag", "t", "", "Name and optionally a tag in the 'name:tag' format")
+	flags.MarkHidden("output") //nolint:errcheck
 
 	return cmd
 }
@@ -68,6 +71,11 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	err := checkMinimalEngineVersion(dockerCli)
 	if err != nil {
 		return nil, err
+	}
+
+	if opt.tag == "" {
+		// FIXME temporary, until we get support for Digest in bundleStore and other commands
+		return nil, fmt.Errorf("A tag is required to run docker app build")
 	}
 
 	var ref reference.Named
@@ -82,17 +90,12 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	}
 	defer app.Cleanup()
 
-	bundle, err := packager.MakeBundleFromApp(dockerCli, app, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	buildopts, err := parseCompose(app, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	buildopts["invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app)
+	buildopts["com.docker.app.invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app)
 	if err != nil {
 		return nil, err
 	}
@@ -114,13 +117,17 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 
 	pw := progress.NewPrinter(ctx, os.Stderr, opt.progress)
 
-	// We rely on buildx "docker" builder integrated in docker engine, so don't nee a DockerAPI here
+	// We rely on buildx "docker" builder integrated in docker engine, so don't need a DockerAPI here
 	resp, err := build.Build(ctx, driverInfo, buildopts, nil, dockerCli.ConfigFile(), pw)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Fprintln(dockerCli.Out(), "Successfully built service images") //nolint:errcheck
 
-	fmt.Println("Successfully built service images")
+	bundle, err := packager.MakeBundleFromApp(dockerCli, app, nil)
+	if err != nil {
+		return nil, err
+	}
 	updateBundle(bundle, resp)
 
 	if ref == nil {
@@ -140,7 +147,7 @@ func checkMinimalEngineVersion(dockerCli command.Cli) error {
 	if err != nil {
 		return err
 	}
-	majorVersion, err := strconv.Atoi(info.ServerVersion[:strings.IndexRune(info.ServerVersion, '.')])
+	majorVersion, err := strconv.Atoi(strings.SplitN(info.ServerVersion, ".", 2)[0])
 	if err != nil {
 		return err
 	}
@@ -154,7 +161,7 @@ func updateBundle(bundle *bundle.Bundle, resp map[string]*client.SolveResponse) 
 	debugSolveResponses(resp)
 	for service, r := range resp {
 		digest := r.ExporterResponse["containerimage.digest"]
-		if service == "invocation-image" {
+		if service == "com.docker.app.invocation-image" {
 			bundle.InvocationImages[0].Digest = digest
 		} else {
 			image := bundle.Images[service]
@@ -175,21 +182,11 @@ func persistBundle(opt buildOptions, bndl *bundle.Bundle, ref reference.Named) e
 		}
 		if opt.out == "-" {
 			_, err = os.Stdout.Write(b)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = ioutil.WriteFile(opt.out, b, 0644)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		if err := packager.PersistInBundleStore(ref, bndl); err != nil {
 			return err
 		}
+		return ioutil.WriteFile(opt.out, b, 0644)
 	}
-	return nil
+	return packager.PersistInBundleStore(ref, bndl)
 }
 
 func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (build.Options, error) {

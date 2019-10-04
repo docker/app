@@ -3,7 +3,6 @@ package build
 import (
 	"fmt"
 	"path"
-	"reflect"
 
 	"github.com/docker/app/types"
 	"github.com/docker/buildx/build"
@@ -14,7 +13,6 @@ import (
 // parseCompose do parse app compose file and extract buildx Options
 // We don't rely on bake's ReadTargets + TargetsToBuildOpt here as we have to skip environment variable interpolation
 func parseCompose(app *types.App, options buildOptions) (map[string]build.Options, error) {
-	// Fixme can have > 1 composes ?
 	parsed, err := loader.ParseYAML(app.Composes()[0])
 	if err != nil {
 		return nil, err
@@ -25,12 +23,13 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 		return nil, fmt.Errorf("Failed to parse compose file: %s", err)
 	}
 
-	var zeroBuildConfig ImageBuildConfig
 	opts := map[string]build.Options{}
 	for _, service := range services {
-		if reflect.DeepEqual(service.Build, zeroBuildConfig) {
+		if service.Build == nil {
 			continue
 		}
+		// FIXME docker app init should update relative paths
+		// compose file has been copied to x.dockerapp, so the relative path to build context get broken
 		contextPath := path.Join(app.Path, "..", service.Build.Context)
 		if service.Build.Dockerfile == "" {
 			service.Build.Dockerfile = "Dockerfile"

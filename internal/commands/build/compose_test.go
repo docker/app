@@ -14,7 +14,6 @@ func Test_parseCompose(t *testing.T) {
 		name    string
 		service string
 		want    build.Options
-		wantErr bool
 	}{
 		{
 			name:    "simple",
@@ -58,17 +57,14 @@ func Test_parseCompose(t *testing.T) {
 			assert.NilError(t, err)
 
 			got, err := parseCompose(app, buildOptions{})
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseCompose() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.NilError(t, err)
 			if _, ok := got["dontwant"]; ok {
 				t.Errorf("parseCompose() should have excluded 'dontwant' service")
 				return
 			}
 			opt, ok := got[tt.service]
 			if !ok {
-				t.Errorf("parseCompose() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parseCompose() error = %s not converted into a build.Options", tt.service)
 				return
 			}
 			if !reflect.DeepEqual(opt, tt.want) {
