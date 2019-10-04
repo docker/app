@@ -12,7 +12,6 @@ const (
 	DescriptionHeader  = "DESCRIPTION"
 	DriverHeader       = "DRIVER"
 	ScopeHeader        = "SCOPE"
-	StateHeader        = "STATE"
 	StatusHeader       = "STATUS"
 	PortsHeader        = "PORTS"
 	ImageHeader        = "IMAGE"

@@ -37,7 +37,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cli"
-  revision = "d83cd90464377d4164c8f70248d064b979e5ca98"
+  branch = "19.03"
 
 [[override]]
   name = "github.com/deislabs/cnab-go"

@@ -226,7 +226,8 @@
   version = "v0.3.2-beta1"
 
 [[projects]]
-  digest = "1:bc88d135d4f5d9a0968a213b3b2d786d1e216b9f10c30720f4d0d4976346732b"
+  branch = "19.03"
+  digest = "1:e6842d1ff5d614806b60493d46d34dacd15eaadea96921c9c63efde37b742e3c"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -281,7 +282,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "d83cd90464377d4164c8f70248d064b979e5ca98"
+  revision = "2355349d8b99ea2c15bbdd7f1f203fa078e9bb4e"
 
 [[projects]]
   digest = "1:47edc537d608c0ad4ef8e9cebfec7c74ccc0986af115ff53ea26b18b4605a878"

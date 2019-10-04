@@ -44,7 +44,6 @@ func NewContainerFormat(source string, quiet bool, size bool) Format {
 image: {{.Image}}
 command: {{.Command}}
 created_at: {{.CreatedAt}}
-state: {{- pad .State 1 0}}
 status: {{- pad .Status 1 0}}
 names: {{.Names}}
 labels: {{- pad .Labels 1 0}}
@@ -88,7 +87,6 @@ func newContainerContext() *containerContext {
 		"CreatedAt":    CreatedAtHeader,
 		"RunningFor":   runningForHeader,
 		"Ports":        PortsHeader,
-		"State":        StateHeader,
 		"Status":       StatusHeader,
 		"Size":         SizeHeader,
 		"Labels":       LabelsHeader,
@@ -169,10 +167,6 @@ func (c *containerContext) RunningFor() string {
 
 func (c *containerContext) Ports() string {
 	return DisplayablePorts(c.c.Ports)
-}
-
-func (c *containerContext) State() string {
-	return c.c.State
 }
 
 func (c *containerContext) Status() string {
