@@ -16,7 +16,3 @@ analyze:
     type: go
     target: github.com/docker/app/cmd/docker-app
     path: cmd/docker-app
-  - name: github.com/docker/app/cmd/docker-app-standalone
-    type: go
-    target: github.com/docker/app/cmd/docker-app-standalone
-    path: cmd/docker-app-standalone
