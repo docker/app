@@ -6,9 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/docker/app/internal/commands/build"
-
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/commands/build"
 	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"

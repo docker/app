@@ -14,7 +14,7 @@ import (
 type ServiceConfig struct {
 	Name string `yaml:"-" json:"-"`
 
-	Build ImageBuildConfig
+	Build *ImageBuildConfig
 }
 
 type ImageBuildConfig struct {
