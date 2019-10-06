@@ -56,32 +56,6 @@ pipeline {
                         }
                     }
                 }
-                stage("License Scan") {
-                    when {
-                        anyOf {
-                            changeset "Gopkg.lock"
-                            branch "master"
-                        }
-                    }
-                    agent {
-                        label 'ubuntu-1604-aufs-edge'
-                    }
-                    steps {
-                        withCredentials([
-                            usernamePassword(credentialsId: 'dockerbuildbot-hub.docker.com', usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD'),
-                            string(credentialsId: 'fossa-api-key', variable: 'FOSSA_API_KEY')
-                        ]) {
-                            dir('src/github.com/docker/app') {
-                                checkout scm
-                                ansiColor('xterm') {
-                                    sh 'echo "${REGISTRY_PASSWORD}" | docker login -u "${REGISTRY_USERNAME}" --password-stdin'
-                                    sh "FOSSA_API_KEY=$FOSSA_API_KEY BRANCH_NAME='${BRANCH_NAME}' make fossa-analyze"
-                                    sh "FOSSA_API_KEY=$FOSSA_API_KEY make fossa-test"
-                                }
-                            }
-                        }
-                    }
-                }
                 stage('Invocation image'){
                     agent {
                         label 'ubuntu-1804'
