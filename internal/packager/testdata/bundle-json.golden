@@ -51,6 +51,15 @@
     "io.cnab.status": {}
   },
   "parameters": {
+    "com.docker.app.inspect-format": {
+      "definition": "com.docker.app.inspect-format",
+      "applyTo": [
+        "com.docker.app.inspect"
+      ],
+      "destination": {
+        "env": "DOCKER_INSPECT_FORMAT"
+      }
+    },
     "com.docker.app.kubernetes-namespace": {
       "definition": "com.docker.app.kubernetes-namespace",
       "applyTo": [
@@ -106,6 +115,16 @@
     }
   },
   "definitions": {
+    "com.docker.app.inspect-format": {
+      "default": "json",
+      "description": "Output format for the inspect command",
+      "enum": [
+        "json",
+        "pretty"
+      ],
+      "title": "Inspect format",
+      "type": "string"
+    },
     "com.docker.app.kubernetes-namespace": {
       "default": "",
       "description": "Namespace in which to deploy",

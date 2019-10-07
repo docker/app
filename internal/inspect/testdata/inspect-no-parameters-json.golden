@@ -1,0 +1,13 @@
+{
+    "Metadata": {
+        "version": "0.1.0",
+        "name": "myapp",
+        "description": "some description",
+        "maintainers": [
+            {
+                "name": "dev",
+                "email": "dev@example.com"
+            }
+        ]
+    }
+}

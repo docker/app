@@ -52,6 +52,15 @@
 				"env": "docker_param1"
 			}
 		},
+		"com.docker.app.inspect-format": {
+			"definition": "com.docker.app.inspect-format",
+			"applyTo": [
+				"com.docker.app.inspect"
+			],
+			"destination": {
+				"env": "DOCKER_INSPECT_FORMAT"
+			}
+		},
 		"com.docker.app.kubernetes-namespace": {
 			"definition": "com.docker.app.kubernetes-namespace",
 			"applyTo": [
@@ -115,6 +124,16 @@
 	"definitions": {
 		"api_host": {
 			"default": "example.com",
+			"type": "string"
+		},
+		"com.docker.app.inspect-format": {
+			"default": "json",
+			"description": "Output format for the inspect command",
+			"enum": [
+				"json",
+				"pretty"
+			],
+			"title": "Inspect format",
 			"type": "string"
 		},
 		"com.docker.app.kubernetes-namespace": {

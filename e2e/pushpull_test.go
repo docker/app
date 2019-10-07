@@ -145,7 +145,7 @@ func TestPushInstall(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "push", "--tag", ref, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-		cmd.Command = dockerCli.Command("app", "install", ref, "--name", t.Name())
+		cmd.Command = dockerCli.Command("app", "install", ref, "--pull", "--name", t.Name())
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		cmd.Command = dockerCli.Command("service", "ls")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
@@ -203,7 +203,7 @@ func TestPushInstallBundle(t *testing.T) {
 			cmd.Command = dockerCli.Command("app", "push", "--tag", ref, bundleFile)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-			cmd.Command = dockerCli.Command("app", "install", ref, "--name", name)
+			cmd.Command = dockerCli.Command("app", "install", ref, "--pull", "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
@@ -223,7 +223,7 @@ func TestPushInstallBundle(t *testing.T) {
 			cmd.Command = dockerCli.Command("app", "push", "--tag", ref2, ref+":latest")
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-			cmd.Command = dockerCli.Command("app", "install", ref2, "--name", name)
+			cmd.Command = dockerCli.Command("app", "install", ref2, "--pull", "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref2))
@@ -250,7 +250,7 @@ func TestPushInstallBundle(t *testing.T) {
 			// remove the bundle from the bundle store to be sure it won't be used instead of registry
 			cleanupIsolatedStore()
 			// install from the registry
-			cmd.Command = dockerCli.Command("app", "install", ref2, "--name", name)
+			cmd.Command = dockerCli.Command("app", "install", ref2, "--pull", "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))

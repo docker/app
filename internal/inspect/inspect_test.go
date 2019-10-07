@@ -3,6 +3,7 @@ package inspect
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/docker/app/internal"
@@ -15,6 +16,11 @@ import (
 const (
 	composeYAML = `version: "3.1"`
 )
+
+type inspectTestCase struct {
+	name string
+	args map[string]string
+}
 
 func TestInspect(t *testing.T) {
 	dir := fs.NewDir(t, "inspect",
@@ -106,29 +112,32 @@ text: hello`),
 	)
 	defer dir.Remove()
 
-	for _, testcase := range []struct {
-		name string
-		args map[string]string
-	}{
-		{name: "no-maintainers"},
-		{name: "no-description"},
-		{name: "no-parameters"},
-		{name: "overridden", args: map[string]string{"web.port": "80"}},
-		{name: "full"},
-	} {
-		t.Run(testcase.name, func(t *testing.T) {
-			app, err := types.NewAppFromDefaultFiles(dir.Join(testcase.name))
-			assert.NilError(t, err)
-			// Inspect twice to ensure output is stable (e.g. sorting of maps)
-			for i := 0; i < 2; i++ {
-				t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-					outBuffer := new(bytes.Buffer)
-					err = Inspect(outBuffer, app, testcase.args, nil)
-					assert.NilError(t, err)
-					golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s.golden", testcase.name))
-				})
-			}
+	t.Run("json", func(t *testing.T) {
+		for _, testcase := range []inspectTestCase{
+			{name: "no-maintainers"},
+			{name: "no-description"},
+			{name: "no-parameters"},
+			{name: "overridden", args: map[string]string{"web.port": "80"}},
+			{name: "full"},
+		} {
+			os.Setenv(internal.DockerInspectFormatEnvVar, "pretty")
+			testInspect(t, dir, testcase, "")
+			os.Setenv(internal.DockerInspectFormatEnvVar, "json")
+			testInspect(t, dir, testcase, "-json")
+		}
+	})
+}
 
+func testInspect(t *testing.T, dir *fs.Dir, testcase inspectTestCase, suffix string) {
+	app, err := types.NewAppFromDefaultFiles(dir.Join(testcase.name))
+	assert.NilError(t, err)
+	// Inspect twice to ensure output is stable (e.g. sorting of maps)
+	for i := 0; i < 2; i++ {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			outBuffer := new(bytes.Buffer)
+			err = Inspect(outBuffer, app, testcase.args, nil)
+			assert.NilError(t, err)
+			golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s%s.golden", testcase.name, suffix))
 		})
 	}
 }

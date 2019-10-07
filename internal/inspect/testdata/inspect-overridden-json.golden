@@ -1,0 +1,17 @@
+{
+    "Metadata": {
+        "version": "0.1.0",
+        "name": "myapp"
+    },
+    "Services": [
+        {
+            "Name": "web",
+            "Image": "nginx",
+            "Replicas": 1,
+            "Ports": "80"
+        }
+    ],
+    "Parameters": {
+        "web.port": "80"
+    }
+}

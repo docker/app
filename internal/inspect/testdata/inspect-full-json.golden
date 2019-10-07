@@ -1,0 +1,49 @@
+{
+    "Metadata": {
+        "version": "0.1.0",
+        "name": "myapp",
+        "description": "some description",
+        "maintainers": [
+            {
+                "name": "dev",
+                "email": "dev@example.com"
+            }
+        ]
+    },
+    "Services": [
+        {
+            "Name": "web1",
+            "Image": "nginx:latest",
+            "Replicas": 2,
+            "Ports": "8080-8100"
+        },
+        {
+            "Name": "web2",
+            "Image": "nginx:latest",
+            "Replicas": 2,
+            "Ports": "9080-9100"
+        }
+    ],
+    "Networks": [
+        "my-network1",
+        "my-network2"
+    ],
+    "Volumes": [
+        "my-volume1",
+        "my-volume2"
+    ],
+    "Secrets": [
+        "my-secret1",
+        "my-secret2"
+    ],
+    "Parameters": {
+        "port": "8080",
+        "text": "hello"
+    },
+    "Attachments": [
+        {
+            "Path": "config.cfg",
+            "Size": 9
+        }
+    ]
+}
