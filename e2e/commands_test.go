@@ -149,32 +149,30 @@ maintainers:
 }
 
 func TestInspectApp(t *testing.T) {
-	cmd, cleanup := dockerCli.createTestCmd()
-	defer cleanup()
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
 
-	// cwd = e2e
-	dir := fs.NewDir(t, "detect-app-binary",
-		fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")))
-	defer dir.Remove()
+		// cwd = e2e
+		dir := fs.NewDir(t, "detect-app-binary",
+			fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")))
+		defer dir.Remove()
 
-	tmpDir := fs.NewDir(t, t.Name())
-	defer tmpDir.Remove()
+		cmd.Command = dockerCli.Command("app", "inspect")
+		cmd.Dir = dir.Path()
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      "invalid reference format",
+		})
 
-	cmd.Command = dockerCli.Command("app", "inspect")
-	cmd.Dir = dir.Path()
-	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
-		ExitCode: 1,
-		Err:      "invalid reference format",
+		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "simple-app:1.0.0")
+		cmd.Dir = ""
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		cmd.Command = dockerCli.Command("app", "inspect", "simple-app:1.0.0")
+		cmd.Dir = dir.Path()
+		output := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
+		golden.Assert(t, output, "app-inspect.golden")
 	})
-
-	cmd.Command = dockerCli.Command("app", "bundle", filepath.Join("testdata", "simple", "simple.dockerapp"), "--output", tmpDir.Join("simple-bundle.json"), "--tag", "simple-app:1.0.0")
-	cmd.Dir = ""
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-	cmd.Command = dockerCli.Command("app", "inspect", "simple-app:1.0.0")
-	cmd.Dir = dir.Path()
-	output := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
-	golden.Assert(t, output, "app-inspect.golden")
 }
 
 func TestDockerAppLifecycle(t *testing.T) {
