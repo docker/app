@@ -216,16 +216,45 @@ CNAB too. CNAB specifies three actions which `docker app` provides as commands:
 * `upgrade`
 * `uninstall`
 
-Here is an example installing an Application Package, querying its status and
+Here is an example installing an Application Package, inspect it and
 then uninstalling it:
 ```console
 $ docker app install examples/hello-world/example-hello-world.dockerapp --name hello
 Creating network hello_default
 Creating service hello_hello
 
-$ docker app status hello
-ID                  NAME                MODE                REPLICAS            IMAGE                        PORTS
-0m1wn7jrgkgj        hello_hello         replicated          1/1                 hashicorp/http-echo:latest   *:8080->5678/tcp
+$ docker app inspect hello
+{
+    "Metadata": {
+        "version": "0.1.0",
+        "name": "hello-world",
+        "description": "Hello, World!",
+        "maintainers": [
+            {
+                "name": "user",
+                "email": "user@email.com"
+            }
+        ]
+    },
+    "Services": [
+        {
+            "Name": "hello",
+            "Image": "hashicorp/http-echo",
+            "Replicas": 1,
+            "Ports": "8080"
+        }
+    ],
+    "Parameters": {
+        "port": "8080",
+        "text": "Hello, World!"
+    },
+    "Attachments": [
+        {
+            "Path": "bundle.json",
+            "Size": 3189
+        }
+    ]
+}
 
 $ docker app uninstall hello
 Removing service hello_hello
@@ -350,7 +379,6 @@ Commands:
   ls          List the installations and their last known installation result
   pull        Pull an application package from a registry
   push        Push an application package to a registry
-  render      Render the Compose file for an Application Package
   rm          Remove an application
   upgrade     Upgrade an installed application
   validate    Checks the rendered application is syntactically correct

@@ -68,15 +68,6 @@ result:
   port: 5001
 ```
 
-Test your application is valid by generating a Compose file from it:
-
-```console
-$ docker app render voting-app.dockerapp
-version: "3.6"
-services:
-...
-```
-
 ### Add a parameters file for an environment
 
 Create a `parameters/` folder to store the parameters you would use for
@@ -125,5 +116,5 @@ vote.port      8080
 vote.replicas  5
 ```
 
-**Note**: You can use a parameters file for `install`, `upgrade`, and `render`
+**Note**: You can use a parameters file for `install` and `upgrade`
 as well.
