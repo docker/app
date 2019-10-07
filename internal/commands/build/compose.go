@@ -30,7 +30,7 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 		}
 
 		var tags []string
-		if service.Image != nil {
+		if service.Image != nil && *service.Image != "" {
 			tags = []string{*service.Image}
 		}
 
