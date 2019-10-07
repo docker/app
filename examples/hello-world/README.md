@@ -89,25 +89,10 @@ port           8080
 text           Hello, World!
 ```
 
-### Render
-
-You can render your application to a Compose file  by running
-`docker app render` or even personalize the rendered Compose file by running
-`docker app render --set text="hello user!"`.
-
-Create a `render` directory and redirect the output of `docker app render ...`
-to `render/docker-compose.yml`:
-
-```console
-$ mkdir render
-$ docker app render --set text="Hello user!" > render/docker-compose.yml
-```
-
 ### Install
 
 You directly install your application by running
-`docker app deploy --set text="Hello user!"` or you can use the rendered version
-and run `docker stack deploy render/docker-compose.yml`.
+`docker app deploy --set text="Hello user!"`.
 
 Navigate to `http://<ip_of_your_node>:8080` with a web browser and you will see
 the text message. Note that `<ip_of_your_node>` is `127.0.0.1` if you installed
