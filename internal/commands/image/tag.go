@@ -8,6 +8,7 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -44,9 +45,9 @@ func runTag(bundleStore store.BundleStore, srcAppImage, destAppImage string) err
 }
 
 func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, error) {
-	cnabRef, err := stringToRef(name)
+	cnabRef, err := reference.ParseDockerRef(name)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "could not parse '%s' as a valid reference", name)
 	}
 
 	bundle, err := bundleStore.Read(cnabRef)
@@ -57,19 +58,10 @@ func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, err
 }
 
 func storeBundle(bundle *bundle.Bundle, name string, bundleStore store.BundleStore) error {
-	cnabRef, err := stringToRef(name)
+	cnabRef, err := reference.ParseDockerRef(name)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not parse '%s' as a valid reference", name)
 	}
 
 	return bundleStore.Store(cnabRef, bundle)
-}
-
-func stringToRef(name string) (reference.Named, error) {
-	cnabRef, err := reference.ParseNormalizedNamed(name)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse '%s' as a valid reference: %v", name, err)
-	}
-
-	return reference.TagNameOnly(cnabRef), nil
 }
