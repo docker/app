@@ -83,7 +83,8 @@ services:
 	userParameters := map[string]string{
 		"front.port": "4242",
 	}
-	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port:-9090}.")
+	checkRenderError(t, userParameters, composeFile, "The default value syntax of Compose files is not supported in Docker App. "+
+		"The characters ':' and '-' are not allowed in parameter names. Invalid parameter: ${front.port:-9090}.")
 
 	composeFile = `
 version: "3.6"
@@ -92,7 +93,8 @@ services:
 	ports:
 		- "${front.port-9090}:80"
 	`
-	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port-9090}.")
+	checkRenderError(t, userParameters, composeFile, "The default value syntax of Compose files is not supported in Docker App. "+
+		"The characters ':' and '-' are not allowed in parameter names. Invalid parameter: ${front.port-9090}.")
 	composeFile = `
 version: "3.6"
 services:
@@ -100,7 +102,8 @@ services:
 	ports:
 		- "${front.port:?Error}:80"
 	`
-	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port:?Error}.")
+	checkRenderError(t, userParameters, composeFile, "The custom error message syntax of Compose files is not supported in Docker App. "+
+		"The characters ':' and '?' are not allowed in parameter names. Invalid parameter: ${front.port:?Error}.")
 
 	composeFile = `
 version: "3.6"
@@ -109,7 +112,8 @@ services:
 	ports:
 		- "${front.port?Error:unset variable}:80"
 	`
-	checkRenderError(t, userParameters, composeFile, "Parameters must not have default values set in compose file. Invalid parameter: ${front.port?Error:unset variable}.")
+	checkRenderError(t, userParameters, composeFile, "The custom error message syntax of Compose files is not supported in Docker App. "+
+		"The characters ':' and '?' are not allowed in parameter names. Invalid parameter: ${front.port?Error:unset variable}.")
 
 }
 func TestSubstituteMixedParams(t *testing.T) {
