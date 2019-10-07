@@ -18,7 +18,7 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 		return nil, err
 	}
 
-	services, err := Load(parsed)
+	services, err := load(parsed)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse compose file: %s", err)
 	}

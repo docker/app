@@ -1,7 +1,6 @@
 package build
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/docker/app/internal/packager"
@@ -56,18 +55,11 @@ func Test_parseCompose(t *testing.T) {
 
 			got, err := parseCompose(app, buildOptions{})
 			assert.NilError(t, err)
-			if _, ok := got["dontwant"]; ok {
-				t.Errorf("parseCompose() should have excluded 'dontwant' service")
-				return
-			}
+			_, ok := got["dontwant"]
+			assert.Assert(t, !ok, "parseCompose() should have excluded 'dontwant' service")
 			opt, ok := got[tt.service]
-			if !ok {
-				t.Errorf("parseCompose() error = %s not converted into a build.Options", tt.service)
-				return
-			}
-			if !reflect.DeepEqual(opt, tt.want) {
-				t.Errorf("parseCompose() got = %v, want = %v", opt, tt.want)
-			}
+			assert.Assert(t, ok, "parseCompose() error = %s not converted into a build.Options", tt.service)
+			assert.DeepEqual(t, opt, tt.want)
 		})
 	}
 }
