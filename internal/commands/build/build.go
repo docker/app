@@ -39,9 +39,9 @@ type buildOptions struct {
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
-		Use:     "build [APPLICATION] [TAG]",
+		Use:     "build [APP_NAME] [APP_IMAGE]",
 		Short:   "Build service images for the application",
-		Example: `$ docker app build myapp.dockerapp`,
+		Example: `$ docker app build myapp.dockerapp my/app:1.0.0`,
 		Args:    cli.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.tag = args[1]
@@ -123,7 +123,10 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	if err != nil {
 		return nil, err
 	}
-	updateBundle(bundle, resp)
+	err = updateBundle(dockerCli, bundle, resp)
+	if err != nil {
+		return nil, err
+	}
 
 	if ref == nil {
 		if ref, err = computeDigest(bundle); err != nil {
@@ -152,20 +155,28 @@ func checkMinimalEngineVersion(dockerCli command.Cli) error {
 	return nil
 }
 
-func updateBundle(bundle *bundle.Bundle, resp map[string]*client.SolveResponse) {
+func updateBundle(dockerCli command.Cli, bundle *bundle.Bundle, resp map[string]*client.SolveResponse) error {
 	debugSolveResponses(resp)
 	for service, r := range resp {
 		digest := r.ExporterResponse["containerimage.digest"]
+		inspect, _, err := dockerCli.Client().ImageInspectWithRaw(context.TODO(), digest)
+		if err != nil {
+			return err
+		}
+		size := uint64(inspect.Size)
 		if service == "com.docker.app.invocation-image" {
 			bundle.InvocationImages[0].Digest = digest
+			bundle.InvocationImages[0].Size = size
 		} else {
 			image := bundle.Images[service]
 			image.ImageType = cnab.ImageTypeDocker
 			image.Digest = digest
+			image.Size = size
 			bundle.Images[service] = image
 		}
 	}
 	debugBundle(bundle)
+	return nil
 }
 
 func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (build.Options, error) {
