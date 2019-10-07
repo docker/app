@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -88,6 +89,15 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 		registryLogs:    registry.Logs(t),
 	}
 	todo(info)
+}
+
+func insertBundles(t *testing.T, cmd icmd.Cmd, info dindSwarmAndRegistryInfo) {
+	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), info.registryAddress+"/c-myapp")
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "b-simple-app")
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "a-simple-app")
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
 // Container represents a docker container

@@ -10,16 +10,6 @@ import (
 	"gotest.tools/icmd"
 )
 
-func insertBundles(t *testing.T, cmd icmd.Cmd, info dindSwarmAndRegistryInfo) {
-	// Push an application so that we can later pull it by digest
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), info.registryAddress+"/c-myapp")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "b-simple-app")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "a-simple-app")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-}
-
 func expectImageListOutput(t *testing.T, cmd icmd.Cmd, output string) {
 	cmd.Command = dockerCli.Command("app", "image", "ls")
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
