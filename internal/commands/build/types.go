@@ -24,7 +24,7 @@ type ImageBuildConfig struct {
 	Args       compose.MappingWithEquals `yaml:",omitempty" json:"args,omitempty"`
 }
 
-func Load(dict map[string]interface{}) ([]ServiceConfig, error) {
+func load(dict map[string]interface{}) ([]ServiceConfig, error) {
 	section, ok := dict["services"]
 	if !ok {
 		return nil, fmt.Errorf("compose file doesn't declare any service")
@@ -33,14 +33,14 @@ func Load(dict map[string]interface{}) ([]ServiceConfig, error) {
 	if !ok {
 		return nil, fmt.Errorf("Invalid compose file: 'services' should be a map")
 	}
-	return LoadServices(services)
+	return loadServices(services)
 }
 
-func LoadServices(servicesDict map[string]interface{}) ([]ServiceConfig, error) {
+func loadServices(servicesDict map[string]interface{}) ([]ServiceConfig, error) {
 	var services []ServiceConfig
 
 	for name, serviceDef := range servicesDict {
-		serviceConfig, err := LoadService(name, serviceDef.(map[string]interface{}))
+		serviceConfig, err := loadService(name, serviceDef.(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}
@@ -49,15 +49,14 @@ func LoadServices(servicesDict map[string]interface{}) ([]ServiceConfig, error) 
 	return services, nil
 }
 
-func LoadService(name string, serviceDict map[string]interface{}) (*ServiceConfig, error) {
-	serviceConfig := &ServiceConfig{}
+func loadService(name string, serviceDict map[string]interface{}) (*ServiceConfig, error) {
+	serviceConfig := &ServiceConfig{Name: name}
 	if err := loader.Transform(serviceDict, serviceConfig, loader.Transformer{
 		TypeOf: reflect.TypeOf(ImageBuildConfig{}),
 		Func:   transformBuildConfig,
 	}); err != nil {
 		return nil, err
 	}
-	serviceConfig.Name = name
 	return serviceConfig, nil
 }
 
