@@ -234,9 +234,9 @@ Removing network hello_default
 
 ## Installation
 
-**Note**: Docker app is a _command line_ plugin (not be confused with docker _engine_ plugins), extending the `docker` command with `app` sub-commands. 
-It requires [Docker CLI](https://download.docker.com) 19.03.0 or later with experimental features enabled. 
-Either set environment variable `DOCKER_CLI_EXPERIMENTAL=enabled` 
+**Note**: Docker app is a _command line_ plugin (not be confused with docker _engine_ plugins), extending the `docker` command with `app` sub-commands.
+It requires [Docker CLI](https://download.docker.com) 19.03.0 or later with experimental features enabled.
+Either set environment variable `DOCKER_CLI_EXPERIMENTAL=enabled`
 or update your [docker CLI configuration](https://docs.docker.com/engine/reference/commandline/cli/#experimental-features).
 
 **Note**: Docker-app can't be installed using the `docker plugin install` command (yet)
@@ -307,10 +307,7 @@ $ docker app inspect myhubuser/myimage
 
 The first time a command is executed against a given image name the bundle is
 pulled from the registry and put in the local bundle store. You can pre-populate
-this store by running `docker app pull myhubuser/myimage:latest`. All commands
-manipulating a package also accept a `--pull` flag to force pulling the bundle
-from the registry, even if it is present in the local store. This can be useful
-when you are repeatedly pushing a bundle on the same tag.
+this store by running `docker app pull myhubuser/myimage:latest`.
 
 ### Multi-arch applications
 

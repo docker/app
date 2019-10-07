@@ -102,7 +102,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 		return nil, "", err
 	}
 
-	bndl, ref, err := resolveBundle(dockerCli, bundleStore, name, false)
+	bndl, ref, err := resolveBundle(dockerCli, bundleStore, name)
 	if err != nil {
 		return nil, "", err
 	}

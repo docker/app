@@ -8,6 +8,7 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
+	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -34,8 +35,13 @@ func runPull(dockerCli command.Cli, name string) error {
 	if err != nil {
 		return err
 	}
+	ref, err := reference.ParseNormalizedNamed(name)
+	if err != nil {
+		return errors.Wrap(err, name)
+	}
+	tagRef := reference.TagNameOnly(ref)
 
-	bndl, ref, err := getLocalBundle(dockerCli, bundleStore, name, true)
+	bndl, err := pullBundle(dockerCli, bundleStore, tagRef)
 	if err != nil {
 		return errors.Wrap(err, name)
 	}
