@@ -3,6 +3,8 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
+	"net"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -89,6 +91,25 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 		registryLogs:    registry.Logs(t),
 	}
 	todo(info)
+}
+
+func findAvailablePort() int {
+	rand.Seed(time.Now().UnixNano())
+	for {
+		candidate := (rand.Int() % 2000) + 5000
+		if isPortAvailable(candidate) {
+			return candidate
+		}
+	}
+}
+
+func isPortAvailable(port int) bool {
+	l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return false
+	}
+	defer l.Close()
+	return true
 }
 
 func insertBundles(t *testing.T, cmd icmd.Cmd, info dindSwarmAndRegistryInfo) {

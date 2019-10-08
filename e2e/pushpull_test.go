@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
-	"net"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -251,25 +249,6 @@ func TestPushInstallBundle(t *testing.T) {
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
 		})
 	})
-}
-
-func findAvailablePort() int {
-	rand.Seed(time.Now().UnixNano())
-	for {
-		candidate := (rand.Int() % 2000) + 5000
-		if isPortAvailable(candidate) {
-			return candidate
-		}
-	}
-}
-
-func isPortAvailable(port int) bool {
-	l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
-	if err != nil {
-		return false
-	}
-	defer l.Close()
-	return true
 }
 
 func httpGet(url string, headers map[string]string, obj interface{}) error {
