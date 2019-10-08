@@ -14,7 +14,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type imageListOptions struct {
+	showDigests bool
+}
+
 func listCmd(dockerCli command.Cli) *cobra.Command {
+	options := imageListOptions{}
 	cmd := &cobra.Command{
 		Short:   "List application images",
 		Use:     "ls",
@@ -30,14 +35,17 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 				return err
 			}
 
-			return runList(dockerCli, bundleStore)
+			return runList(dockerCli, options, bundleStore)
 		},
 	}
+
+	flags := cmd.Flags()
+	flags.BoolVar(&options.showDigests, "digests", false, "Show digests")
 
 	return cmd
 }
 
-func runList(dockerCli command.Cli, bundleStore store.BundleStore) error {
+func runList(dockerCli command.Cli, options imageListOptions, bundleStore store.BundleStore) error {
 	bundles, err := bundleStore.List()
 	if err != nil {
 		return err
@@ -48,7 +56,7 @@ func runList(dockerCli command.Cli, bundleStore store.BundleStore) error {
 		return err
 	}
 
-	return printImages(dockerCli, pkgs)
+	return printImages(dockerCli, options, pkgs)
 }
 
 func getPackages(bundleStore store.BundleStore, references []reference.Named) ([]pkg, error) {
@@ -70,38 +78,43 @@ func getPackages(bundleStore store.BundleStore, references []reference.Named) ([
 	return packages, nil
 }
 
-func printImages(dockerCli command.Cli, refs []pkg) error {
+func printImages(dockerCli command.Cli, options imageListOptions, refs []pkg) error {
 	w := tabwriter.NewWriter(dockerCli.Out(), 0, 0, 1, ' ', 0)
 
-	printHeaders(w)
+	columns := getColumns(options)
+	printHeaders(w, columns)
 	for _, ref := range refs {
-		printValues(w, ref)
+		printValues(w, columns, ref)
 	}
 
 	return w.Flush()
 }
 
-func printHeaders(w io.Writer) {
+func getColumns(options imageListOptions) columns {
+	if options.showDigests {
+		return withDigestColumns
+	}
+	return defaultColumns
+}
+
+func printHeaders(w io.Writer, cols columns) {
 	var headers []string
-	for _, column := range listColumns {
+	for _, column := range cols {
 		headers = append(headers, column.header)
 	}
 	fmt.Fprintln(w, strings.Join(headers, "\t"))
 }
 
-func printValues(w io.Writer, ref pkg) {
+func printValues(w io.Writer, cols columns, ref pkg) {
 	var values []string
-	for _, column := range listColumns {
+	for _, column := range cols {
 		values = append(values, column.value(ref))
 	}
 	fmt.Fprintln(w, strings.Join(values, "\t"))
 }
 
 var (
-	listColumns = []struct {
-		header string
-		value  func(p pkg) string
-	}{
+	defaultColumns = []column{
 		{"APP IMAGE", func(p pkg) string {
 			return reference.FamiliarString(p.ref)
 		}},
@@ -109,7 +122,37 @@ var (
 			return p.bundle.Name
 		}},
 	}
+
+	withDigestColumns = columns{
+		{"REPOSITORY", func(p pkg) string {
+			return reference.FamiliarName(p.ref)
+		}},
+		{"TAG", func(p pkg) string {
+			t, ok := p.ref.(reference.Tagged)
+			if ok {
+				return t.Tag()
+			}
+			return "<none>"
+		}},
+		{"DIGEST", func(p pkg) string {
+			t, ok := p.ref.(reference.Digested)
+			if ok {
+				return t.Digest().Encoded()
+			}
+			return "<none>"
+		}},
+		{"APP NAME", func(p pkg) string {
+			return p.bundle.Name
+		}},
+	}
 )
+
+type columns []column
+
+type column struct {
+	header string
+	value  func(p pkg) string
+}
 
 type pkg struct {
 	ref    reference.Named
