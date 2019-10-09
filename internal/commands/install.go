@@ -10,6 +10,7 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/docker/pkg/namesgenerator"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +18,6 @@ import (
 type installOptions struct {
 	parametersOptions
 	credentialOptions
-	pullOptions
 	orchestrator  string
 	kubeNamespace string
 	stackName     string
@@ -59,7 +59,6 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Assign a name to the installation")
@@ -68,7 +67,6 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
-	defer muteDockerCli(dockerCli)()
 	opts.SetDefaultTargetContext(dockerCli)
 
 	bind, err := requiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())
@@ -80,9 +78,9 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 		return err
 	}
 
-	bndl, ref, err := resolveBundle(dockerCli, bundleStore, appname, opts.pull)
+	bndl, ref, err := resolveBundle(dockerCli, bundleStore, appname)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Unable to find application %q", appname)
 	}
 	if err := bndl.Validate(); err != nil {
 		return err
@@ -131,7 +129,10 @@ func runInstall(dockerCli command.Cli, appname string, opts installOptions) erro
 	inst := &action.Install{
 		Driver: driverImpl,
 	}
-	err = inst.Run(&installation.Claim, creds, os.Stdout)
+	{
+		defer muteDockerCli(dockerCli)()
+		err = inst.Run(&installation.Claim, creds, os.Stdout)
+	}
 	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.
 	err2 := installationStore.Store(installation)

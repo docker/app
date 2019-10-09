@@ -13,8 +13,6 @@ import (
 
 type renderOptions struct {
 	parametersOptions
-	pullOptions
-
 	formatDriver string
 	renderOutput string
 }
@@ -32,7 +30,6 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
-	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVarP(&opts.renderOutput, "output", "o", "-", "Output file")
 	cmd.Flags().StringVar(&opts.formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
 
@@ -52,7 +49,7 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		w = f
 	}
 
-	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts.pullOptions, opts.parametersOptions)
+	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts.parametersOptions)
 	if err != nil {
 		return err
 	}

@@ -149,14 +149,6 @@ func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli, credentialS
 	}
 }
 
-type pullOptions struct {
-	pull bool
-}
-
-func (o *pullOptions) addFlags(flags *pflag.FlagSet) {
-	flags.BoolVar(&o.pull, "pull", false, "Pull the bundle")
-}
-
 // insecureRegistriesFromEngine reads the registry configuration from the daemon and returns
 // a list of all insecure ones.
 func insecureRegistriesFromEngine(dockerCli command.Cli) ([]string, error) {

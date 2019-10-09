@@ -17,6 +17,7 @@ import (
 	"github.com/deislabs/cnab-go/driver"
 	dockerDriver "github.com/deislabs/cnab-go/driver/docker"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/log"
 	"github.com/docker/app/internal/packager"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
@@ -24,6 +25,7 @@ import (
 	"github.com/docker/cli/cli/context/docker"
 	"github.com/docker/cli/cli/context/store"
 	contextstore "github.com/docker/cli/cli/context/store"
+	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -255,7 +257,7 @@ func loadBundleFromFile(filename string) (*bundle.Bundle, error) {
 //resolveBundle looks for a CNAB bundle which can be in a Docker App Package format or
 // a bundle stored locally or in the bundle store. It returns a built or found bundle,
 // a reference to the bundle if it is found in the bundlestore, and an error.
-func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool) (*bundle.Bundle, string, error) {
+func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, string, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
 	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
@@ -264,41 +266,58 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 	name, kind := getAppNameKind(name)
 	switch kind {
 	case nameKindFile:
-		if pullRef {
-			return nil, "", errors.Errorf("%s: cannot pull when referencing a file based app", name)
-		}
 		if strings.HasSuffix(name, internal.AppExtension) {
 			return extractAndLoadAppBasedBundle(dockerCli, name)
 		}
 		bndl, err := loadBundleFromFile(name)
 		return bndl, "", err
 	case nameKindDir, nameKindEmpty:
-		if pullRef {
-			if kind == nameKindDir {
-				return nil, "", errors.Errorf("%s: cannot pull when referencing a directory based app", name)
-			}
-			return nil, "", errors.Errorf("cannot pull when referencing a directory based app")
-		}
 		return extractAndLoadAppBasedBundle(dockerCli, name)
 	case nameKindReference:
-		bndl, tagRef, err := getLocalBundle(dockerCli, bundleStore, name, pullRef)
+		bndl, tagRef, err := getBundle(dockerCli, bundleStore, name)
+		if err != nil {
+			return nil, "", err
+		}
 		return bndl, tagRef.String(), err
 	}
 	return nil, "", fmt.Errorf("could not resolve bundle %q", name)
 }
 
-func getLocalBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string, pullRef bool) (*bundle.Bundle, reference.Named, error) {
+func getBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, reference.Named, error) {
 	ref, err := reference.ParseNormalizedNamed(name)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, name)
 	}
 	tagRef := reference.TagNameOnly(ref)
+
+	bndl, err := bundleStore.Read(tagRef)
+	if err != nil {
+		fmt.Fprintf(dockerCli.Err(), "Unable to find application image %q locally\n", reference.FamiliarString(tagRef))
+
+		bndl, err = pullBundle(dockerCli, bundleStore, tagRef)
+		if err != nil {
+			return nil, nil, err
+		}
+		return bndl, tagRef, nil
+	}
+
+	return bndl, tagRef, nil
+}
+
+func pullBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, tagRef reference.Named) (*bundle.Bundle, error) {
 	insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
 	if err != nil {
-		return nil, tagRef, fmt.Errorf("could not retrieve insecure registries: %v", err)
+		return nil, fmt.Errorf("could not retrieve insecure registries: %v", err)
 	}
-	bndl, err := bundleStore.LookupOrPullBundle(tagRef, pullRef, dockerCli.ConfigFile(), insecureRegistries)
-	return bndl, tagRef, err
+
+	bndl, err := remotes.Pull(log.WithLogContext(context.Background()), reference.TagNameOnly(tagRef), remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...))
+	if err != nil {
+		return nil, err
+	}
+	if err := bundleStore.Store(tagRef, bndl); err != nil {
+		return nil, err
+	}
+	return bndl, nil
 }
 
 func requiredClaimBindMount(c claim.Claim, targetContextName string, dockerCli command.Cli) (bindMount, error) {
@@ -354,8 +373,7 @@ func isDockerHostLocal(host string) bool {
 	return host == "" || strings.HasPrefix(host, "unix://") || strings.HasPrefix(host, "npipe://")
 }
 
-func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
-	pullOpts pullOptions, paramsOpts parametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
+func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer, paramsOpts parametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err
@@ -364,7 +382,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	bundle, ref, err := resolveBundle(dockerCli, bundleStore, appname, pullOpts.pull)
+	bundle, ref, err := resolveBundle(dockerCli, bundleStore, appname)
 	if err != nil {
 		return nil, nil, nil, err
 	}

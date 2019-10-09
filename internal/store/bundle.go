@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,11 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/docker/app/internal/log"
-	"github.com/docker/cli/cli/config/configfile"
-
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 )
@@ -25,8 +20,6 @@ type BundleStore interface {
 	Read(ref reference.Named) (*bundle.Bundle, error)
 	List() ([]reference.Named, error)
 	Remove(ref reference.Named) error
-
-	LookupOrPullBundle(ref reference.Named, pullRef bool, config *configfile.ConfigFile, insecureRegistries []string) (*bundle.Bundle, error)
 }
 
 var _ BundleStore = &bundleStore{}
@@ -110,25 +103,6 @@ func (b *bundleStore) Remove(ref reference.Named) error {
 	}
 
 	return os.Remove(path)
-}
-
-// LookupOrPullBundle will fetch the given bundle from the local
-// bundle store, or if it is missing from the registry, and returns
-// it. Always pulls if pullRef is true. If it pulls then the local
-// bundle store is updated.
-func (b *bundleStore) LookupOrPullBundle(ref reference.Named, pullRef bool, config *configfile.ConfigFile, insecureRegistries []string) (*bundle.Bundle, error) {
-	if !pullRef {
-		bndl, err := b.Read(ref)
-		return bndl, errors.Wrapf(err, "bundle not found")
-	}
-	bndl, err := remotes.Pull(log.WithLogContext(context.Background()), reference.TagNameOnly(ref), remotes.CreateResolver(config, insecureRegistries...))
-	if err != nil {
-		return nil, errors.Wrap(err, ref.String())
-	}
-	if err := b.Store(ref, bndl); err != nil {
-		return nil, err
-	}
-	return bndl, nil
 }
 
 func (b *bundleStore) storePath(ref reference.Named) (string, error) {

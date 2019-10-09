@@ -13,7 +13,6 @@ import (
 type upgradeOptions struct {
 	parametersOptions
 	credentialOptions
-	pullOptions
 	bundleOrDockerApp string
 }
 
@@ -30,7 +29,6 @@ func upgradeCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.pullOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "app-name", "", "Override the installation with another Application Package")
 
 	return cmd
@@ -55,7 +53,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	}
 
 	if opts.bundleOrDockerApp != "" {
-		b, _, err := resolveBundle(dockerCli, bundleStore, opts.bundleOrDockerApp, opts.pull)
+		b, _, err := resolveBundle(dockerCli, bundleStore, opts.bundleOrDockerApp)
 		if err != nil {
 			return err
 		}

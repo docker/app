@@ -7,7 +7,6 @@ import (
 	"gotest.tools/assert"
 
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/distribution/reference"
 )
 
@@ -42,10 +41,6 @@ func (b *bundleStoreStub) List() ([]reference.Named, error) {
 
 func (b *bundleStoreStub) Remove(ref reference.Named) error {
 	return nil
-}
-
-func (b *bundleStoreStub) LookupOrPullBundle(ref reference.Named, pullRef bool, config *configfile.ConfigFile, insecureRegistries []string) (*bundle.Bundle, error) {
-	return nil, nil
 }
 
 var mockedBundleStore = &bundleStoreStub{}
