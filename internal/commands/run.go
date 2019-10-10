@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type installOptions struct {
+type runOptions struct {
 	parametersOptions
 	credentialOptions
 	orchestrator  string
@@ -33,28 +33,27 @@ const (
 	nameKindReference
 )
 
-const longDescription = `Install an application.
-By default, the application definition in the current directory will be
-installed. The APP_NAME can also be:
+const longDescription = `Run an application.
+By default, the application definition in the current directory will be ran. The APP_NAME can also be:
 - a path to a Docker Application definition (.dockerapp) or a CNAB bundle.json
 - a registry Application Package reference`
 
-const example = `$ docker app install myapp.dockerapp --name myinstallation --target-context=mycontext
-$ docker app install myrepo/myapp:mytag --name myinstallation --target-context=mycontext
-$ docker app install bundle.json --name myinstallation --credential-set=mycredentials.yml`
+const example = `$ docker app run myapp.dockerapp --name myinstallation --target-context=mycontext
+$ docker app run myrepo/myapp:mytag --name myinstallation --target-context=mycontext
+$ docker app run bundle.json --name myinstallation --credential-set=mycredentials.yml`
 
-func installCmd(dockerCli command.Cli) *cobra.Command {
-	var opts installOptions
+func runCmd(dockerCli command.Cli) *cobra.Command {
+	var opts runOptions
 
 	cmd := &cobra.Command{
-		Use:     "install [APP_NAME] [--name INSTALLATION_NAME] [--target-context TARGET_CONTEXT] [OPTIONS]",
+		Use:     "run [APP_NAME] [--name INSTALLATION_NAME] [--target-context TARGET_CONTEXT] [OPTIONS]",
 		Aliases: []string{"deploy"},
-		Short:   "Install an application",
+		Short:   "Run an application",
 		Long:    longDescription,
 		Example: example,
 		Args:    cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInstall(dockerCli, firstOrEmpty(args), opts)
+			return runRun(dockerCli, firstOrEmpty(args), opts)
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
@@ -66,7 +65,7 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
+func runRun(dockerCli command.Cli, appname string, opts runOptions) error {
 	opts.SetDefaultTargetContext(dockerCli)
 
 	bind, err := requiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())

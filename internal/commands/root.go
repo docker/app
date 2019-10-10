@@ -49,7 +49,7 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 
 func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 	cmd.AddCommand(
-		installCmd(dockerCli),
+		runCmd(dockerCli),
 		upgradeCmd(dockerCli),
 		removeCmd(dockerCli),
 		listCmd(dockerCli),
