@@ -73,6 +73,11 @@ const (
 	// CustomDockerAppName is the custom variable set by Docker App to
 	// save custom informations
 	CustomDockerAppName = "com.docker.app"
+
+	// LabelAppNamespace is the label used to track app resources
+	LabelAppNamespace = Namespace + "namespace"
+	// LabelAppVersion is the label used to identify what version of docker app was used to create the app
+	LabelAppVersion = Namespace + "version"
 )
 
 var (

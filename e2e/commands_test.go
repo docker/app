@@ -230,6 +230,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 			fmt.Sprintf("Creating service %s_api", appName),
 			fmt.Sprintf("Creating service %s_web", appName),
 		})
+	assertAppLabels(t, &cmd, appName, "db")
 
 	// List the installed application
 	cmd.Command = dockerCli.Command("app", "ls")
@@ -254,6 +255,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 			fmt.Sprintf("Updating service %s_api", appName),
 			fmt.Sprintf("Updating service %s_web", appName),
 		})
+	assertAppLabels(t, &cmd, appName, "db")
 
 	// Uninstall the application
 	cmd.Command = dockerCli.Command("app", "rm", appName)
@@ -403,6 +405,15 @@ func initializeDockerAppEnvironment(t *testing.T, cmd *icmd.Cmd, tmpDir *fs.Dir,
 	// Load the needed base cnab image into the swarm docker engine
 	cmd.Command = dockerCli.Command("load", "--input", tmpDir.Join("cnab-app-base.tar.gz"))
 	icmd.RunCmd(*cmd).Assert(t, icmd.Success)
+}
+
+func assertAppLabels(t *testing.T, cmd *icmd.Cmd, appName, containerName string) {
+	cmd.Command = dockerCli.Command("inspect", fmt.Sprintf("%s_%s", appName, containerName))
+	checkContains(t, icmd.RunCmd(*cmd).Assert(t, icmd.Success).Combined(),
+		[]string{
+			fmt.Sprintf(`"%s": "%s"`, internal.LabelAppNamespace, appName),
+			fmt.Sprintf(`"%s": ".+"`, internal.LabelAppVersion),
+		})
 }
 
 func checkContains(t *testing.T, combined string, expectedLines []string) {
