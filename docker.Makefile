@@ -14,7 +14,7 @@ E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
 COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
 SCHEMAS_CTNR_NAME := $(BIN_NAME)-schemas-$(TAG)
 
-BUILD_ARGS=--build-arg=EXPERIMENTAL --build-arg=TAG --build-arg=COMMIT --build-arg=ALPINE_VERSION --build-arg=GOPROXY
+BUILD_ARGS=--build-arg EXPERIMENTAL=$(EXPERIMENTAL) --build-arg TAG=$(TAG) --build-arg COMMIT=$(COMMIT) --build-arg ALPINE_VERSION=$(ALPINE_VERSION) --build-arg GOPROXY=$(GOPROXY)
 
 PKG_PATH := /go/src/$(PKG_NAME)
 
