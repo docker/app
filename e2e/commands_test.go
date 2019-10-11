@@ -161,7 +161,7 @@ func TestInspectApp(t *testing.T) {
 		cmd.Dir = dir.Path()
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      "could not parse '' as a valid reference",
+			Err:      `"docker app inspect" requires exactly 1 argument.`,
 		})
 
 		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "simple-app:1.0.0")
