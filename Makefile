@@ -31,7 +31,7 @@ endif
 
 TEST_RESULTS_DIR = _build/test-results
 STATIC_FLAGS= CGO_ENABLED=0
-GO_BUILD = $(STATIC_FLAGS) go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
+GO_BUILD = $(STATIC_FLAGS) go build -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS) -trimpath
 GO_TEST = $(STATIC_FLAGS) go test -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 GO_TESTSUM = $(STATIC_FLAGS) gotestsum --junitfile $(TEST_RESULTS_DIR)/$(TEST_RESULTS_PREFIX)$(1) -- -tags=$(BUILDTAGS) -ldflags=$(LDFLAGS)
 
