@@ -1,0 +1,6 @@
+webui:
+  port: 8000
+rng:
+  port: 8001
+hasher:
+  port: 8002
