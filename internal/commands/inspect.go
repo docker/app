@@ -23,7 +23,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		Short: "Shows metadata, parameters and a summary of the Compose file for a given application",
 		Example: `$ docker app inspect my-installed-app
 $docker app inspect my-app:1.0.0`,
-		Args: cli.RequiresMaxArgs(1),
+		Args: cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInspect(dockerCli, firstOrEmpty(args), opts)
 		},
