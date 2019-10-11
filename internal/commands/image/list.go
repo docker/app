@@ -51,7 +51,7 @@ func runList(dockerCli command.Cli, bundleStore store.BundleStore) error {
 	return printImages(dockerCli, pkgs)
 }
 
-func getPackages(bundleStore store.BundleStore, references []reference.Named) ([]pkg, error) {
+func getPackages(bundleStore store.BundleStore, references []reference.Reference) ([]pkg, error) {
 	packages := make([]pkg, len(references))
 	for i, ref := range references {
 		b, err := bundleStore.Read(ref)
@@ -112,6 +112,6 @@ var (
 )
 
 type pkg struct {
-	ref    reference.Named
+	ref    reference.Reference
 	bundle *bundle.Bundle
 }

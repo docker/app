@@ -16,10 +16,10 @@ import (
 
 //
 type BundleStore interface {
-	Store(ref reference.Named, bndle *bundle.Bundle) error
-	Read(ref reference.Named) (*bundle.Bundle, error)
-	List() ([]reference.Named, error)
-	Remove(ref reference.Named) error
+	Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error)
+	Read(ref reference.Reference) (*bundle.Bundle, error)
+	List() ([]reference.Reference, error)
+	Remove(ref reference.Reference) error
 }
 
 var _ BundleStore = &bundleStore{}
@@ -28,24 +28,52 @@ type bundleStore struct {
 	path string
 }
 
-func (b *bundleStore) Store(ref reference.Named, bndle *bundle.Bundle) error {
-	path, err := b.storePath(ref)
+// We store bundles either by image:tags, image:digest or by unique ID (actually, bundle's sha256).
+//
+// Within the bundle store, the file layout is
+// <registry>
+//  \_ <repo>
+//       \_ _tags
+//           \_ <tag>
+//                \_ bundle.json
+//       \_ _digests
+//            \_ <algorithm>
+//                \_ <digested-reference>
+//                     \_ bundle.json
+// _ids
+//  \_ <bundle_id>
+//      \_ bundle.json
+//
+
+func (b *bundleStore) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error) {
+	if ref == nil {
+		digest, err := ComputeDigest(bndle)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
+		}
+		ref = ID{digest.Encoded()}
+	}
+	dir, err := b.storePath(ref)
 	if err != nil {
-		return errors.Wrapf(err, "failed to store bundle %q", ref)
+		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return errors.Wrapf(err, "failed to store bundle %q", ref)
+	path := filepath.Join(dir, "bundle.json")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
-	err = bndle.WriteFile(path, 0644)
-	return errors.Wrapf(err, "failed to store bundle %q", ref)
+	if err = bndle.WriteFile(path, 0644); err != nil {
+		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
+	}
+	return ref, nil
 }
 
-func (b *bundleStore) Read(ref reference.Named) (*bundle.Bundle, error) {
+func (b *bundleStore) Read(ref reference.Reference) (*bundle.Bundle, error) {
 	path, err := b.storePath(ref)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
 	}
-	data, err := ioutil.ReadFile(path)
+
+	data, err := ioutil.ReadFile(filepath.Join(path, "bundle.json"))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
 	}
@@ -57,8 +85,9 @@ func (b *bundleStore) Read(ref reference.Named) (*bundle.Bundle, error) {
 }
 
 // Returns the list of all bundles present in the bundle store
-func (b *bundleStore) List() ([]reference.Named, error) {
-	var references []reference.Named
+func (b *bundleStore) List() ([]reference.Reference, error) {
+	var references []reference.Reference
+	digests := filepath.Join(b.path, "_ids")
 	if err := filepath.Walk(b.path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -69,6 +98,13 @@ func (b *bundleStore) List() ([]reference.Named, error) {
 		}
 
 		if !strings.HasSuffix(info.Name(), ".json") {
+			return nil
+		}
+
+		if strings.HasPrefix(path, digests) {
+			rel := path[len(digests)+1:]
+			dg := strings.Split(filepath.ToSlash(rel), "/")[0]
+			references = append(references, ID{dg})
 			return nil
 		}
 
@@ -85,28 +121,31 @@ func (b *bundleStore) List() ([]reference.Named, error) {
 	}
 
 	sort.Slice(references, func(i, j int) bool {
-		return references[i].Name() < references[j].Name()
+		return references[i].String() < references[j].String()
 	})
 
 	return references, nil
 }
 
 // Remove removes a bundle from the bundle store.
-func (b *bundleStore) Remove(ref reference.Named) error {
+func (b *bundleStore) Remove(ref reference.Reference) error {
 	path, err := b.storePath(ref)
 	if err != nil {
 		return err
 	}
-
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New("no such image " + reference.FamiliarString(ref))
 	}
-
-	return os.Remove(path)
+	return os.RemoveAll(path)
 }
 
-func (b *bundleStore) storePath(ref reference.Named) (string, error) {
-	name := ref.Name()
+func (b *bundleStore) storePath(ref reference.Reference) (string, error) {
+	named, ok := ref.(reference.Named)
+	if !ok {
+		return filepath.Join(b.path, "_ids", ref.String()), nil
+	}
+
+	name := strings.Replace(named.Name(), ":", "_", 1)
 	// A name is safe for use as a filesystem path (it is
 	// alphanumerics + "." + "/") except for the ":" used to
 	// separate domain from port which is not safe on Windows.
@@ -116,7 +155,6 @@ func (b *bundleStore) storePath(ref reference.Named) (string, error) {
 	// replace one -- if there are more (and this wasn't caught
 	// when parsing the ref) then there will be errors when we try
 	// to use this as a path later.
-	name = strings.Replace(name, ":", "_", 1)
 	storeDir := filepath.Join(b.path, filepath.FromSlash(name))
 
 	// We rely here on _ not being valid in a name meaning there can be no clashes due to nesting of repositories.
@@ -130,7 +168,7 @@ func (b *bundleStore) storePath(ref reference.Named) (string, error) {
 		return "", errors.Errorf("%s: not tagged or digested", ref.String())
 	}
 
-	return storeDir + ".json", nil
+	return storeDir, nil
 }
 
 func (b *bundleStore) pathToReference(path string) (reference.Named, error) {
@@ -149,8 +187,8 @@ func (b *bundleStore) pathToReference(path string) (reference.Named, error) {
 		return nil, fmt.Errorf("invalid path %q, not referencing a CNAB bundle in json format", path)
 	}
 
-	// remove the json suffix from the filename
-	paths[len(paths)-1] = strings.TrimSuffix(paths[len(paths)-1], ".json")
+	// remove the bundle.json filename
+	paths = paths[:len(paths)-1]
 
 	name, err := reconstructNamedReference(path, paths)
 	if err != nil {

@@ -39,15 +39,14 @@ type buildOptions struct {
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
-		Use:     "build [APP_NAME] [APP_IMAGE]",
+		Use:     "build [APP_NAME] [OPTIONS]",
 		Short:   "Build service images for the application",
-		Example: `$ docker app build myapp.dockerapp my/app:1.0.0`,
-		Args:    cli.ExactArgs(2),
+		Example: `$ docker app build myapp.dockerapp --tag my/app:1.0.0`,
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.tag = args[1]
-			tag, err := runBuild(dockerCli, args[0], opts)
+			ref, err := runBuild(dockerCli, args[0], opts)
 			if err == nil {
-				fmt.Printf("Successfully build %s\n", tag.String())
+				fmt.Printf("Successfully build %s\n", ref.String())
 			}
 			return err
 		},
@@ -56,23 +55,19 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags := cmd.Flags()
 	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
+	flags.StringVarP(&opts.tag, "tag", "t", "", "Application image and optionally a tag in the 'image:tag' format")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
 
 	return cmd
 }
 
-func runBuild(dockerCli command.Cli, application string, opt buildOptions) (reference.Named, error) {
+func runBuild(dockerCli command.Cli, application string, opt buildOptions) (reference.Reference, error) {
 	err := checkMinimalEngineVersion(dockerCli)
 	if err != nil {
 		return nil, err
 	}
 
-	if opt.tag == "" {
-		// FIXME temporary, until we get support for Digest in bundleStore and other commands
-		return nil, fmt.Errorf("A tag is required to run docker app build")
-	}
-
-	var ref reference.Named
+	var ref reference.Reference
 	ref, err = packager.GetNamedTagged(opt.tag)
 	if err != nil {
 		return nil, err
@@ -128,16 +123,7 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		return nil, err
 	}
 
-	if ref == nil {
-		if ref, err = computeDigest(bundle); err != nil {
-			return nil, err
-		}
-	}
-
-	if err = packager.PersistInBundleStore(ref, bundle); err != nil {
-		return nil, err
-	}
-	return ref, nil
+	return packager.PersistInBundleStore(ref, bundle)
 }
 
 func checkMinimalEngineVersion(dockerCli command.Cli) error {

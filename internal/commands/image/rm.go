@@ -47,16 +47,15 @@ $ docker app image rm docker.io/library/myapp@sha256:beef...`,
 }
 
 func runRm(bundleStore store.BundleStore, app string) error {
-	ref, err := reference.ParseNormalizedNamed(app)
+	ref, err := StringToRef(app)
 	if err != nil {
 		return err
 	}
 
-	tagged := reference.TagNameOnly(ref)
-	if err := bundleStore.Remove(tagged); err != nil {
+	if err := bundleStore.Remove(ref); err != nil {
 		return err
 	}
 
-	fmt.Println("Deleted: " + reference.FamiliarString(tagged))
+	fmt.Println("Deleted: " + reference.FamiliarString(ref))
 	return nil
 }

@@ -34,19 +34,19 @@ func TestStoreAndReadBundle(t *testing.T) {
 		{
 			name: "tagged",
 			ref:  parseRefOrDie(t, "my-repo/my-bundle:my-tag"),
-			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag.json"),
+			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag", "bundle.json"),
 		},
 		{
 			name: "digested",
 			ref:  parseRefOrDie(t, "my-repo/my-bundle@sha256:"+testSha),
-			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_digests", "sha256", testSha+".json"),
+			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_digests", "sha256", testSha, "bundle.json"),
 		},
 	}
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			// Store the bundle
-			err = bundleStore.Store(testcase.ref, expectedBundle)
+			_, err = bundleStore.Store(testcase.ref, expectedBundle)
 			assert.NilError(t, err)
 
 			// Check the file exists
@@ -86,64 +86,64 @@ func TestStorePath(t *testing.T) {
 		{
 			Name:            "simple-tagged",
 			Ref:             parseRefOrDie(t, "foo:latest"),
-			ExpectedSubpath: "docker.io/library/foo/_tags/latest.json",
+			ExpectedSubpath: "docker.io/library/foo/_tags/latest",
 		},
 		{
 			Name:            "deep-simple-tagged",
 			Ref:             parseRefOrDie(t, "user/foo/bar:latest"),
-			ExpectedSubpath: "docker.io/user/foo/bar/_tags/latest.json",
+			ExpectedSubpath: "docker.io/user/foo/bar/_tags/latest",
 		},
 		{
 			Name:            "host-and-tagged",
 			Ref:             parseRefOrDie(t, "my.registry.example.com/foo:latest"),
-			ExpectedSubpath: "my.registry.example.com/foo/_tags/latest.json",
+			ExpectedSubpath: "my.registry.example.com/foo/_tags/latest",
 		},
 		{
 			Name:            "host-port-and-tagged",
 			Ref:             parseRefOrDie(t, "my.registry.example.com:5000/foo:latest"),
-			ExpectedSubpath: "my.registry.example.com_5000/foo/_tags/latest.json",
+			ExpectedSubpath: "my.registry.example.com_5000/foo/_tags/latest",
 		},
 		// Variants of a digested ref
 		{
 			Name:            "simple-digested",
 			Ref:             parseRefOrDie(t, "foo@sha256:"+testSha),
-			ExpectedSubpath: "docker.io/library/foo/_digests/sha256/" + testSha + ".json",
+			ExpectedSubpath: "docker.io/library/foo/_digests/sha256/" + testSha,
 		},
 		{
 			Name:            "deep-simple-digested",
 			Ref:             parseRefOrDie(t, "user/foo/bar@sha256:"+testSha),
-			ExpectedSubpath: "docker.io/user/foo/bar/_digests/sha256/" + testSha + ".json",
+			ExpectedSubpath: "docker.io/user/foo/bar/_digests/sha256/" + testSha,
 		},
 		{
 			Name:            "host-and-digested",
 			Ref:             parseRefOrDie(t, "my.registry.example.com/foo@sha256:"+testSha),
-			ExpectedSubpath: "my.registry.example.com/foo/_digests/sha256/" + testSha + ".json",
+			ExpectedSubpath: "my.registry.example.com/foo/_digests/sha256/" + testSha,
 		},
 		{
 			Name:            "host-port-and-digested",
 			Ref:             parseRefOrDie(t, "my.registry.example.com:5000/foo@sha256:"+testSha),
-			ExpectedSubpath: "my.registry.example.com_5000/foo/_digests/sha256/" + testSha + ".json",
+			ExpectedSubpath: "my.registry.example.com_5000/foo/_digests/sha256/" + testSha,
 		},
 		// If both then digest takes precedence (tag is ignored)
 		{
 			Name:            "simple-tagged-and-digested",
 			Ref:             parseRefOrDie(t, "foo:latest@sha256:"+testSha),
-			ExpectedSubpath: "docker.io/library/foo/_digests/sha256/" + testSha + ".json",
+			ExpectedSubpath: "docker.io/library/foo/_digests/sha256/" + testSha,
 		},
 		{
 			Name:            "deep-simple-tagged-and-digested",
 			Ref:             parseRefOrDie(t, "user/foo/bar:latest@sha256:"+testSha),
-			ExpectedSubpath: "docker.io/user/foo/bar/_digests/sha256/" + testSha + ".json",
+			ExpectedSubpath: "docker.io/user/foo/bar/_digests/sha256/" + testSha,
 		},
 		{
 			Name:            "host-and-tagged-and-digested",
 			Ref:             parseRefOrDie(t, "my.registry.example.com/foo:latest@sha256:"+testSha),
-			ExpectedSubpath: "my.registry.example.com/foo/_digests/sha256/" + testSha + ".json",
+			ExpectedSubpath: "my.registry.example.com/foo/_digests/sha256/" + testSha,
 		},
 		{
 			Name:            "host-port-and-tagged-and-digested",
 			Ref:             parseRefOrDie(t, "my.registry.example.com:5000/foo:latest@sha256:"+testSha),
-			ExpectedSubpath: "my.registry.example.com_5000/foo/_digests/sha256/" + testSha + ".json",
+			ExpectedSubpath: "my.registry.example.com_5000/foo/_digests/sha256/" + testSha,
 		},
 	} {
 		t.Run(tc.Name, func(t *testing.T) {
@@ -177,11 +177,11 @@ func TestPathToReference(t *testing.T) {
 			ExpectedError: `invalid path "registry/repo/name/_tags/file.xml", not referencing a CNAB bundle in json format`,
 		}, {
 			Name:         "return a reference from tagged",
-			Path:         "docker.io/library/foo/_tags/latest.json",
+			Path:         "docker.io/library/foo/_tags/latest/bundle.json",
 			ExpectedName: "docker.io/library/foo",
 		}, {
 			Name:         "return a reference from digested",
-			Path:         "docker.io/library/foo/_digests/sha256/" + testSha + ".json",
+			Path:         "docker.io/library/foo/_digests/sha256/" + testSha + "/bundle.json",
 			ExpectedName: "docker.io/library/foo",
 		},
 	} {
@@ -222,7 +222,7 @@ func TestList(t *testing.T) {
 
 	bndl := &bundle.Bundle{Name: "bundle-name"}
 	for _, ref := range refs {
-		err = bundleStore.Store(ref, bndl)
+		_, err = bundleStore.Store(ref, bndl)
 		assert.NilError(t, err)
 	}
 
@@ -260,7 +260,7 @@ func TestRemove(t *testing.T) {
 
 	bndl := &bundle.Bundle{Name: "bundle-name"}
 	for _, ref := range refs {
-		err = bundleStore.Store(ref, bndl)
+		_, err = bundleStore.Store(ref, bndl)
 		assert.NilError(t, err)
 	}
 
