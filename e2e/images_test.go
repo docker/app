@@ -12,11 +12,11 @@ import (
 
 func insertBundles(t *testing.T, cmd icmd.Cmd, info dindSwarmAndRegistryInfo) {
 	// Push an application so that we can later pull it by digest
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), info.registryAddress+"/c-myapp")
+	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "--tag", info.registryAddress+"/c-myapp")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "b-simple-app")
+	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "b-simple-app")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "a-simple-app")
+	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app")
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
@@ -86,7 +86,7 @@ func TestImageTag(t *testing.T) {
 		}
 
 		// given a first available image
-		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "a-simple-app")
+		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		singleImageExpectation := `APP IMAGE           APP NAME
@@ -112,14 +112,14 @@ a-simple-app:latest simple
 		dockerAppImageTag("a-simple-app$2", "b-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not parse 'a-simple-app$2' as a valid reference: invalid reference format`,
+			Err:      `could not parse 'a-simple-app$2' as a valid reference`,
 		})
 
 		// with invalid target reference
 		dockerAppImageTag("a-simple-app", "b@simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not parse 'b@simple-app' as a valid reference: invalid reference format`,
+			Err:      `could not parse 'b@simple-app' as a valid reference`,
 		})
 
 		// with unexisting source image
@@ -175,7 +175,7 @@ c-simple-app:latest simple
 `)
 
 		// given a new application
-		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "push-pull")
+		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "--tag", "push-pull")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
 a-simple-app:0.1    simple

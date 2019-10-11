@@ -17,17 +17,17 @@ type bundleStoreStub struct {
 	StoredError  error
 }
 
-func (b *bundleStoreStub) Store(ref reference.Named, bndle *bundle.Bundle) error {
+func (b *bundleStoreStub) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error) {
 	defer func() {
 		b.StoredError = nil
 	}()
 
 	b.StoredBundle = ref.String()
 
-	return b.StoredError
+	return ref, b.StoredError
 }
 
-func (b *bundleStoreStub) Read(ref reference.Named) (*bundle.Bundle, error) {
+func (b *bundleStoreStub) Read(ref reference.Reference) (*bundle.Bundle, error) {
 	defer func() {
 		b.ReadBundle = nil
 		b.ReadError = nil
@@ -35,11 +35,11 @@ func (b *bundleStoreStub) Read(ref reference.Named) (*bundle.Bundle, error) {
 	return b.ReadBundle, b.ReadError
 }
 
-func (b *bundleStoreStub) List() ([]reference.Named, error) {
+func (b *bundleStoreStub) List() ([]reference.Reference, error) {
 	return nil, nil
 }
 
-func (b *bundleStoreStub) Remove(ref reference.Named) error {
+func (b *bundleStoreStub) Remove(ref reference.Reference) error {
 	return nil
 }
 

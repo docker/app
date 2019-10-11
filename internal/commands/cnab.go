@@ -17,6 +17,7 @@ import (
 	"github.com/deislabs/cnab-go/driver"
 	dockerDriver "github.com/deislabs/cnab-go/driver/docker"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/log"
 	"github.com/docker/app/internal/packager"
 	appstore "github.com/docker/app/internal/store"
@@ -283,25 +284,24 @@ func resolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 	return nil, "", fmt.Errorf("could not resolve bundle %q", name)
 }
 
-func getBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, reference.Named, error) {
-	ref, err := reference.ParseNormalizedNamed(name)
+func getBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, reference.Reference, error) {
+	ref, err := image.StringToRef(name)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, name)
+		return nil, nil, err
 	}
-	tagRef := reference.TagNameOnly(ref)
-
-	bndl, err := bundleStore.Read(tagRef)
+	bndl, err := bundleStore.Read(ref)
 	if err != nil {
-		fmt.Fprintf(dockerCli.Err(), "Unable to find application image %q locally\n", reference.FamiliarString(tagRef))
+		fmt.Fprintf(dockerCli.Err(), "Unable to find application image %q locally\n", reference.FamiliarString(ref))
 
-		bndl, err = pullBundle(dockerCli, bundleStore, tagRef)
-		if err != nil {
-			return nil, nil, err
+		if named, ok := ref.(reference.Named); ok {
+			bndl, err = pullBundle(dockerCli, bundleStore, named)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
-		return bndl, tagRef, nil
 	}
 
-	return bndl, tagRef, nil
+	return bndl, ref, nil
 }
 
 func pullBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, tagRef reference.Named) (*bundle.Bundle, error) {
@@ -314,7 +314,7 @@ func pullBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, tagRef 
 	if err != nil {
 		return nil, err
 	}
-	if err := bundleStore.Store(tagRef, bndl); err != nil {
+	if _, err := bundleStore.Store(tagRef, bndl); err != nil {
 		return nil, err
 	}
 	return bndl, nil

@@ -75,7 +75,7 @@ func TestRenderFormatters(t *testing.T) {
 		cmd := info.configuredCmd
 
 		appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
-		cmd.Command = dockerCli.Command("app", "build", appPath, "a-simple-tag")
+		cmd.Command = dockerCli.Command("app", "build", appPath, "--tag", "a-simple-tag")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
@@ -161,10 +161,10 @@ func TestInspectApp(t *testing.T) {
 		cmd.Dir = dir.Path()
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      "invalid reference format",
+			Err:      "could not parse '' as a valid reference",
 		})
 
-		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "simple-app:1.0.0")
+		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "simple-app:1.0.0")
 		cmd.Dir = ""
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 

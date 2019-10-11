@@ -70,17 +70,14 @@ func MakeCNABImageName(appName, appVersion, suffix string) (string, error) {
 	return name, nil
 }
 
-func PersistInBundleStore(ref reference.Named, bndle *bundle.Bundle) error {
-	if ref == nil {
-		return nil
-	}
+func PersistInBundleStore(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error) {
 	appstore, err := store.NewApplicationStore(config.Dir())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	bundleStore, err := appstore.BundleStore()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return bundleStore.Store(ref, bndle)
 }

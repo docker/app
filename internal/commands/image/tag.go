@@ -44,7 +44,7 @@ func runTag(bundleStore store.BundleStore, srcAppImage, destAppImage string) err
 }
 
 func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, error) {
-	cnabRef, err := stringToRef(name)
+	cnabRef, err := StringToRef(name)
 	if err != nil {
 		return nil, err
 	}
@@ -57,19 +57,17 @@ func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, err
 }
 
 func storeBundle(bundle *bundle.Bundle, name string, bundleStore store.BundleStore) error {
-	cnabRef, err := stringToRef(name)
+	cnabRef, err := StringToRef(name)
 	if err != nil {
 		return err
 	}
-
-	return bundleStore.Store(cnabRef, bundle)
+	_, err = bundleStore.Store(cnabRef, bundle)
+	return err
 }
 
-func stringToRef(name string) (reference.Named, error) {
-	cnabRef, err := reference.ParseNormalizedNamed(name)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse '%s' as a valid reference: %v", name, err)
+func StringToRef(s string) (reference.Reference, error) {
+	if named, err := reference.ParseNormalizedNamed(s); err == nil {
+		return reference.TagNameOnly(named), nil
 	}
-
-	return reference.TagNameOnly(cnabRef), nil
+	return store.FromString(s)
 }
