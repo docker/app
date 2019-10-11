@@ -185,6 +185,7 @@ Unable to find application "unknown": failed to resolve bundle manifest "docker.
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
 			Err:      expected,
+			Out:      "Pulling from registry...",
 		})
 	})
 }
