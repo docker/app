@@ -13,6 +13,10 @@ Learn how the basics of how to write a simple Docker Application.
 Learn how to create a Docker Application from an existing Compose file using the
 Docker voting app from [Docker samples](https://github.com/dockersamples).
 
+### [Build service containers and package application](dockercoins)
+
+Learn how to organize your application so docker app will build the services docker images and the application image.
+
 ### [Docker Application CNAB generation](cnab-simple)
 
 Create a [CNAB](https://cnab.io) `bundle.json` and invocation image from a
