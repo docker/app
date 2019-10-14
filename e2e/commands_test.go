@@ -198,7 +198,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	initializeDockerAppEnvironment(t, &cmd, tmpDir, swarm, useBindMount)
 
 	// Install an illformed Docker Application Package
-	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--set", "web_port=-1", "--name", appName)
+	cmd.Command = dockerCli.Command("app", "run", "testdata/simple/simple.dockerapp", "--set", "web_port=-1", "--name", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
 		Err:      "error decoding 'Ports': Invalid hostPort: -1",
@@ -220,7 +220,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	})
 
 	// Install a Docker Application Package with an existing failed installation is fine
-	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--name", appName)
+	cmd.Command = dockerCli.Command("app", "run", "testdata/simple/simple.dockerapp", "--name", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
 			fmt.Sprintf("WARNING: installing over previously failed installation %q", appName),
@@ -240,7 +240,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 		})
 
 	// Installing again the same application is forbidden
-	cmd.Command = dockerCli.Command("app", "install", "testdata/simple/simple.dockerapp", "--name", appName)
+	cmd.Command = dockerCli.Command("app", "run", "testdata/simple/simple.dockerapp", "--name", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
 		Err:      fmt.Sprintf("Installation %q already exists, use 'docker app upgrade' instead", appName),
@@ -307,7 +307,7 @@ func TestCredentials(t *testing.T) {
 
 	t.Run("missing", func(t *testing.T) {
 		cmd.Command = dockerCli.Command(
-			"app", "install",
+			"app", "run",
 			"--credential", "secret1=foo",
 			// secret2 deliberately omitted.
 			"--credential", "secret3=baz",
@@ -322,7 +322,7 @@ func TestCredentials(t *testing.T) {
 
 	t.Run("full", func(t *testing.T) {
 		cmd.Command = dockerCli.Command(
-			"app", "install",
+			"app", "run",
 			"--credential", "secret1=foo",
 			"--credential", "secret2=bar",
 			"--credential", "secret3=baz",
@@ -334,7 +334,7 @@ func TestCredentials(t *testing.T) {
 
 	t.Run("mixed-credstore", func(t *testing.T) {
 		cmd.Command = dockerCli.Command(
-			"app", "install",
+			"app", "run",
 			"--credential-set", "test-creds",
 			"--credential", "secret3=xyzzy",
 			"--name", "mixed-credstore", bundle,
@@ -345,7 +345,7 @@ func TestCredentials(t *testing.T) {
 
 	t.Run("mixed-local-cred", func(t *testing.T) {
 		cmd.Command = dockerCli.Command(
-			"app", "install",
+			"app", "run",
 			"--credential-set", tmpDir.Join("local", "test-creds.yaml"),
 			"--credential", "secret3=xyzzy",
 			"--name", "mixed-local-cred", bundle,
@@ -356,7 +356,7 @@ func TestCredentials(t *testing.T) {
 
 	t.Run("overload", func(t *testing.T) {
 		cmd.Command = dockerCli.Command(
-			"app", "install",
+			"app", "run",
 			"--credential-set", "test-creds",
 			"--credential", "secret1=overload",
 			"--credential", "secret3=xyzzy",

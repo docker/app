@@ -144,7 +144,7 @@ func TestPushInstall(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "push", "--tag", ref, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-		cmd.Command = dockerCli.Command("app", "install", ref, "--name", t.Name())
+		cmd.Command = dockerCli.Command("app", "run", ref, "--name", t.Name())
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		cmd.Command = dockerCli.Command("service", "ls")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
@@ -165,7 +165,7 @@ func TestPushPullInstall(t *testing.T) {
 		info.stopRegistry()
 
 		// install from local store
-		cmd.Command = dockerCli.Command("app", "install", ref+tag, "--name", t.Name())
+		cmd.Command = dockerCli.Command("app", "run", ref+tag, "--name", t.Name())
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		cmd.Command = dockerCli.Command("service", "ls")
 		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
@@ -178,7 +178,7 @@ func TestPushPullInstall(t *testing.T) {
 			})
 
 		// install should fail (registry is stopped)
-		cmd.Command = dockerCli.Command("app", "install", "unknown")
+		cmd.Command = dockerCli.Command("app", "run", "unknown")
 		//nolint: lll
 		expected := `Unable to find application image "unknown:latest" locally
 Unable to find application "unknown": failed to resolve bundle manifest "docker.io/library/unknown:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed`
@@ -205,7 +205,7 @@ func TestPushInstallBundle(t *testing.T) {
 			cmd.Command = dockerCli.Command("app", "push", "--tag", ref, "a-simple-app:1.0.0")
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-			cmd.Command = dockerCli.Command("app", "install", ref, "--name", name)
+			cmd.Command = dockerCli.Command("app", "run", ref, "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
@@ -225,7 +225,7 @@ func TestPushInstallBundle(t *testing.T) {
 			cmd.Command = dockerCli.Command("app", "push", "--tag", ref2, ref+":latest")
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-			cmd.Command = dockerCli.Command("app", "install", ref2, "--name", name)
+			cmd.Command = dockerCli.Command("app", "run", ref2, "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref2))
@@ -252,7 +252,7 @@ func TestPushInstallBundle(t *testing.T) {
 			// remove the bundle from the bundle store to be sure it won't be used instead of registry
 			cleanupIsolatedStore()
 			// install from the registry
-			cmd.Command = dockerCli.Command("app", "install", ref2, "--name", name)
+			cmd.Command = dockerCli.Command("app", "run", ref2, "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))

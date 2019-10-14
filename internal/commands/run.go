@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type installOptions struct {
+type runOptions struct {
 	parametersOptions
 	credentialOptions
 	orchestrator  string
@@ -33,28 +33,22 @@ const (
 	nameKindReference
 )
 
-const longDescription = `Install an application.
-By default, the application definition in the current directory will be
-installed. The APP_NAME can also be:
-- a path to a Docker Application definition (.dockerapp) or a CNAB bundle.json
-- a registry Application Package reference`
+const longDescription = `Run an application based on a docker app image.`
 
-const example = `$ docker app install myapp.dockerapp --name myinstallation --target-context=mycontext
-$ docker app install myrepo/myapp:mytag --name myinstallation --target-context=mycontext
-$ docker app install bundle.json --name myinstallation --credential-set=mycredentials.yml`
+const example = `$ docker app run --name myinstallation --target-context=mycontext myrepo/myapp:mytag`
 
-func installCmd(dockerCli command.Cli) *cobra.Command {
-	var opts installOptions
+func runCmd(dockerCli command.Cli) *cobra.Command {
+	var opts runOptions
 
 	cmd := &cobra.Command{
-		Use:     "install [APP_NAME] [--name INSTALLATION_NAME] [--target-context TARGET_CONTEXT] [OPTIONS]",
+		Use:     "run [OPTIONS] [APP_IMAGE]",
 		Aliases: []string{"deploy"},
-		Short:   "Install an application",
+		Short:   "Run an application",
 		Long:    longDescription,
 		Example: example,
-		Args:    cli.RequiresMaxArgs(1),
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInstall(dockerCli, firstOrEmpty(args), opts)
+			return runRun(dockerCli, args[0], opts)
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
@@ -66,7 +60,7 @@ func installCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runInstall(dockerCli command.Cli, appname string, opts installOptions) error {
+func runRun(dockerCli command.Cli, appname string, opts runOptions) error {
 	opts.SetDefaultTargetContext(dockerCli)
 
 	bind, err := requiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())

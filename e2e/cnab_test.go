@@ -50,7 +50,7 @@ func TestCallCustomStatusAction(t *testing.T) {
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			// docker app install
-			cmd.Command = dockerCli.Command("app", "install", path.Join(testDir, "bundle.json"), "--name", testCase.name)
+			cmd.Command = dockerCli.Command("app", "run", path.Join(testDir, "bundle.json"), "--name", testCase.name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			// docker app uninstall
@@ -78,7 +78,7 @@ func TestCnabParameters(t *testing.T) {
 	}()
 
 	// docker app install
-	cmd.Command = dockerCli.Command("app", "install", path.Join(testDir, "bundle.json"), "--name", "cnab-parameters",
+	cmd.Command = dockerCli.Command("app", "run", path.Join(testDir, "bundle.json"), "--name", "cnab-parameters",
 		"--set", "boolParam=true",
 		"--set", "stringParam=value",
 		"--set", "intParam=42",

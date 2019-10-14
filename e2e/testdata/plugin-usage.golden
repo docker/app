@@ -13,11 +13,11 @@ Commands:
   build       Build service images for the application
   init        Initialize Docker Application definition
   inspect     Shows metadata, parameters and a summary of the Compose file for a given application
-  install     Install an application
   ls          List the installations and their last known installation result
   pull        Pull an application package from a registry
   push        Push an application package to a registry
   rm          Remove an application
+  run         Run an application
   upgrade     Upgrade an installed application
   validate    Checks the rendered application is syntactically correct
 
