@@ -35,20 +35,20 @@ const (
 
 const longDescription = `Run an application based on a docker app image.`
 
-const example = `$ docker app run myrepo/myapp:mytag --name myinstallation --target-context=mycontext`
+const example = `$ docker app run --name myinstallation --target-context=mycontext myrepo/myapp:mytag`
 
 func runCmd(dockerCli command.Cli) *cobra.Command {
 	var opts runOptions
 
 	cmd := &cobra.Command{
-		Use:     "run [APP_NAME] [--name INSTALLATION_NAME] [--target-context TARGET_CONTEXT] [OPTIONS]",
+		Use:     "run [OPTIONS] [APP_IMAGE]",
 		Aliases: []string{"deploy"},
 		Short:   "Run an application",
 		Long:    longDescription,
 		Example: example,
-		Args:    cli.RequiresMaxArgs(1),
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRun(dockerCli, firstOrEmpty(args), opts)
+			return runRun(dockerCli, args[0], opts)
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
