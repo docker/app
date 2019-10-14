@@ -1,1 +1,5 @@
-myapp 0.1.0
+version: 0.1.0
+name: myapp
+description: ""
+maintainers: []
+
