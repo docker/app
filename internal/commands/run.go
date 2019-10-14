@@ -33,14 +33,9 @@ const (
 	nameKindReference
 )
 
-const longDescription = `Run an application.
-By default, the application definition in the current directory will be ran. The APP_NAME can also be:
-- a path to a Docker Application definition (.dockerapp) or a CNAB bundle.json
-- a registry Application Package reference`
+const longDescription = `Run an application based on a docker app image.`
 
-const example = `$ docker app run myapp.dockerapp --name myinstallation --target-context=mycontext
-$ docker app run myrepo/myapp:mytag --name myinstallation --target-context=mycontext
-$ docker app run bundle.json --name myinstallation --credential-set=mycredentials.yml`
+const example = `$ docker app run myrepo/myapp:mytag --name myinstallation --target-context=mycontext`
 
 func runCmd(dockerCli command.Cli) *cobra.Command {
 	var opts runOptions
