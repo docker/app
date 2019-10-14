@@ -1,8 +1,11 @@
 package build
 
 import (
+	"errors"
 	"fmt"
 	"path"
+
+	"github.com/docker/distribution/reference"
 
 	"github.com/docker/app/types"
 	"github.com/docker/buildx/build"
@@ -12,7 +15,7 @@ import (
 
 // parseCompose do parse app compose file and extract buildx Options
 // We don't rely on bake's ReadTargets + TargetsToBuildOpt here as we have to skip environment variable interpolation
-func parseCompose(app *types.App, options buildOptions) (map[string]build.Options, error) {
+func parseCompose(app *types.App, contextPath string, options buildOptions, reference reference.Reference) (map[string]build.Options, error) {
 	parsed, err := loader.ParseYAML(app.Composes()[0])
 	if err != nil {
 		return nil, err
@@ -29,22 +32,19 @@ func parseCompose(app *types.App, options buildOptions) (map[string]build.Option
 			continue
 		}
 
-		var tags []string
-		if service.Image != nil && *service.Image != "" {
-			tags = []string{*service.Image}
+		if service.Name == "installer" {
+			return nil, errors.New("'installer' is a reserved service name, please fix your docker-compose.yml file")
 		}
 
-		// FIXME docker app init should update relative paths
-		// compose file has been copied to x.dockerapp, so the relative path to build context get broken
-		contextPath := path.Join(app.Path, "..", service.Build.Context)
+		tags := []string{fmt.Sprintf("%s-%s", reference.String(), service.Name)}
+
 		if service.Build.Dockerfile == "" {
 			service.Build.Dockerfile = "Dockerfile"
 		}
-		dockerfile := path.Join(contextPath, service.Build.Dockerfile)
 		opts[service.Name] = build.Options{
 			Inputs: build.Inputs{
-				ContextPath:    contextPath,
-				DockerfilePath: dockerfile,
+				ContextPath:    path.Join(contextPath, service.Build.Context),
+				DockerfilePath: path.Join(contextPath, service.Build.Context, service.Build.Dockerfile),
 			},
 			BuildArgs: flatten(service.Build.Args),
 			NoCache:   options.noCache,

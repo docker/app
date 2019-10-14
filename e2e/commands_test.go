@@ -74,8 +74,9 @@ func TestRenderFormatters(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 
-		appPath := filepath.Join("testdata", "simple", "simple.dockerapp")
-		cmd.Command = dockerCli.Command("app", "build", appPath, "--tag", "a-simple-tag")
+		contextPath := filepath.Join("testdata", "simple")
+		appPath := filepath.Join(contextPath, "simple.dockerapp")
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-tag", contextPath)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
@@ -164,7 +165,8 @@ func TestInspectApp(t *testing.T) {
 			Err:      `"docker app inspect" requires exactly 1 argument.`,
 		})
 
-		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "simple-app:1.0.0")
+		contextPath := filepath.Join("testdata", "simple")
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "simple-app:1.0.0", contextPath)
 		cmd.Dir = ""
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 

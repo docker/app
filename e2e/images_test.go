@@ -12,11 +12,11 @@ import (
 
 func insertBundles(t *testing.T, cmd icmd.Cmd, info dindSwarmAndRegistryInfo) {
 	// Push an application so that we can later pull it by digest
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "--tag", info.registryAddress+"/c-myapp")
+	cmd.Command = dockerCli.Command("app", "build", "--tag", info.registryAddress+"/c-myapp", filepath.Join("testdata", "push-pull"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "b-simple-app")
+	cmd.Command = dockerCli.Command("app", "build", "--tag", "b-simple-app", filepath.Join("testdata", "simple"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app")
+	cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-app", filepath.Join("testdata", "simple"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
@@ -86,7 +86,7 @@ func TestImageTag(t *testing.T) {
 		}
 
 		// given a first available image
-		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "simple", "simple.dockerapp"), "--tag", "a-simple-app")
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-app", filepath.Join("testdata", "simple"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		singleImageExpectation := `APP IMAGE           APP NAME
@@ -175,7 +175,7 @@ c-simple-app:latest simple
 `)
 
 		// given a new application
-		cmd.Command = dockerCli.Command("app", "build", filepath.Join("testdata", "push-pull", "push-pull.dockerapp"), "--tag", "push-pull")
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "push-pull", filepath.Join("testdata", "push-pull"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `APP IMAGE           APP NAME
 a-simple-app:0.1    simple

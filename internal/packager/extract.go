@@ -14,11 +14,7 @@ import (
 )
 
 // findApp looks for an app in CWD or subdirs
-func findApp() (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", errors.Wrap(err, "cannot resolve current working directory")
-	}
+func FindApp(cwd string) (string, error) {
 	if strings.HasSuffix(cwd, internal.AppExtension) {
 		return cwd, nil
 	}
@@ -47,8 +43,11 @@ func findApp() (string, error) {
 // If nothing is found, it looks for an image and loads it
 func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 	if name == "" {
-		var err error
-		if name, err = findApp(); err != nil {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot resolve current working directory")
+		}
+		if name, err = FindApp(cwd); err != nil {
 			return nil, err
 		}
 	}

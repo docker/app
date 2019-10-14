@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -34,14 +36,15 @@ type buildOptions struct {
 	progress string
 	pull     bool
 	tag      string
+	folder   string
 }
 
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
-		Use:     "build [APP_NAME] [OPTIONS]",
+		Use:     "build [OPTIONS] [CONTEXT_PATH]",
 		Short:   "Build service images for the application",
-		Example: `$ docker app build myapp.dockerapp --tag my/app:1.0.0`,
+		Example: `$ docker app build --tag my/app:1.0.0 .`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ref, err := runBuild(dockerCli, args[0], opts)
@@ -56,12 +59,13 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
 	flags.StringVarP(&opts.tag, "tag", "t", "", "Application image and optionally a tag in the 'image:tag' format")
+	flags.StringVarP(&opts.folder, "folder", "f", "", "Docker app folder containing application definition")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
 
 	return cmd
 }
 
-func runBuild(dockerCli command.Cli, application string, opt buildOptions) (reference.Reference, error) {
+func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) (reference.Reference, error) {
 	err := checkMinimalEngineVersion(dockerCli)
 	if err != nil {
 		return nil, err
@@ -73,18 +77,35 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 		return nil, err
 	}
 
+	application, err := getAppFolder(opt, contextPath)
+	if err != nil {
+		return nil, err
+	}
+
 	app, err := packager.Extract(application)
 	if err != nil {
 		return nil, err
 	}
 	defer app.Cleanup()
 
-	buildopts, err := parseCompose(app, opt)
+	serviceTag := ref
+	if serviceTag == nil {
+		named, err := reference.WithName(app.Metadata().Name)
+		if err != nil {
+			return nil, err
+		}
+		serviceTag, err = reference.WithTag(named, app.Metadata().Version)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	buildopts, err := parseCompose(app, contextPath, opt, serviceTag)
 	if err != nil {
 		return nil, err
 	}
 
-	buildopts["com.docker.app.invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app)
+	buildopts["com.docker.app.invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app, serviceTag)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +147,25 @@ func runBuild(dockerCli command.Cli, application string, opt buildOptions) (refe
 	return packager.PersistInBundleStore(ref, bundle)
 }
 
+func getAppFolder(opt buildOptions, contextPath string) (string, error) {
+	application := opt.folder
+	if application == "" {
+		files, err := ioutil.ReadDir(contextPath)
+		if err != nil {
+			return "", err
+		}
+		for _, f := range files {
+			if strings.HasSuffix(f.Name(), ".dockerapp") {
+				if application != "" {
+					return "", fmt.Errorf("%s contains multiple *.dockerapp folders, use -f option to select the one to build", contextPath)
+				}
+				application = filepath.Join(contextPath, f.Name())
+			}
+		}
+	}
+	return application, nil
+}
+
 func checkMinimalEngineVersion(dockerCli command.Cli) error {
 	info, err := dockerCli.Client().Info(appcontext.Context())
 	if err != nil {
@@ -165,7 +205,7 @@ func updateBundle(dockerCli command.Cli, bundle *bundle.Bundle, resp map[string]
 	return nil
 }
 
-func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (build.Options, error) {
+func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App, serviceTag reference.Reference) (build.Options, error) {
 	buildContext := bytes.NewBuffer(nil)
 	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
 		return build.Options{}, err
@@ -176,6 +216,7 @@ func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (b
 			ContextPath: "-",
 		},
 		Session: []session.Attachable{authprovider.NewDockerAuthProvider(os.Stderr)},
+		Tags:    []string{fmt.Sprintf("%s-installer", serviceTag.String())},
 	}, nil
 }
 
