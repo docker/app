@@ -162,5 +162,10 @@
       "default": "foo",
       "type": "string"
     }
+  },
+  "custom": {
+    "com.docker.app": {
+      "version": "%s"
+    }
   }
 }
