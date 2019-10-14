@@ -9,6 +9,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/render"
@@ -132,14 +134,9 @@ func printTable(out io.Writer, appInfo appInfo) error {
 
 func printMetadata(out io.Writer, app appInfo) {
 	meta := app.Metadata
-	fmt.Fprintln(out, meta.Name, meta.Version)
-	if maintainers := meta.Maintainers.String(); maintainers != "" {
-		fmt.Fprintln(out)
-		fmt.Fprintln(out, "Maintained by:", maintainers)
-	}
-	if meta.Description != "" {
-		fmt.Fprintln(out)
-		fmt.Fprintln(out, meta.Description)
+
+	if bytes, err := yaml.Marshal(meta); err == nil {
+		fmt.Fprintln(out, string(bytes))
 	}
 }
 

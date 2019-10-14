@@ -1,3 +1,7 @@
-myapp 0.1.0
+version: 0.1.0
+name: myapp
+description: ""
+maintainers:
+- name: dev
+  email: dev@example.com
 
-Maintained by: dev <dev@example.com>
