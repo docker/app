@@ -17,7 +17,7 @@ func initCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "init APP_NAME [--compose-file COMPOSE_FILE] [OPTIONS]",
 		Short:   "Initialize Docker Application definition",
-		Long:    `Start building a Docker Application package. If there is a docker-compose.yml file in the current directory it will be copied and used.`,
+		Long:    `Start building a Docker Application package.`,
 		Example: `$ docker app init myapp`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
