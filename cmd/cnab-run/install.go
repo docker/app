@@ -14,6 +14,7 @@ import (
 	"github.com/docker/cli/cli/command/stack"
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/command/stack/swarm"
+	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
@@ -50,6 +51,7 @@ func installAction(instanceName string) error {
 	if err != nil {
 		return err
 	}
+	addAppLabels(rendered, instanceName)
 	if err := os.Chdir(app.Path); err != nil {
 		return err
 	}
@@ -83,4 +85,15 @@ func getBundleImageMap() (map[string]bundle.Image, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func addAppLabels(rendered *composetypes.Config, instanceName string) {
+	for i, service := range rendered.Services {
+		if service.Labels == nil {
+			service.Labels = map[string]string{}
+		}
+		service.Labels[internal.LabelAppNamespace] = instanceName
+		service.Labels[internal.LabelAppVersion] = internal.Version
+		rendered.Services[i] = service
+	}
 }
