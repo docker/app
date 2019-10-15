@@ -16,6 +16,13 @@ const (
 	CNABVersion1_0_0 = "v1.0.0-WD"
 )
 
+// DockerAppCustom contains extension custom data that docker app injects
+// in the bundle.
+type DockerAppCustom struct {
+	Version string          `json:"version,omitempty"`
+	Payload json.RawMessage `json:"payload,omitempty"`
+}
+
 // ToCNAB creates a CNAB bundle from an app package
 func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) {
 	mapping := ExtractCNABParameterMapping(app.Parameters())
@@ -142,6 +149,11 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 
 	bndl := &bundle.Bundle{
 		SchemaVersion: CNABVersion1_0_0,
+		Custom: map[string]interface{}{
+			internal.CustomDockerAppName: DockerAppCustom{
+				Version: internal.Version,
+			},
+		},
 		Credentials: map[string]bundle.Credential{
 			internal.CredentialDockerContextName: {
 				Location: bundle.Location{

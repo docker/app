@@ -69,6 +69,10 @@ const (
 	// DockerInspectFormatEnvVar is the environment variable set by the CNAB runtime to select
 	// the inspect output format.
 	DockerInspectFormatEnvVar = "DOCKER_INSPECT_FORMAT"
+
+	// CustomDockerAppName is the custom variable set by Docker App to
+	// save custom informations
+	CustomDockerAppName = "com.docker.app"
 )
 
 var (
