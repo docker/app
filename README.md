@@ -377,7 +377,7 @@ Commands:
   pull        Pull an application package from a registry
   push        Push an application package to a registry
   rm          Remove an application
-  upgrade     Upgrade an installed application
+  update      Update a running application
   validate    Checks the rendered application is syntactically correct
 
 Run 'docker app COMMAND --help' for more information on a command.

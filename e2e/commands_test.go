@@ -213,10 +213,10 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 		})
 
 	// Upgrading a failed installation is not allowed
-	cmd.Command = dockerCli.Command("app", "upgrade", appName)
+	cmd.Command = dockerCli.Command("app", "update", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
-		Err:      fmt.Sprintf("Installation %q has failed and cannot be upgraded, reinstall it using 'docker app install'", appName),
+		Err:      fmt.Sprintf("Installation %q has failed and cannot be updated, reinstall it using 'docker app install'", appName),
 	})
 
 	// Install a Docker Application Package with an existing failed installation is fine
@@ -243,11 +243,11 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd.Command = dockerCli.Command("app", "run", "testdata/simple/simple.dockerapp", "--name", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
-		Err:      fmt.Sprintf("Installation %q already exists, use 'docker app upgrade' instead", appName),
+		Err:      fmt.Sprintf("Installation %q already exists, use 'docker app update' instead", appName),
 	})
 
-	// Upgrade the application, changing the port
-	cmd.Command = dockerCli.Command("app", "upgrade", appName, "--set", "web_port=8081")
+	// Update the application, changing the port
+	cmd.Command = dockerCli.Command("app", "update", appName, "--set", "web_port=8081")
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
 			fmt.Sprintf("Updating service %s_db", appName),
