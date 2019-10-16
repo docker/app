@@ -68,6 +68,51 @@ func TestBuildWithoutTag(t *testing.T) {
 	})
 }
 
+func TestBuildWithArgs(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+
+		testDir := path.Join("testdata", "build")
+		cmd.Command = dockerCli.Command("app", "build", "-f", path.Join(testDir, "single.dockerapp"), testDir, "--build-arg", "REPLACE_BY_BUILD_ARG=replaced")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		cfg := getDockerConfigDir(t, cmd)
+
+		f := path.Join(cfg, "app", "bundles", "_ids")
+		infos, err := ioutil.ReadDir(f)
+		assert.NilError(t, err)
+		assert.Equal(t, len(infos), 1)
+		id := infos[0].Name()
+
+		f = path.Join(cfg, "app", "bundles", "_ids", id, "bundle.json")
+		data, err := ioutil.ReadFile(f)
+		assert.NilError(t, err)
+		var bndl bundle.Bundle
+		err = json.Unmarshal(data, &bndl)
+		assert.NilError(t, err)
+
+		cmd.Command = dockerCli.Command("inspect", bndl.Images["worker"].Digest)
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 0,
+			Out:      `"com.docker.labelled.arg": "replaced"`,
+		})
+	})
+}
+
+func TestBuildWithArgsDefinedTwice(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+
+		testDir := path.Join("testdata", "build")
+		cmd.Command = dockerCli.Command("app", "build", "-f", path.Join(testDir, "single.dockerapp"), testDir,
+			"--build-arg", "REPLACE_BY_BUILD_ARG=replaced", "--build-arg", "REPLACE_BY_BUILD_ARG=replaced_twice")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `'--build-arg REPLACE_BY_BUILD_ARG' is defined twice`,
+		})
+	})
+}
+
 func getDockerConfigDir(t *testing.T, cmd icmd.Cmd) string {
 	var cfg string
 	for _, s := range cmd.Env {

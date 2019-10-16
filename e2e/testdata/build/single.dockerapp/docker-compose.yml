@@ -7,6 +7,9 @@ services:
   worker:
     build:
       context: ./worker
+      args:
+        - REPLACE_BY_BUILD_ARG=original
+        - STATIC_ARG=static
       dockerfile: Dockerfile.worker
   db:
     image: postgres:9.3
