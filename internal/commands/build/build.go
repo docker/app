@@ -88,24 +88,12 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) (refe
 	}
 	defer app.Cleanup()
 
-	serviceTag := ref
-	if serviceTag == nil {
-		named, err := reference.WithName(app.Metadata().Name)
-		if err != nil {
-			return nil, err
-		}
-		serviceTag, err = reference.WithTag(named, app.Metadata().Version)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	buildopts, err := parseCompose(app, contextPath, opt, serviceTag)
+	buildopts, err := parseCompose(app, contextPath, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	buildopts["com.docker.app.invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app, serviceTag)
+	buildopts["com.docker.app.invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app)
 	if err != nil {
 		return nil, err
 	}
@@ -160,6 +148,9 @@ func getAppFolder(opt buildOptions, contextPath string) (string, error) {
 					return "", fmt.Errorf("%s contains multiple *.dockerapp folders, use -f option to select the one to build", contextPath)
 				}
 				application = filepath.Join(contextPath, f.Name())
+				if !f.IsDir() {
+					return "", fmt.Errorf("%s isn't a directory", f.Name())
+				}
 			}
 		}
 	}
@@ -205,7 +196,7 @@ func updateBundle(dockerCli command.Cli, bundle *bundle.Bundle, resp map[string]
 	return nil
 }
 
-func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App, serviceTag reference.Reference) (build.Options, error) {
+func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App) (build.Options, error) {
 	buildContext := bytes.NewBuffer(nil)
 	if err := packager.PackInvocationImageContext(dockerCli, app, buildContext); err != nil {
 		return build.Options{}, err
@@ -216,7 +207,6 @@ func createInvocationImageBuildOptions(dockerCli command.Cli, app *types.App, se
 			ContextPath: "-",
 		},
 		Session: []session.Attachable{authprovider.NewDockerAuthProvider(os.Stderr)},
-		Tags:    []string{fmt.Sprintf("%s-installer", serviceTag.String())},
 	}, nil
 }
 

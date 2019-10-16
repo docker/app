@@ -1,11 +1,8 @@
 package build
 
 import (
-	"errors"
 	"fmt"
 	"path"
-
-	"github.com/docker/distribution/reference"
 
 	"github.com/docker/app/types"
 	"github.com/docker/buildx/build"
@@ -15,7 +12,7 @@ import (
 
 // parseCompose do parse app compose file and extract buildx Options
 // We don't rely on bake's ReadTargets + TargetsToBuildOpt here as we have to skip environment variable interpolation
-func parseCompose(app *types.App, contextPath string, options buildOptions, reference reference.Reference) (map[string]build.Options, error) {
+func parseCompose(app *types.App, contextPath string, options buildOptions) (map[string]build.Options, error) {
 	parsed, err := loader.ParseYAML(app.Composes()[0])
 	if err != nil {
 		return nil, err
@@ -31,12 +28,10 @@ func parseCompose(app *types.App, contextPath string, options buildOptions, refe
 		if service.Build == nil {
 			continue
 		}
-
-		if service.Name == "installer" {
-			return nil, errors.New("'installer' is a reserved service name, please fix your docker-compose.yml file")
+		var tags []string
+		if service.Image != nil {
+			tags = append(tags, *service.Image)
 		}
-
-		tags := []string{fmt.Sprintf("%s-%s", reference.String(), service.Name)}
 
 		if service.Build.Dockerfile == "" {
 			service.Build.Dockerfile = "Dockerfile"

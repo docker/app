@@ -14,7 +14,7 @@ import (
 )
 
 // findApp looks for an app in CWD or subdirs
-func FindApp(cwd string) (string, error) {
+func findApp(cwd string) (string, error) {
 	if strings.HasSuffix(cwd, internal.AppExtension) {
 		return cwd, nil
 	}
@@ -47,7 +47,7 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot resolve current working directory")
 		}
-		if name, err = FindApp(cwd); err != nil {
+		if name, err = findApp(cwd); err != nil {
 			return nil, err
 		}
 	}
