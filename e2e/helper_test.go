@@ -43,7 +43,7 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	// Solution found is: fix the port of the registry to be the same internally and externally
 	// and run the dind container in the same network namespace: this way 127.0.0.1:<registry-port> both resolves to the registry from the client and from dind
 
-	swarm := NewContainer("docker:19.03.2-dind", 2375, "--insecure-registry", fmt.Sprintf("127.0.0.1:%d", registryPort))
+	swarm := NewContainer("docker:19.03.3-dind", 2375, "--insecure-registry", fmt.Sprintf("127.0.0.1:%d", registryPort))
 	swarm.Start(t, "--expose", strconv.FormatInt(int64(registryPort), 10),
 		"-p", fmt.Sprintf("%d:%d", registryPort, registryPort),
 		"-p", "2375",

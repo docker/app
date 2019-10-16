@@ -177,6 +177,23 @@ func TestInspectApp(t *testing.T) {
 	})
 }
 
+func TestRunOnlyOne(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
+	cmd.Command = dockerCli.Command("app", "run")
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Err:      `"docker app run" requires exactly 1 argument.`,
+	})
+
+	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", "bundle.json", "myapp")
+	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 1,
+		Err:      `"docker app run" cannot run a bundle and an app image`,
+	})
+}
+
 func TestDockerAppLifecycle(t *testing.T) {
 	t.Run("withBindMounts", func(t *testing.T) {
 		testDockerAppLifecycle(t, true)
@@ -189,18 +206,21 @@ func TestDockerAppLifecycle(t *testing.T) {
 func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
-	appName := strings.Replace(t.Name(), "/", "_", 1)
+	appName := strings.ToLower(strings.Replace(t.Name(), "/", "_", 1))
 	tmpDir := fs.NewDir(t, appName)
 	defer tmpDir.Remove()
 	// Running a swarm using docker in docker to install the application
 	// and run the invocation image
-	swarm := NewContainer("docker:18.09-dind", 2375)
-	swarm.Start(t)
+	swarm := NewContainer("docker:19.03.3-dind", 2375)
+	swarm.Start(t, "-e", "DOCKER_TLS_CERTDIR=")
 	defer swarm.Stop(t)
 	initializeDockerAppEnvironment(t, &cmd, tmpDir, swarm, useBindMount)
 
+	cmd.Command = dockerCli.Command("app", "build", "--tag", appName, "testdata/simple")
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
 	// Install an illformed Docker Application Package
-	cmd.Command = dockerCli.Command("app", "run", "testdata/simple/simple.dockerapp", "--set", "web_port=-1", "--name", appName)
+	cmd.Command = dockerCli.Command("app", "run", appName, "--set", "web_port=-1", "--name", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
 		Err:      "error decoding 'Ports': Invalid hostPort: -1",
@@ -222,7 +242,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	})
 
 	// Install a Docker Application Package with an existing failed installation is fine
-	cmd.Command = dockerCli.Command("app", "run", "testdata/simple/simple.dockerapp", "--name", appName)
+	cmd.Command = dockerCli.Command("app", "run", appName, "--name", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
 			fmt.Sprintf("WARNING: installing over previously failed installation %q", appName),
@@ -243,7 +263,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 		})
 
 	// Installing again the same application is forbidden
-	cmd.Command = dockerCli.Command("app", "run", "testdata/simple/simple.dockerapp", "--name", appName)
+	cmd.Command = dockerCli.Command("app", "run", appName, "--name", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
 		Err:      fmt.Sprintf("Installation %q already exists, use 'docker app update' instead", appName),
@@ -315,7 +335,8 @@ func TestCredentials(t *testing.T) {
 			"--credential", "secret1=foo",
 			// secret2 deliberately omitted.
 			"--credential", "secret3=baz",
-			"--name", "missing", bundle,
+			"--name", "missing",
+			"--cnab-bundle-json", bundle,
 		)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
@@ -330,7 +351,8 @@ func TestCredentials(t *testing.T) {
 			"--credential", "secret1=foo",
 			"--credential", "secret2=bar",
 			"--credential", "secret3=baz",
-			"--name", "full", bundle,
+			"--name", "full",
+			"--cnab-bundle-json", bundle,
 		)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		golden.Assert(t, result.Stdout(), "credential-install-full.golden")
@@ -341,7 +363,8 @@ func TestCredentials(t *testing.T) {
 			"app", "run",
 			"--credential-set", "test-creds",
 			"--credential", "secret3=xyzzy",
-			"--name", "mixed-credstore", bundle,
+			"--name", "mixed-credstore",
+			"--cnab-bundle-json", bundle,
 		)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		golden.Assert(t, result.Stdout(), "credential-install-mixed-credstore.golden")
@@ -352,7 +375,8 @@ func TestCredentials(t *testing.T) {
 			"app", "run",
 			"--credential-set", tmpDir.Join("local", "test-creds.yaml"),
 			"--credential", "secret3=xyzzy",
-			"--name", "mixed-local-cred", bundle,
+			"--name", "mixed-local-cred",
+			"--cnab-bundle-json", bundle,
 		)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		golden.Assert(t, result.Stdout(), "credential-install-mixed-local-cred.golden")
@@ -364,7 +388,8 @@ func TestCredentials(t *testing.T) {
 			"--credential-set", "test-creds",
 			"--credential", "secret1=overload",
 			"--credential", "secret3=xyzzy",
-			"--name", "overload", bundle,
+			"--name", "overload",
+			"--cnab-bundle-json", bundle,
 		)
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
