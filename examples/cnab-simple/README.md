@@ -33,10 +33,10 @@ Install the application:
 $ docker app install
 ```
 
-Upgrade the installation, demonstrating setting parameters:
+Update the installation, demonstrating setting parameters:
 
 ```console
-$ docker app upgrade --set port=9876 --set text="hello DockerCon EU" hello
+$ docker app update --set port=9876 --set text="hello DockerCon EU" hello
 ```
 
 Uninstall the application installation:

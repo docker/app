@@ -10,31 +10,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type upgradeOptions struct {
+type updateOptions struct {
 	parametersOptions
 	credentialOptions
 	bundleOrDockerApp string
 }
 
-func upgradeCmd(dockerCli command.Cli) *cobra.Command {
-	var opts upgradeOptions
+func updateCmd(dockerCli command.Cli) *cobra.Command {
+	var opts updateOptions
 	cmd := &cobra.Command{
-		Use:     "upgrade INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
-		Short:   "Upgrade an installed application",
-		Example: `$ docker app upgrade myinstallation --target-context=mycontext --set key=value`,
+		Use:     "update [OPTIONS] RUNNING_APP",
+		Short:   "Update a running application",
+		Example: `$ docker app update myrunningapp --target-context=mycontext --set key=value`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runUpgrade(dockerCli, args[0], opts)
+			return runUpdate(dockerCli, args[0], opts)
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "app-name", "", "Override the installation with another Application Package")
+	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "image", "", "Override the installation with another Application Package")
 
 	return cmd
 }
 
-func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOptions) error {
+func runUpdate(dockerCli command.Cli, installationName string, opts updateOptions) error {
 	defer muteDockerCli(dockerCli)()
 	opts.SetDefaultTargetContext(dockerCli)
 
@@ -49,7 +49,7 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	}
 
 	if isInstallationFailed(installation) {
-		return fmt.Errorf("Installation %q has failed and cannot be upgraded, reinstall it using 'docker app install'", installationName)
+		return fmt.Errorf("Installation %q has failed and cannot be updated, reinstall it using 'docker app install'", installationName)
 	}
 
 	if opts.bundleOrDockerApp != "" {
@@ -85,11 +85,11 @@ func runUpgrade(dockerCli command.Cli, installationName string, opts upgradeOpti
 	err = u.Run(&installation.Claim, creds, os.Stdout)
 	err2 := installationStore.Store(installation)
 	if err != nil {
-		return fmt.Errorf("Upgrade failed: %s\n%s", err, errBuf)
+		return fmt.Errorf("Update failed: %s\n%s", err, errBuf)
 	}
 	if err2 != nil {
 		return err2
 	}
-	fmt.Fprintf(os.Stdout, "Application %q upgraded on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(os.Stdout, "Application %q updated on context %q\n", installationName, opts.targetContext)
 	return nil
 }
