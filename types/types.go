@@ -178,13 +178,6 @@ func WithSource(source AppSourceKind) func(*App) error {
 	}
 }
 
-func WithCRLF(hasCRLF bool) func(*App) error {
-	return func(app *App) error {
-		app.hasCRLF = hasCRLF
-		return nil
-	}
-}
-
 // WithParametersFiles adds the specified parameters files to the app
 func WithParametersFiles(files ...string) func(*App) error {
 	return parametersLoader(func() ([][]byte, error) { return readFiles(files...) })

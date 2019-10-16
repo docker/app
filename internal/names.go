@@ -10,8 +10,6 @@ import (
 const (
 	// AppExtension is the extension used by an application.
 	AppExtension = ".dockerapp"
-	// ImageLabel is the label used to distinguish applications from Docker images.
-	ImageLabel = "com.docker.application"
 	// MetadataFileName is metadata file name
 	MetadataFileName = "metadata.yml"
 	// ComposeFileName is compose file name
@@ -78,11 +76,6 @@ const (
 	LabelAppNamespace = Namespace + "namespace"
 	// LabelAppVersion is the label used to identify what version of docker app was used to create the app
 	LabelAppVersion = Namespace + "version"
-)
-
-var (
-	// FileNames lists the application file names, in order.
-	FileNames = []string{MetadataFileName, ComposeFileName, ParametersFileName}
 )
 
 var appNameRe, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]+$")
