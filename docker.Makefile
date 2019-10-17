@@ -140,7 +140,7 @@ specification/bindata.go: specification/schemas/*.json build_dev_image
 schemas: specification/bindata.go ## generate specification/bindata.go from json schemas
 
 invocation-image:
-	docker build -f Dockerfile.invocation-image $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME) .
+	docker build -f Dockerfile.invocation-image $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME) -t docker/cnab-app-base:unknown .
 
 save-invocation-image-tag:
 	docker tag $(CNAB_BASE_INVOCATION_IMAGE_NAME) docker/cnab-app-base:$(INVOCATION_IMAGE_TAG)
