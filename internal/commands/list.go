@@ -17,7 +17,7 @@ import (
 )
 
 type listOptions struct {
-	targetContext string
+	targetContextOptions
 }
 
 var (
@@ -57,8 +57,8 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runList(dockerCli command.Cli, opts listOptions) error {
-	targetContext := getTargetContext(opts.targetContext, dockerCli.CurrentContext())
-	installations, err := getInstallations(targetContext, config.Dir())
+	opts.SetDefaultTargetContext(dockerCli)
+	installations, err := getInstallations(opts.targetContext, config.Dir())
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
+	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -22,16 +23,6 @@ type runOptions struct {
 	kubeNamespace string
 	stackName     string
 }
-
-type nameKind uint
-
-const (
-	_ nameKind = iota
-	nameKindEmpty
-	nameKindFile
-	nameKindDir
-	nameKindReference
-)
 
 const longDescription = `Run an application based on a docker app image.`
 
@@ -63,7 +54,7 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 func runRun(dockerCli command.Cli, appname string, opts runOptions) error {
 	opts.SetDefaultTargetContext(dockerCli)
 
-	bind, err := requiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())
+	bind, err := cnab.RequiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())
 	if err != nil {
 		return err
 	}
@@ -72,7 +63,7 @@ func runRun(dockerCli command.Cli, appname string, opts runOptions) error {
 		return err
 	}
 
-	bndl, ref, err := resolveBundle(dockerCli, bundleStore, appname)
+	bndl, ref, err := cnab.ResolveBundle(dockerCli, bundleStore, appname)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to find application %q", appname)
 	}
@@ -101,7 +92,7 @@ func runRun(dockerCli command.Cli, appname string, opts runOptions) error {
 		return err
 	}
 
-	driverImpl, errBuf := prepareDriver(dockerCli, bind, nil)
+	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
 	installation.Bundle = bndl
 
 	if err := mergeBundleParameters(installation,

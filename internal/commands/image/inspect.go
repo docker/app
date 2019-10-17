@@ -1,10 +1,12 @@
-package commands
+package image
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/cnab"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -14,6 +16,22 @@ import (
 
 type inspectOptions struct {
 	pretty bool
+}
+
+func firstOrEmpty(list []string) string {
+	if len(list) != 0 {
+		return list[0]
+	}
+	return ""
+}
+
+func muteDockerCli(dockerCli command.Cli) func() {
+	stdout := dockerCli.Out()
+	stderr := dockerCli.Err()
+	dockerCli.Apply(command.WithCombinedStreams(ioutil.Discard)) //nolint:errcheck // WithCombinedStreams cannot error
+	return func() {
+		dockerCli.Apply(command.WithOutputStream(stdout), command.WithErrorStream(stderr)) //nolint:errcheck // as above
+	}
 }
 
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
@@ -43,7 +61,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if err != nil {
 		return err
 	}
-	bndl, ref, err := getBundle(dockerCli, bundleStore, appname)
+	bndl, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
 
 	if err != nil {
 		return err
@@ -54,7 +72,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	}
 	installation.Bundle = bndl
 
-	driverImpl, errBuf := prepareDriver(dockerCli, bindMount{}, nil)
+	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, cnab.BindMount{}, nil)
 	a := &action.RunCustom{
 		Action: internal.ActionInspectName,
 		Driver: driverImpl,

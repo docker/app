@@ -20,6 +20,13 @@ func ComputeDigest(bundle io.WriterTo) (digest.Digest, error) {
 	return digest.SHA256.FromBytes(b.Bytes()), nil
 }
 
+func StringToRef(s string) (reference.Reference, error) {
+	if named, err := reference.ParseNormalizedNamed(s); err == nil {
+		return reference.TagNameOnly(named), nil
+	}
+	return FromString(s)
+}
+
 func FromString(s string) (ID, error) {
 	if ok, _ := regexp.MatchString("[a-z0-9]{64}", s); !ok {
 		return ID{}, fmt.Errorf("could not parse '%s' as a valid reference", s)

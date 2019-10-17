@@ -12,7 +12,6 @@ Management Commands:
 Commands:
   build       Build service images for the application
   init        Initialize Docker Application definition
-  inspect     Shows metadata, parameters and a summary of the Compose file for a given application
   ls          List the installations and their last known installation result
   pull        Pull an application package from a registry
   push        Push an application package to a registry
