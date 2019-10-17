@@ -17,7 +17,7 @@ func TestBuild(t *testing.T) {
 		cmd := info.configuredCmd
 
 		testDir := path.Join("testdata", "build")
-		cmd.Command = dockerCli.Command("app", "build", path.Join(testDir, "single"), "--tag", "single:1.0.0")
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "single:1.0.0", "-f", path.Join(testDir, "single.dockerapp"), testDir)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		cfg := getDockerConfigDir(t, cmd)
@@ -42,7 +42,7 @@ func TestBuildWithoutTag(t *testing.T) {
 		cmd := info.configuredCmd
 
 		testDir := path.Join("testdata", "build")
-		cmd.Command = dockerCli.Command("app", "build", path.Join(testDir, "single"))
+		cmd.Command = dockerCli.Command("app", "build", "-f", path.Join(testDir, "single.dockerapp"), testDir)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		cfg := getDockerConfigDir(t, cmd)

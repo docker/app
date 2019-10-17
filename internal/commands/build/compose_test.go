@@ -49,11 +49,9 @@ func Test_parseCompose(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			app, err := packager.Extract("testdata/" + tt.name)
 			assert.NilError(t, err)
-
-			got, err := parseCompose(app, buildOptions{})
+			got, err := parseCompose(app, "testdata", buildOptions{})
 			assert.NilError(t, err)
 			_, ok := got["dontwant"]
 			assert.Assert(t, !ok, "parseCompose() should have excluded 'dontwant' service")
