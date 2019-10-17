@@ -107,7 +107,7 @@ pipeline {
                                 sh 'docker load -i coverage-invocation-image.tar'
                             }
                             ansiColor('xterm') {
-                                sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-run || true'
+                                sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-run'
                                 sh 'make -f docker.Makefile TAG=$TAG-coverage coverage-results'
                             }
                             archiveArtifacts '_build/ci-cov/all.out'

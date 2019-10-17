@@ -18,13 +18,6 @@ type inspectOptions struct {
 	pretty bool
 }
 
-func firstOrEmpty(list []string) string {
-	if len(list) != 0 {
-		return list[0]
-	}
-	return ""
-}
-
 func muteDockerCli(dockerCli command.Cli) func() {
 	stdout := dockerCli.Out()
 	stderr := dockerCli.Err()
@@ -43,7 +36,7 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 $docker app inspect my-app:1.0.0`,
 		Args: cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInspect(dockerCli, firstOrEmpty(args), opts)
+			return runInspect(dockerCli, args[0], opts)
 		},
 	}
 	cmd.Flags().BoolVar(&opts.pretty, "pretty", false, "Pretty print the output")
