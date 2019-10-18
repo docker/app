@@ -382,11 +382,3 @@ Commands:
 
 Run 'docker app COMMAND --help' for more information on a command.
 ```
-
-## Experimental
-
-Some commands are flagged as experimental and will remain in this state until
-they mature. These commands are only accessible using an experimental binary.
-Feel free to test these commands and give us some feedback!
-
-See [BUILDING.md/Experimental](BUILDING.md#experimental).

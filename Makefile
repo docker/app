@@ -8,15 +8,9 @@ ifeq ($(BUILDTIME),)
   $(warning unable to set BUILDTIME. Set the value manually)
 endif
 
-BUILDTAGS=""
-ifeq ($(EXPERIMENTAL),on)
-  BUILDTAGS="experimental"
-endif
-
 LDFLAGS := "-s -w \
   -X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
   -X $(PKG_NAME)/internal.Version=$(TAG)      \
-  -X $(PKG_NAME)/internal.Experimental=$(EXPERIMENTAL) \
   -X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
 
 EXEC_EXT :=

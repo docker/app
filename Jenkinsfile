@@ -76,12 +76,10 @@ pipeline {
                             ansiColor('xterm') {
                                 sh 'make -f docker.Makefile save-invocation-image'
                                 sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$TAG-coverage OUTPUT=coverage-invocation-image.tar save-invocation-image-tag'
-                                sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$TAG-coverage-experimental OUTPUT=coverage-experimental-invocation-image.tar save-invocation-image-tag'
                             }
                             dir('_build') {
                                 stash name: 'invocation-image', includes: 'invocation-image.tar'
                                 stash name: 'coverage-invocation-image', includes: 'coverage-invocation-image.tar'
-                                stash name: 'coverage-experimental-invocation-image', includes: 'coverage-experimental-invocation-image.tar'
                             }
                         }
                     }
@@ -90,7 +88,6 @@ pipeline {
                             dir('src/github.com/docker/app') {
                                 sh 'docker rmi docker/cnab-app-base:$TAG'
                                 sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
-                                sh 'docker rmi docker/cnab-app-base:$TAG-coverage-experimental'
                             }
                             deleteDir()
                         }
@@ -126,34 +123,6 @@ pipeline {
                                 junit '*.xml'
                             }
                             sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
-                            deleteDir()
-                        }
-                    }
-                }
-                stage("Coverage (experimental)") {
-                    agent { label 'ubuntu-1804 && x86_64 && overlay2' }
-                    steps {
-                        dir('src/github.com/docker/app') {
-                            checkout scm
-                            dir('_build') {
-                                unstash "coverage-experimental-invocation-image"
-                                sh 'docker load -i coverage-experimental-invocation-image.tar'
-                            }
-                            ansiColor('xterm') {
-                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile TAG=$TAG-coverage-experimental coverage-run || true'
-                                sh 'make EXPERIMENTAL=on TEST_RESULTS_PREFIX="experimental-" -f docker.Makefile TAG=$TAG-coverage-experimental coverage-results'
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            dir('src/github.com/docker/app/_build/test-results') {
-                                sh '[ ! -e experimental-unit-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app","unit/experimental",g; s,"github.com/docker/app/([^"]*)","unit/experimental/\\1",g\' experimental-unit-coverage.xml'
-                                sh '[ ! -e experimental-e2e-coverage.xml ] || sed -i -E -e \'s,"github.com/docker/app/e2e","e2e/experimental",g\' experimental-e2e-coverage.xml'
-                                archiveArtifacts '*.xml'
-                                junit '*.xml'
-                            }
-                            sh 'docker rmi docker/cnab-app-base:$TAG-coverage-experimental'
                             deleteDir()
                         }
                     }

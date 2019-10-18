@@ -14,7 +14,7 @@ E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
 COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
 SCHEMAS_CTNR_NAME := $(BIN_NAME)-schemas-$(TAG)
 
-BUILD_ARGS=--build-arg EXPERIMENTAL=$(EXPERIMENTAL) --build-arg TAG=$(TAG) --build-arg COMMIT=$(COMMIT) --build-arg ALPINE_VERSION=$(ALPINE_VERSION) --build-arg GOPROXY=$(GOPROXY)
+BUILD_ARGS=--build-arg TAG=$(TAG) --build-arg COMMIT=$(COMMIT) --build-arg ALPINE_VERSION=$(ALPINE_VERSION) --build-arg GOPROXY=$(GOPROXY)
 
 PKG_PATH := /go/src/$(PKG_NAME)
 
@@ -37,7 +37,7 @@ shell: build_dev_image ## run a shell in the docker build image
 	docker run -ti --rm $(DEV_IMAGE_NAME) bash
 
 cross: create_bin ## cross-compile binaries (linux, darwin, windows)
-	docker build $(BUILD_ARGS) --target=cross -t $(CROSS_IMAGE_NAME)  .
+	docker build $(BUILD_ARGS) --target=cross -t $(CROSS_IMAGE_NAME) .
 	docker create --name $(CROSS_CTNR_NAME) $(CROSS_IMAGE_NAME) noop
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
 	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
@@ -48,7 +48,7 @@ cross: create_bin ## cross-compile binaries (linux, darwin, windows)
 	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
 
 cli-cross: create_bin
-	docker build $(BUILD_ARGS) --target=build -t $(CLI_IMAGE_NAME)  .
+	docker build $(BUILD_ARGS) --target=build -t $(CLI_IMAGE_NAME) .
 	docker create --name $(CLI_CNTR_NAME) $(CLI_IMAGE_NAME) noop
 	docker cp $(CLI_CNTR_NAME):/go/src/github.com/docker/cli/build/docker-linux-amd64 bin/docker-linux
 	docker cp $(CLI_CNTR_NAME):/go/src/github.com/docker/cli/build/docker-darwin-amd64 bin/docker-darwin
@@ -90,15 +90,15 @@ test: test-unit test-e2e ## run all tests
 
 test-unit: build_dev_image ## run unit tests
 	@$(call mkdir,_build/test-results)
-	docker run --rm -v $(CURDIR)/_build/test-results:/test-results $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) test-unit
+	docker run --rm -v $(CURDIR)/_build/test-results:/test-results $(DEV_IMAGE_NAME) make TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) test-unit
 
 test-e2e: build_dev_image invocation-image ## run end-to-end tests
-	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) bin/$(BIN_NAME) test-e2e
+	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
 coverage-run: build_dev_image ## run tests with coverage
 	@$(call mkdir,_build)
-	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -t $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} EXPERIMENTAL=$(EXPERIMENTAL) TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) coverage
+	docker run -v /var/run:/var/run:ro --name $(COV_CTNR_NAME) --network="host" -t $(DEV_IMAGE_NAME) make COMMIT=${COMMIT} TAG=${TAG} TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) coverage
 coverage-results:
 	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/cov/ ./_build/ci-cov
 	docker cp $(COV_CTNR_NAME):$(PKG_PATH)/_build/test-results/ ./_build/test-results

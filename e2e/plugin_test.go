@@ -23,9 +23,6 @@ func TestInvokePluginFromCLI(t *testing.T) {
 	usage := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
 
 	goldenFile := "plugin-usage.golden"
-	if hasExperimental {
-		goldenFile = "plugin-usage-experimental.golden"
-	}
 	golden.Assert(t, usage, goldenFile)
 
 	// docker info should print app version and short description

@@ -25,10 +25,6 @@ func FullVersion() string {
 		fmt.Sprintf("OS/Arch:               %s/%s", runtime.GOOS, runtime.GOARCH),
 	}
 
-	if Experimental == "on" {
-		res = append(res, fmt.Sprintf("Experimental app build"))
-	}
-
 	return strings.Join(res, "\n")
 }
 
