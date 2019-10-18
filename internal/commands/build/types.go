@@ -3,6 +3,7 @@ package build
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/docker/cli/cli/compose/loader"
 	compose "github.com/docker/cli/cli/compose/types"
@@ -24,7 +25,7 @@ type ImageBuildConfig struct {
 	Args       compose.MappingWithEquals `yaml:",omitempty" json:"args,omitempty"`
 }
 
-func load(dict map[string]interface{}) ([]ServiceConfig, error) {
+func load(dict map[string]interface{}, buildArgs []string) ([]ServiceConfig, error) {
 	section, ok := dict["services"]
 	if !ok {
 		return nil, fmt.Errorf("compose file doesn't declare any service")
@@ -33,14 +34,14 @@ func load(dict map[string]interface{}) ([]ServiceConfig, error) {
 	if !ok {
 		return nil, fmt.Errorf("Invalid compose file: 'services' should be a map")
 	}
-	return loadServices(services)
+	return loadServices(services, buildArgs)
 }
 
-func loadServices(servicesDict map[string]interface{}) ([]ServiceConfig, error) {
+func loadServices(servicesDict map[string]interface{}, buildArgs []string) ([]ServiceConfig, error) {
 	var services []ServiceConfig
 
 	for name, serviceDef := range servicesDict {
-		serviceConfig, err := loadService(name, serviceDef.(map[string]interface{}))
+		serviceConfig, err := loadService(name, serviceDef.(map[string]interface{}), buildArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -49,13 +50,18 @@ func loadServices(servicesDict map[string]interface{}) ([]ServiceConfig, error) 
 	return services, nil
 }
 
-func loadService(name string, serviceDict map[string]interface{}) (*ServiceConfig, error) {
+func loadService(name string, serviceDict map[string]interface{}, buildArgs []string) (*ServiceConfig, error) {
 	serviceConfig := &ServiceConfig{Name: name}
+	args := buildArgsToMap(buildArgs)
+
 	if err := loader.Transform(serviceDict, serviceConfig, loader.Transformer{
 		TypeOf: reflect.TypeOf(ImageBuildConfig{}),
 		Func:   transformBuildConfig,
 	}); err != nil {
 		return nil, err
+	}
+	if serviceConfig.Build != nil {
+		serviceConfig.Build.mergeArgs(args)
 	}
 	return serviceConfig, nil
 }
@@ -68,5 +74,31 @@ func transformBuildConfig(data interface{}) (interface{}, error) {
 		return data, nil
 	default:
 		return data, errors.Errorf("invalid type %T for service build", value)
+	}
+}
+
+func buildArgsToMap(array []string) map[string]string {
+	result := make(map[string]string)
+	for _, value := range array {
+		parts := strings.SplitN(value, "=", 2)
+		key := parts[0]
+		if len(parts) == 1 {
+			result[key] = ""
+		} else {
+			result[key] = parts[1]
+		}
+	}
+	return result
+}
+
+func (m ImageBuildConfig) mergeArgs(mapToMerge map[string]string) {
+	for key := range m.Args {
+		if val, ok := mapToMerge[key]; ok {
+			if val == "" {
+				m.Args[key] = nil
+			} else {
+				m.Args[key] = &val
+			}
+		}
 	}
 }

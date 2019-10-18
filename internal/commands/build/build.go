@@ -37,6 +37,7 @@ type buildOptions struct {
 	pull     bool
 	tag      string
 	folder   string
+	args     []string
 }
 
 func Cmd(dockerCli command.Cli) *cobra.Command {
@@ -61,6 +62,7 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags.StringVarP(&opts.tag, "tag", "t", "", "Application image and optionally a tag in the 'image:tag' format")
 	flags.StringVarP(&opts.folder, "folder", "f", "", "Docker app folder containing application definition")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
+	flags.StringArrayVar(&opts.args, "build-arg", []string{}, "Set build-time variables")
 
 	return cmd
 }
@@ -68,6 +70,10 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) (reference.Reference, error) {
 	err := checkMinimalEngineVersion(dockerCli)
 	if err != nil {
+		return nil, err
+	}
+
+	if err = checkBuildArgsUniqueness(opt.args); err != nil {
 		return nil, err
 	}
 
@@ -241,4 +247,16 @@ func debugSolveResponses(resp map[string]*client.SolveResponse) {
 			logrus.Debug(string(dt))
 		}
 	}
+}
+
+func checkBuildArgsUniqueness(args []string) error {
+	set := make(map[string]bool)
+	for _, value := range args {
+		key := strings.Split(value, "=")[0]
+		if _, ok := set[key]; ok {
+			return fmt.Errorf("'--build-arg %s' is defined twice", key)
+		}
+		set[key] = true
+	}
+	return nil
 }
