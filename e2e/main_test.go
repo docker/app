@@ -1,12 +1,10 @@
 package e2e
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -19,10 +17,9 @@ import (
 )
 
 var (
-	e2ePath         = flag.String("e2e-path", ".", "Set path to the e2e directory")
-	dockerCliPath   = os.Getenv("DOCKERCLI_BINARY")
-	hasExperimental = false
-	dockerCli       dockerCliCommand
+	e2ePath       = flag.String("e2e-path", ".", "Set path to the e2e directory")
+	dockerCliPath = os.Getenv("DOCKERCLI_BINARY")
+	dockerCli     dockerCliCommand
 )
 
 type dockerCliCommand struct {
@@ -119,13 +116,6 @@ func TestMain(m *testing.M) {
 	createDockerAppSymLink(dockerApp, cliPluginDir)
 
 	dockerCli = dockerCliCommand{path: dockerCliPath, cliPluginDir: cliPluginDir}
-
-	cmd := exec.Command(dockerApp, "app", "--version")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		panic(err)
-	}
-	hasExperimental = bytes.Contains(output, []byte("Experimental: on"))
 	os.Exit(m.Run())
 }
 

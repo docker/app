@@ -6,9 +6,6 @@ E2E_NAME := $(BIN_NAME)-e2e
 BUILD_ANALYZER?=dockereng/fossa-analyzer:1.0.10
 FOSSA_OPTS?=--option all-tags:true --option allow-unresolved:true
 
-# Enable experimental features. "on" or "off"
-EXPERIMENTAL := off
-
 ALPINE_VERSION=3.10.1
 
 # Failing to resolve sh.exe to a full path denotes a windows vanilla shell.
