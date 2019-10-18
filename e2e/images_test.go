@@ -1,8 +1,10 @@
 package e2e
 
 import (
+	"bufio"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"gotest.tools/assert"
@@ -26,6 +28,23 @@ func expectImageListOutput(t *testing.T, cmd icmd.Cmd, output string) {
 	assert.Equal(t, result.Stdout(), output)
 }
 
+func verifyImageIDListOutput(t *testing.T, cmd icmd.Cmd, count int, distinct int) {
+	cmd.Command = dockerCli.Command("app", "image", "ls", "-q")
+	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	scanner := bufio.NewScanner(strings.NewReader(result.Stdout()))
+	lines := []string{}
+	counter := make(map[string]int)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+		counter[scanner.Text()]++
+	}
+	if err := scanner.Err(); err != nil {
+		assert.Error(t, err, "Verification failed")
+	}
+	assert.Equal(t, len(lines), count)
+	assert.Equal(t, len(counter), distinct)
+}
+
 func TestImageList(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
@@ -41,6 +60,16 @@ b-simple-app:latest           simple
 `
 		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp:latest")
 		expectImageListOutput(t, cmd, expectedOutput)
+	})
+}
+
+func TestImageListQuiet(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		dir := fs.NewDir(t, "")
+		defer dir.Remove()
+		insertBundles(t, cmd, info)
+		verifyImageIDListOutput(t, cmd, 3, 2)
 	})
 }
 

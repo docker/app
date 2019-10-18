@@ -1,6 +1,7 @@
 package image
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
@@ -11,10 +12,16 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/pkg/stringid"
 	"github.com/spf13/cobra"
 )
 
+type imageListOption struct {
+	quiet bool
+}
+
 func listCmd(dockerCli command.Cli) *cobra.Command {
+	options := imageListOption{}
 	cmd := &cobra.Command{
 		Short:   "List application images",
 		Use:     "ls",
@@ -30,14 +37,16 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 				return err
 			}
 
-			return runList(dockerCli, bundleStore)
+			return runList(dockerCli, options, bundleStore)
 		},
 	}
+	flags := cmd.Flags()
+	flags.BoolVarP(&options.quiet, "quiet", "q", false, "Only show numeric IDs")
 
 	return cmd
 }
 
-func runList(dockerCli command.Cli, bundleStore store.BundleStore) error {
+func runList(dockerCli command.Cli, options imageListOption, bundleStore store.BundleStore) error {
 	bundles, err := bundleStore.List()
 	if err != nil {
 		return err
@@ -48,6 +57,9 @@ func runList(dockerCli command.Cli, bundleStore store.BundleStore) error {
 		return err
 	}
 
+	if options.quiet {
+		return printImageIDs(dockerCli, pkgs)
+	}
 	return printImages(dockerCli, pkgs)
 }
 
@@ -79,6 +91,24 @@ func printImages(dockerCli command.Cli, refs []pkg) error {
 	}
 
 	return w.Flush()
+}
+
+func printImageIDs(dockerCli command.Cli, refs []pkg) error {
+	var buf bytes.Buffer
+
+	for _, ref := range refs {
+		id, ok := ref.ref.(store.ID)
+		if !ok {
+			var err error
+			id, err = store.FromBundle(ref.bundle)
+			if err != nil {
+				return err
+			}
+		}
+		fmt.Fprintln(&buf, stringid.TruncateID(id.String()))
+	}
+	fmt.Fprintf(dockerCli.Out(), buf.String())
+	return nil
 }
 
 func printHeaders(w io.Writer) {

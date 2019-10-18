@@ -6,6 +6,7 @@ import (
 	"io"
 	"regexp"
 
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 )
@@ -25,6 +26,11 @@ func FromString(s string) (ID, error) {
 		return ID{}, fmt.Errorf("could not parse '%s' as a valid reference", s)
 	}
 	return ID{s}, nil
+}
+
+func FromBundle(bndle *bundle.Bundle) (ID, error) {
+	digest, err := ComputeDigest(bndle)
+	return ID{digest.Encoded()}, err
 }
 
 // ID is an unique identifier for docker app image bundle, implementing reference.Reference
