@@ -1,4 +1,4 @@
-package commands
+package internal
 
 import (
 	"fmt"
@@ -128,11 +128,11 @@ func rewriteContextIfDockerDesktop(meta *store.Metadata, s store.Store) {
 	meta.Endpoints[kubernetes.KubernetesEndpoint] = *kubeEp
 }
 
-type dockerDesktopAwareStore struct {
+type DockerDesktopAwareStore struct {
 	store.Store
 }
 
-func (s dockerDesktopAwareStore) List() ([]store.Metadata, error) {
+func (s DockerDesktopAwareStore) List() ([]store.Metadata, error) {
 	contexts, err := s.Store.List()
 	if err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func (s dockerDesktopAwareStore) List() ([]store.Metadata, error) {
 	return contexts, nil
 }
 
-func (s dockerDesktopAwareStore) GetMetadata(name string) (store.Metadata, error) {
+func (s DockerDesktopAwareStore) GetMetadata(name string) (store.Metadata, error) {
 	context, err := s.Store.GetMetadata(name)
 	if err != nil {
 		return store.Metadata{}, err

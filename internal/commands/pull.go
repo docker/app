@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -41,7 +42,7 @@ func runPull(dockerCli command.Cli, name string) error {
 	}
 	tagRef := reference.TagNameOnly(ref)
 
-	bndl, err := pullBundle(dockerCli, bundleStore, tagRef)
+	bndl, err := cnab.PullBundle(dockerCli, bundleStore, tagRef)
 	if err != nil {
 		return errors.Wrap(err, name)
 	}

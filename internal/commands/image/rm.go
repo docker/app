@@ -47,7 +47,7 @@ $ docker app image rm docker.io/library/myapp@sha256:beef...`,
 }
 
 func runRm(bundleStore store.BundleStore, app string) error {
-	ref, err := StringToRef(app)
+	ref, err := store.StringToRef(app)
 	if err != nil {
 		return err
 	}

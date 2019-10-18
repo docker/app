@@ -9,11 +9,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/app/internal/packager"
-
 	"github.com/containerd/containerd/platforms"
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/log"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -102,7 +103,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 		return nil, "", err
 	}
 
-	bndl, ref, err := resolveBundle(dockerCli, bundleStore, name)
+	bndl, ref, err := cnab.ResolveBundle(dockerCli, bundleStore, name)
 	if err != nil {
 		return nil, "", err
 	}
@@ -136,7 +137,7 @@ func pushInvocationImage(dockerCli command.Cli, retag retagResult) error {
 }
 
 func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, retag retagResult) error {
-	insecureRegistries, err := insecureRegistriesFromEngine(dockerCli)
+	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
 		return errors.Wrap(err, "could not retrieve insecure registries")
 	}

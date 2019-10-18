@@ -1,18 +1,18 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 
+	"github.com/deislabs/cnab-go/claim"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/commands/build"
 	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
+	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -54,7 +54,6 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		removeCmd(dockerCli),
 		listCmd(dockerCli),
 		initCmd(dockerCli),
-		inspectCmd(dockerCli),
 		renderCmd(dockerCli),
 		validateCmd(),
 		pushCmd(dockerCli),
@@ -122,8 +121,30 @@ func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
 	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameter value")
 }
 
+type targetContextOptions struct {
+	targetContext string
+}
+
+func (o *targetContextOptions) SetDefaultTargetContext(dockerCli command.Cli) {
+	o.targetContext = getTargetContext(o.targetContext, dockerCli.CurrentContext())
+}
+
+func getTargetContext(optstargetContext, currentContext string) string {
+	var targetContext string
+	switch {
+	case optstargetContext != "":
+		targetContext = optstargetContext
+	case os.Getenv("DOCKER_TARGET_CONTEXT") != "":
+		targetContext = os.Getenv("DOCKER_TARGET_CONTEXT")
+	}
+	if targetContext == "" {
+		targetContext = currentContext
+	}
+	return targetContext
+}
+
 type credentialOptions struct {
-	targetContext    string
+	targetContextOptions
 	credentialsets   []string
 	credentials      []string
 	sendRegistryAuth bool
@@ -136,10 +157,6 @@ func (o *credentialOptions) addFlags(flags *pflag.FlagSet) {
 	flags.BoolVar(&o.sendRegistryAuth, "with-registry-auth", false, "Sends registry auth")
 }
 
-func (o *credentialOptions) SetDefaultTargetContext(dockerCli command.Cli) {
-	o.targetContext = getTargetContext(o.targetContext, dockerCli.CurrentContext())
-}
-
 func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli, credentialStore store.CredentialStore) []credentialSetOpt {
 	return []credentialSetOpt{
 		addNamedCredentialSets(credentialStore, o.credentialsets),
@@ -149,23 +166,7 @@ func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli, credentialS
 	}
 }
 
-// insecureRegistriesFromEngine reads the registry configuration from the daemon and returns
-// a list of all insecure ones.
-func insecureRegistriesFromEngine(dockerCli command.Cli) ([]string, error) {
-	registries := []string{}
-
-	info, err := dockerCli.Client().Info(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("could not get docker info: %v", err)
-	}
-
-	for _, reg := range info.RegistryConfig.IndexConfigs {
-		if !reg.Secure {
-			registries = append(registries, reg.Name)
-		}
-	}
-
-	logrus.Debugf("insecure registries: %v", registries)
-
-	return registries, nil
+func isInstallationFailed(installation *appstore.Installation) bool {
+	return installation.Result.Action == claim.ActionInstall &&
+		installation.Result.Status == claim.StatusFailure
 }

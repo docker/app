@@ -6,6 +6,7 @@ import (
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
+	"github.com/docker/app/internal/cnab"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -60,11 +61,11 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 			fmt.Fprintf(os.Stderr, "deletion forced for installation %q\n", installationName)
 		}()
 	}
-	bind, err := requiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
+	bind, err := cnab.RequiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
-	driverImpl, errBuf := prepareDriver(dockerCli, bind, nil)
+	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
 	creds, err := prepareCredentialSet(installation.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err

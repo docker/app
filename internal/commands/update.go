@@ -6,6 +6,7 @@ import (
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
+	"github.com/docker/app/internal/cnab"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
@@ -53,7 +54,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 	}
 
 	if opts.bundleOrDockerApp != "" {
-		b, _, err := resolveBundle(dockerCli, bundleStore, opts.bundleOrDockerApp)
+		b, _, err := cnab.ResolveBundle(dockerCli, bundleStore, opts.bundleOrDockerApp)
 		if err != nil {
 			return err
 		}
@@ -67,11 +68,11 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		return err
 	}
 
-	bind, err := requiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
+	bind, err := cnab.RequiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
 	if err != nil {
 		return err
 	}
-	driverImpl, errBuf := prepareDriver(dockerCli, bind, nil)
+	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
 	creds, err := prepareCredentialSet(installation.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err

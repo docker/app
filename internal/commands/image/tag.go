@@ -7,7 +7,6 @@ import (
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/distribution/reference"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +43,7 @@ func runTag(bundleStore store.BundleStore, srcAppImage, destAppImage string) err
 }
 
 func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, error) {
-	cnabRef, err := StringToRef(name)
+	cnabRef, err := store.StringToRef(name)
 	if err != nil {
 		return nil, err
 	}
@@ -57,17 +56,10 @@ func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, err
 }
 
 func storeBundle(bundle *bundle.Bundle, name string, bundleStore store.BundleStore) error {
-	cnabRef, err := StringToRef(name)
+	cnabRef, err := store.StringToRef(name)
 	if err != nil {
 		return err
 	}
 	_, err = bundleStore.Store(cnabRef, bundle)
 	return err
-}
-
-func StringToRef(s string) (reference.Reference, error) {
-	if named, err := reference.ParseNormalizedNamed(s); err == nil {
-		return reference.TagNameOnly(named), nil
-	}
-	return store.FromString(s)
 }

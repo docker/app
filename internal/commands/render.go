@@ -1,13 +1,18 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/cnab"
+	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config"
 	"github.com/spf13/cobra"
 )
 
@@ -59,4 +64,38 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		return fmt.Errorf("render failed: %s\n%s", err, errBuf)
 	}
 	return nil
+}
+
+func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer, paramsOpts parametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
+	s, err := appstore.NewApplicationStore(config.Dir())
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	bundleStore, err := s.BundleStore()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	bundle, ref, err := cnab.ResolveBundle(dockerCli, bundleStore, appname)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	installation, err := appstore.NewInstallation("custom-action", ref)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	installation.Bundle = bundle
+
+	if err := mergeBundleParameters(installation,
+		withFileParameters(paramsOpts.parametersFiles),
+		withCommandLineParameters(paramsOpts.overrides),
+	); err != nil {
+		return nil, nil, nil, err
+	}
+
+	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, cnab.BindMount{}, stdout)
+	a := &action.RunCustom{
+		Action: actionName,
+		Driver: driverImpl,
+	}
+	return a, installation, errBuf, nil
 }

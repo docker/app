@@ -158,11 +158,11 @@ func TestInspectApp(t *testing.T) {
 			fs.WithDir("attachments.dockerapp", fs.FromDir("testdata/attachments.dockerapp")))
 		defer dir.Remove()
 
-		cmd.Command = dockerCli.Command("app", "inspect")
+		cmd.Command = dockerCli.Command("app", "image", "inspect")
 		cmd.Dir = dir.Path()
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `"docker app inspect" requires exactly 1 argument.`,
+			Err:      `"docker app image inspect" requires exactly 1 argument.`,
 		})
 
 		contextPath := filepath.Join("testdata", "simple")
@@ -170,7 +170,7 @@ func TestInspectApp(t *testing.T) {
 		cmd.Dir = ""
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-		cmd.Command = dockerCli.Command("app", "inspect", "simple-app:1.0.0")
+		cmd.Command = dockerCli.Command("app", "image", "inspect", "simple-app:1.0.0")
 		cmd.Dir = dir.Path()
 		output := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
 		golden.Assert(t, output, "app-inspect.golden")
