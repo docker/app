@@ -4,10 +4,8 @@ description: ""
 maintainers: []
 
 
-Service (1) Replicas Ports Image
------------ -------- ----- -----
-web         1        80    nginx
+SERVICE REPLICAS PORTS IMAGE
+web     1        80    nginx
 
-Parameter (1) Value
-------------- -----
-web.port      80
+PARAMETER VALUE
+web.port  80

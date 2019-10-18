@@ -92,35 +92,35 @@ func printTable(out io.Writer, appInfo appInfo) error {
 		for _, service := range appInfo.Services {
 			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, service.Replicas, service.Ports, service.Image)
 		}
-	}, "Service", "Replicas", "Ports", "Image")
+	}, "SERVICE", "REPLICAS", "PORTS", "IMAGE")
 
 	// Add Network section
 	printSection(out, len(appInfo.Networks), func(w io.Writer) {
 		for _, name := range appInfo.Networks {
 			fmt.Fprintln(w, name)
 		}
-	}, "Network")
+	}, "NETWORK")
 
 	// Add Volume section
 	printSection(out, len(appInfo.Volumes), func(w io.Writer) {
 		for _, name := range appInfo.Volumes {
 			fmt.Fprintln(w, name)
 		}
-	}, "Volume")
+	}, "VOLUME")
 
 	// Add Secret section
 	printSection(out, len(appInfo.Secrets), func(w io.Writer) {
 		for _, name := range appInfo.Secrets {
 			fmt.Fprintln(w, name)
 		}
-	}, "Secret")
+	}, "SECRET")
 
 	// Add Parameter section
 	printSection(out, len(appInfo.parametersKeys), func(w io.Writer) {
 		for _, k := range appInfo.parametersKeys {
 			fmt.Fprintf(w, "%s\t%s\n", k, appInfo.Parameters[k])
 		}
-	}, "Parameter", "Value")
+	}, "PARAMETER", "VALUE")
 
 	// Add Attachments section
 	printSection(out, len(appInfo.Attachments), func(w io.Writer) {
@@ -128,7 +128,7 @@ func printTable(out io.Writer, appInfo appInfo) error {
 			sizeString := units.HumanSize(float64(attachment.Size))
 			fmt.Fprintf(w, "%s\t%s\n", attachment.Path, sizeString)
 		}
-	}, "Attachment", "Size")
+	}, "ATTACHMENT", "SIZE")
 	return nil
 }
 
@@ -146,23 +146,9 @@ func printSection(out io.Writer, len int, printer func(io.Writer), headers ...st
 	}
 	fmt.Fprintln(out)
 	w := tabwriter.NewWriter(out, 0, 0, 1, ' ', 0)
-	var plural string
-	if len > 1 {
-		plural = "s"
-	}
-	headers[0] = fmt.Sprintf("%s%s (%d)", headers[0], plural, len)
-	printHeaders(w, headers...)
+	fmt.Fprintln(w, strings.Join(headers, "\t"))
 	printer(w)
 	w.Flush()
-}
-
-func printHeaders(w io.Writer, headers ...string) {
-	fmt.Fprintln(w, strings.Join(headers, "\t"))
-	dashes := make([]string, len(headers))
-	for i, h := range headers {
-		dashes[i] = strings.Repeat("-", len(h))
-	}
-	fmt.Fprintln(w, strings.Join(dashes, "\t"))
 }
 
 func getAppInfo(app *types.App, config *composetypes.Config, argParameters map[string]string) (appInfo, error) {
