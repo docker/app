@@ -32,12 +32,13 @@ import (
 )
 
 type buildOptions struct {
-	noCache  bool
-	progress string
-	pull     bool
-	tag      string
-	folder   string
-	args     []string
+	noCache     bool
+	progress    string
+	pull        bool
+	tag         string
+	folder      string
+	imageIDFile string
+	args        []string
 }
 
 func Cmd(dockerCli command.Cli) *cobra.Command {
@@ -48,11 +49,7 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 		Example: `$ docker app build --tag my/app:1.0.0 .`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := runBuild(dockerCli, args[0], opts)
-			if err == nil {
-				fmt.Printf("Successfully build %s\n", ref.String())
-			}
-			return err
+			return runBuild(dockerCli, args[0], opts)
 		},
 	}
 
@@ -63,49 +60,78 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags.StringVarP(&opts.folder, "folder", "f", "", "Docker app folder containing application definition")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
 	flags.StringArrayVar(&opts.args, "build-arg", []string{}, "Set build-time variables")
+	flags.StringVar(&opts.imageIDFile, "iidfile", "", "Write the app image ID to the file")
 
 	return cmd
 }
 
-func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) (reference.Reference, error) {
+func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error {
 	err := checkMinimalEngineVersion(dockerCli)
 	if err != nil {
-		return nil, err
+		return err
+	}
+
+	if opt.imageIDFile != "" {
+		// Avoid leaving a stale file if we eventually fail
+		if err := os.Remove(opt.imageIDFile); err != nil && !os.IsNotExist(err) {
+			return err
+		}
 	}
 
 	if err = checkBuildArgsUniqueness(opt.args); err != nil {
-		return nil, err
+		return err
+	}
+
+	application, err := getAppFolder(opt, contextPath)
+	if err != nil {
+		return err
+	}
+
+	app, err := packager.Extract(application)
+	if err != nil {
+		return err
+	}
+	defer app.Cleanup()
+
+	bundle, err := buildImageUsingBuildx(app, contextPath, opt, dockerCli)
+	if err != nil {
+		return err
 	}
 
 	var ref reference.Reference
 	ref, err = packager.GetNamedTagged(opt.tag)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	application, err := getAppFolder(opt, contextPath)
+	id, err := packager.PersistInBundleStore(ref, bundle)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	app, err := packager.Extract(application)
-	if err != nil {
-		return nil, err
+	if opt.imageIDFile != "" {
+		if err = ioutil.WriteFile(opt.imageIDFile, []byte(id.String()), 0644); err != nil {
+			fmt.Fprintf(dockerCli.Err(), "Failed to write application image id in %s: %s", opt.imageIDFile, err)
+		}
 	}
-	defer app.Cleanup()
 
+	fmt.Printf("Successfully built %s\n", id)
+	if ref != nil {
+		fmt.Printf("Successfully tagged %s\n", ref.String())
+	}
+	return err
+}
+
+func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions, dockerCli command.Cli) (*bundle.Bundle, error) {
 	buildopts, err := parseCompose(app, contextPath, opt)
 	if err != nil {
 		return nil, err
 	}
-
 	buildopts["com.docker.app.invocation-image"], err = createInvocationImageBuildOptions(dockerCli, app)
 	if err != nil {
 		return nil, err
 	}
-
 	debugBuildOpts(buildopts)
-
 	ctx, cancel := context.WithCancel(appcontext.Context())
 	defer cancel()
 	const drivername = "buildx_buildkit_default"
@@ -119,9 +145,7 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) (refe
 			Driver: d,
 		},
 	}
-
 	pw := progress.NewPrinter(ctx, os.Stderr, opt.progress)
-
 	// We rely on buildx "docker" builder integrated in docker engine, so don't need a DockerAPI here
 	resp, err := build.Build(ctx, driverInfo, buildopts, nil, dockerCli.ConfigFile(), pw)
 	if err != nil {
@@ -137,8 +161,7 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) (refe
 	if err != nil {
 		return nil, err
 	}
-
-	return packager.PersistInBundleStore(ref, bundle)
+	return bundle, nil
 }
 
 func getAppFolder(opt buildOptions, contextPath string) (string, error) {

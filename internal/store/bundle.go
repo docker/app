@@ -16,6 +16,7 @@ import (
 
 //
 type BundleStore interface {
+	// Store do store the bundle with optional reference, and return it's unique ID
 	Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error)
 	Read(ref reference.Reference) (*bundle.Bundle, error)
 	List() ([]reference.Reference, error)
@@ -46,25 +47,27 @@ type bundleStore struct {
 //
 
 func (b *bundleStore) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error) {
-	if ref == nil {
-		digest, err := ComputeDigest(bndle)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
-		}
-		ref = ID{digest.Encoded()}
-	}
-	dir, err := b.storePath(ref)
+	digest, err := ComputeDigest(bndle)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
+	id := ID{digest.Encoded()}
+
+	if ref == nil {
+		ref = id
+	}
+	dir, err := b.storePath(ref)
+	if err != nil {
+		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
+	}
 	path := filepath.Join(dir, "bundle.json")
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
+		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
 	if err = bndle.WriteFile(path, 0644); err != nil {
-		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
+		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
-	return ref, nil
+	return id, nil
 }
 
 func (b *bundleStore) Read(ref reference.Reference) (*bundle.Bundle, error) {
