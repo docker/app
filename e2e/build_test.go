@@ -3,9 +3,14 @@ package e2e
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"testing"
+
+	"gotest.tools/fs"
+
+	"github.com/docker/app/internal/store"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"gotest.tools/assert"
@@ -15,9 +20,11 @@ import (
 func TestBuild(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
+		tmp := fs.NewDir(t, "TestBuild")
 
 		testDir := path.Join("testdata", "build")
-		cmd.Command = dockerCli.Command("app", "build", "--tag", "single:1.0.0", "-f", path.Join(testDir, "single.dockerapp"), testDir)
+		iidfile := tmp.Join("iidfile")
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "single:1.0.0", "--iidfile", iidfile, "-f", path.Join(testDir, "single.dockerapp"), testDir)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		cfg := getDockerConfigDir(t, cmd)
@@ -34,6 +41,15 @@ func TestBuild(t *testing.T) {
 			cmd.Command = dockerCli.Command("inspect", ref)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		}
+
+		_, err = os.Stat(iidfile)
+		assert.NilError(t, err)
+		bytes, err := ioutil.ReadFile(iidfile)
+		assert.NilError(t, err)
+		iid := string(bytes)
+		actualID, err := store.FromBundle(&bndl)
+		assert.NilError(t, err)
+		assert.Equal(t, iid, actualID.String())
 	})
 }
 
