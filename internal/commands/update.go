@@ -21,8 +21,8 @@ func updateCmd(dockerCli command.Cli) *cobra.Command {
 	var opts updateOptions
 	cmd := &cobra.Command{
 		Use:     "update [OPTIONS] RUNNING_APP",
-		Short:   "Update a running application",
-		Example: `$ docker app update myrunningapp --target-context=mycontext --set key=value`,
+		Short:   "Update a running App",
+		Example: `$ docker app update myrunningapp --set key=value`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runUpdate(dockerCli, args[0], opts)
@@ -30,7 +30,7 @@ func updateCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "image", "", "Override the installation with another Application Package")
+	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "image", "", "Override the running App with another App image")
 
 	return cmd
 }
@@ -50,7 +50,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 	}
 
 	if isInstallationFailed(installation) {
-		return fmt.Errorf("Installation %q has failed and cannot be updated, reinstall it using 'docker app install'", installationName)
+		return fmt.Errorf("Installation %q has failed and cannot be updated, reinstall it using 'docker app run'", installationName)
 	}
 
 	if opts.bundleOrDockerApp != "" {

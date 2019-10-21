@@ -190,7 +190,7 @@ func TestRunOnlyOne(t *testing.T) {
 	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", "bundle.json", "myapp")
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
-		Err:      `"docker app run" cannot run a bundle and an app image`,
+		Err:      `"docker app run" cannot run a bundle and an App image`,
 	})
 }
 
@@ -238,7 +238,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd.Command = dockerCli.Command("app", "update", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
-		Err:      fmt.Sprintf("Installation %q has failed and cannot be updated, reinstall it using 'docker app install'", appName),
+		Err:      fmt.Sprintf("Installation %q has failed and cannot be updated, reinstall it using 'docker app run'", appName),
 	})
 
 	// Install a Docker Application Package with an existing failed installation is fine

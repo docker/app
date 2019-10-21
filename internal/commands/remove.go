@@ -21,17 +21,17 @@ func removeCmd(dockerCli command.Cli) *cobra.Command {
 	var opts removeOptions
 
 	cmd := &cobra.Command{
-		Use:     "rm INSTALLATION_NAME [--target-context TARGET_CONTEXT] [OPTIONS]",
-		Short:   "Remove an application",
+		Use:     "rm [OPTIONS] RUNNING_APP",
+		Short:   "Remove a running App",
 		Aliases: []string{"remove"},
-		Example: `$ docker app rm myinstallation --target-context=mycontext`,
+		Example: `$ docker app rm myrunningapp`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRemove(dockerCli, args[0], opts)
 		},
 	}
 	opts.addFlags(cmd.Flags())
-	cmd.Flags().BoolVar(&opts.force, "force", false, "Force removal of installation")
+	cmd.Flags().BoolVar(&opts.force, "force", false, "Force the removal of a running App")
 
 	return cmd
 }

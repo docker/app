@@ -23,7 +23,7 @@ type imageListOption struct {
 func listCmd(dockerCli command.Cli) *cobra.Command {
 	options := imageListOption{}
 	cmd := &cobra.Command{
-		Short:   "List application images",
+		Short:   "List App images",
 		Use:     "ls",
 		Aliases: []string{"list"},
 		RunE: func(cmd *cobra.Command, args []string) error {

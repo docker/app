@@ -30,16 +30,18 @@ func muteDockerCli(dockerCli command.Cli) func() {
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	var opts inspectOptions
 	cmd := &cobra.Command{
-		Use:   "inspect [APP_NAME] [OPTIONS]",
-		Short: "Shows metadata, parameters and a summary of the Compose file for a given application",
-		Example: `$ docker app inspect my-installed-app
-$docker app inspect my-app:1.0.0`,
+		Use:   "inspect [OPTIONS] APP_IMAGE",
+		Short: "Display detailed information about an App image",
+		Example: `$ docker app image inspect myapp
+$ docker app image inspect myapp:1.0.0
+$ docker app image inspect myrepo/myapp:1.0.0
+$ docker app image inspect 34be4a0c5f50`,
 		Args: cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInspect(dockerCli, args[0], opts)
 		},
 	}
-	cmd.Flags().BoolVar(&opts.pretty, "pretty", false, "Pretty print the output")
+	cmd.Flags().BoolVar(&opts.pretty, "pretty", false, "Print the information in a human friendly format")
 
 	return cmd
 }
