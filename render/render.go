@@ -116,9 +116,13 @@ func render(appPath string, composeContent string, imageMap map[string]bundle.Im
 	if err := processEnabled(rendered); err != nil {
 		return nil, err
 	}
+	// Apply relocation map
 	for ix, service := range rendered.Services {
 		if img, ok := imageMap[service.Name]; ok {
 			service.Image = img.Image
+			if img.Image == "" {
+				service.Image = img.Digest
+			}
 			rendered.Services[ix] = service
 		}
 	}
