@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
@@ -22,17 +21,15 @@ type nameKind uint
 
 const (
 	_ nameKind = iota
-	nameKindEmpty
-	nameKindFile
 	nameKindDir
 	nameKindReference
 )
 
 func getAppNameKind(name string) (string, nameKind) {
 	if name == "" {
-		return name, nameKindEmpty
+		return name, nameKindDir
 	}
-	// name can be a bundle.json or bundle.cnab file, or a dockerapp directory
+	// name can be a dockerapp directory
 	st, err := os.Stat(name)
 	if os.IsNotExist(err) {
 		// try with .dockerapp extension
@@ -47,7 +44,7 @@ func getAppNameKind(name string) (string, nameKind) {
 	if st.IsDir() {
 		return name, nameKindDir
 	}
-	return name, nameKindFile
+	return name, nameKindReference
 }
 
 func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.Bundle, string, error) {
@@ -60,7 +57,8 @@ func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.B
 	return bndl, "", err
 }
 
-func loadBundleFromFile(filename string) (*bundle.Bundle, error) {
+// LoadBundleFromFile loads a bundle from a file
+func LoadBundleFromFile(filename string) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{}
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -74,19 +72,11 @@ func loadBundleFromFile(filename string) (*bundle.Bundle, error) {
 // a reference to the bundle if it is found in the bundlestore, and an error.
 func ResolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, string, error) {
 	// resolution logic:
-	// - if there is a docker-app package in working directory, or an http:// / https:// prefix, use packager.Extract result
-	// - the name has a .json or .cnab extension and refers to an existing file or web resource: load the bundle
-	// - name matches a bundle name:version stored in the bundle store: use it
+	// - if there is a docker-app package in working directory or if a directory is given use packager.Extract
 	// - pull the bundle from the registry and add it to the bundle store
 	name, kind := getAppNameKind(name)
 	switch kind {
-	case nameKindFile:
-		if strings.HasSuffix(name, internal.AppExtension) {
-			return extractAndLoadAppBasedBundle(dockerCli, name)
-		}
-		bndl, err := loadBundleFromFile(name)
-		return bndl, "", err
-	case nameKindDir, nameKindEmpty:
+	case nameKindDir:
 		return extractAndLoadAppBasedBundle(dockerCli, name)
 	case nameKindReference:
 		bndl, tagRef, err := GetBundle(dockerCli, bundleStore, name)

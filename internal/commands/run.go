@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/cli/cli"
+
 	"github.com/deislabs/cnab-go/action"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/store"
-	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/pkg/errors"
@@ -22,6 +24,7 @@ type runOptions struct {
 	orchestrator  string
 	kubeNamespace string
 	stackName     string
+	cnabBundle    string
 }
 
 const longDescription = `Run an application based on a docker app image.`
@@ -37,9 +40,20 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 		Short:   "Run an application",
 		Long:    longDescription,
 		Example: example,
-		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRun(dockerCli, args[0], opts)
+			if opts.cnabBundle != "" && len(args) != 0 {
+				return errors.Errorf(
+					"%q cannot run a bundle and an app image",
+					cmd.CommandPath(),
+				)
+			}
+			if opts.cnabBundle == "" {
+				if err := cli.ExactArgs(1)(cmd, args); err != nil {
+					return err
+				}
+				return runDockerApp(dockerCli, args[0], opts)
+			}
+			return runCnab(dockerCli, opts)
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
@@ -47,25 +61,42 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Assign a name to the installation")
+	cmd.Flags().StringVar(&opts.cnabBundle, "cnab-bundle-json", "", "Run a CNAB bundle instead of a Docker App")
 
 	return cmd
 }
 
-func runRun(dockerCli command.Cli, appname string, opts runOptions) error {
+func runCnab(dockerCli command.Cli, opts runOptions) error {
+	bndl, err := cnab.LoadBundleFromFile(opts.cnabBundle)
+	if err != nil {
+		return errors.Wrapf(err, "failed to read bundle %q", opts.cnabBundle)
+	}
+	return runBundle(dockerCli, bndl, opts, "")
+}
+
+func runDockerApp(dockerCli command.Cli, appname string, opts runOptions) error {
+	bundleStore, err := prepareBundleStore()
+	if err != nil {
+		return err
+	}
+
+	bndl, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to find application %q", appname)
+	}
+	return runBundle(dockerCli, bndl, opts, ref.String())
+}
+
+func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref string) error {
 	opts.SetDefaultTargetContext(dockerCli)
 
 	bind, err := cnab.RequiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())
 	if err != nil {
 		return err
 	}
-	bundleStore, installationStore, credentialStore, err := prepareStores(opts.targetContext)
+	_, installationStore, credentialStore, err := prepareStores(opts.targetContext)
 	if err != nil {
 		return err
-	}
-
-	bndl, ref, err := cnab.ResolveBundle(dockerCli, bundleStore, appname)
-	if err != nil {
-		return errors.Wrapf(err, "Unable to find application %q", appname)
 	}
 	if err := bndl.Validate(); err != nil {
 		return err
