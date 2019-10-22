@@ -26,10 +26,10 @@ type bundleStoreStubForListCmd struct {
 	refList []reference.Reference
 }
 
-func (b *bundleStoreStubForListCmd) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error) {
+func (b *bundleStoreStubForListCmd) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error) {
 	b.refMap[ref] = bndle
 	b.refList = append(b.refList, ref)
-	return ref, nil
+	return store.FromBundle(bndle)
 }
 
 func (b *bundleStoreStubForListCmd) Read(ref reference.Reference) (*bundle.Bundle, error) {

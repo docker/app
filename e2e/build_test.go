@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -49,7 +50,28 @@ func TestBuild(t *testing.T) {
 		iid := string(bytes)
 		actualID, err := store.FromBundle(&bndl)
 		assert.NilError(t, err)
-		assert.Equal(t, iid, actualID.String())
+		assert.Equal(t, iid, fmt.Sprintf("sha256:%s", actualID.String()))
+	})
+}
+
+func TestQuietBuild(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		tmp := fs.NewDir(t, "TestBuild")
+
+		testDir := path.Join("testdata", "build")
+		iidfile := tmp.Join("iidfile")
+		cmd.Command = dockerCli.Command("app", "build", "--quiet", "--iidfile", iidfile, "-f", path.Join(testDir, "single.dockerapp"), testDir)
+		out := icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined()
+		out = strings.Trim(out, "\r\n")
+
+		_, err := os.Stat(iidfile)
+		assert.NilError(t, err)
+		bytes, err := ioutil.ReadFile(iidfile)
+		assert.NilError(t, err)
+		iid := string(bytes)
+		assert.NilError(t, err)
+		assert.Equal(t, iid, out)
 	})
 }
 

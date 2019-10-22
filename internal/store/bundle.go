@@ -11,13 +11,14 @@ import (
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
 
 //
 type BundleStore interface {
 	// Store do store the bundle with optional reference, and return it's unique ID
-	Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error)
+	Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error)
 	Read(ref reference.Reference) (*bundle.Bundle, error)
 	List() ([]reference.Reference, error)
 	Remove(ref reference.Reference) error
@@ -46,12 +47,12 @@ type bundleStore struct {
 //      \_ bundle.json
 //
 
-func (b *bundleStore) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error) {
+func (b *bundleStore) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error) {
 	digest, err := ComputeDigest(bndle)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
-	id := ID{digest.Encoded()}
+	id := ID{digest}
 
 	if ref == nil {
 		ref = id
@@ -107,7 +108,7 @@ func (b *bundleStore) List() ([]reference.Reference, error) {
 		if strings.HasPrefix(path, digests) {
 			rel := path[len(digests)+1:]
 			dg := strings.Split(filepath.ToSlash(rel), "/")[0]
-			references = append(references, ID{dg})
+			references = append(references, ID{digest.NewDigestFromEncoded(digest.SHA256, dg)})
 			return nil
 		}
 
