@@ -148,6 +148,7 @@ func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, re
 	}
 	fixupOptions := []remotes.FixupOption{
 		remotes.WithEventCallback(display.onEvent),
+		remotes.WithAutoBundleUpdate(),
 	}
 	if platforms := platformFilter(opts); len(platforms) > 0 {
 		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(platforms))
