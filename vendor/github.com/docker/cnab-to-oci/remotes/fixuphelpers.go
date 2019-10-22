@@ -91,15 +91,15 @@ func makeManifestWalker(ctx context.Context, sourceFetcher remotes.Fetcher,
 	scheduler := newErrgroupScheduler(ctx, cfg.maxConcurrentJobs, cfg.jobsBufferLength)
 	cleaner := func() {
 		cancel()
-		scheduler.drain()
+		scheduler.drain() //nolint:errcheck
 	}
 	walker := newManifestWalker(notifyEvent, scheduler, progress, descriptorContentHandler)
 	return walker.walk(scheduler.ctx(), fixupInfo.resolvedDescriptor, nil), cleaner, nil
 }
 
-func notifyError(notifyEvent eventNotifier, err error) (bundle.BaseImage, error) {
+func notifyError(notifyEvent eventNotifier, err error) error {
 	notifyEvent(FixupEventTypeCopyImageEnd, "", err)
-	return bundle.BaseImage{}, err
+	return err
 }
 
 func checkBaseImage(baseImage *bundle.BaseImage) error {
@@ -119,7 +119,7 @@ func checkBaseImage(baseImage *bundle.BaseImage) error {
 	case images.MediaTypeDockerSchema2ManifestList:
 	case "":
 	default:
-		return fmt.Errorf("image media type %q is not supported", baseImage.ImageType)
+		return fmt.Errorf("image media type %q is not supported", baseImage.MediaType)
 	}
 
 	return nil

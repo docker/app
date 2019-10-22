@@ -153,12 +153,13 @@ func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, re
 		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(platforms))
 	}
 	// bundle fixup
-	if err := remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolver, fixupOptions...); err != nil {
+	relocationMap, err := remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolver, fixupOptions...)
+	if err != nil {
 		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
 	}
 	// push bundle manifest
 	logrus.Debugf("Pushing the bundle %q", retag.cnabRef)
-	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl, retag.cnabRef, resolver, true, withAppAnnotations)
+	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl, relocationMap, retag.cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
 	}

@@ -102,14 +102,12 @@ func (p promise) then(next func(ctx context.Context) error) promise {
 	}
 	go func() {
 		defer close(completionSource.done)
-		select {
-		case <-p.Done():
-			if err := p.Err(); err != nil {
-				completionSource.err = err
-				return
-			}
-			completionSource.err = p.scheduler.schedule(next).wait()
+		<-p.Done()
+		if err := p.Err(); err != nil {
+			completionSource.err = err
+			return
 		}
+		completionSource.err = p.scheduler.schedule(next).wait()
 	}()
 	return newPromise(p.scheduler, completionSource)
 }

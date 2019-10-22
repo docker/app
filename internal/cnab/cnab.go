@@ -128,7 +128,8 @@ func PullBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, tagRef 
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve insecure registries: %v", err)
 	}
-	bndl, err := remotes.Pull(log.WithLogContext(context.Background()), reference.TagNameOnly(tagRef), remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...))
+
+	bndl, _, err := remotes.Pull(log.WithLogContext(context.Background()), reference.TagNameOnly(tagRef), remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...))
 	if err != nil {
 		return nil, err
 	}

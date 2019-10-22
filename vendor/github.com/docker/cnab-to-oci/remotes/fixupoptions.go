@@ -1,6 +1,12 @@
 package remotes
 
 import (
+	"fmt"
+	"io"
+	"io/ioutil"
+
+	"github.com/docker/cnab-to-oci/internal"
+
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
@@ -25,6 +31,10 @@ type fixupConfig struct {
 	resolver                      remotes.Resolver
 	invocationImagePlatformFilter platforms.Matcher
 	componentImagePlatformFilter  platforms.Matcher
+	autoBundleUpdate              bool
+	pushImages                    bool
+	imageClient                   internal.ImageClient
+	pushOut                       io.Writer
 }
 
 // FixupOption is a helper for configuring a FixupBundle
@@ -102,6 +112,36 @@ func WithParallelism(maxConcurrentJobs int, jobsBufferLength int) FixupOption {
 	return func(cfg *fixupConfig) error {
 		cfg.maxConcurrentJobs = maxConcurrentJobs
 		cfg.jobsBufferLength = jobsBufferLength
+		return nil
+	}
+}
+
+// WithAutoBundleUpdate updates the bundle with content digests and size provided by the registry
+func WithAutoBundleUpdate() FixupOption {
+	return func(cfg *fixupConfig) error {
+		cfg.autoBundleUpdate = true
+		return nil
+	}
+}
+
+// WithPushImages authorizes the fixup command to push missing images.
+// By default the fixup will look at images defined in the bundle.
+// Existing images in the target registry or accessible from an other registry will be copied or mounted under the
+// target tag.
+// But local only images (for example after a local build of components of the bundle) must be pushed.
+// This option will allow to push images that are only available in the docker daemon image store to the defined target.
+func WithPushImages(imageClient internal.ImageClient, out io.Writer) FixupOption {
+	return func(cfg *fixupConfig) error {
+		cfg.pushImages = true
+		if imageClient == nil {
+			return fmt.Errorf("could not configure fixup, 'imageClient' cannot be nil to push images")
+		}
+		cfg.imageClient = imageClient
+		if out == nil {
+			cfg.pushOut = ioutil.Discard
+		} else {
+			cfg.pushOut = out
+		}
 		return nil
 	}
 }
