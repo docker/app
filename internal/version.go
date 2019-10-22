@@ -9,7 +9,7 @@ import (
 
 var (
 	// Version is the git tag that this was built from.
-	Version = "v0.9.0-zeta1-20-g29f299f945"
+	Version = "unknown"
 	// GitCommit is the commit that this was built from.
 	GitCommit = "unknown"
 	// BuildTime is the time at which the binary was built.
