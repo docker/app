@@ -15,16 +15,17 @@ type bundleStoreStub struct {
 	ReadError    error
 	StoredBundle string
 	StoredError  error
+	StoredID     reference.Digested
 }
 
-func (b *bundleStoreStub) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Reference, error) {
+func (b *bundleStoreStub) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error) {
 	defer func() {
 		b.StoredError = nil
 	}()
 
 	b.StoredBundle = ref.String()
 
-	return ref, b.StoredError
+	return b.StoredID, b.StoredError
 }
 
 func (b *bundleStoreStub) Read(ref reference.Reference) (*bundle.Bundle, error) {

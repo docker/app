@@ -39,6 +39,7 @@ type buildOptions struct {
 	folder      string
 	imageIDFile string
 	args        []string
+	quiet       bool
 }
 
 func Cmd(dockerCli command.Cli) *cobra.Command {
@@ -60,6 +61,7 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags.StringVarP(&opts.folder, "folder", "f", "", "Docker app folder containing application definition")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
 	flags.StringArrayVar(&opts.args, "build-arg", []string{}, "Set build-time variables")
+	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Suppress the build output and print app image ID on success")
 	flags.StringVar(&opts.imageIDFile, "iidfile", "", "Write the app image ID to the file")
 
 	return cmd
@@ -110,14 +112,18 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error
 	}
 
 	if opt.imageIDFile != "" {
-		if err = ioutil.WriteFile(opt.imageIDFile, []byte(id.String()), 0644); err != nil {
+		if err = ioutil.WriteFile(opt.imageIDFile, []byte(id.Digest().String()), 0644); err != nil {
 			fmt.Fprintf(dockerCli.Err(), "Failed to write application image id in %s: %s", opt.imageIDFile, err)
 		}
 	}
 
-	fmt.Printf("Successfully built %s\n", id)
+	if opt.quiet {
+		fmt.Fprintln(dockerCli.Out(), id.Digest().String())
+		return err
+	}
+	fmt.Fprintf(dockerCli.Out(), "Successfully built %s\n", id.String())
 	if ref != nil {
-		fmt.Printf("Successfully tagged %s\n", ref.String())
+		fmt.Fprintf(dockerCli.Out(), "Successfully tagged %s\n", ref.String())
 	}
 	return err
 }
@@ -145,13 +151,23 @@ func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions,
 			Driver: d,
 		},
 	}
-	pw := progress.NewPrinter(ctx, os.Stderr, opt.progress)
+
+	var out *os.File
+	if opt.quiet {
+		if out, err = os.Create(os.DevNull); err != nil {
+			return nil, err
+		}
+	} else {
+		out = os.NewFile(dockerCli.Out().FD(), "/dev/stdout")
+	}
+
+	pw := progress.NewPrinter(ctx, out, opt.progress)
+
 	// We rely on buildx "docker" builder integrated in docker engine, so don't need a DockerAPI here
 	resp, err := build.Build(ctx, driverInfo, buildopts, nil, dockerCli.ConfigFile(), pw)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintln(dockerCli.Out(), "Successfully built service images") //nolint:errcheck
 
 	bundle, err := packager.MakeBundleFromApp(dockerCli, app, nil)
 	if err != nil {
