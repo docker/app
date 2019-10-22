@@ -28,6 +28,12 @@ func expectImageListOutput(t *testing.T, cmd icmd.Cmd, output string) {
 	assert.Equal(t, result.Stdout(), output)
 }
 
+func expectImageListDigestsOutput(t *testing.T, cmd icmd.Cmd, output string) {
+	cmd.Command = dockerCli.Command("app", "image", "ls", "--digests")
+	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	assert.Equal(t, result.Stdout(), output)
+}
+
 func verifyImageIDListOutput(t *testing.T, cmd icmd.Cmd, count int, distinct int) {
 	cmd.Command = dockerCli.Command("app", "image", "ls", "-q")
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -70,6 +76,22 @@ func TestImageListQuiet(t *testing.T) {
 		defer dir.Remove()
 		insertBundles(t, cmd, info)
 		verifyImageIDListOutput(t, cmd, 3, 2)
+	})
+}
+
+func TestImageListDigests(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		dir := fs.NewDir(t, "")
+		defer dir.Remove()
+		insertBundles(t, cmd, info)
+		expected := `APP IMAGE                     DIGEST APP NAME
+%s <none> push-pull
+a-simple-app:latest           <none> simple
+b-simple-app:latest           <none> simple
+`
+		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp:latest")
+		expectImageListDigestsOutput(t, cmd, expectedOutput)
 	})
 }
 
