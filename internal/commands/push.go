@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -14,16 +13,11 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/log"
-	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/types/metadata"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/term"
-	"github.com/docker/docker/registry"
 	"github.com/morikuni/aec"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -78,23 +72,15 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	if err != nil {
 		return err
 	}
-	// Retag invocation image if needed
-	retag, err := shouldRetagInvocationImage(metadata.FromBundle(bndl), bndl, opts.tag, ref)
+
+	cnabRef, err := reference.ParseNormalizedNamed(ref)
 	if err != nil {
 		return err
 	}
-	if retag.shouldRetag {
-		logrus.Debugf(`Retagging invocation image "%q"`, retag.invocationImageRef.String())
-		if err := retagInvocationImage(dockerCli, bndl, retag.invocationImageRef.String()); err != nil {
-			return err
-		}
-	}
-	// Push the invocation image
-	if err := pushInvocationImage(dockerCli, retag); err != nil {
-		return err
-	}
+	cnabRef = reference.TagNameOnly(cnabRef)
+
 	// Push the bundle
-	return pushBundle(dockerCli, opts, bndl, retag)
+	return pushBundle(dockerCli, opts, bndl, cnabRef)
 }
 
 func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bundle, string, error) {
@@ -113,30 +99,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 	return bndl, ref, err
 }
 
-func pushInvocationImage(dockerCli command.Cli, retag retagResult) error {
-	logrus.Debugf("Pushing the invocation image %q", retag.invocationImageRef)
-	repoInfo, err := registry.ParseRepositoryInfo(retag.invocationImageRef)
-	if err != nil {
-		return err
-	}
-	encodedAuth, err := command.EncodeAuthToBase64(command.ResolveAuthConfig(context.Background(), dockerCli, repoInfo.Index))
-	if err != nil {
-		return err
-	}
-	reader, err := dockerCli.Client().ImagePush(context.Background(), retag.invocationImageRef.String(), types.ImagePushOptions{
-		RegistryAuth: encodedAuth,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "starting push of %q", retag.invocationImageRef.String())
-	}
-	defer reader.Close()
-	if err := jsonmessage.DisplayJSONMessagesStream(reader, ioutil.Discard, 0, false, nil); err != nil {
-		return errors.Wrapf(err, "pushing to %q", retag.invocationImageRef.String())
-	}
-	return nil
-}
-
-func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, retag retagResult) error {
+func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, cnabRef reference.Named) error {
 	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
 		return errors.Wrap(err, "could not retrieve insecure registries")
@@ -149,22 +112,23 @@ func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, re
 	fixupOptions := []remotes.FixupOption{
 		remotes.WithEventCallback(display.onEvent),
 		remotes.WithAutoBundleUpdate(),
+		remotes.WithPushImages(dockerCli.Client(), dockerCli.Out()),
 	}
 	if platforms := platformFilter(opts); len(platforms) > 0 {
 		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(platforms))
 	}
 	// bundle fixup
-	relocationMap, err := remotes.FixupBundle(context.Background(), bndl, retag.cnabRef, resolver, fixupOptions...)
+	relocationMap, err := remotes.FixupBundle(context.Background(), bndl, cnabRef, resolver, fixupOptions...)
 	if err != nil {
-		return errors.Wrapf(err, "fixing up %q for push", retag.cnabRef)
+		return errors.Wrapf(err, "fixing up %q for push", cnabRef)
 	}
 	// push bundle manifest
-	logrus.Debugf("Pushing the bundle %q", retag.cnabRef)
-	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl, relocationMap, retag.cnabRef, resolver, true, withAppAnnotations)
+	logrus.Debugf("Pushing the bundle %q", cnabRef)
+	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl, relocationMap, cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
-		return errors.Wrapf(err, "pushing to %q", retag.cnabRef)
+		return errors.Wrapf(err, "pushing to %q", cnabRef)
 	}
-	fmt.Fprintf(os.Stdout, "Successfully pushed bundle to %s. Digest is %s.\n", retag.cnabRef.String(), descriptor.Digest)
+	fmt.Fprintf(os.Stdout, "Successfully pushed bundle to %s. Digest is %s.\n", cnabRef, descriptor.Digest)
 	return nil
 }
 
@@ -182,57 +146,6 @@ func platformFilter(opts pushOptions) []string {
 		return nil
 	}
 	return opts.platforms
-}
-
-func retagInvocationImage(dockerCli command.Cli, bndl *bundle.Bundle, newName string) error {
-	err := dockerCli.Client().ImageTag(context.Background(), bndl.InvocationImages[0].Image, newName)
-	if err != nil {
-		return err
-	}
-	bndl.InvocationImages[0].Image = newName
-	return nil
-}
-
-type retagResult struct {
-	shouldRetag        bool
-	cnabRef            reference.Named
-	invocationImageRef reference.Named
-}
-
-func shouldRetagInvocationImage(meta metadata.AppMetadata, bndl *bundle.Bundle, tagOverride, bundleRef string) (retagResult, error) {
-	// Use the bundle reference as a tag override
-	if tagOverride == "" && bundleRef != "" {
-		tagOverride = bundleRef
-	}
-	imgName := tagOverride
-	var err error
-	if imgName == "" {
-		imgName, err = packager.MakeCNABImageName(meta.Name, meta.Version, "")
-		if err != nil {
-			return retagResult{}, err
-		}
-	}
-	cnabRef, err := reference.ParseNormalizedNamed(imgName)
-	if err != nil {
-		return retagResult{}, errors.Wrap(err, imgName)
-	}
-	if _, digested := cnabRef.(reference.Digested); digested {
-		return retagResult{}, errors.Errorf("%s: can't push to a digested reference", cnabRef)
-	}
-	cnabRef = reference.TagNameOnly(cnabRef)
-	expectedInvocationImageRef, err := reference.ParseNormalizedNamed(reference.TagNameOnly(cnabRef).String() + "-invoc")
-	if err != nil {
-		return retagResult{}, errors.Wrap(err, reference.TagNameOnly(cnabRef).String()+"-invoc")
-	}
-	currentInvocationImageRef, err := reference.ParseNormalizedNamed(bndl.InvocationImages[0].Image)
-	if err != nil {
-		return retagResult{}, errors.Wrap(err, bndl.InvocationImages[0].Image)
-	}
-	return retagResult{
-		cnabRef:            cnabRef,
-		invocationImageRef: expectedInvocationImageRef,
-		shouldRetag:        expectedInvocationImageRef.String() != currentInvocationImageRef.String(),
-	}, nil
 }
 
 type fixupDisplay interface {
