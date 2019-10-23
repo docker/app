@@ -7,3 +7,4 @@ bin/
 .gradle
 coverage.html
 cover.out
+.vscode
