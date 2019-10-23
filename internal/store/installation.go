@@ -34,7 +34,7 @@ func NewInstallation(name string, reference string) (*Installation, error) {
 	}, nil
 }
 
-// SetParameters sets the parameter value if the installation bundle has
+// SetParameter sets the parameter value if the installation bundle has
 // a defined parameter with that name.
 func (i Installation) SetParameter(name string, value string) {
 	if _, ok := i.Bundle.Parameters[name]; ok {

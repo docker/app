@@ -11,6 +11,16 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+var (
+	identifierRegexp = regexp.MustCompile(`^([a-f0-9]{64})$`)
+
+	shortIdentifierRegexp = regexp.MustCompile(`^([a-f0-9]{1,64})$`)
+)
+
+func isShortID(ref string) bool {
+	return shortIdentifierRegexp.MatchString(ref)
+}
+
 // ComputeDigest takes a bundle and produce a unigue reference.Digested
 func ComputeDigest(bundle io.WriterTo) (digest.Digest, error) {
 	b := bytes.Buffer{}
@@ -29,7 +39,7 @@ func StringToRef(s string) (reference.Reference, error) {
 }
 
 func FromString(s string) (ID, error) {
-	if ok, _ := regexp.MatchString("[a-z0-9]{64}", s); !ok {
+	if ok := identifierRegexp.MatchString(s); !ok {
 		return ID{}, fmt.Errorf("could not parse '%s' as a valid reference", s)
 	}
 	digest := digest.NewDigestFromEncoded(digest.SHA256, s)

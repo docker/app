@@ -74,7 +74,8 @@ func (a ApplicationStore) BundleStore() (BundleStore, error) {
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return nil, errors.Wrapf(err, "failed to create bundle store directory %q", path)
 	}
-	return &bundleStore{path: path}, nil
+	//return &bundleStore{path: path}, nil
+	return NewBundleStore(path)
 }
 
 func makeDigestedDirectory(context string) string {

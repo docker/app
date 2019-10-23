@@ -10,7 +10,6 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/log"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/app/internal/store"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cnab-to-oci/remotes"
@@ -90,7 +89,9 @@ func ResolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 
 // GetBundle searches for the bundle locally and tries to pull it if not found
 func GetBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, reference.Reference, error) {
-	ref, err := store.StringToRef(name)
+	//ref, err := store.StringToRef(name)
+	ref, err := bundleStore.LookUp(name)
+	fmt.Println(ref)
 	if err != nil {
 		return nil, nil, err
 	}
