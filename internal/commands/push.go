@@ -23,7 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 const ( // Docker specific annotations and values
@@ -40,8 +39,6 @@ const ( // Docker specific annotations and values
 
 type pushOptions struct {
 	tag          string
-	platforms    []string
-	allPlatforms bool
 }
 
 func pushCmd(dockerCli command.Cli) *cobra.Command {
@@ -51,17 +48,12 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 		Short:   "Push an App image to a registry",
 		Example: `$ docker app push myapp --tag myrepo/myapp:mytag`,
 		Args:    cli.RequiresMaxArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return checkFlags(cmd.Flags(), opts)
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPush(dockerCli, firstOrEmpty(args), opts)
 		},
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default: <name>:<version> from metadata)")
-	flags.StringSliceVar(&opts.platforms, "platform", []string{"linux/amd64"}, "For multi-arch service images, push the specified platforms")
-	flags.BoolVar(&opts.allPlatforms, "all-platforms", false, "If present, push all platforms")
 	return cmd
 }
 
@@ -80,7 +72,7 @@ func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
 	cnabRef = reference.TagNameOnly(cnabRef)
 
 	// Push the bundle
-	return pushBundle(dockerCli, opts, bndl, cnabRef)
+	return pushBundle(dockerCli, bndl, cnabRef)
 }
 
 func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bundle, string, error) {
@@ -99,7 +91,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 	return bndl, ref, err
 }
 
-func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, cnabRef reference.Named) error {
+func pushBundle(dockerCli command.Cli, bndl *bundle.Bundle, cnabRef reference.Named) error {
 	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
 		return errors.Wrap(err, "could not retrieve insecure registries")
@@ -113,9 +105,6 @@ func pushBundle(dockerCli command.Cli, opts pushOptions, bndl *bundle.Bundle, cn
 		remotes.WithEventCallback(display.onEvent),
 		remotes.WithAutoBundleUpdate(),
 		remotes.WithPushImages(dockerCli.Client(), dockerCli.Out()),
-	}
-	if platforms := platformFilter(opts); len(platforms) > 0 {
-		fixupOptions = append(fixupOptions, remotes.WithComponentImagePlatforms(platforms))
 	}
 	// bundle fixup
 	relocationMap, err := remotes.FixupBundle(context.Background(), bndl, cnabRef, resolver, fixupOptions...)
@@ -139,13 +128,6 @@ func withAppAnnotations(index *ocischemav1.Index) error {
 	index.Annotations[DockerAppFormatAnnotation] = DockerAppFormatCNAB
 	index.Annotations[DockerTypeAnnotation] = DockerTypeApp
 	return nil
-}
-
-func platformFilter(opts pushOptions) []string {
-	if opts.allPlatforms {
-		return nil
-	}
-	return opts.platforms
 }
 
 type fixupDisplay interface {
@@ -275,11 +257,4 @@ func (r *plainDisplay) onEvent(ev remotes.FixupEvent) {
 			fmt.Fprint(r.out, " done!\n")
 		}
 	}
-}
-
-func checkFlags(flags *pflag.FlagSet, opts pushOptions) error {
-	if opts.allPlatforms && flags.Changed("all-platforms") && flags.Changed("platform") {
-		return fmt.Errorf("--all-plaforms and --plaform flags cannot be used at the same time")
-	}
-	return nil
 }

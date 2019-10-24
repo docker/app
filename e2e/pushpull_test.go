@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/docker/cnab-to-oci/converter"
-	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
@@ -24,97 +23,6 @@ type dindSwarmAndRegistryInfo struct {
 	configuredCmd   icmd.Cmd
 	stopRegistry    func()
 	registryLogs    func() string
-}
-
-func TestPushArchs(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
-		testCases := []struct {
-			name              string
-			args              []string
-			expectedPlatforms []manifestlist.PlatformSpec
-		}{
-			{
-				name: "default",
-				args: []string{},
-				expectedPlatforms: []manifestlist.PlatformSpec{
-					{
-						OS:           "linux",
-						Architecture: "amd64",
-					},
-				},
-			},
-			{
-				name: "all-platforms",
-				args: []string{"--all-platforms"},
-				expectedPlatforms: []manifestlist.PlatformSpec{
-					{
-						OS:           "linux",
-						Architecture: "amd64",
-					},
-					{
-						OS:           "linux",
-						Architecture: "386",
-					},
-					{
-						OS:           "linux",
-						Architecture: "ppc64le",
-					},
-					{
-						OS:           "linux",
-						Architecture: "s390x",
-					},
-					{
-						OS:           "linux",
-						Architecture: "arm",
-						Variant:      "v5",
-					},
-					{
-						OS:           "linux",
-						Architecture: "arm",
-						Variant:      "v6",
-					},
-					{
-						OS:           "linux",
-						Architecture: "arm",
-						Variant:      "v7",
-					},
-					{
-						OS:           "linux",
-						Architecture: "arm64",
-						Variant:      "v8",
-					},
-				},
-			},
-		}
-
-		for _, testCase := range testCases {
-			t.Run(testCase.name, func(t *testing.T) {
-				cmd := info.configuredCmd
-				ref := info.registryAddress + "/test/push-pull:1"
-				args := []string{"app", "push", "--tag", ref}
-				args = append(args, testCase.args...)
-				args = append(args, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
-				cmd.Command = dockerCli.Command(args...)
-				icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-				var index v1.Index
-				headers := map[string]string{
-					"Accept": "application/vnd.docker.distribution.manifest.list.v2+json",
-				}
-				err := httpGet("http://"+info.registryAddress+"/v2/test/push-pull/manifests/1", headers, &index)
-				assert.NilError(t, err, info.registryLogs())
-				digest, err := getManifestListDigest(index)
-				assert.NilError(t, err, info.registryLogs())
-				var manifestList manifestlist.ManifestList
-				err = httpGet("http://"+info.registryAddress+"/v2/test/push-pull/manifests/"+digest.String(), headers, &manifestList)
-				assert.NilError(t, err)
-				assert.Equal(t, len(manifestList.Manifests), len(testCase.expectedPlatforms), "Unexpected number of platforms")
-				for _, m := range manifestList.Manifests {
-					assert.Assert(t, cmp.Contains(testCase.expectedPlatforms, m.Platform), "Platform expected but not found: %s", m.Platform)
-				}
-			})
-		}
-	})
 }
 
 func TestPushInsecureRegistry(t *testing.T) {
