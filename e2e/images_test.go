@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"gotest.tools/assert"
-	"gotest.tools/fs"
 	"gotest.tools/icmd"
 )
 
@@ -54,8 +53,6 @@ func verifyImageIDListOutput(t *testing.T, cmd icmd.Cmd, count int, distinct int
 func TestImageList(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
-		dir := fs.NewDir(t, "")
-		defer dir.Remove()
 
 		insertBundles(t, cmd, info)
 
@@ -72,8 +69,6 @@ b-simple-app:latest           simple
 func TestImageListQuiet(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
-		dir := fs.NewDir(t, "")
-		defer dir.Remove()
 		insertBundles(t, cmd, info)
 		verifyImageIDListOutput(t, cmd, 3, 2)
 	})
@@ -82,8 +77,6 @@ func TestImageListQuiet(t *testing.T) {
 func TestImageListDigests(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
-		dir := fs.NewDir(t, "")
-		defer dir.Remove()
 		insertBundles(t, cmd, info)
 		expected := `APP IMAGE                     DIGEST APP NAME
 %s <none> push-pull
@@ -98,8 +91,6 @@ b-simple-app:latest           <none> simple
 func TestImageRm(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
-		dir := fs.NewDir(t, "")
-		defer dir.Remove()
 
 		insertBundles(t, cmd, info)
 
