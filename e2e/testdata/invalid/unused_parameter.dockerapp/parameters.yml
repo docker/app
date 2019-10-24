@@ -1,0 +1,7 @@
+web:
+  port: '8082'
+api:
+  host: example.com
+static_subdir: data/static
+unused:
+  parameter: FOO

@@ -1,0 +1,29 @@
+version: "3.6"
+services:
+  api:
+    image: python:3.6
+    networks:
+      back:
+      front:
+        aliases:
+          - api.example.com
+          - ${api.host}
+  web:
+    image: nginx:latest
+    networks:
+      - front
+    volumes:
+      - static:/opt/${static_subdir}
+    ports:
+      - ${web.port}:80
+  db:
+    image: postgres:9.3
+    networks:
+      - back
+networks:
+  front:
+  back:
+volumes:
+  static:
+    external: true
+    name: corp/web-static-data
