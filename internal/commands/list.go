@@ -44,14 +44,14 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "ls [OPTIONS]",
-		Short:   "List the installations and their last known installation result",
+		Short:   "List running Apps",
 		Aliases: []string{"list"},
 		Args:    cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runList(dockerCli, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.targetContext, "target-context", "", "List installations on this context")
+	cmd.Flags().StringVar(&opts.targetContext, "target-context", "", "List running Apps on this context")
 
 	return cmd
 }

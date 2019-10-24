@@ -15,11 +15,11 @@ var (
 
 func initCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "init APP_NAME [--compose-file COMPOSE_FILE] [OPTIONS]",
-		Short:   "Initialize Docker Application definition",
-		Long:    `Start building a Docker Application package.`,
-		Example: `$ docker app init myapp`,
-		Args:    cli.ExactArgs(1),
+		Use:   "init [OPTIONS] APP_DEFINITION",
+		Short: "Initialize an App definition",
+		Example: `$ docker app init myapp
+$ docker app init myapp --compose-file docker-compose.yml`,
+		Args: cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			created, err := packager.Init(args[0], initComposeFile)
 			if err != nil {
@@ -29,6 +29,6 @@ func initCmd(dockerCli command.Cli) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&initComposeFile, "compose-file", "", "Compose file to use as application base (optional)")
+	cmd.Flags().StringVar(&initComposeFile, "compose-file", "", "Compose file to use to bootstrap a Docker App definition")
 	return cmd
 }

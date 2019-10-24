@@ -8,7 +8,7 @@ import (
 // Cmd is the image top level command
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Short: "Manage application images",
+		Short: "Manage App images",
 		Use:   "image",
 	}
 

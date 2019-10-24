@@ -24,8 +24,8 @@ var (
 // NewRootCmd returns the base root command.
 func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Short:       "Docker Application",
-		Long:        `A tool to build and manage Docker Applications.`,
+		Short:       "Docker App",
+		Long:        `A tool to build, share and run a Docker App`,
 		Use:         use,
 		Annotations: map[string]string{"experimentalCLI": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

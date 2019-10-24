@@ -45,24 +45,25 @@ type buildOptions struct {
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
-		Use:     "build [OPTIONS] [CONTEXT_PATH]",
-		Short:   "Build service images for the application",
-		Example: `$ docker app build --tag my/app:1.0.0 .`,
-		Args:    cli.ExactArgs(1),
+		Use:   "build [OPTIONS] [BUILD_PATH]",
+		Short: "Build an App image from an App definition (.dockerapp)",
+		Example: `$ docker app build .
+$ docker app build . -f myapp.dockerapp -t myrepo/myapp:1.0.0`,
+		Args: cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runBuild(dockerCli, args[0], opts)
 		},
 	}
 
 	flags := cmd.Flags()
-	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the image")
+	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the App image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
-	flags.StringVarP(&opts.tag, "tag", "t", "", "Application image and optionally a tag in the 'image:tag' format")
-	flags.StringVarP(&opts.folder, "folder", "f", "", "Docker app folder containing application definition")
-	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the image")
+	flags.StringVarP(&opts.tag, "tag", "t", "", "App image tag, optionally in the 'repo:tag' format")
+	flags.StringVarP(&opts.folder, "folder", "f", "", "App definition as a .dockerapp directory")
+	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the App image")
 	flags.StringArrayVar(&opts.args, "build-arg", []string{}, "Set build-time variables")
-	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Suppress the build output and print app image ID on success")
-	flags.StringVar(&opts.imageIDFile, "iidfile", "", "Write the app image ID to the file")
+	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Suppress the build output and print App image ID on success")
+	flags.StringVar(&opts.imageIDFile, "iidfile", "", "Write the App image ID to the file")
 
 	return cmd
 }
@@ -190,7 +191,7 @@ func getAppFolder(opt buildOptions, contextPath string) (string, error) {
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".dockerapp") {
 				if application != "" {
-					return "", fmt.Errorf("%s contains multiple *.dockerapp folders, use -f option to select the one to build", contextPath)
+					return "", fmt.Errorf("%s contains multiple .dockerapp directories, use -f option to select the one to build", contextPath)
 				}
 				application = filepath.Join(contextPath, f.Name())
 				if !f.IsDir() {

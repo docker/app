@@ -14,13 +14,14 @@ import (
 
 func rmCmd() *cobra.Command {
 	return &cobra.Command{
-		Short:   "Remove an application image",
-		Use:     "rm [APP_IMAGE] [APP_IMAGE...]",
+		Short:   "Remove an App image",
+		Use:     "rm APP_IMAGE [APP_IMAGE...]",
 		Aliases: []string{"remove"},
 		Args:    cli.RequiresMinArgs(1),
 		Example: `$ docker app image rm myapp
 $ docker app image rm myapp:1.0.0
-$ docker app image rm docker.io/library/myapp@sha256:beef...`,
+$ docker app image rm myrepo/myapp@sha256:c0de...
+$ docker app image rm 34be4a0c5f50`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appstore, err := store.NewApplicationStore(config.Dir())
 			if err != nil {

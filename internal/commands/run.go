@@ -27,23 +27,24 @@ type runOptions struct {
 	cnabBundle    string
 }
 
-const longDescription = `Run an application based on a docker app image.`
+const longDescription = `Run an App from an App image.`
 
-const example = `$ docker app run --name myinstallation --target-context=mycontext myrepo/myapp:mytag`
+const example = `$ docker app run --name myrunningapp myrepo/myapp:mytag
+$ docker app run 34be4a0c5f50 --name myrunningapp`
 
 func runCmd(dockerCli command.Cli) *cobra.Command {
 	var opts runOptions
 
 	cmd := &cobra.Command{
-		Use:     "run [OPTIONS] [APP_IMAGE]",
+		Use:     "run [OPTIONS] APP_IMAGE",
 		Aliases: []string{"deploy"},
-		Short:   "Run an application",
+		Short:   "Run an App from an App image",
 		Long:    longDescription,
 		Example: example,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.cnabBundle != "" && len(args) != 0 {
 				return errors.Errorf(
-					"%q cannot run a bundle and an app image",
+					"%q cannot run a bundle and an App image",
 					cmd.CommandPath(),
 				)
 			}
@@ -58,10 +59,10 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
-	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
-	cmd.Flags().StringVar(&opts.stackName, "name", "", "Assign a name to the installation")
-	cmd.Flags().StringVar(&opts.cnabBundle, "cnab-bundle-json", "", "Run a CNAB bundle instead of a Docker App")
+	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to run on (swarm, kubernetes)")
+	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace in which to run the App")
+	cmd.Flags().StringVar(&opts.stackName, "name", "", "Name of the running App")
+	cmd.Flags().StringVar(&opts.cnabBundle, "cnab-bundle-json", "", "Run a CNAB bundle instead of a Docker App image")
 
 	return cmd
 }
