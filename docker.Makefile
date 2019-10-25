@@ -37,40 +37,19 @@ shell: build_dev_image ## run a shell in the docker build image
 	docker run -ti --rm $(DEV_IMAGE_NAME) bash
 
 cross: create_bin ## cross-compile binaries (linux, darwin, windows)
-	docker build $(BUILD_ARGS) --target=cross -t $(CROSS_IMAGE_NAME) .
-	docker create --name $(CROSS_CTNR_NAME) $(CROSS_IMAGE_NAME) noop
-	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-linux
-	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-darwin
-	docker cp $(CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-windows.exe
-	docker rm $(CROSS_CTNR_NAME)
+	docker build $(BUILD_ARGS) --output type=local,dest=./bin/ --target=cross -t $(CROSS_IMAGE_NAME) .
 	@$(call chmod,+x,bin/$(BIN_NAME)-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-darwin)
 	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
 
 cli-cross: create_bin
-	docker build $(BUILD_ARGS) --target=build -t $(CLI_IMAGE_NAME) .
-	docker create --name $(CLI_CNTR_NAME) $(CLI_IMAGE_NAME) noop
-	docker cp $(CLI_CNTR_NAME):/go/src/github.com/docker/cli/build/docker-linux-amd64 bin/docker-linux
-	docker cp $(CLI_CNTR_NAME):/go/src/github.com/docker/cli/build/docker-darwin-amd64 bin/docker-darwin
-	docker cp $(CLI_CNTR_NAME):/go/src/github.com/docker/cli/build/docker-windows-amd64 bin/docker-windows.exe
-	docker rm $(CLI_CNTR_NAME)
+	docker build $(BUILD_ARGS) --output type=local,dest=./bin/ --target=cli -t $(CLI_IMAGE_NAME) .
 	@$(call chmod,+x,bin/docker-linux)
 	@$(call chmod,+x,bin/docker-darwin)
 	@$(call chmod,+x,bin/docker-windows.exe)
 
 e2e-cross: create_bin
-	docker build $(BUILD_ARGS) --target=e2e-cross -t $(E2E_CROSS_IMAGE_NAME)  .
-	docker create --name $(E2E_CROSS_CTNR_NAME) $(E2E_CROSS_IMAGE_NAME) noop
-	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-linux
-	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-darwin
-	docker cp $(E2E_CROSS_CTNR_NAME):$(PKG_PATH)/bin/$(BIN_NAME)-e2e-windows.exe bin/$(BIN_NAME)-e2e-windows.exe
-	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-linux bin/gotestsum-linux
-	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-darwin bin/gotestsum-darwin
-	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/gotestsum-windows.exe bin/gotestsum-windows.exe
-	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-linux bin/test2json-linux
-	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-darwin bin/test2json-darwin
-	docker cp $(E2E_CROSS_CTNR_NAME):/usr/local/bin/test2json-windows.exe bin/test2json-windows.exe
-	docker rm $(E2E_CROSS_CTNR_NAME)
+	docker build $(BUILD_ARGS) --output type=local,dest=./bin/ --target=e2e-cross -t $(E2E_CROSS_IMAGE_NAME)  .
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-linux)
 	@$(call chmod,+x,bin/$(BIN_NAME)-e2e-darwin)
 	@$(call chmod,+x,bin/gotestsum-linux)

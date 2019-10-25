@@ -43,11 +43,34 @@ RUN go get -d gopkg.in/mjibson/esc.v0 && \
   rm -rf /go/src/* /go/pkg/* /go/bin/*
 COPY . .
 
-FROM dev AS cross
+FROM scratch AS cli
+COPY --from=build /go/src/github.com/docker/cli/build/docker-linux-amd64 docker-linux
+COPY --from=build /go/src/github.com/docker/cli/build/docker-darwin-amd64 docker-darwin
+COPY --from=build /go/src/github.com/docker/cli/build/docker-windows-amd64 docker-windows.exe
+
+FROM dev AS cross-build
 ARG TAG="unknown"
 RUN make TAG=${TAG} cross
 
-FROM cross AS e2e-cross
+FROM scratch AS cross
+ARG PROJECT_PATH=/go/src/github.com/docker/app
+COPY --from=cross-build ${PROJECT_PATH}/bin/docker-app-linux docker-app-linux
+COPY --from=cross-build ${PROJECT_PATH}/bin/docker-app-darwin docker-app-darwin
+COPY --from=cross-build ${PROJECT_PATH}/bin/docker-app-windows.exe docker-app-windows.exe
+
+FROM cross-build AS e2e-cross-build
 ARG TAG="unknown"
 # Run e2e tests
 RUN make TAG=${TAG} e2e-cross
+
+FROM scratch AS e2e-cross
+ARG PROJECT_PATH=/go/src/github.com/docker/app
+COPY --from=e2e-cross-build ${PROJECT_PATH}/bin/docker-app-e2e-linux docker-app-e2e-linux
+COPY --from=e2e-cross-build ${PROJECT_PATH}/bin/docker-app-e2e-darwin docker-app-e2e-darwin
+COPY --from=e2e-cross-build ${PROJECT_PATH}/bin/docker-app-e2e-windows.exe docker-app-e2e-windows.exe
+COPY --from=e2e-cross-build /usr/local/bin/gotestsum-linux gotestsum-linux
+COPY --from=e2e-cross-build /usr/local/bin/gotestsum-darwin gotestsum-darwin
+COPY --from=e2e-cross-build /usr/local/bin/gotestsum-windows.exe gotestsum-windows.exe
+COPY --from=e2e-cross-build /usr/local/bin/test2json-linux test2json-linux
+COPY --from=e2e-cross-build /usr/local/bin/test2json-darwin test2json-darwin
+COPY --from=e2e-cross-build /usr/local/bin/test2json-windows.exe test2json-windows.exe
