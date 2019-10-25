@@ -25,6 +25,14 @@ func readFile(t *testing.T, path string) string {
 	return strings.Replace(string(content), "\r", "", -1)
 }
 
+type dindSwarmAndRegistryInfo struct {
+	swarmAddress    string
+	registryAddress string
+	configuredCmd   icmd.Cmd
+	stopRegistry    func()
+	registryLogs    func() string
+}
+
 func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInfo)) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()

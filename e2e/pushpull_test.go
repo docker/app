@@ -1,29 +1,15 @@
 package e2e
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/docker/cnab-to-oci/converter"
-	"github.com/opencontainers/go-digest"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
 	"gotest.tools/assert/cmp"
 	"gotest.tools/icmd"
 )
-
-type dindSwarmAndRegistryInfo struct {
-	swarmAddress    string
-	registryAddress string
-	configuredCmd   icmd.Cmd
-	stopRegistry    func()
-	registryLogs    func() string
-}
 
 func TestPushInsecureRegistry(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
@@ -171,40 +157,4 @@ func TestPushInstallBundle(t *testing.T) {
 			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
 		})
 	})
-}
-
-func httpGet(url string, headers map[string]string, obj interface{}) error {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return err
-	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	r, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("unexpected http error code %d with message %s", r.StatusCode, string(body))
-	}
-	if err := json.NewDecoder(r.Body).Decode(obj); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getManifestListDigest(index v1.Index) (digest.Digest, error) {
-	for _, m := range index.Manifests {
-		if m.Annotations[converter.CNABDescriptorTypeAnnotation] == "component" {
-			return m.Digest, nil
-		}
-	}
-	return "", fmt.Errorf("Service image not found")
 }
