@@ -12,6 +12,7 @@ pipeline {
     environment {
         TAG = tag()
         BUILD_TAG = tag()
+        DOCKER_BUILDKIT = "1"
     }
 
     stages {

@@ -9,7 +9,8 @@ pipeline {
 
     environment {
         TAG = "${env.BUILD_TAG}"
-        GOPROXY="direct"
+        GOPROXY = "direct"
+        DOCKER_BUILDKIT = "1"
     }
 
     stages {
