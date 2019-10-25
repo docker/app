@@ -37,27 +37,20 @@ const ( // Docker specific annotations and values
 	DockerTypeApp = "app"
 )
 
-type pushOptions struct {
-	tag          string
-}
-
 func pushCmd(dockerCli command.Cli) *cobra.Command {
-	var opts pushOptions
 	cmd := &cobra.Command{
-		Use:     "push [OPTIONS] APP_IMAGE",
+		Use:     "push APP_IMAGE",
 		Short:   "Push an App image to a registry",
-		Example: `$ docker app push myapp --tag myrepo/myapp:mytag`,
-		Args:    cli.RequiresMaxArgs(1),
+		Example: `$ docker app push myrepo/myapp:mytag`,
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runPush(dockerCli, firstOrEmpty(args), opts)
+			return runPush(dockerCli, args[0])
 		},
 	}
-	flags := cmd.Flags()
-	flags.StringVarP(&opts.tag, "tag", "t", "", "Target registry reference (default: <name>:<version> from metadata)")
 	return cmd
 }
 
-func runPush(dockerCli command.Cli, name string, opts pushOptions) error {
+func runPush(dockerCli command.Cli, name string) error {
 	defer muteDockerCli(dockerCli)()
 	// Get the bundle
 	bndl, ref, err := resolveReferenceAndBundle(dockerCli, name)
