@@ -160,6 +160,6 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 		return err2
 	}
 
-	fmt.Fprintf(os.Stdout, "App %q is running on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(os.Stdout, "App %q running on context %q\n", installationName, opts.targetContext)
 	return nil
 }
