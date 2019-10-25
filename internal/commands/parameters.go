@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types/parameters"
 	cliopts "github.com/docker/cli/opts"
@@ -40,6 +42,22 @@ func withCommandLineParameters(overrides []string) mergeBundleOpt {
 		d := cliopts.ConvertKVStringsToMap(overrides)
 		for k, v := range d {
 			c.params[k] = v
+		}
+		return nil
+	}
+}
+
+func withLabels(labels []string) mergeBundleOpt {
+	return func(c *mergeBundleConfig) error {
+		l := packager.DockerAppArgs{
+			Labels: cliopts.ConvertKVStringsToMap(labels),
+		}
+		out, err := json.Marshal(l)
+		if err != nil {
+			return err
+		}
+		if _, ok := c.bundle.Parameters[internal.ParameterArgs]; ok {
+			c.params[internal.ParameterArgs] = string(out)
 		}
 		return nil
 	}

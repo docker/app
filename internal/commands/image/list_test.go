@@ -14,12 +14,6 @@ import (
 	"github.com/docker/distribution/reference"
 )
 
-type mockRef string
-
-func (ref mockRef) String() string {
-	return string(ref)
-}
-
 type bundleStoreStubForListCmd struct {
 	refMap map[reference.Reference]*bundle.Bundle
 	// in order to keep the reference in the same order between tests

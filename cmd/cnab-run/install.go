@@ -51,7 +51,11 @@ func installAction(instanceName string) error {
 	if err != nil {
 		return err
 	}
+	if err = addLabels(rendered); err != nil {
+		return err
+	}
 	addAppLabels(rendered, instanceName)
+
 	if err := os.Chdir(app.Path); err != nil {
 		return err
 	}
@@ -85,6 +89,28 @@ func getBundleImageMap() (map[string]bundle.Image, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func addLabels(rendered *composetypes.Config) error {
+	args, err := ioutil.ReadFile(internal.DockerArgsPath)
+	if err != nil {
+		return err
+	}
+	a := packager.DockerAppArgs{}
+	err = json.Unmarshal(args, &a)
+	if err != nil {
+		return err
+	}
+	for k, v := range a.Labels {
+		for i, service := range rendered.Services {
+			if service.Labels == nil {
+				service.Labels = map[string]string{}
+			}
+			service.Labels[k] = v
+			rendered.Services[i] = service
+		}
+	}
+	return nil
 }
 
 func addAppLabels(rendered *composetypes.Config, instanceName string) {
