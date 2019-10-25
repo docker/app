@@ -28,11 +28,11 @@ type ImageBuildConfig struct {
 func load(dict map[string]interface{}, buildArgs []string) ([]ServiceConfig, error) {
 	section, ok := dict["services"]
 	if !ok {
-		return nil, fmt.Errorf("compose file doesn't declare any service")
+		return nil, fmt.Errorf("Compose file doesn't declare any service")
 	}
 	services, ok := section.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("Invalid compose file: 'services' should be a map")
+		return nil, fmt.Errorf("Invalid Compose file: 'services' should be a map")
 	}
 	return loadServices(services, buildArgs)
 }

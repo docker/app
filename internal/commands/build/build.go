@@ -114,7 +114,7 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error
 
 	if opt.imageIDFile != "" {
 		if err = ioutil.WriteFile(opt.imageIDFile, []byte(id.Digest().String()), 0644); err != nil {
-			fmt.Fprintf(dockerCli.Err(), "Failed to write application image id in %s: %s", opt.imageIDFile, err)
+			fmt.Fprintf(dockerCli.Err(), "Failed to write App image ID in %s: %s", opt.imageIDFile, err)
 		}
 	}
 
@@ -191,7 +191,7 @@ func getAppFolder(opt buildOptions, contextPath string) (string, error) {
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".dockerapp") {
 				if application != "" {
-					return "", fmt.Errorf("%s contains multiple .dockerapp directories, use -f option to select the one to build", contextPath)
+					return "", fmt.Errorf("%s contains multiple .dockerapp directories, use -f option to select the App definition to build", contextPath)
 				}
 				application = filepath.Join(contextPath, f.Name())
 				if !f.IsDir() {
