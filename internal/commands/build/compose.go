@@ -12,20 +12,22 @@ import (
 
 // parseCompose do parse app compose file and extract buildx Options
 // We don't rely on bake's ReadTargets + TargetsToBuildOpt here as we have to skip environment variable interpolation
-func parseCompose(app *types.App, contextPath string, options buildOptions) (map[string]build.Options, error) {
+func parseCompose(app *types.App, contextPath string, options buildOptions) (map[string]build.Options, []ServiceConfig, error) {
 	parsed, err := loader.ParseYAML(app.Composes()[0])
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	services, err := load(parsed, options.args)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse compose file: %s", err)
+		return nil, nil, fmt.Errorf("Failed to parse compose file: %s", err)
 	}
 
+	pulledServices := []ServiceConfig{}
 	opts := map[string]build.Options{}
 	for _, service := range services {
 		if service.Build == nil {
+			pulledServices = append(pulledServices, service)
 			continue
 		}
 		var tags []string
@@ -47,7 +49,7 @@ func parseCompose(app *types.App, contextPath string, options buildOptions) (map
 			Tags:      tags,
 		}
 	}
-	return opts, nil
+	return opts, pulledServices, nil
 }
 
 func flatten(in compose.MappingWithEquals) map[string]string {

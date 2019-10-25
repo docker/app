@@ -12,6 +12,11 @@ import (
 	"strconv"
 	"strings"
 
+	errors2 "github.com/pkg/errors"
+
+	"github.com/docker/app/internal"
+	"github.com/docker/cnab-to-oci/remotes"
+
 	"github.com/deislabs/cnab-go/bundle"
 	cnab "github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal/packager"
@@ -130,7 +135,7 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error
 }
 
 func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions, dockerCli command.Cli) (*bundle.Bundle, error) {
-	buildopts, err := parseCompose(app, contextPath, opt)
+	buildopts, pulledServices, err := parseCompose(app, contextPath, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +183,40 @@ func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions,
 	if err != nil {
 		return nil, err
 	}
+
+	if !opt.noResolveImage {
+		if err = fixServiceImageReferences(ctx, dockerCli, bundle, pulledServices); err != nil {
+			return nil, err
+		}
+	}
+
 	return bundle, nil
+}
+
+func fixServiceImageReferences(ctx context.Context, dockerCli command.Cli, bundle *bundle.Bundle, pulledServices []ServiceConfig) error {
+	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
+	if err != nil {
+		return errors2.Wrapf(err, "could not retrieve insecure registries")
+	}
+	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...)
+	for _, service := range pulledServices {
+		image := bundle.Images[service.Name]
+		ref, err := reference.ParseNormalizedNamed(*service.Image)
+		if err != nil {
+			return errors2.Wrapf(err, "could not resolve image %s", *service.Image)
+		}
+		_, desc, err := resolver.Resolve(ctx, ref.String())
+		if err != nil {
+			return errors2.Wrapf(err, "could not resolve image %s", ref.Name())
+		}
+		canonical, err := reference.WithDigest(ref, desc.Digest)
+		if err != nil {
+			return errors2.Wrapf(err, "could not resolve image %s", ref.Name())
+		}
+		image.Image = canonical.String()
+		bundle.Images[service.Name] = image
+	}
+	return nil
 }
 
 func getAppFolder(opt buildOptions, contextPath string) (string, error) {

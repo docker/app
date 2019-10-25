@@ -17,7 +17,7 @@
         "resources": {},
         "placement": {}
       },
-      "image": "python:3.6",
+      "image": "python:3.6@sha256:52f872eae9755743c9494e0e3cf02a47d34b42032cab1e5ab777b30c3665d5f1",
       "networks": {
         "back": null,
         "front": {
@@ -35,7 +35,7 @@
         "resources": {},
         "placement": {}
       },
-      "image": "postgres:9.3",
+      "image": "postgres:9.3@sha256:3cd40afb5803762170a1149ade6962fe24d405b3ccf2fe499ff1428635520a17",
       "networks": {
         "back": null
       }
@@ -47,7 +47,7 @@
         "resources": {},
         "placement": {}
       },
-      "image": "nginx:latest",
+      "image": "nginx:latest@sha256:922c815aa4df050d4df476e92daed4231f466acc8ee90e0e774951b0fd7195a4",
       "networks": {
         "front": null
       },

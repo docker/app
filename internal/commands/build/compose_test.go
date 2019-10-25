@@ -51,7 +51,7 @@ func Test_parseCompose(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			app, err := packager.Extract("testdata/" + tt.name)
 			assert.NilError(t, err)
-			got, err := parseCompose(app, "testdata", buildOptions{})
+			got, _, err := parseCompose(app, "testdata", buildOptions{})
 			assert.NilError(t, err)
 			_, ok := got["dontwant"]
 			assert.Assert(t, !ok, "parseCompose() should have excluded 'dontwant' service")

@@ -75,15 +75,14 @@ func TestRenderFormatters(t *testing.T) {
 		cmd := info.configuredCmd
 
 		contextPath := filepath.Join("testdata", "simple")
-		appPath := filepath.Join(contextPath, "simple.dockerapp")
-		cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-tag", contextPath)
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-tag", "--no-resolve-image", contextPath)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", appPath)
+		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", "a-simple-tag")
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 
-		cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", appPath)
+		cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", "a-simple-tag")
 		result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
 	})
