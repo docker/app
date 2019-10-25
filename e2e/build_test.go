@@ -43,6 +43,11 @@ func TestBuild(t *testing.T) {
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		}
 
+		for _, img := range bndl.Images {
+			// Check all image not being built locally get a fixed reference
+			assert.Assert(t, img.Image == "" || strings.Contains(img.Image, "@sha256:"))
+		}
+
 		_, err = os.Stat(iidfile)
 		assert.NilError(t, err)
 		bytes, err := ioutil.ReadFile(iidfile)
