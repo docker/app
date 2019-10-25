@@ -38,8 +38,8 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		internal.ParameterArgs: {
 			Type:        "string",
 			Default:     "",
-			Title:       "Labels",
-			Description: "Labels to apply to service containers",
+			Title:       "Arguments",
+			Description: "Arguments that are passed by file to the invocation image",
 		},
 		internal.ParameterOrchestratorName: {
 			Type: "string",

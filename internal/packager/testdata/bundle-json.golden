@@ -51,6 +51,16 @@
     "io.cnab.status": {}
   },
   "parameters": {
+    "com.docker.app.args": {
+      "definition": "com.docker.app.args",
+      "applyTo": [
+        "install",
+        "upgrade"
+      ],
+      "destination": {
+        "path": "/cnab/app/args.json"
+      }
+    },
     "com.docker.app.inspect-format": {
       "definition": "com.docker.app.inspect-format",
       "applyTo": [
@@ -115,6 +125,12 @@
     }
   },
   "definitions": {
+    "com.docker.app.args": {
+      "default": "",
+      "description": "Arguments that are passed by file to the invocation image",
+      "title": "Arguments",
+      "type": "string"
+    },
     "com.docker.app.inspect-format": {
       "default": "json",
       "description": "Output format for the inspect command",

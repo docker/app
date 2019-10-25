@@ -193,6 +193,31 @@ func TestRunOnlyOne(t *testing.T) {
 	})
 }
 
+func TestRunWithLabels(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+
+		contextPath := filepath.Join("testdata", "simple")
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "myapp", contextPath)
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		cmd.Command = dockerCli.Command("app", "run", "myapp", "--name", "myapp", "--label", "label.key=labelValue")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		services := []string{
+			"myapp_db", "myapp_web", "myapp_api",
+		}
+		for _, service := range services {
+			fmt.Printf("%q", service)
+			cmd.Command = dockerCli.Command("inspect", service)
+			icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+				ExitCode: 0,
+				Out:      `"label.key": "labelValue"`,
+			})
+		}
+	})
+}
+
 func TestDockerAppLifecycle(t *testing.T) {
 	t.Run("withBindMounts", func(t *testing.T) {
 		testDockerAppLifecycle(t, true)

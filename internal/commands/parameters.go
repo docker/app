@@ -49,6 +49,11 @@ func withCommandLineParameters(overrides []string) mergeBundleOpt {
 
 func withLabels(labels []string) mergeBundleOpt {
 	return func(c *mergeBundleConfig) error {
+		for _, l := range labels {
+			if strings.HasPrefix(l, internal.Namespace) {
+				return errors.Errorf("labels cannot start with %q", internal.Namespace)
+			}
+		}
 		l := packager.DockerAppArgs{
 			Labels: cliopts.ConvertKVStringsToMap(labels),
 		}

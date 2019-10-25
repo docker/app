@@ -96,9 +96,8 @@ func addLabels(rendered *composetypes.Config) error {
 	if err != nil {
 		return err
 	}
-	a := packager.DockerAppArgs{}
-	err = json.Unmarshal(args, &a)
-	if err != nil {
+	var a packager.DockerAppArgs
+	if err := json.Unmarshal(args, &a); err != nil {
 		return err
 	}
 	for k, v := range a.Labels {
