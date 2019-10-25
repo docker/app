@@ -48,6 +48,10 @@ func (b *bundleStoreStubForListCmd) Remove(ref reference.Reference) error {
 	return nil
 }
 
+func (b *bundleStoreStubForListCmd) LookUp(refOrID string) (reference.Reference, error) {
+	return nil, nil
+}
+
 func TestListWithQuietFlag(t *testing.T) {
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)

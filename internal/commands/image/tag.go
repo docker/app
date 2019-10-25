@@ -7,6 +7,7 @@ import (
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/config"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -46,20 +47,26 @@ func runTag(bundleStore store.BundleStore, srcAppImage, destAppImage string) err
 }
 
 func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, error) {
-	cnabRef, err := store.StringToRef(name)
+	cnabRef, err := bundleStore.LookUp(name)
 	if err != nil {
-		return nil, err
+		switch err.(type) {
+		case *store.UnknownReferenceError:
+			return nil, fmt.Errorf("could not tag %q: no such App image", name)
+		default:
+			return nil, errors.Wrapf(err, "could not tag %q", name)
+		}
+
 	}
 
 	bundle, err := bundleStore.Read(cnabRef)
 	if err != nil {
-		return nil, fmt.Errorf("could not tag '%s': no such App image", name)
+		return nil, errors.Wrapf(err, "could not tag %q: no such App image", name)
 	}
 	return bundle, nil
 }
 
 func storeBundle(bundle *bundle.Bundle, name string, bundleStore store.BundleStore) error {
-	cnabRef, err := store.StringToRef(name)
+	cnabRef, err := store.StringToNamedRef(name)
 	if err != nil {
 		return err
 	}

@@ -97,7 +97,7 @@ Deleted: b-simple-app:latest`,
 		cmd.Command = dockerCli.Command("app", "image", "rm", "b-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `Error: no such image b-simple-app:latest`,
+			Err:      `b-simple-app:latest: reference not found`,
 		})
 
 		expectedOutput := "APP IMAGE APP NAME\n"
@@ -141,28 +141,28 @@ a-simple-app:latest simple
 		dockerAppImageTag("a-simple-app$2", "b-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not parse 'a-simple-app$2' as a valid reference`,
+			Err:      `could not parse "a-simple-app$2" as a valid reference`,
 		})
 
 		// with invalid target reference
 		dockerAppImageTag("a-simple-app", "b@simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not parse 'b@simple-app' as a valid reference`,
+			Err:      `could not parse "b@simple-app" as a valid reference`,
 		})
 
 		// with unexisting source image
 		dockerAppImageTag("b-simple-app", "target")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not tag 'b-simple-app': no such App image`,
+			Err:      `could not tag "b-simple-app": no such App image`,
 		})
 
 		// with unexisting source tag
 		dockerAppImageTag("a-simple-app:not-a-tag", "target")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not tag 'a-simple-app:not-a-tag': no such App image`,
+			Err:      `could not tag "a-simple-app:not-a-tag": no such App image`,
 		})
 
 		// tag image with only names

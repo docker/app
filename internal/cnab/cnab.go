@@ -10,10 +10,12 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/log"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/store"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
+	"github.com/sirupsen/logrus"
 )
 
 type nameKind uint
@@ -89,25 +91,34 @@ func ResolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 
 // GetBundle searches for the bundle locally and tries to pull it if not found
 func GetBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, reference.Reference, error) {
-	//ref, err := store.StringToRef(name)
-	ref, err := bundleStore.LookUp(name)
-	fmt.Println(ref)
+	bndl, ref, err := getBundleFromStore(bundleStore, name)
 	if err != nil {
+		named, err := store.StringToNamedRef(name)
+		if err != nil {
+			return nil, nil, err
+		}
+		fmt.Fprintf(dockerCli.Err(), "Unable to find App image %q locally\n", reference.FamiliarString(named))
+		fmt.Fprintf(dockerCli.Out(), "Pulling from registry...\n")
+		bndl, err = PullBundle(dockerCli, bundleStore, named)
+		if err != nil {
+			return nil, nil, err
+		}
+		ref = named
+	}
+	return bndl, ref, nil
+}
+
+func getBundleFromStore(bundleStore appstore.BundleStore, name string) (*bundle.Bundle, reference.Reference, error) {
+	ref, err := bundleStore.LookUp(name)
+	if err != nil {
+		logrus.Debugf("Unable to find reference %q in the bundle store", name)
 		return nil, nil, err
 	}
 	bndl, err := bundleStore.Read(ref)
 	if err != nil {
-		fmt.Fprintf(dockerCli.Err(), "Unable to find App image %q locally\n", reference.FamiliarString(ref))
-
-		fmt.Fprintf(dockerCli.Out(), "Pulling from registry...\n")
-		if named, ok := ref.(reference.Named); ok {
-			bndl, err = PullBundle(dockerCli, bundleStore, named)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
+		logrus.Debugf("Unable to read bundle %q from store", reference.FamiliarString(ref))
+		return nil, nil, err
 	}
-
 	return bndl, ref, nil
 }
 

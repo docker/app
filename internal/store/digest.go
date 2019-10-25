@@ -9,6 +9,7 @@ import (
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -31,16 +32,18 @@ func ComputeDigest(bundle io.WriterTo) (digest.Digest, error) {
 	return digest.SHA256.FromBytes(b.Bytes()), nil
 }
 
-func StringToRef(s string) (reference.Reference, error) {
-	if named, err := reference.ParseNormalizedNamed(s); err == nil {
-		return reference.TagNameOnly(named), nil
+// StringToNamedRef converts a string to a named reference
+func StringToNamedRef(s string) (reference.Named, error) {
+	named, err := reference.ParseNormalizedNamed(s)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not parse %q as a valid reference", s)
 	}
-	return FromString(s)
+	return reference.TagNameOnly(named), nil
 }
 
 func FromString(s string) (ID, error) {
 	if ok := identifierRegexp.MatchString(s); !ok {
-		return ID{}, fmt.Errorf("could not parse '%s' as a valid reference", s)
+		return ID{}, fmt.Errorf("could not parse %q as a valid reference", s)
 	}
 	digest := digest.NewDigestFromEncoded(digest.SHA256, s)
 	return ID{digest}, nil

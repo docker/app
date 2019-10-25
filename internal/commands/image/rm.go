@@ -48,7 +48,7 @@ $ docker app image rm 34be4a0c5f50`,
 }
 
 func runRm(bundleStore store.BundleStore, app string) error {
-	ref, err := store.StringToRef(app)
+	ref, err := bundleStore.LookUp(app)
 	if err != nil {
 		return err
 	}
