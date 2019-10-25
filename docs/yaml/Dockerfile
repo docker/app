@@ -18,7 +18,6 @@ RUN build/yaml-docs-generator \
 FROM scratch
 ARG PROJECT=github.com/docker/app
 ARG PROJECT_PATH=/go/src/${PROJECT}
-ENV PROJECT_PATH=${PROJECT_PATH}
 # CMD cannot be nil so we set it to empty string
 CMD  [""]
 COPY --from=base ${PROJECT_PATH}/docs/reference /docs/reference
