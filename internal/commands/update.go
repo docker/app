@@ -50,7 +50,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 	}
 
 	if isInstallationFailed(installation) {
-		return fmt.Errorf("Installation %q has failed and cannot be updated, reinstall it using 'docker app run'", installationName)
+		return fmt.Errorf("Running App %q cannot be updated, please use 'docker app run' instead", installationName)
 	}
 
 	if opts.bundleOrDockerApp != "" {
@@ -91,6 +91,6 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 	if err2 != nil {
 		return err2
 	}
-	fmt.Fprintf(os.Stdout, "Application %q updated on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(os.Stdout, "Running App %q updated on context %q\n", installationName, opts.targetContext)
 	return nil
 }

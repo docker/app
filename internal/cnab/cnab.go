@@ -96,7 +96,7 @@ func GetBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name str
 	}
 	bndl, err := bundleStore.Read(ref)
 	if err != nil {
-		fmt.Fprintf(dockerCli.Err(), "Unable to find application image %q locally\n", reference.FamiliarString(ref))
+		fmt.Fprintf(dockerCli.Err(), "Unable to find App image %q locally\n", reference.FamiliarString(ref))
 
 		fmt.Fprintf(dockerCli.Out(), "Pulling from registry...\n")
 		if named, ok := ref.(reference.Named); ok {

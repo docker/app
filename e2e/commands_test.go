@@ -238,7 +238,7 @@ func testDockerAppLifecycle(t *testing.T, useBindMount bool) {
 	cmd.Command = dockerCli.Command("app", "update", appName)
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
-		Err:      fmt.Sprintf("Installation %q has failed and cannot be updated, reinstall it using 'docker app run'", appName),
+		Err:      fmt.Sprintf("Running App %q cannot be updated, please use 'docker app run' instead", appName),
 	})
 
 	// Install a Docker Application Package with an existing failed installation is fine

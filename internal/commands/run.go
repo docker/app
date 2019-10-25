@@ -83,7 +83,7 @@ func runDockerApp(dockerCli command.Cli, appname string, opts runOptions) error 
 
 	bndl, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to find application %q", appname)
+		return errors.Wrapf(err, "Unable to find App %q", appname)
 	}
 	return runBundle(dockerCli, bndl, opts, ref.String())
 }
@@ -154,12 +154,12 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	// so any installation needs a clean uninstallation.
 	err2 := installationStore.Store(installation)
 	if err != nil {
-		return fmt.Errorf("Installation failed: %s\n%s", err, errBuf)
+		return fmt.Errorf("Failed to run App: %s\n%s", err, errBuf)
 	}
 	if err2 != nil {
 		return err2
 	}
 
-	fmt.Fprintf(os.Stdout, "Application %q installed on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(os.Stdout, "App %q running on context %q\n", installationName, opts.targetContext)
 	return nil
 }

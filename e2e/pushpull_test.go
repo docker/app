@@ -180,8 +180,8 @@ func TestPushPullInstall(t *testing.T) {
 		// install should fail (registry is stopped)
 		cmd.Command = dockerCli.Command("app", "run", "unknown")
 		//nolint: lll
-		expected := `Unable to find application image "unknown:latest" locally
-Unable to find application "unknown": failed to resolve bundle manifest "docker.io/library/unknown:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed`
+		expected := `Unable to find App image "unknown:latest" locally
+Unable to find App "unknown": failed to resolve bundle manifest "docker.io/library/unknown:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed`
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
 			Err:      expected,

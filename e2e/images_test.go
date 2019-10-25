@@ -155,14 +155,14 @@ a-simple-app:latest simple
 		dockerAppImageTag("b-simple-app", "target")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not tag 'b-simple-app': no such application image`,
+			Err:      `could not tag 'b-simple-app': no such App image`,
 		})
 
 		// with unexisting source tag
 		dockerAppImageTag("a-simple-app:not-a-tag", "target")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not tag 'a-simple-app:not-a-tag': no such application image`,
+			Err:      `could not tag 'a-simple-app:not-a-tag': no such App image`,
 		})
 
 		// tag image with only names
