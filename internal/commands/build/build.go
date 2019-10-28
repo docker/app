@@ -45,7 +45,7 @@ type buildOptions struct {
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
-		Use:   "build [OPTIONS] [BUILD_PATH]",
+		Use:   "build [OPTIONS] BUILD_PATH",
 		Short: "Build an App image from an App definition (.dockerapp)",
 		Example: `$ docker app build .
 $ docker app build . -f myapp.dockerapp -t myrepo/myapp:1.0.0`,
