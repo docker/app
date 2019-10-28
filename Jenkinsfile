@@ -57,7 +57,7 @@ pipeline {
                                         archiveArtifacts 'bin/*.tar.gz'
                                     }
                                 } finally {
-                                    def clean_images = /docker image ls --format="{{.Repository}}:{{.Tag}}" '*$BUILD_TAG*' | xargs docker image rm -f/
+                                    def clean_images = /docker image ls --format="{{.Repository}}:{{.Tag}}" '*$BUILD_TAG*' | xargs --no-run-if-empty  docker image rm -f/
                                     sh clean_images
                                 }
                             }
