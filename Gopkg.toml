@@ -131,6 +131,10 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/jackpal/gateway"
   revision = "10816db7ab2f4b71e71dba9420bfa67d5be27b33"
 
+[[constraint]]
+  name = "github.com/dustin/go-humanize"
+  version = "1.0.0"
+
 [prune]
   non-go = true
   unused-packages = true

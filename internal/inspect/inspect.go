@@ -9,6 +9,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/deislabs/cnab-go/claim"
+	"github.com/docker/go-units"
 	"gopkg.in/yaml.v2"
 
 	"github.com/deislabs/cnab-go/bundle"
@@ -18,7 +20,7 @@ import (
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/app/types/parameters"
 	composetypes "github.com/docker/cli/cli/compose/types"
-	units "github.com/docker/go-units"
+	humanize "github.com/dustin/go-humanize"
 )
 
 type service struct {
@@ -34,7 +36,7 @@ type attachment struct {
 	Size int64  `json:",omitempty"`
 }
 
-type appInfo struct {
+type imageAppInfo struct {
 	Metadata       metadata.AppMetadata `json:",omitempty"`
 	Services       []service            `json:",omitempty"`
 	Networks       []string             `json:",omitempty"`
@@ -45,8 +47,35 @@ type appInfo struct {
 	Attachments    []attachment      `json:",omitempty"`
 }
 
-// Inspect dumps the metadata of an app
-func Inspect(out io.Writer, app *types.App, argParameters map[string]string, imageMap map[string]bundle.Image) error {
+type installation struct {
+	Name         string `yaml:"Name,omitempty" json:",omitempty"`
+	Created      string `yaml:"Created,omitempty" json:",omitempty"`
+	Modified     string `yaml:"Modified,omitempty" json:",omitempty"`
+	Revision     string `yaml:"Revision,omitempty" json:",omitempty"`
+	LastAction   string `yaml:"Last Action,omitempty" json:"Last Action,omitempty"`
+	Result       string `yaml:"Result,omitempty" json:",omitempty"`
+	Orchestrator string `yaml:"Ochestrator,omitempty" json:",omitempty"`
+}
+
+type application struct {
+	Name    string `yaml:"Name,omitempty" json:",omitempty"`
+	Version string `yaml:"Version,omitempty" json:",omitempty"`
+	ImageID string `yaml:"Image ID,omitempty" json:"Image ID,omitempty"`
+}
+
+type appInfo struct {
+	Installation installation           `yaml:"Installation,omitempty" json:"Installation,omitempty"`
+	Application  application            `yaml:"Application,omitempty" json:"Application,omitempty"`
+	Parameters   map[string]interface{} `yaml:"Parameters,omitempty" json:"Parameters,omitempty"`
+}
+
+func Inspect(out io.Writer, claim claim.Claim, outputFormat string, cliDefinedOrchestrator string) error {
+	// Collect all the relevant information about the application
+	appInfo := getAppInfo(claim, cliDefinedOrchestrator)
+	return printAppInfo(out, appInfo, outputFormat)
+}
+
+func ImageInspect(out io.Writer, app *types.App, argParameters map[string]string, imageMap map[string]bundle.Image) error {
 	// Render the compose file
 	config, err := render.Render(app, argParameters, imageMap)
 	if err != nil {
@@ -54,16 +83,27 @@ func Inspect(out io.Writer, app *types.App, argParameters map[string]string, ima
 	}
 
 	// Collect all the relevant information about the application
-	appInfo, err := getAppInfo(app, config, argParameters)
+	appInfo, err := getImageAppInfo(app, config, argParameters)
 	if err != nil {
 		return err
 	}
 
 	outputFormat := os.Getenv(internal.DockerInspectFormatEnvVar)
-	return printAppInfo(out, appInfo, outputFormat)
+	return printImageAppInfo(out, appInfo, outputFormat)
 }
 
 func printAppInfo(out io.Writer, app appInfo, format string) error {
+	switch format {
+	case "pretty":
+		return printAppTable(out, app)
+	case "json":
+		return printJSON(out, app)
+	default:
+		return fmt.Errorf("unknown format %q", format)
+	}
+}
+
+func printImageAppInfo(out io.Writer, app imageAppInfo, format string) error {
 	switch format {
 	case "pretty":
 		return printTable(out, app)
@@ -74,7 +114,7 @@ func printAppInfo(out io.Writer, app appInfo, format string) error {
 	}
 }
 
-func printJSON(out io.Writer, appInfo appInfo) error {
+func printJSON(out io.Writer, appInfo interface{}) error {
 	js, err := json.MarshalIndent(appInfo, "", "    ")
 	if err != nil {
 		return err
@@ -83,9 +123,30 @@ func printJSON(out io.Writer, appInfo appInfo) error {
 	return nil
 }
 
-func printTable(out io.Writer, appInfo appInfo) error {
+func printAppTable(out io.Writer, info appInfo) error {
+
+	printYAML(out, appInfo{
+		Installation: info.Installation,
+		Application:  application{},
+		Parameters:   nil,
+	})
+	printYAML(out, appInfo{
+		Installation: installation{},
+		Application:  info.Application,
+		Parameters:   nil,
+	})
+	printYAML(out, appInfo{
+		Installation: installation{},
+		Application:  application{},
+		Parameters:   info.Parameters,
+	})
+
+	return nil
+}
+
+func printTable(out io.Writer, appInfo imageAppInfo) error {
 	// Add Meta data
-	printMetadata(out, appInfo)
+	printYAML(out, appInfo.Metadata)
 
 	// Add Service section
 	printSection(out, len(appInfo.Services), func(w io.Writer) {
@@ -132,10 +193,8 @@ func printTable(out io.Writer, appInfo appInfo) error {
 	return nil
 }
 
-func printMetadata(out io.Writer, app appInfo) {
-	meta := app.Metadata
-
-	if bytes, err := yaml.Marshal(meta); err == nil {
+func printYAML(out io.Writer, info interface{}) {
+	if bytes, err := yaml.Marshal(info); err == nil {
 		fmt.Fprintln(out, string(bytes))
 	}
 }
@@ -151,7 +210,49 @@ func printSection(out io.Writer, len int, printer func(io.Writer), headers ...st
 	w.Flush()
 }
 
-func getAppInfo(app *types.App, config *composetypes.Config, argParameters map[string]string) (appInfo, error) {
+func getAppInfo(claim claim.Claim, cliDefinedOrchestrator string) appInfo {
+	orchestrator := getOrchestrator(claim, cliDefinedOrchestrator)
+	return appInfo{
+		Installation: installation{
+			Name:         claim.Name,
+			Created:      humanize.Time(claim.Created),
+			Modified:     humanize.Time(claim.Modified),
+			Revision:     claim.Revision,
+			LastAction:   claim.Result.Action,
+			Result:       claim.Result.Status,
+			Orchestrator: orchestrator,
+		},
+		Application: application{
+			Name:    claim.Bundle.Name,
+			Version: claim.Bundle.Version,
+			ImageID: getShortDigest(claim.Bundle.InvocationImages[0].Digest),
+		},
+		Parameters: removeDockerAppParameters(claim.Parameters),
+	}
+}
+
+func getShortDigest(digest string) string {
+	return strings.TrimPrefix(digest, "sha256")[:13]
+}
+
+func getOrchestrator(claim claim.Claim, cliDefaultOrchestrator string) string {
+	if orchestrator, ok := claim.Parameters[internal.ParameterOrchestratorName]; ok && orchestrator != "" {
+		return orchestrator.(string)
+	}
+	return cliDefaultOrchestrator
+}
+
+func removeDockerAppParameters(parameters map[string]interface{}) map[string]interface{} {
+	filteredResults := make(map[string]interface{})
+	for key, val := range parameters {
+		if !strings.HasPrefix(key, "com.docker.app") {
+			filteredResults[key] = val
+		}
+	}
+	return filteredResults
+}
+
+func getImageAppInfo(app *types.App, config *composetypes.Config, argParameters map[string]string) (imageAppInfo, error) {
 	services := []service{}
 	for _, s := range config.Services {
 		services = append(services, service{
@@ -161,6 +262,7 @@ func getAppInfo(app *types.App, config *composetypes.Config, argParameters map[s
 			Ports:    getPorts(s.Ports),
 		})
 	}
+
 	sort.SliceStable(services, func(i, j int) bool {
 		return services[i].Name < services[j].Name
 	})
@@ -186,7 +288,7 @@ func getAppInfo(app *types.App, config *composetypes.Config, argParameters map[s
 	// Extract all the parameters
 	parametersKeys, allParameters, err := extractParameters(app, argParameters)
 	if err != nil {
-		return appInfo{}, err
+		return imageAppInfo{}, err
 	}
 
 	attachments := []attachment{}
@@ -198,7 +300,7 @@ func getAppInfo(app *types.App, config *composetypes.Config, argParameters map[s
 		})
 	}
 
-	return appInfo{
+	return imageAppInfo{
 		Metadata:       app.Metadata(),
 		Services:       services,
 		Networks:       networks,

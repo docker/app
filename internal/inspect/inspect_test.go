@@ -135,7 +135,7 @@ func testInspect(t *testing.T, dir *fs.Dir, testcase inspectTestCase, suffix str
 	for i := 0; i < 2; i++ {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			outBuffer := new(bytes.Buffer)
-			err = Inspect(outBuffer, app, testcase.args, nil)
+			err = ImageInspect(outBuffer, app, testcase.args, nil)
 			assert.NilError(t, err)
 			golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s%s.golden", testcase.name, suffix))
 		})

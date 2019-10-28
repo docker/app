@@ -462,6 +462,14 @@
   revision = "18e7e58ea1a5ec016625a636d0d52500eea123bc"
 
 [[projects]]
+  digest = "1:b7ffca49e9cfd3dfb04a8e0a59347708c6f78f68476a32c5e0a0edca5d1b258c"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9f541cc9db5d55bce703bd99987c9d5cb8eea45e"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:6be8997d410d48dd045a8c18ee25e59ebfaeb9aa502c240b0d8ad9bb3e3fdd4f"
   name = "github.com/globalsign/mgo"
@@ -1441,6 +1449,7 @@
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/docker/go/canonical/json",
+    "github.com/dustin/go-humanize",
     "github.com/imdario/mergo",
     "github.com/jackpal/gateway",
     "github.com/moby/buildkit/client",

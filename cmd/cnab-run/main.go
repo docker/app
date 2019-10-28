@@ -17,6 +17,7 @@ var (
 		"uninstall":                         uninstallAction,
 		internal.ActionStatusNameDeprecated: statusAction,
 		internal.ActionStatusName:           statusAction,
+		internal.ActionStatusJSONName:       statusJSONAction,
 		internal.ActionInspectName:          inspectAction,
 		internal.ActionRenderName:           renderAction,
 	}

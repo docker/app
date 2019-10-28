@@ -48,7 +48,8 @@
     "com.docker.app.render": {
       "stateless": true
     },
-    "io.cnab.status": {}
+    "io.cnab.status": {},
+    "io.cnab.status+json": {}
   },
   "parameters": {
     "com.docker.app.args": {
