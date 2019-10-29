@@ -1,4 +1,4 @@
-FROM dockercore/golang-cross:1.12.9@sha256:3ea9dcef4dd2c46d80445c0b22d6177817f4cfce22c523cc12a5a1091cb37705 AS build
+FROM dockercore/golang-cross:1.12.9@sha256:3ea9dcef4dd2c46d80445c0b22d6177817f4cfce22c523cc12a5a1091cb37705 AS cli-build
 ENV     DISABLE_WARN_OUTSIDE_CONTAINER=1
 
 RUN apt-get install -y -q --no-install-recommends \
@@ -11,13 +11,19 @@ WORKDIR /go/src/github.com/docker/cli
 RUN git clone https://github.com/docker/cli . && git checkout a1b83ffd2cbeefc0752e5aa7a543d49c1ddfd2cb
 
 ARG GOPROXY
-RUN make binary-osx binary-windows binary && \
-  cp build/docker-linux-amd64 /usr/bin/docker
-
-WORKDIR /go/src/github.com/docker/app/
+RUN make binary-osx binary-windows binary
 
 # main dev image
-FROM build AS dev
+FROM golang:1.13.3 AS dev
+
+RUN apt-get update && apt-get install -y -q --no-install-recommends \
+  coreutils \
+  util-linux \
+  uuid-runtime
+
+WORKDIR /go/src/github.com/docker/app/
+COPY --from=cli-build /go/src/github.com/docker/cli/build/docker-linux-amd64 /usr/bin/docker
+
 ENV PATH=${PATH}:/go/src/github.com/docker/app/bin/
 ARG DEP_VERSION=v0.5.4
 RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
@@ -44,9 +50,9 @@ RUN go get -d gopkg.in/mjibson/esc.v0 && \
 COPY . .
 
 FROM scratch AS cli
-COPY --from=build /go/src/github.com/docker/cli/build/docker-linux-amd64 docker-linux
-COPY --from=build /go/src/github.com/docker/cli/build/docker-darwin-amd64 docker-darwin
-COPY --from=build /go/src/github.com/docker/cli/build/docker-windows-amd64 docker-windows.exe
+COPY --from=cli-build /go/src/github.com/docker/cli/build/docker-linux-amd64 docker-linux
+COPY --from=cli-build /go/src/github.com/docker/cli/build/docker-darwin-amd64 docker-darwin
+COPY --from=cli-build /go/src/github.com/docker/cli/build/docker-windows-amd64 docker-windows.exe
 
 FROM dev AS cross-build
 ARG TAG="unknown"
