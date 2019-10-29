@@ -104,18 +104,26 @@ func printImageIDs(dockerCli command.Cli, refs []pkg) error {
 	var buf bytes.Buffer
 
 	for _, ref := range refs {
-		id, ok := ref.ref.(store.ID)
-		if !ok {
-			var err error
-			id, err = store.FromBundle(ref.bundle)
-			if err != nil {
-				return err
-			}
+		id, err := getImageID(ref)
+		if err != nil {
+			return err
 		}
-		fmt.Fprintln(&buf, stringid.TruncateID(id.String()))
+		fmt.Fprintln(&buf, id)
 	}
 	fmt.Fprint(dockerCli.Out(), buf.String())
 	return nil
+}
+
+func getImageID(p pkg) (string, error) {
+	id, ok := p.ref.(store.ID)
+	if !ok {
+		var err error
+		id, err = store.FromBundle(p.bundle)
+		if err != nil {
+			return "", err
+		}
+	}
+	return stringid.TruncateID(id.String()), nil
 }
 
 func printHeaders(w io.Writer, listColumns []imageListColumn) {
@@ -136,8 +144,17 @@ func printValues(w io.Writer, ref pkg, listColumns []imageListColumn) {
 
 func getImageListColumns(options imageListOption) []imageListColumn {
 	columns := []imageListColumn{
-		{"APP IMAGE", func(p pkg) string {
+		{"REPOSITORY", func(p pkg) string {
+			if n, ok := p.ref.(reference.Named); ok {
+				return reference.FamiliarName(n)
+			}
 			return reference.FamiliarString(p.ref)
+		}},
+		{"TAG", func(p pkg) string {
+			if t, ok := p.ref.(reference.Tagged); ok {
+				return t.Tag()
+			}
+			return "<none>"
 		}},
 	}
 	if options.digests {
@@ -148,9 +165,18 @@ func getImageListColumns(options imageListOption) []imageListColumn {
 			return "<none>"
 		}})
 	}
-	columns = append(columns, imageListColumn{"APP NAME", func(p pkg) string {
-		return p.bundle.Name
-	}})
+	columns = append(columns,
+		imageListColumn{"APP IMAGE ID", func(p pkg) string {
+			id, err := getImageID(p)
+			if err != nil {
+				return ""
+			}
+			return id
+		}},
+		imageListColumn{"APP NAME", func(p pkg) string {
+			return p.bundle.Name
+		}},
+	)
 	return columns
 }
 
