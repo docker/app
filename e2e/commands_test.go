@@ -165,7 +165,7 @@ func TestInspectApp(t *testing.T) {
 		})
 
 		contextPath := filepath.Join("testdata", "simple")
-		cmd.Command = dockerCli.Command("app", "build", "--tag", "simple-app:1.0.0", contextPath)
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "simple-app:1.0.0", "--no-resolve-image", contextPath)
 		cmd.Dir = ""
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
