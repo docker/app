@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,13 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	errors2 "github.com/pkg/errors"
-
-	"github.com/docker/app/internal"
-	"github.com/docker/cnab-to-oci/remotes"
-
 	"github.com/deislabs/cnab-go/bundle"
 	cnab "github.com/deislabs/cnab-go/driver"
+	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types"
 	"github.com/docker/buildx/build"
@@ -27,24 +22,27 @@ import (
 	"github.com/docker/buildx/util/progress"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/moby/buildkit/util/appcontext"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 type buildOptions struct {
-	noCache     bool
-	progress    string
-	pull        bool
-	tag         string
-	folder      string
-	imageIDFile string
-	args        []string
-	quiet       bool
+	noCache        bool
+	progress       string
+	pull           bool
+	tag            string
+	folder         string
+	imageIDFile    string
+	args           []string
+	quiet          bool
+	noResolveImage bool
 }
 
 func Cmd(dockerCli command.Cli) *cobra.Command {
@@ -63,6 +61,7 @@ $ docker app build . -f myapp.dockerapp -t myrepo/myapp:1.0.0`,
 	flags := cmd.Flags()
 	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the App image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
+	flags.BoolVar(&opts.noResolveImage, "no-resolve-image", false, "Do not query the registry to resolve image digest")
 	flags.StringVarP(&opts.tag, "tag", "t", "", "App image tag, optionally in the 'repo:tag' format")
 	flags.StringVarP(&opts.folder, "folder", "f", "", "App definition as a .dockerapp directory")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the App image")
@@ -196,22 +195,22 @@ func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions,
 func fixServiceImageReferences(ctx context.Context, dockerCli command.Cli, bundle *bundle.Bundle, pulledServices []ServiceConfig) error {
 	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
-		return errors2.Wrapf(err, "could not retrieve insecure registries")
+		return errors.Wrapf(err, "could not retrieve insecure registries")
 	}
 	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...)
 	for _, service := range pulledServices {
 		image := bundle.Images[service.Name]
 		ref, err := reference.ParseNormalizedNamed(*service.Image)
 		if err != nil {
-			return errors2.Wrapf(err, "could not resolve image %s", *service.Image)
+			return errors.Wrapf(err, "could not resolve image %s", *service.Image)
 		}
 		_, desc, err := resolver.Resolve(ctx, ref.String())
 		if err != nil {
-			return errors2.Wrapf(err, "could not resolve image %s", ref.Name())
+			return errors.Wrapf(err, "could not resolve image %s", ref.Name())
 		}
 		canonical, err := reference.WithDigest(ref, desc.Digest)
 		if err != nil {
-			return errors2.Wrapf(err, "could not resolve image %s", ref.Name())
+			return errors.Wrapf(err, "could not resolve image %s", ref.Name())
 		}
 		image.Image = canonical.String()
 		bundle.Images[service.Name] = image
@@ -251,7 +250,7 @@ func checkMinimalEngineVersion(dockerCli command.Cli) error {
 		return err
 	}
 	if majorVersion < 19 {
-		return errors.New("'build' require docker engine 19.03 or later")
+		return fmt.Errorf("'build' require docker engine 19.03 or later")
 	}
 	return nil
 }
