@@ -28,10 +28,10 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 		Use:     "render [OPTIONS] APP_IMAGE",
 		Short:   "Render the Compose file for an App image",
 		Example: `$ docker app render myrepo/myapp:1.0.0 --set key=value --parameters-file myparam.yml`,
-		Args:    cli.RequiresMaxArgs(1),
+		Args:    cli.ExactArgs(1),
 		Hidden:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRender(dockerCli, firstOrEmpty(args), opts)
+			return runRender(dockerCli, args[0], opts)
 		},
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
@@ -75,11 +75,11 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	bundle, ref, err := cnab.ResolveBundle(dockerCli, bundleStore, appname)
+	bundle, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	installation, err := appstore.NewInstallation("custom-action", ref)
+	installation, err := appstore.NewInstallation("custom-action", ref.String())
 	if err != nil {
 		return nil, nil, nil, err
 	}
