@@ -27,7 +27,7 @@
         },
         {
             "Name": "web",
-            "Image": "nginx:latest",
+            "Image": "nginx",
             "Replicas": 1,
             "Ports": "8082"
         }

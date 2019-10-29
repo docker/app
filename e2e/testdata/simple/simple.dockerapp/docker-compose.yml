@@ -9,7 +9,7 @@ services:
           - api.example.com
           - ${api_host}
   web:
-    image: nginx:latest
+    image: nginx
     networks:
       - front
     volumes:

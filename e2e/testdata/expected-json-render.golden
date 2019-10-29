@@ -47,7 +47,7 @@
         "resources": {},
         "placement": {}
       },
-      "image": "nginx:latest",
+      "image": "nginx",
       "networks": {
         "front": null
       },
