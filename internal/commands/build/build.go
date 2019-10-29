@@ -200,7 +200,7 @@ func fixServiceImageReferences(ctx context.Context, dockerCli command.Cli, bundl
 	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...)
 	for _, service := range pulledServices {
 		image := bundle.Images[service.Name]
-		ref, err := reference.ParseNormalizedNamed(*service.Image)
+		ref, err := reference.ParseDockerRef(*service.Image)
 		if err != nil {
 			return errors.Wrapf(err, "could not resolve image %s", *service.Image)
 		}

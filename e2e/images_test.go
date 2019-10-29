@@ -14,11 +14,11 @@ import (
 
 func insertBundles(t *testing.T, cmd icmd.Cmd, info dindSwarmAndRegistryInfo) {
 	// Push an application so that we can later pull it by digest
-	cmd.Command = dockerCli.Command("app", "build", "--tag", info.registryAddress+"/c-myapp", filepath.Join("testdata", "push-pull"))
+	cmd.Command = dockerCli.Command("app", "build", "--no-resolve-image", "--tag", info.registryAddress+"/c-myapp", filepath.Join("testdata", "push-pull"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "build", "--tag", "b-simple-app", filepath.Join("testdata", "simple"))
+	cmd.Command = dockerCli.Command("app", "build", "--no-resolve-image", "--tag", "b-simple-app", filepath.Join("testdata", "simple"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-app", filepath.Join("testdata", "simple"))
+	cmd.Command = dockerCli.Command("app", "build", "--no-resolve-image", "--tag", "a-simple-app", filepath.Join("testdata", "simple"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
