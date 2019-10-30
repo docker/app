@@ -23,6 +23,7 @@ import (
 type runOptions struct {
 	cliopts.ParametersOptions
 	credentialOptions
+	installerContextOptions
 	orchestrator  string
 	kubeNamespace string
 	stackName     string
@@ -92,14 +93,8 @@ func runDockerApp(dockerCli command.Cli, appname string, opts runOptions) error 
 	return runBundle(dockerCli, bndl, opts, ref.String())
 }
 
-func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref string) error {
-	opts.SetDefaultTargetContext(dockerCli)
-
-	bind, err := cnab.RequiredBindMount(opts.targetContext, opts.orchestrator, dockerCli.ContextStore())
-	if err != nil {
-		return err
-	}
-	_, installationStore, credentialStore, err := prepareStores(opts.targetContext)
+func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref string) (err error) {
+	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
 	}
@@ -114,7 +109,7 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	if installation, err := installationStore.Read(installationName); err == nil {
 		// A failed installation can be overridden, but with a warning
 		if isInstallationFailed(installation) {
-			fmt.Fprintf(os.Stderr, "WARNING: installing over previously failed installation %q\n", installationName)
+			fmt.Fprintf(dockerCli.Err(), "WARNING: installing over previously failed installation %q\n", installationName)
 		} else {
 			// Return an error in case of successful installation, or even failed upgrade, which means
 			// their was already a successful installation.
@@ -128,7 +123,10 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 		return err
 	}
 
-	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
+	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions)
+	if err != nil {
+		return err
+	}
 	installation.Bundle = bndl
 
 	if err := bdl.MergeBundleParameters(installation,
@@ -165,6 +163,6 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 		return err2
 	}
 
-	fmt.Fprintf(os.Stdout, "App %q running on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(dockerCli.Out(), "App %q running on context %q\n", installationName, dockerCli.CurrentContext())
 	return nil
 }

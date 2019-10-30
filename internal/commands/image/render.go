@@ -22,6 +22,7 @@ import (
 
 type renderOptions struct {
 	cliopts.ParametersOptions
+	installerContextOptions
 	formatDriver string
 	renderOutput string
 }
@@ -58,7 +59,7 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		w = f
 	}
 
-	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts.ParametersOptions)
+	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts)
 	if err != nil {
 		return err
 	}
@@ -70,8 +71,7 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 	return nil
 }
 
-func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
-	paramsOpts cliopts.ParametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
+func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer, opts renderOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err
@@ -91,13 +91,16 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	installation.Bundle = bundle
 
 	if err := bdl.MergeBundleParameters(installation,
-		bdl.WithFileParameters(paramsOpts.ParametersFiles),
-		bdl.WithCommandLineParameters(paramsOpts.Overrides),
+		bdl.WithFileParameters(opts.ParametersFiles),
+		bdl.WithCommandLineParameters(opts.Overrides),
 	); err != nil {
 		return nil, nil, nil, err
 	}
 
-	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, cnab.BindMount{}, stdout)
+	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	a := &action.RunCustom{
 		Action: actionName,
 		Driver: driverImpl,

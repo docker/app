@@ -6,7 +6,6 @@ import (
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
-	"github.com/docker/app/internal/cnab"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -14,6 +13,7 @@ import (
 
 type removeOptions struct {
 	credentialOptions
+	installerContextOptions
 	force bool
 }
 
@@ -38,9 +38,8 @@ func removeCmd(dockerCli command.Cli) *cobra.Command {
 
 func runRemove(dockerCli command.Cli, installationName string, opts removeOptions) (mainErr error) {
 	defer muteDockerCli(dockerCli)()
-	opts.SetDefaultTargetContext(dockerCli)
 
-	_, installationStore, credentialStore, err := prepareStores(opts.targetContext)
+	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
 	}
@@ -61,11 +60,10 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 			fmt.Fprintf(os.Stderr, "deletion forced for running App %q\n", installationName)
 		}()
 	}
-	bind, err := cnab.RequiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
+	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions)
 	if err != nil {
 		return err
 	}
-	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
 	creds, err := prepareCredentialSet(installation.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
@@ -85,6 +83,6 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 	if err := installationStore.Delete(installationName); err != nil {
 		return fmt.Errorf("Failed to delete running App %q from the installation store: %s", installationName, err)
 	}
-	fmt.Fprintf(os.Stdout, "App %q uninstalled on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(dockerCli.Out(), "App %q uninstalled on context %q\n", installationName, dockerCli.CurrentContext())
 	return nil
 }

@@ -25,13 +25,13 @@ type BindMount struct {
 
 const defaultSocketPath string = "/var/run/docker.sock"
 
-func RequiredClaimBindMount(c claim.Claim, targetContextName string, dockerCli command.Cli) (BindMount, error) {
+func RequiredClaimBindMount(c claim.Claim, dockerCli command.Cli) (BindMount, error) {
 	var specifiedOrchestrator string
 	if rawOrchestrator, ok := c.Parameters[internal.ParameterOrchestratorName]; ok {
 		specifiedOrchestrator = rawOrchestrator.(string)
 	}
 
-	return RequiredBindMount(targetContextName, specifiedOrchestrator, dockerCli.ContextStore())
+	return RequiredBindMount(dockerCli.CurrentContext(), specifiedOrchestrator, dockerCli.ContextStore())
 }
 
 // RequiredBindMount Returns the path required to bind mount when running
