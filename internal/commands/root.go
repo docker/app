@@ -1,18 +1,24 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/deislabs/cnab-go/claim"
+	"github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/commands/build"
 	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
+	"github.com/docker/cli/cli/flags"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -110,12 +116,67 @@ func prepareBundleStore() (store.BundleStore, error) {
 	return bundleStore, nil
 }
 
-type targetContextOptions struct {
-	targetContext string
+func setupDriver(installation *store.Installation, dockerCli command.Cli, opts installerContextOptions) (driver.Driver, *bytes.Buffer, error) {
+	dockerCli, err := opts.setInstallerContext(dockerCli)
+	if err != nil {
+		return nil, nil, err
+	}
+	bind, err := cnab.RequiredClaimBindMount(installation.Claim, dockerCli)
+	if err != nil {
+		return nil, nil, err
+	}
+	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
+	return driverImpl, errBuf, nil
 }
 
-func (o *targetContextOptions) SetDefaultTargetContext(dockerCli command.Cli) {
-	o.targetContext = getTargetContext(o.targetContext, dockerCli.CurrentContext())
+type parametersOptions struct {
+	parametersFiles []string
+	overrides       []string
+}
+
+func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
+	flags.StringArrayVar(&o.parametersFiles, "parameters-file", []string{}, "Override parameters file")
+	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameter value")
+}
+
+type installerContextOptions struct {
+	installerContext string
+}
+
+func (o *installerContextOptions) addFlag(flags *pflag.FlagSet) {
+	flags.StringVar(&o.installerContext, "installer-context", "", "Context on which the installer image is ran (default: <current-context>)")
+}
+
+func (o *installerContextOptions) setInstallerContext(dockerCli command.Cli) (command.Cli, error) {
+	o.installerContext = getTargetContext(o.installerContext, dockerCli.CurrentContext())
+	if o.installerContext != dockerCli.CurrentContext() {
+		if _, err := dockerCli.ContextStore().GetMetadata(o.installerContext); err != nil {
+			return nil, errors.Wrapf(err, "Unknown docker context %s", o.installerContext)
+		}
+		fmt.Fprintf(dockerCli.Out(), "Using context %q to run installer image", o.installerContext)
+		cli, err := command.NewDockerCli()
+		if err != nil {
+			return nil, err
+		}
+		opts := flags.ClientOptions{
+			Common: &flags.CommonOptions{
+				Context:  o.installerContext,
+				LogLevel: logrus.GetLevel().String(),
+			},
+			ConfigDir: config.Dir(),
+		}
+		if err = cli.Apply(
+			command.WithInputStream(dockerCli.In()),
+			command.WithOutputStream(dockerCli.Out()),
+			command.WithErrorStream(dockerCli.Err())); err != nil {
+			return nil, err
+		}
+		if err = cli.Initialize(&opts); err != nil {
+			return nil, err
+		}
+		return cli, nil
+	}
+	return dockerCli, nil
 }
 
 func getTargetContext(optstargetContext, currentContext string) string {
@@ -123,8 +184,8 @@ func getTargetContext(optstargetContext, currentContext string) string {
 	switch {
 	case optstargetContext != "":
 		targetContext = optstargetContext
-	case os.Getenv("DOCKER_TARGET_CONTEXT") != "":
-		targetContext = os.Getenv("DOCKER_TARGET_CONTEXT")
+	case os.Getenv("INSTALLER_TARGET_CONTEXT") != "":
+		targetContext = os.Getenv("INSTALLER_TARGET_CONTEXT")
 	}
 	if targetContext == "" {
 		targetContext = currentContext
@@ -133,7 +194,6 @@ func getTargetContext(optstargetContext, currentContext string) string {
 }
 
 type credentialOptions struct {
-	targetContextOptions
 	credentialsets   []string
 	credentials      []string
 	sendRegistryAuth bool
@@ -149,7 +209,7 @@ func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli, credentialS
 	return []credentialSetOpt{
 		addNamedCredentialSets(credentialStore, o.credentialsets),
 		addCredentials(o.credentials),
-		addDockerCredentials(o.targetContext, dockerCli.ContextStore()),
+		addDockerCredentials(dockerCli.CurrentContext(), dockerCli.ContextStore()),
 		addRegistryCredentials(o.sendRegistryAuth, dockerCli),
 	}
 }

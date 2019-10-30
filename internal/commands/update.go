@@ -16,6 +16,7 @@ import (
 type updateOptions struct {
 	cliopts.ParametersOptions
 	credentialOptions
+	installerContextOptions
 	bundleOrDockerApp string
 }
 
@@ -39,9 +40,8 @@ func updateCmd(dockerCli command.Cli) *cobra.Command {
 
 func runUpdate(dockerCli command.Cli, installationName string, opts updateOptions) error {
 	defer muteDockerCli(dockerCli)()
-	opts.SetDefaultTargetContext(dockerCli)
 
-	bundleStore, installationStore, credentialStore, err := prepareStores(opts.targetContext)
+	bundleStore, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
 	}
@@ -70,11 +70,10 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		return err
 	}
 
-	bind, err := cnab.RequiredClaimBindMount(installation.Claim, opts.targetContext, dockerCli)
+	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions)
 	if err != nil {
 		return err
 	}
-	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
 	creds, err := prepareCredentialSet(installation.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
@@ -93,6 +92,6 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 	if err2 != nil {
 		return err2
 	}
-	fmt.Fprintf(os.Stdout, "Running App %q updated on context %q\n", installationName, opts.targetContext)
+	fmt.Fprintf(dockerCli.Out(), "Running App %q updated on context %q\n", installationName, dockerCli.CurrentContext())
 	return nil
 }
