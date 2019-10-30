@@ -110,7 +110,9 @@ func prepareDriver(dockerCli command.Cli, bindMount BindMount, stdout io.Writer)
 	// Load any driver-specific config out of the environment.
 	driverCfg := map[string]string{}
 	for env := range d.Config() {
-		driverCfg[env] = os.Getenv(env)
+		if value, ok := os.LookupEnv(env); ok {
+			driverCfg[env] = value
+		}
 	}
 	d.SetConfig(driverCfg)
 

@@ -46,7 +46,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/containerd/containerd"
-  branch = "master"
+  version = "v1.3.0"
 
 [[override]]
   name = "github.com/docker/cli"
@@ -54,7 +54,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/deislabs/cnab-go"
-  version = "v0.3.2-beta1"
+  version = "v0.7.1-beta1"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
@@ -82,7 +82,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/distribution"
-  revision = "0d3efadf0154c2b8a4e7b6621fff9809655cc580"
+  revision = "0d3efadf0154c2b8a4e7b6621fff9809655cc580" # version needed by containerd v1.3.0
 
 [[override]]
   name = "github.com/docker/swarmkit"

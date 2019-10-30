@@ -1,8 +1,6 @@
 package action
 
 import (
-	"io"
-
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/deislabs/cnab-go/driver"
@@ -14,13 +12,18 @@ type Status struct {
 }
 
 // Run executes a status action in an image
-func (i *Status) Run(c *claim.Claim, creds credentials.Set, w io.Writer) error {
+func (i *Status) Run(c *claim.Claim, creds credentials.Set, opCfgs ...OperationConfigFunc) error {
 	invocImage, err := selectInvocationImage(i.Driver, c)
 	if err != nil {
 		return err
 	}
 
-	op, err := opFromClaim(claim.ActionStatus, stateful, c, invocImage, creds, w)
+	op, err := opFromClaim(claim.ActionStatus, stateful, c, invocImage, creds)
+	if err != nil {
+		return err
+	}
+
+	err = OperationConfigs(opCfgs).ApplyConfig(op)
 	if err != nil {
 		return err
 	}

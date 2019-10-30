@@ -81,12 +81,10 @@ func TestCnabParameters(t *testing.T) {
 	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, "bundle.json"), "--name", "cnab-parameters",
 		"--set", "boolParam=true",
 		"--set", "stringParam=value",
-		"--set", "intParam=42",
-		"--set", "floatParam=3.14")
+		"--set", "intParam=42")
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	expectedOutput := `boolParam=true
 stringParam=value
-intParam=42
-floatParam=3.14`
+intParam=42`
 	assert.Assert(t, is.Contains(result.Combined(), expectedOutput))
 }

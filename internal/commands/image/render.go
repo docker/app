@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/deislabs/cnab-go/driver"
+
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
 	bdl "github.com/docker/app/internal/bundle"
@@ -59,13 +61,18 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		w = f
 	}
 
+	cfgFunc := func(op *driver.Operation) error {
+		op.Out = w
+		return nil
+	}
+
 	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts)
 	if err != nil {
 		return err
 	}
 	installation.Parameters[internal.ParameterRenderFormatName] = opts.formatDriver
 
-	if err := action.Run(&installation.Claim, nil, w); err != nil {
+	if err := action.Run(&installation.Claim, nil, cfgFunc); err != nil {
 		return fmt.Errorf("render failed: %s\n%s", err, errBuf)
 	}
 	return nil

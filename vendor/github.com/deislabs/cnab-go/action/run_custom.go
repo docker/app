@@ -2,7 +2,6 @@ package action
 
 import (
 	"errors"
-	"io"
 
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/credentials"
@@ -28,7 +27,7 @@ type RunCustom struct {
 var blockedActions = map[string]struct{}{"install": {}, "uninstall": {}, "upgrade": {}}
 
 // Run executes a status action in an image
-func (i *RunCustom) Run(c *claim.Claim, creds credentials.Set, w io.Writer) error {
+func (i *RunCustom) Run(c *claim.Claim, creds credentials.Set, opCfgs ...OperationConfigFunc) error {
 	if _, ok := blockedActions[i.Action]; ok {
 		return ErrBlockedAction
 	}
@@ -43,7 +42,12 @@ func (i *RunCustom) Run(c *claim.Claim, creds credentials.Set, w io.Writer) erro
 		return err
 	}
 
-	op, err := opFromClaim(i.Action, actionDef.Stateless, c, invocImage, creds, w)
+	op, err := opFromClaim(i.Action, actionDef.Stateless, c, invocImage, creds)
+	if err != nil {
+		return err
+	}
+
+	err = OperationConfigs(opCfgs).ApplyConfig(op)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/docker/app/internal/cnab"
 
+	"github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal/cliopts"
 
 	"github.com/deislabs/cnab-go/action"
@@ -79,7 +80,11 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 	uninst := &action.Uninstall{
 		Driver: driverImpl,
 	}
-	if err := uninst.Run(&installation.Claim, creds, os.Stdout); err != nil {
+	cfgFunc := func(op *driver.Operation) error {
+		op.Out = dockerCli.Out()
+		return nil
+	}
+	if err := uninst.Run(&installation.Claim, creds, cfgFunc); err != nil {
 		if err2 := installationStore.Store(installation); err2 != nil {
 			return fmt.Errorf("%s while %s", err2, errBuf)
 		}

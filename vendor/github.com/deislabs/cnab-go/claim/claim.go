@@ -48,7 +48,7 @@ type Claim struct {
 }
 
 // ValidName is a regular expression that indicates whether a name is a valid claim name.
-var ValidName = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
+var ValidName = regexp.MustCompile("^[a-zA-Z0-9._-]+$")
 
 // New creates a new Claim initialized for an installation operation.
 func New(name string) (*Claim, error) {

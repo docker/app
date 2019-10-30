@@ -40,12 +40,6 @@
       "destination": {
         "env": "INT_PARAM"
       }
-    },
-    "floatParam": {
-      "definition": "floatParam_type",
-      "destination": {
-        "env": "FLOAT_PARAM"
-      }
     }
   }
 }

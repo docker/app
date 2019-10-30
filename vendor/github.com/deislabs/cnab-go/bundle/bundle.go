@@ -87,15 +87,36 @@ type BaseImage struct {
 	MediaType string            `json:"mediaType,omitempty" yaml:"mediaType,omitempty"`
 }
 
+func (i *BaseImage) DeepCopy() *BaseImage {
+	i2 := *i
+	i2.Labels = make(map[string]string, len(i.Labels))
+	for key, value := range i.Labels {
+		i2.Labels[key] = value
+	}
+	return &i2
+}
+
 // Image describes a container image in the bundle
 type Image struct {
 	BaseImage   `yaml:",inline"`
 	Description string `json:"description" yaml:"description"` //TODO: change? see where it's being used? change to description?
 }
 
+func (i *Image) DeepCopy() *Image {
+	i2 := *i
+	i2.BaseImage = *i.BaseImage.DeepCopy()
+	return &i2
+}
+
 // InvocationImage contains the image type and location for the installation of a bundle
 type InvocationImage struct {
 	BaseImage `yaml:",inline"`
+}
+
+func (img *InvocationImage) DeepCopy() *InvocationImage {
+	img2 := *img
+	img2.BaseImage = *img.BaseImage.DeepCopy()
+	return &img2
 }
 
 // Location provides the location where a value should be written in

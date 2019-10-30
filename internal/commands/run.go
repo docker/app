@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal/cliopts"
 
 	"github.com/deislabs/cnab-go/action"
@@ -152,7 +153,11 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	}
 	{
 		defer muteDockerCli(dockerCli)()
-		err = inst.Run(&installation.Claim, creds, os.Stdout)
+		cfgFunc := func(op *driver.Operation) error {
+			op.Out = dockerCli.Out()
+			return nil
+		}
+		err = inst.Run(&installation.Claim, creds, cfgFunc)
 	}
 	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.

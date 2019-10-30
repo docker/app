@@ -55,11 +55,20 @@ func (d *Driver) Config() map[string]string {
 		"PULL_ALWAYS":         "Always pull image, even if locally available (0|1)",
 		"DOCKER_DRIVER_QUIET": "Make the Docker driver quiet (only print container stdout/stderr)",
 		"OUTPUTS_MOUNT_PATH":  "Absolute path to where Docker driver can create temporary directories to bundle outputs. Defaults to temp dir.",
+		"CLEANUP_CONTAINERS":  "If true, the docker container will be destroyed when it finishes running. If false, it will not be destroyed. The supported values are true and false. Defaults to true.",
 	}
 }
 
 // SetConfig sets Docker driver configuration
 func (d *Driver) SetConfig(settings map[string]string) {
+	// Set default and provide feedback on acceptable input values.
+	value, ok := settings["CLEANUP_CONTAINERS"]
+	if !ok {
+		settings["CLEANUP_CONTAINERS"] = "true"
+	} else if value != "true" && value != "false" {
+		fmt.Printf("CLEANUP_CONTAINERS environment variable has unexpected value %q. Supported values are 'true', 'false', or unset.", value)
+	}
+
 	d.config = settings
 }
 
@@ -137,7 +146,7 @@ func (d *Driver) exec(op *driver.Operation) (driver.OperationResult, error) {
 		return driver.OperationResult{}, nil
 	}
 	if d.config["PULL_ALWAYS"] == "1" {
-		if err := pullImage(ctx, cli, op.Image); err != nil {
+		if err := pullImage(ctx, cli, op.Image.Image); err != nil {
 			return driver.OperationResult{}, err
 		}
 	}
@@ -147,7 +156,7 @@ func (d *Driver) exec(op *driver.Operation) (driver.OperationResult, error) {
 	}
 
 	cfg := &container.Config{
-		Image:        op.Image,
+		Image:        op.Image.Image,
 		Env:          env,
 		Entrypoint:   strslice.StrSlice{"/cnab/app/run"},
 		AttachStderr: true,
@@ -164,8 +173,8 @@ func (d *Driver) exec(op *driver.Operation) (driver.OperationResult, error) {
 	resp, err := cli.Client().ContainerCreate(ctx, cfg, hostCfg, nil, "")
 	switch {
 	case client.IsErrNotFound(err):
-		fmt.Fprintf(cli.Err(), "Unable to find image '%s' locally\n", op.Image)
-		if err := pullImage(ctx, cli, op.Image); err != nil {
+		fmt.Fprintf(cli.Err(), "Unable to find image '%s' locally\n", op.Image.Image)
+		if err := pullImage(ctx, cli, op.Image.Image); err != nil {
 			return driver.OperationResult{}, err
 		}
 		if resp, err = cli.Client().ContainerCreate(ctx, cfg, hostCfg, nil, ""); err != nil {
@@ -175,7 +184,9 @@ func (d *Driver) exec(op *driver.Operation) (driver.OperationResult, error) {
 		return driver.OperationResult{}, fmt.Errorf("cannot create container: %v", err)
 	}
 
-	defer cli.Client().ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
+	if d.config["CLEANUP_CONTAINERS"] == "true" {
+		defer cli.Client().ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
+	}
 
 	tarContent, err := generateTar(op.Files)
 	if err != nil {
@@ -301,7 +312,34 @@ func (d *Driver) fetchOutputs(ctx context.Context, container string, op *driver.
 		return opResult, err
 	}
 
+	// if an applicable output is expected but does not exist and it has a
+	// non-empty default value, create an entry in the map with the
+	// default value as its contents
+	for name, output := range op.Bundle.Outputs {
+		filepath := unix_path.Join("/cnab", "app", "outputs", name)
+		if !existsInOutputsMap(opResult.Outputs, filepath) && output.AppliesTo(op.Action) {
+			if outputDefinition, exists := op.Bundle.Definitions[output.Definition]; exists {
+				outputDefault := outputDefinition.Default
+				if outputDefault != nil {
+					contents := fmt.Sprintf("%v", outputDefault)
+					opResult.Outputs[filepath] = contents
+				} else {
+					return opResult, fmt.Errorf("required output %s is missing and has no default", name)
+				}
+			}
+		}
+	}
+
 	return opResult, nil
+}
+
+func existsInOutputsMap(outputsMap map[string]string, path string) bool {
+	for outputPath := range outputsMap {
+		if outputPath == path {
+			return true
+		}
+	}
+	return false
 }
 
 func generateTar(files map[string]string) (io.Reader, error) {

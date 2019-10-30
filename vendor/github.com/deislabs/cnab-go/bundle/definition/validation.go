@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
-	"github.com/qri-io/jsonschema"
 )
 
 // ValidationError error represents a validation error
@@ -24,7 +23,7 @@ func (s *Schema) Validate(data interface{}) ([]ValidationError, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load schema")
 	}
-	def := new(jsonschema.RootSchema)
+	def := NewRootSchema()
 	err = json.Unmarshal([]byte(b), def)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to build schema")

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"strings"
 
@@ -28,7 +27,7 @@ const stateful = false
 // - status
 type Action interface {
 	// Run an action, and record the status in the given claim
-	Run(*claim.Claim, credentials.Set, io.Writer) error
+	Run(*claim.Claim, credentials.Set, ...OperationConfigFunc) error
 }
 
 func golangTypeToJSONType(value interface{}) (string, error) {
@@ -176,19 +175,7 @@ func getImageMap(b *bundle.Bundle) ([]byte, error) {
 	return json.Marshal(imgs)
 }
 
-func appliesToAction(action string, parameter bundle.Parameter) bool {
-	if len(parameter.ApplyTo) == 0 {
-		return true
-	}
-	for _, act := range parameter.ApplyTo {
-		if action == act {
-			return true
-		}
-	}
-	return false
-}
-
-func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.InvocationImage, creds credentials.Set, w io.Writer) (*driver.Operation, error) {
+func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.InvocationImage, creds credentials.Set) (*driver.Operation, error) {
 	env, files, err := creds.Expand(c.Bundle, stateless)
 	if err != nil {
 		return nil, err
@@ -204,6 +191,13 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 	if err := injectParameters(action, c, env, files); err != nil {
 		return nil, err
 	}
+
+	bundleBytes, err := json.Marshal(c.Bundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal bundle contents: %s", err)
+	}
+
+	files["/cnab/bundle.json"] = string(bundleBytes)
 
 	imgMap, err := getImageMap(c.Bundle)
 	if err != nil {
@@ -227,13 +221,12 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 		Action:       action,
 		Installation: c.Name,
 		Parameters:   c.Parameters,
-		Image:        ii.Image,
-		ImageType:    ii.ImageType,
+		Image:        ii,
 		Revision:     c.Revision,
 		Environment:  env,
 		Files:        files,
 		Outputs:      outputs,
-		Out:          w,
+		Bundle:       c.Bundle,
 	}, nil
 }
 
@@ -241,12 +234,27 @@ func injectParameters(action string, c *claim.Claim, env, files map[string]strin
 	for k, param := range c.Bundle.Parameters {
 		rawval, ok := c.Parameters[k]
 		if !ok {
-			if param.Required && appliesToAction(action, param) {
+			if param.Required && param.AppliesTo(action) {
 				return fmt.Errorf("missing required parameter %q for action %q", k, action)
 			}
 			continue
 		}
-		value := fmt.Sprintf("%v", rawval)
+
+		contents, err := json.Marshal(rawval)
+		if err != nil {
+			return err
+		}
+
+		// In order to preserve the exact string value the user provided
+		// we don't marshal string parameters
+		value := string(contents)
+		if value[0] == '"' {
+			value, ok = rawval.(string)
+			if !ok {
+				return fmt.Errorf("failed to parse parameter %q as string", k)
+			}
+		}
+
 		if param.Destination == nil {
 			// env is a CNAB_P_
 			env[fmt.Sprintf("CNAB_P_%s", strings.ToUpper(k))] = value
