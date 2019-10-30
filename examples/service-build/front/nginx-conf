@@ -1,0 +1,9 @@
+server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+        proxy_pass http://back:5000/;
+        proxy_set_header Host "localhost";
+    }
+}

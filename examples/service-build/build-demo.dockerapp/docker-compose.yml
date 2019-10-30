@@ -1,0 +1,17 @@
+version: "3.7"
+
+services:
+  front:
+    build:
+      context: front/
+      dockerfile: Dockerfile
+    ports:
+      - "${front.port}:80"
+
+  back:
+    build:
+      context: back/
+      dockerfile: Dockerfile
+      args:
+        - MESSAGE
+
