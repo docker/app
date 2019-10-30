@@ -11,7 +11,7 @@ import (
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
-	"github.com/opencontainers/go-digest"
+	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
 
@@ -22,12 +22,28 @@ type BundleStore interface {
 	Read(ref reference.Reference) (*bundle.Bundle, error)
 	List() ([]reference.Reference, error)
 	Remove(ref reference.Reference) error
+	LookUp(refOrID string) (reference.Reference, error)
 }
 
 var _ BundleStore = &bundleStore{}
 
+type referencesMap map[ID][]reference.Reference
+
 type bundleStore struct {
-	path string
+	path    string
+	refsMap referencesMap
+}
+
+// NewBundleStore creates a new bundle store with the given path and initializes it
+func NewBundleStore(path string) (BundleStore, error) {
+	bundleStore := &bundleStore{
+		path:    path,
+		refsMap: make(referencesMap),
+	}
+	if err := bundleStore.scanAllBundles(); err != nil {
+		return nil, err
+	}
+	return bundleStore, nil
 }
 
 // We store bundles either by image:tags, image:digest or by unique ID (actually, bundle's sha256).
@@ -48,12 +64,10 @@ type bundleStore struct {
 //
 
 func (b *bundleStore) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error) {
-	digest, err := ComputeDigest(bndle)
+	id, err := FromBundle(bndle)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
-	id := ID{digest}
-
 	if ref == nil {
 		ref = id
 	}
@@ -68,60 +82,29 @@ func (b *bundleStore) Store(ref reference.Reference, bndle *bundle.Bundle) (refe
 	if err = bndle.WriteFile(path, 0644); err != nil {
 		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
+	b.refsMap.appendRef(id, ref)
 	return id, nil
 }
 
 func (b *bundleStore) Read(ref reference.Reference) (*bundle.Bundle, error) {
-	path, err := b.storePath(ref)
+	paths, err := b.storePaths(ref)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
 	}
 
-	data, err := ioutil.ReadFile(filepath.Join(path, "bundle.json"))
+	bndl, err := b.fetchBundleJSON(filepath.Join(paths[0], "bundle.json"))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
 	}
-	var bndle bundle.Bundle
-	if err := json.Unmarshal(data, &bndle); err != nil {
-		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
-	}
-	return &bndle, nil
+	return bndl, nil
 }
 
 // Returns the list of all bundles present in the bundle store
 func (b *bundleStore) List() ([]reference.Reference, error) {
 	var references []reference.Reference
-	digests := filepath.Join(b.path, "_ids")
-	if err := filepath.Walk(b.path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
 
-		if info.IsDir() {
-			return nil
-		}
-
-		if !strings.HasSuffix(info.Name(), ".json") {
-			return nil
-		}
-
-		if strings.HasPrefix(path, digests) {
-			rel := path[len(digests)+1:]
-			dg := strings.Split(filepath.ToSlash(rel), "/")[0]
-			references = append(references, ID{digest.NewDigestFromEncoded(digest.SHA256, dg)})
-			return nil
-		}
-
-		ref, err := b.pathToReference(path)
-		if err != nil {
-			return err
-		}
-
-		references = append(references, ref)
-
-		return nil
-	}); err != nil {
-		return nil, err
+	for _, refAliases := range b.refsMap {
+		references = append(references, refAliases...)
 	}
 
 	sort.Slice(references, func(i, j int) bool {
@@ -140,7 +123,86 @@ func (b *bundleStore) Remove(ref reference.Reference) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New("no such image " + reference.FamiliarString(ref))
 	}
+	b.refsMap.removeRef(ref)
 	return os.RemoveAll(path)
+}
+
+func (b *bundleStore) LookUp(refOrID string) (reference.Reference, error) {
+	ref, err := FromString(refOrID)
+	if err == nil {
+		if _, found := b.refsMap[ref]; !found {
+			return nil, unknownReference(refOrID)
+		}
+		return ref, nil
+	}
+	if isShortID(refOrID) {
+		ref, err := b.matchShortID(refOrID)
+		if err == nil {
+			return ref, nil
+		}
+	}
+	named, err := StringToNamedRef(refOrID)
+	if err != nil {
+		return nil, err
+	}
+	if _, err = b.referenceToID(named); err != nil {
+		return nil, err
+	}
+	return named, nil
+}
+
+func (b *bundleStore) matchShortID(shortID string) (reference.Reference, error) {
+	var found reference.Reference
+	for id := range b.refsMap {
+		if strings.HasPrefix(id.String(), shortID) {
+			if found != nil && found != id {
+				return nil, fmt.Errorf("ambiguous reference found")
+			}
+			found = id
+		}
+	}
+	if found == nil {
+		return nil, unknownReference(shortID)
+	}
+	return found, nil
+}
+
+func (b *bundleStore) referenceToID(ref reference.Reference) (ID, error) {
+	if id, ok := ref.(ID); ok {
+		return id, nil
+	}
+	for id, refs := range b.refsMap {
+		for _, r := range refs {
+			if r == ref {
+				return id, nil
+			}
+		}
+	}
+	return ID{}, unknownReference(reference.FamiliarString(ref))
+}
+
+func (b *bundleStore) storePaths(ref reference.Reference) ([]string, error) {
+	var paths []string
+
+	id, err := b.referenceToID(ref)
+	if err != nil {
+		return nil, err
+	}
+
+	if refs, exist := b.refsMap[id]; exist {
+		for _, rf := range refs {
+			path, err := b.storePath(rf)
+			if err != nil {
+				return nil, err
+			}
+			paths = append(paths, path)
+		}
+	}
+
+	if len(paths) == 0 {
+		return nil, unknownReference(reference.FamiliarString(ref))
+	}
+	return paths, nil
 }
 
 func (b *bundleStore) storePath(ref reference.Reference) (string, error) {
@@ -175,6 +237,66 @@ func (b *bundleStore) storePath(ref reference.Reference) (string, error) {
 	return storeDir, nil
 }
 
+// scanAllBundles scans the bundle store directories and creates the internal map of App image
+// references. This function must be called before any other public BundleStore interface method.
+func (b *bundleStore) scanAllBundles() error {
+	if err := filepath.Walk(b.path, b.processBundleStoreFile); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err error) error {
+	if err != nil {
+		return err
+	}
+	idRefPath := filepath.Join(b.path, "_ids")
+
+	if info.IsDir() {
+		return nil
+	}
+
+	if !strings.HasSuffix(info.Name(), ".json") {
+		return nil
+	}
+
+	if strings.HasPrefix(path, idRefPath) {
+		rel := path[len(idRefPath)+1:]
+		dg := strings.Split(filepath.ToSlash(rel), "/")[0]
+		id := ID{digest.NewDigestFromEncoded(digest.SHA256, dg)}
+		b.refsMap.appendRef(id, id)
+		return nil
+	}
+
+	ref, err := b.pathToReference(path)
+	if err != nil {
+		return err
+	}
+	bndl, err := b.fetchBundleJSON(path)
+	if err != nil {
+		return err
+	}
+	id, err := FromBundle(bndl)
+	if err != nil {
+		return err
+	}
+	b.refsMap[id] = append(b.refsMap[id], ref)
+
+	return nil
+}
+
+func (b *bundleStore) fetchBundleJSON(bundlePath string) (*bundle.Bundle, error) {
+	data, err := ioutil.ReadFile(bundlePath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read file %s", bundlePath)
+	}
+	var bndl bundle.Bundle
+	if err := json.Unmarshal(data, &bndl); err != nil {
+		return nil, errors.Wrapf(err, "failed to read file %s", bundlePath)
+	}
+	return &bndl, nil
+}
+
 func (b *bundleStore) pathToReference(path string) (reference.Named, error) {
 	// Clean the path and remove the local bundle store path
 	cleanpath := filepath.ToSlash(path)
@@ -202,6 +324,30 @@ func (b *bundleStore) pathToReference(path string) (reference.Named, error) {
 	return reference.ParseNamed(name)
 }
 
+func (rm referencesMap) appendRef(id ID, ref reference.Reference) {
+	if _, found := rm[id]; found {
+		if !containsRef(rm[id], ref) {
+			rm[id] = append(rm[id], ref)
+		}
+	} else {
+		rm[id] = []reference.Reference{ref}
+	}
+}
+
+func (rm referencesMap) removeRef(ref reference.Reference) {
+	for id, refs := range rm {
+		for i, r := range refs {
+			if r == ref {
+				rm[id] = append(refs[:i], refs[i+1:]...)
+				if len(rm[id]) == 0 {
+					delete(rm, id)
+				}
+				return
+			}
+		}
+	}
+}
+
 func reconstructNamedReference(path string, paths []string) (string, error) {
 	name, paths := strings.Replace(paths[0], "_", ":", 1), paths[1:]
 	for i, p := range paths {
@@ -222,3 +368,28 @@ func reconstructNamedReference(path string, paths []string) (string, error) {
 	}
 	return name, nil
 }
+
+func containsRef(list []reference.Reference, ref reference.Reference) bool {
+	for _, v := range list {
+		if v == ref {
+			return true
+		}
+	}
+	return false
+}
+
+func unknownReference(ref string) *UnknownReferenceError {
+	return &UnknownReferenceError{ref}
+}
+
+// UnknownReferenceError represents a reference not found in the bundle store
+type UnknownReferenceError struct {
+	string
+}
+
+func (e *UnknownReferenceError) Error() string {
+	return fmt.Sprintf("%s: reference not found", e.string)
+}
+
+// NotFound satisfies interface github.com/docker/docker/errdefs.ErrNotFound
+func (e *UnknownReferenceError) NotFound() {}
