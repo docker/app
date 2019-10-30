@@ -26,5 +26,5 @@ pull request for inclusion in the changelog:
 -->
 
 
-**- A picture of a cute animal (not mandatory but encouraged)**
+**- A picture of a cute animal (not mandatory)**
 
