@@ -300,7 +300,7 @@ unknown-property: value`)
 	assert.NilError(t, err)
 	c, err := Render(app, nil, nil)
 	assert.Assert(t, is.Nil(c))
-	assert.Error(t, err, "failed to load Compose file: unknown-property Additional property unknown-property is not allowed")
+	assert.Error(t, err, "failed to load Compose file: (root) Additional property unknown-property is not allowed")
 }
 
 func TestValidateRenderedApplication(t *testing.T) {

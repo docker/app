@@ -37,11 +37,10 @@
   version = "v0.4.12"
 
 [[projects]]
-  digest = "1:3b7289c340e1043e1b826ba201d4d9ed1eb3ec32a5e8600208ec030afa74f458"
+  digest = "1:e893c4b3dd07ff6aadc49350676a98f462815fa63017570adcf8522fd06f0132"
   name = "github.com/Microsoft/hcsshim"
   packages = [
     ".",
-    "internal/guestrequest",
     "internal/guid",
     "internal/hcs",
     "internal/hcserror",
@@ -58,8 +57,7 @@
     "osversion",
   ]
   pruneopts = "NUT"
-  revision = "f92b8fb9c92e17da496af5a69e3ee13fbe9916e1"
-  version = "v0.8.6"
+  revision = "2226e083fc390003ae5aa8325c3c92789afa0e7a"
 
 [[projects]]
   branch = "master"
@@ -151,11 +149,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:eed35b29da8f6a4f75df1e156e053e969f546f3e625a6c26753839a93def2298"
+  digest = "1:717cd14410b438cd8ec527e3512c13309700977be39992848f8a88abe72af02f"
   name = "github.com/containerd/continuity"
   packages = [
     "fs",
-    "pathdriver",
     "syscallx",
     "sysx",
   ]
@@ -234,7 +231,7 @@
   version = "v0.3.1"
 
 [[projects]]
-  digest = "1:bc88d135d4f5d9a0968a213b3b2d786d1e216b9f10c30720f4d0d4976346732b"
+  digest = "1:995dbc119304c3b7edd6fadbaf77200b75bbba47ed7a9a6d3ff1268cf53ce437"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -289,7 +286,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "d83cd90464377d4164c8f70248d064b979e5ca98"
+  revision = "6318939f30e01585b34eb6a68a54b890a8d54eb0"
 
 [[projects]]
   digest = "1:3314fe819a33c59d1d8c25b35297da7d3137dadef098699e087c50be3ecdd867"
@@ -350,7 +347,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:dfdaff443a9f534cf1d95490e8c51f0eda6024fd4839656504b6a70c08e3ab3c"
+  digest = "1:5b5820e4dbabe9742d8e6de338060fe555aaade0d608fc6f632a4ab2a98851a5"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -394,7 +391,7 @@
     "registry/resumable",
   ]
   pruneopts = "NUT"
-  revision = "8a208a10de6a13ba2d9f65b9955d3594d9b14615"
+  revision = "7cb46617fcc1071963ab59d81082eab3e3ef8f9d"
 
 [[projects]]
   digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
@@ -958,11 +955,12 @@
   revision = "bd5ef7bd5415a7ac448318e64f11a24cd21e594b"
 
 [[projects]]
-  digest = "1:aaf69f944071a4cede9c6559b674b41faeb3a1ecea85aba335d176b88f000333"
+  digest = "1:edc620626ec0133d5d5077fead99ccff6a63f435a55fbf53cbb40df98a0a853d"
   name = "github.com/xeipuuv/gojsonschema"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "93e72a773fade158921402d6a24c819b48aba29d"
+  revision = "82fcdeb203eb6ab2a67d0a623d9c19e5e5a64927"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -1433,6 +1431,7 @@
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/api/types/container",
     "github.com/docker/docker/api/types/mount",
+    "github.com/docker/docker/api/types/swarm",
     "github.com/docker/docker/client",
     "github.com/docker/docker/pkg/archive",
     "github.com/docker/docker/pkg/jsonmessage",
