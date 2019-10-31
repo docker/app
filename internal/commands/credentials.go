@@ -136,6 +136,8 @@ func prepareCredentialSet(b *bundle.Bundle, opts ...credentialSetOpt) (map[strin
 
 	_, requiresDockerContext := b.Credentials[internal.CredentialDockerContextName]
 	_, hasDockerContext := creds[internal.CredentialDockerContextName]
+
+	// FIXME not sure what this mean if we don't have --target-context
 	if requiresDockerContext && !hasDockerContext {
 		return nil, errors.New("no target context specified. Use --target-context= or DOCKER_TARGET_CONTEXT= to define it")
 	}

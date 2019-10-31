@@ -30,7 +30,8 @@ func removeCmd(dockerCli command.Cli) *cobra.Command {
 			return runRemove(dockerCli, args[0], opts)
 		},
 	}
-	opts.addFlags(cmd.Flags())
+	opts.credentialOptions.addFlags(cmd.Flags())
+	opts.installerContextOptions.addFlags(cmd.Flags())
 	cmd.Flags().BoolVar(&opts.force, "force", false, "Force the removal of a running App")
 
 	return cmd
@@ -60,7 +61,7 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 			fmt.Fprintf(os.Stderr, "deletion forced for running App %q\n", installationName)
 		}()
 	}
-	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions)
+	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions, os.Stdout)
 	if err != nil {
 		return err
 	}

@@ -63,6 +63,7 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
+	opts.installerContextOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Assign a name to the installation")
@@ -123,7 +124,7 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 		return err
 	}
 
-	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions)
+	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions, os.Stdout)
 	if err != nil {
 		return err
 	}
@@ -163,6 +164,6 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 		return err2
 	}
 
-	fmt.Fprintf(dockerCli.Out(), "App %q running on context %q\n", installationName, dockerCli.CurrentContext())
+	fmt.Fprintf(os.Stdout, "App %q running on context %q\n", installationName, dockerCli.CurrentContext())
 	return nil
 }

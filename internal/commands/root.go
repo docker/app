@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -116,7 +117,7 @@ func prepareBundleStore() (store.BundleStore, error) {
 	return bundleStore, nil
 }
 
-func setupDriver(installation *store.Installation, dockerCli command.Cli, opts installerContextOptions) (driver.Driver, *bytes.Buffer, error) {
+func setupDriver(installation *appstore.Installation, dockerCli command.Cli, opts installerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
 	dockerCli, err := opts.setInstallerContext(dockerCli)
 	if err != nil {
 		return nil, nil, err
@@ -125,7 +126,7 @@ func setupDriver(installation *store.Installation, dockerCli command.Cli, opts i
 	if err != nil {
 		return nil, nil, err
 	}
-	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
+	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, stdout)
 	return driverImpl, errBuf, nil
 }
 
@@ -143,12 +144,15 @@ type installerContextOptions struct {
 	installerContext string
 }
 
-func (o *installerContextOptions) addFlag(flags *pflag.FlagSet) {
-	flags.StringVar(&o.installerContext, "installer-context", "", "Context on which the installer image is ran (default: <current-context>)")
+func (o *installerContextOptions) addFlags(flags *pflag.FlagSet) {
+	defaultContext, ok := os.LookupEnv("DOCKER_INSTALLER_CONTEXT")
+	if !ok {
+		defaultContext = "default"
+	}
+	flags.StringVar(&o.installerContext, "installer-context", defaultContext, "Context on which the installer image is ran")
 }
 
 func (o *installerContextOptions) setInstallerContext(dockerCli command.Cli) (command.Cli, error) {
-	o.installerContext = getTargetContext(o.installerContext, dockerCli.CurrentContext())
 	if o.installerContext != dockerCli.CurrentContext() {
 		if _, err := dockerCli.ContextStore().GetMetadata(o.installerContext); err != nil {
 			return nil, errors.Wrapf(err, "Unknown docker context %s", o.installerContext)
@@ -177,20 +181,6 @@ func (o *installerContextOptions) setInstallerContext(dockerCli command.Cli) (co
 		return cli, nil
 	}
 	return dockerCli, nil
-}
-
-func getTargetContext(optstargetContext, currentContext string) string {
-	var targetContext string
-	switch {
-	case optstargetContext != "":
-		targetContext = optstargetContext
-	case os.Getenv("INSTALLER_TARGET_CONTEXT") != "":
-		targetContext = os.Getenv("INSTALLER_TARGET_CONTEXT")
-	}
-	if targetContext == "" {
-		targetContext = currentContext
-	}
-	return targetContext
 }
 
 type credentialOptions struct {

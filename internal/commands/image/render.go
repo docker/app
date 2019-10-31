@@ -40,6 +40,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
+	opts.installerContextOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVarP(&opts.renderOutput, "output", "o", "-", "Output file")
 	cmd.Flags().StringVar(&opts.formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
 
@@ -65,7 +66,7 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 	}
 	installation.Parameters[internal.ParameterRenderFormatName] = opts.formatDriver
 
-	if err := action.Run(&installation.Claim, nil, nil); err != nil {
+	if err := action.Run(&installation.Claim, nil, w); err != nil {
 		return fmt.Errorf("render failed: %s\n%s", err, errBuf)
 	}
 	return nil
@@ -97,7 +98,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 		return nil, nil, nil, err
 	}
 
-	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions)
+	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions, stdout)
 	if err != nil {
 		return nil, nil, nil, err
 	}
