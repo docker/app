@@ -208,7 +208,6 @@ func TestRunWithLabels(t *testing.T) {
 			"myapp_db", "myapp_web", "myapp_api",
 		}
 		for _, service := range services {
-			fmt.Printf("%q", service)
 			cmd.Command = dockerCli.Command("inspect", service)
 			icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 				ExitCode: 0,
