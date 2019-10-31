@@ -23,11 +23,24 @@ type DockerAppCustom struct {
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
+// DockerAppArgs represent the object passed to the invocation image
+// by Docker App.
+type DockerAppArgs struct {
+	// Labels are the labels to add to containers on run
+	Labels map[string]string `json:"labels,omitempty"`
+}
+
 // ToCNAB creates a CNAB bundle from an app package
 func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) {
 	mapping := ExtractCNABParameterMapping(app.Parameters())
 	flatParameters := app.Parameters().Flatten()
 	definitions := definition.Definitions{
+		internal.ParameterArgs: {
+			Type:        "string",
+			Default:     "",
+			Title:       "Arguments",
+			Description: "Arguments that are passed by file to the invocation image",
+		},
 		internal.ParameterOrchestratorName: {
 			Type: "string",
 			Enum: []interface{}{
@@ -73,6 +86,16 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		},
 	}
 	parameters := map[string]bundle.Parameter{
+		internal.ParameterArgs: {
+			Destination: &bundle.Location{
+				Path: internal.DockerArgsPath,
+			},
+			ApplyTo: []string{
+				"install",
+				"upgrade",
+			},
+			Definition: internal.ParameterArgs,
+		},
 		internal.ParameterOrchestratorName: {
 			Destination: &bundle.Location{
 				EnvironmentVariable: internal.DockerStackOrchestratorEnvVar,

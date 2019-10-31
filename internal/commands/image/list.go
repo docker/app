@@ -107,7 +107,7 @@ func printImageIDs(dockerCli command.Cli, refs []pkg) error {
 		}
 		fmt.Fprintln(&buf, stringid.TruncateID(id.String()))
 	}
-	fmt.Fprintf(dockerCli.Out(), buf.String())
+	fmt.Fprint(dockerCli.Out(), buf.String())
 	return nil
 }
 

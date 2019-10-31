@@ -25,6 +25,7 @@ type runOptions struct {
 	kubeNamespace string
 	stackName     string
 	cnabBundle    string
+	labels        []string
 }
 
 const longDescription = `Run an App from an App image.`
@@ -59,10 +60,11 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.parametersOptions.addFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to run on (swarm, kubernetes)")
-	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace in which to run the App")
-	cmd.Flags().StringVar(&opts.stackName, "name", "", "Name of the running App")
-	cmd.Flags().StringVar(&opts.cnabBundle, "cnab-bundle-json", "", "Run a CNAB bundle instead of a Docker App image")
+	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
+	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
+	cmd.Flags().StringVar(&opts.stackName, "name", "", "Assign a name to the installation")
+	cmd.Flags().StringVar(&opts.cnabBundle, "cnab-bundle-json", "", "Run a CNAB bundle instead of a Docker App")
+	cmd.Flags().StringArrayVar(&opts.labels, "label", nil, "Label to add to services")
 
 	return cmd
 }
@@ -130,6 +132,7 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	if err := mergeBundleParameters(installation,
 		withFileParameters(opts.parametersFiles),
 		withCommandLineParameters(opts.overrides),
+		withLabels(opts.labels),
 		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
 		withSendRegistryAuth(opts.sendRegistryAuth),
 	); err != nil {

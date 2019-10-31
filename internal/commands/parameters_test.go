@@ -2,6 +2,8 @@ package commands
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/store"
 	"gotest.tools/assert"
 	"gotest.tools/assert/cmp"
@@ -263,4 +266,42 @@ func TestMergeBundleParameters(t *testing.T) {
 		err := mergeBundleParameters(i, withInvalidValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})
+}
+
+func TestLabels(t *testing.T) {
+	expected := packager.DockerAppArgs{
+		Labels: map[string]string{
+			"label": "value",
+		},
+	}
+	expectedStr, err := json.Marshal(expected)
+	assert.NilError(t, err)
+
+	labels := []string{
+		"label=value",
+	}
+	op := withLabels(labels)
+
+	config := &mergeBundleConfig{
+		bundle: &bundle.Bundle{
+			Parameters: map[string]bundle.Parameter{
+				internal.ParameterArgs: {},
+			},
+		},
+		params: map[string]string{},
+	}
+	err = op(config)
+	assert.NilError(t, err)
+	fmt.Println(config.params)
+	l := config.params[internal.ParameterArgs]
+	assert.Equal(t, l, string(expectedStr))
+}
+
+func TestInvalidLabels(t *testing.T) {
+	labels := []string{
+		"com.docker.app.label=value",
+	}
+	op := withLabels(labels)
+	err := op(&mergeBundleConfig{})
+	assert.ErrorContains(t, err, fmt.Sprintf("labels cannot start with %q", internal.Namespace))
 }

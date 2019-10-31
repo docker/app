@@ -52,6 +52,8 @@ const (
 	ParameterRenderFormatName = Namespace + "render-format"
 	// ParameterInspectFormatName is the name of the parameter containing the inspect format
 	ParameterInspectFormatName = Namespace + "inspect-format"
+	// ParameterArgs is the name of the parameter containing labels to be applied to service containers
+	ParameterArgs = Namespace + "args"
 	// ParameterShareRegistryCredsName is the name of the parameter which indicates if credentials should be shared
 	ParameterShareRegistryCredsName = Namespace + "share-registry-creds"
 
@@ -67,6 +69,8 @@ const (
 	// DockerInspectFormatEnvVar is the environment variable set by the CNAB runtime to select
 	// the inspect output format.
 	DockerInspectFormatEnvVar = "DOCKER_INSPECT_FORMAT"
+
+	DockerArgsPath = "/cnab/app/args.json"
 
 	// CustomDockerAppName is the custom variable set by Docker App to
 	// save custom informations
