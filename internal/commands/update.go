@@ -33,6 +33,7 @@ func updateCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
+	opts.installerContextOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "image", "", "Override the running App with another App image")
 
 	return cmd
@@ -70,7 +71,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		return err
 	}
 
-	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions)
+	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions, os.Stdout)
 	if err != nil {
 		return err
 	}
