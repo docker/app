@@ -91,6 +91,11 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	todo(info)
 }
 
+func build(t *testing.T, cmd icmd.Cmd, dockerCli dockerCliCommand, ref, path string) {
+	cmd.Command = dockerCli.Command("app", "build", "-t", ref, path)
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+}
+
 // Container represents a docker container
 type Container struct {
 	image           string
