@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
@@ -77,6 +78,9 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	}
 	bundle, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
 	if err != nil {
+		if strings.HasSuffix(appname, ".dockerapp") {
+			return nil, nil, nil, fmt.Errorf("%q looks like a docker App directory and App must be built first before rendering", appname)
+		}
 		return nil, nil, nil, err
 	}
 	installation, err := appstore.NewInstallation("custom-action", ref.String())
