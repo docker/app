@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	delimiter    = "\\$"
-	substitution = "[_a-z][._a-z0-9]*(?::?[-?][^}]*)?"
+	delimiter           = "\\$"
+	substitution        = "[_a-z][._a-z0-9-]*"
+	composeSubstitution = "[_a-z][._a-z0-9]*(?::?[-?][^}]*)?"
 )
 
 var (
@@ -21,8 +22,15 @@ var (
 		"%s(?i:(?P<escaped>%s)|(?P<named>%s)|{(?P<braced>%s)}|(?P<invalid>))",
 		delimiter, delimiter, substitution, substitution,
 	)
+	composePatternString = fmt.Sprintf(
+		"%s(?i:(?P<escaped>%s)|(?P<named>%s)|{(?P<braced>%s)}|(?P<invalid>))",
+		delimiter, delimiter, composeSubstitution, composeSubstitution,
+	)
 	// ExtrapolationPattern is the variable regexp pattern used to interpolate or extract variables when rendering
 	ExtrapolationPattern = regexp.MustCompile(patternString)
+	// ComposeExtrapolationPattern is the compose original variable regexp pattern used to interpolate or extract
+	// variables when rendering. This pattern is only used when a docherapp file is initialized from a compose file
+	ComposeExtrapolationPattern = regexp.MustCompile(composePatternString)
 )
 
 // Load applies the specified function when loading a slice of compose data

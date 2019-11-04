@@ -1,0 +1,16 @@
+version: 0.1.0
+name: myapp
+maintainers:
+  - name: dev
+    email: dev@example.com
+---
+version: "3.0"
+services:
+  test:
+    image: alpine:latest
+    command: echo ${texts.first} ${texts.second-1} ${texts.second-2}
+---
+texts:
+  first: "brave"
+  second-1: "gnu"
+  second-2: "world"

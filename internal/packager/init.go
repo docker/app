@@ -105,7 +105,7 @@ func initFromComposeFile(name string, composeFile string) error {
 			}
 		}
 	}
-	vars, err := compose.ExtractVariables(composeRaw, compose.ExtrapolationPattern)
+	vars, err := compose.ExtractVariables(composeRaw, compose.ComposeExtrapolationPattern)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse compose file")
 	}
