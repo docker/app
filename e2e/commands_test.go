@@ -75,16 +75,14 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 	}
 }
 
-func TestRenderAppDirectoryFails(t *testing.T) {
+func TestRenderAppNotFound(t *testing.T) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
-	appPath := filepath.Join("testdata", "envfile", "envfile.dockerapp")
 
-	cmd.Command = dockerCli.Command("app", "render", appPath)
-	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
-		ExitCode: 1,
-		Err:      fmt.Sprintf("%q looks like a docker App directory and App must be built first before rendering", appPath),
-	})
+	appName := "non_existing_app:some_tag"
+	cmd.Command = dockerCli.Command("app", "render", appName)
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1}).Combined(),
+		[]string{fmt.Sprintf("could not render %q: no such App image", appName)})
 }
 
 func TestRenderFormatters(t *testing.T) {

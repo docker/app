@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
@@ -14,6 +13,7 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -78,10 +78,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	}
 	bundle, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
 	if err != nil {
-		if strings.HasSuffix(appname, ".dockerapp") {
-			return nil, nil, nil, fmt.Errorf("%q looks like a docker App directory and App must be built first before rendering", appname)
-		}
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrapf(err, "could not render %q: no such App image", appname)
 	}
 	installation, err := appstore.NewInstallation("custom-action", ref.String())
 	if err != nil {
