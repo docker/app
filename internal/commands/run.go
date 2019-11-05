@@ -9,6 +9,7 @@ import (
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/cnab-go/credentials"
+	bdl "github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
@@ -129,12 +130,12 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
 	installation.Bundle = bndl
 
-	if err := mergeBundleParameters(installation,
-		withFileParameters(opts.parametersFiles),
-		withCommandLineParameters(opts.overrides),
-		withLabels(opts.labels),
-		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
-		withSendRegistryAuth(opts.sendRegistryAuth),
+	if err := bdl.MergeBundleParameters(installation,
+		bdl.WithFileParameters(opts.parametersFiles),
+		bdl.WithCommandLineParameters(opts.overrides),
+		bdl.WithLabels(opts.labels),
+		bdl.WithOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
+		bdl.WithSendRegistryAuth(opts.sendRegistryAuth),
 	); err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package commands
+package image
 
 import (
 	"bytes"
@@ -6,8 +6,11 @@ import (
 	"io"
 	"os"
 
+	"github.com/spf13/pflag"
+
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
+	bdl "github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cnab"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
@@ -16,6 +19,16 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
+
+type parametersOptions struct {
+	ParametersFiles []string
+	Overrides       []string
+}
+
+func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
+	flags.StringArrayVar(&o.ParametersFiles, "parameters-file", []string{}, "Override parameters file")
+	flags.StringArrayVarP(&o.Overrides, "set", "s", []string{}, "Override parameter value")
+}
 
 type renderOptions struct {
 	parametersOptions
@@ -86,9 +99,9 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	}
 	installation.Bundle = bundle
 
-	if err := mergeBundleParameters(installation,
-		withFileParameters(paramsOpts.parametersFiles),
-		withCommandLineParameters(paramsOpts.overrides),
+	if err := bdl.MergeBundleParameters(installation,
+		bdl.WithFileParameters(paramsOpts.ParametersFiles),
+		bdl.WithCommandLineParameters(paramsOpts.Overrides),
 	); err != nil {
 		return nil, nil, nil, err
 	}

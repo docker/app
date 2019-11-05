@@ -1,4 +1,4 @@
-package commands
+package bundle
 
 import (
 	"bytes"
@@ -31,8 +31,8 @@ overridden: bar`))
 	actual := map[string]string{
 		"overridden": "foo",
 	}
-	err := withFileParameters([]string{tmpDir.Join("params.yaml")})(
-		&mergeBundleConfig{
+	err := WithFileParameters([]string{tmpDir.Join("params.yaml")})(
+		&MergeBundleConfig{
 			bundle: bundle,
 			params: actual,
 		})
@@ -51,8 +51,8 @@ func TestWithCommandLineParameters(t *testing.T) {
 		"overridden": "foo",
 	}
 
-	err := withCommandLineParameters([]string{"param1.param2=value1", "param3=3", "overridden=bar"})(
-		&mergeBundleConfig{
+	err := WithCommandLineParameters([]string{"param1.param2=value1", "param3=3", "overridden=bar"})(
+		&MergeBundleConfig{
 			bundle: bundle,
 			params: actual,
 		})
@@ -145,7 +145,7 @@ func TestWithOrchestratorParameters(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			actual := map[string]string{}
-			err := withOrchestratorParameters("kubernetes", "my-namespace")(&mergeBundleConfig{
+			err := WithOrchestratorParameters("kubernetes", "my-namespace")(&MergeBundleConfig{
 				bundle: testCase.bundle,
 				params: actual,
 			})
@@ -157,17 +157,17 @@ func TestWithOrchestratorParameters(t *testing.T) {
 
 func TestMergeBundleParameters(t *testing.T) {
 	t.Run("Override Order", func(t *testing.T) {
-		first := func(c *mergeBundleConfig) error {
+		first := func(c *MergeBundleConfig) error {
 			c.params["param"] = "first"
 			return nil
 		}
-		second := func(c *mergeBundleConfig) error {
+		second := func(c *MergeBundleConfig) error {
 			c.params["param"] = "second"
 			return nil
 		}
 		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i,
+		err := MergeBundleParameters(i,
 			first,
 			second,
 		)
@@ -181,7 +181,7 @@ func TestMergeBundleParameters(t *testing.T) {
 	t.Run("Default values", func(t *testing.T) {
 		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i)
+		err := MergeBundleParameters(i)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
 			"param": "default",
@@ -190,13 +190,13 @@ func TestMergeBundleParameters(t *testing.T) {
 	})
 
 	t.Run("Converting values", func(t *testing.T) {
-		withIntValue := func(c *mergeBundleConfig) error {
+		withIntValue := func(c *MergeBundleConfig) error {
 			c.params["param"] = "1"
 			return nil
 		}
 		bundle := prepareBundle(withParameter("param", "integer"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i, withIntValue)
+		err := MergeBundleParameters(i, withIntValue)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
 			"param": 1,
@@ -207,7 +207,7 @@ func TestMergeBundleParameters(t *testing.T) {
 	t.Run("Default values", func(t *testing.T) {
 		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i)
+		err := MergeBundleParameters(i)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
 			"param": "default",
@@ -216,54 +216,54 @@ func TestMergeBundleParameters(t *testing.T) {
 	})
 
 	t.Run("Undefined parameter throws warning", func(t *testing.T) {
-		withUndefined := func(c *mergeBundleConfig) error {
+		withUndefined := func(c *MergeBundleConfig) error {
 			c.params["param"] = "1"
 			return nil
 		}
 		bundle := prepareBundle()
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
 		buf := new(bytes.Buffer)
-		err := mergeBundleParameters(i, withUndefined, withErrorWriter(buf))
+		err := MergeBundleParameters(i, withUndefined, WithErrorWriter(buf))
 		assert.NilError(t, err)
 		assert.Assert(t, strings.Contains(buf.String(), "is not defined in the bundle"))
 	})
 
 	t.Run("Warn on undefined parameter", func(t *testing.T) {
-		withUndefined := func(c *mergeBundleConfig) error {
+		withUndefined := func(c *MergeBundleConfig) error {
 			c.params["param"] = "1"
 			return nil
 		}
 		w := bytes.NewBuffer(nil)
-		withStdErr := func(c *mergeBundleConfig) error {
+		withStdErr := func(c *MergeBundleConfig) error {
 			c.stderr = w
 			return nil
 		}
 		bundle := prepareBundle()
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i, withUndefined, withStdErr)
+		err := MergeBundleParameters(i, withUndefined, withStdErr)
 		assert.NilError(t, err)
 		assert.Equal(t, w.String(), "Warning: parameter \"param\" is not defined in the bundle\n")
 	})
 
 	t.Run("Invalid type is rejected", func(t *testing.T) {
-		withIntValue := func(c *mergeBundleConfig) error {
+		withIntValue := func(c *MergeBundleConfig) error {
 			c.params["param"] = "foo"
 			return nil
 		}
 		bundle := prepareBundle(withParameter("param", "integer"))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i, withIntValue)
+		err := MergeBundleParameters(i, withIntValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})
 
 	t.Run("Invalid value is rejected", func(t *testing.T) {
-		withInvalidValue := func(c *mergeBundleConfig) error {
+		withInvalidValue := func(c *MergeBundleConfig) error {
 			c.params["param"] = "invalid"
 			return nil
 		}
 		bundle := prepareBundle(withParameterAndValues("param", "string", []interface{}{"valid"}))
 		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
-		err := mergeBundleParameters(i, withInvalidValue)
+		err := MergeBundleParameters(i, withInvalidValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})
 }
@@ -280,9 +280,9 @@ func TestLabels(t *testing.T) {
 	labels := []string{
 		"label=value",
 	}
-	op := withLabels(labels)
+	op := WithLabels(labels)
 
-	config := &mergeBundleConfig{
+	config := &MergeBundleConfig{
 		bundle: &bundle.Bundle{
 			Parameters: map[string]bundle.Parameter{
 				internal.ParameterArgs: {},
@@ -301,7 +301,7 @@ func TestInvalidLabels(t *testing.T) {
 	labels := []string{
 		"com.docker.app.label=value",
 	}
-	op := withLabels(labels)
-	err := op(&mergeBundleConfig{})
+	op := WithLabels(labels)
+	err := op(&MergeBundleConfig{})
 	assert.ErrorContains(t, err, fmt.Sprintf("labels cannot start with %q", internal.Namespace))
 }

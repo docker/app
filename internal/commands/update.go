@@ -6,6 +6,7 @@ import (
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
+	"github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -60,10 +61,10 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		}
 		installation.Bundle = b
 	}
-	if err := mergeBundleParameters(installation,
-		withFileParameters(opts.parametersFiles),
-		withCommandLineParameters(opts.overrides),
-		withSendRegistryAuth(opts.sendRegistryAuth),
+	if err := bundle.MergeBundleParameters(installation,
+		bundle.WithFileParameters(opts.parametersFiles),
+		bundle.WithCommandLineParameters(opts.overrides),
+		bundle.WithSendRegistryAuth(opts.sendRegistryAuth),
 	); err != nil {
 		return err
 	}
