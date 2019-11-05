@@ -12,7 +12,10 @@ func TestRenderWithEnvFile(t *testing.T) {
 	defer cleanup()
 	appPath := filepath.Join("testdata", "envfile", "envfile.dockerapp")
 
-	cmd.Command = dockerCli.Command("app", "render", appPath)
+	cmd.Command = dockerCli.Command("app", "build", "-f", appPath, "--tag", "a-simple-tag", "--no-resolve-image", ".")
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+	cmd.Command = dockerCli.Command("app", "render", "a-simple-tag")
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{Out: `version: "3.7"
 services:
   db:

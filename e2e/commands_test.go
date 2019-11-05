@@ -48,11 +48,16 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		dir := fs.NewDir(t, "")
 		defer dir.Remove()
 
+		// Build the App
+		cmd.Command = dockerCli.Command("app", "build", ".", "--folder", filepath.Join(appPath, "my.dockerapp"), "--tag", "a-simple-tag", "--no-resolve-image")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		// Render the App
 		envParameters := map[string]string{}
 		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
 		assert.NilError(t, err)
 		assert.NilError(t, yaml.Unmarshal(data, &envParameters))
-		args := dockerCli.Command("app", "render", filepath.Join(appPath, "my.dockerapp"), "--parameters-file", filepath.Join(appPath, "parameters-0.yml"))
+		args := dockerCli.Command("app", "render", "a-simple-tag", "--parameters-file", filepath.Join(appPath, "parameters-0.yml"))
 		for k, v := range envParameters {
 			args = append(args, "--set", fmt.Sprintf("%s=%s", k, v))
 		}
@@ -68,6 +73,16 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 			assert.Assert(t, is.Equal(readFile(t, filepath.Join(appPath, "expected.txt")), readFile(t, dir.Join("actual.yaml"))), "rendering mismatch")
 		})
 	}
+}
+
+func TestRenderAppNotFound(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
+	appName := "non_existing_app:some_tag"
+	cmd.Command = dockerCli.Command("app", "render", appName)
+	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1}).Combined(),
+		[]string{fmt.Sprintf("could not render %q: no such App image", appName)})
 }
 
 func TestRenderFormatters(t *testing.T) {
