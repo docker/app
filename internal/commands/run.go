@@ -121,7 +121,7 @@ func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, r
 	} else {
 		logrus.Debug(err)
 	}
-	installation, err := store.NewInstallation(installationName, ref)
+	installation, err := store.NewInstallation(installationName, ref, bndl)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,6 @@ func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, r
 	if err != nil {
 		return err
 	}
-	installation.Bundle = bndl.Bundle
 
 	if err := bdl.MergeBundleParameters(installation,
 		bdl.WithFileParameters(opts.ParametersFiles),

@@ -66,11 +66,10 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if err != nil {
 		return err
 	}
-	installation, err := appstore.NewInstallation("custom-action", ref.String())
+	installation, err := appstore.NewInstallation("custom-action", ref.String(), bndl)
 	if err != nil {
 		return err
 	}
-	installation.Bundle = bndl.Bundle
 	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
 	if err != nil {
 		return err

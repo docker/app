@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/docker/app/internal/relocated"
+
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/deislabs/cnab-go/claim"
@@ -113,10 +115,10 @@ func withParameterAndValues(name, typ string, allowedValues []interface{}) bundl
 	}
 }
 
-func prepareBundle(ops ...bundleOperator) *bundle.Bundle {
-	b := &bundle.Bundle{}
+func prepareBundle(ops ...bundleOperator) *relocated.Bundle {
+	b := relocated.FromBundle(&bundle.Bundle{})
 	for _, op := range ops {
-		op(b)
+		op(b.Bundle)
 	}
 	return b
 }
@@ -124,7 +126,7 @@ func prepareBundle(ops ...bundleOperator) *bundle.Bundle {
 func TestWithOrchestratorParameters(t *testing.T) {
 	testCases := []struct {
 		name     string
-		bundle   *bundle.Bundle
+		bundle   *relocated.Bundle
 		expected map[string]string
 	}{
 		{
@@ -146,7 +148,7 @@ func TestWithOrchestratorParameters(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			actual := map[string]string{}
 			err := WithOrchestratorParameters("kubernetes", "my-namespace")(&MergeBundleConfig{
-				bundle: testCase.bundle,
+				bundle: testCase.bundle.Bundle,
 				params: actual,
 			})
 			assert.NilError(t, err)
@@ -166,7 +168,10 @@ func TestMergeBundleParameters(t *testing.T) {
 			return nil
 		}
 		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
-		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
+		i := &store.Installation{
+			Claim:         claim.Claim{Bundle: bundle.Bundle},
+			RelocationMap: bundle.RelocationMap,
+		}
 		err := MergeBundleParameters(i,
 			first,
 			second,
@@ -180,7 +185,10 @@ func TestMergeBundleParameters(t *testing.T) {
 
 	t.Run("Default values", func(t *testing.T) {
 		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
-		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
+		i := &store.Installation{
+			Claim:         claim.Claim{Bundle: bundle.Bundle},
+			RelocationMap: bundle.RelocationMap,
+		}
 		err := MergeBundleParameters(i)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
@@ -195,7 +203,10 @@ func TestMergeBundleParameters(t *testing.T) {
 			return nil
 		}
 		bundle := prepareBundle(withParameter("param", "integer"))
-		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
+		i := &store.Installation{
+			Claim:         claim.Claim{Bundle: bundle.Bundle},
+			RelocationMap: bundle.RelocationMap,
+		}
 		err := MergeBundleParameters(i, withIntValue)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
@@ -206,7 +217,10 @@ func TestMergeBundleParameters(t *testing.T) {
 
 	t.Run("Default values", func(t *testing.T) {
 		bundle := prepareBundle(withParameterAndDefault("param", "string", "default"))
-		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
+		i := &store.Installation{
+			Claim:         claim.Claim{Bundle: bundle.Bundle},
+			RelocationMap: bundle.RelocationMap,
+		}
 		err := MergeBundleParameters(i)
 		assert.NilError(t, err)
 		expected := map[string]interface{}{
@@ -221,7 +235,10 @@ func TestMergeBundleParameters(t *testing.T) {
 			return nil
 		}
 		bundle := prepareBundle()
-		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
+		i := &store.Installation{
+			Claim:         claim.Claim{Bundle: bundle.Bundle},
+			RelocationMap: bundle.RelocationMap,
+		}
 		buf := new(bytes.Buffer)
 		err := MergeBundleParameters(i, withUndefined, WithErrorWriter(buf))
 		assert.NilError(t, err)
@@ -239,7 +256,10 @@ func TestMergeBundleParameters(t *testing.T) {
 			return nil
 		}
 		bundle := prepareBundle()
-		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
+		i := &store.Installation{
+			Claim:         claim.Claim{Bundle: bundle.Bundle},
+			RelocationMap: bundle.RelocationMap,
+		}
 		err := MergeBundleParameters(i, withUndefined, withStdErr)
 		assert.NilError(t, err)
 		assert.Equal(t, w.String(), "Warning: parameter \"param\" is not defined in the bundle\n")
@@ -251,7 +271,10 @@ func TestMergeBundleParameters(t *testing.T) {
 			return nil
 		}
 		bundle := prepareBundle(withParameter("param", "integer"))
-		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
+		i := &store.Installation{
+			Claim:         claim.Claim{Bundle: bundle.Bundle},
+			RelocationMap: bundle.RelocationMap,
+		}
 		err := MergeBundleParameters(i, withIntValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})
@@ -262,7 +285,10 @@ func TestMergeBundleParameters(t *testing.T) {
 			return nil
 		}
 		bundle := prepareBundle(withParameterAndValues("param", "string", []interface{}{"valid"}))
-		i := &store.Installation{Claim: claim.Claim{Bundle: bundle}}
+		i := &store.Installation{
+			Claim:         claim.Claim{Bundle: bundle.Bundle},
+			RelocationMap: bundle.RelocationMap,
+		}
 		err := MergeBundleParameters(i, withInvalidValue)
 		assert.ErrorContains(t, err, "invalid value for parameter")
 	})

@@ -91,11 +91,10 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "could not render %q: no such App image", appname)
 	}
-	installation, err := appstore.NewInstallation("custom-action", ref.String())
+	installation, err := appstore.NewInstallation("custom-action", ref.String(), bundle)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	installation.Bundle = bundle.Bundle
 
 	if err := bdl.MergeBundleParameters(installation,
 		bdl.WithFileParameters(opts.ParametersFiles),
