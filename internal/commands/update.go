@@ -63,7 +63,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		if err != nil {
 			return err
 		}
-		installation.Bundle = b
+		installation.Bundle = b.Bundle
 	}
 	if err := bundle.MergeBundleParameters(installation,
 		bundle.WithFileParameters(opts.ParametersFiles),

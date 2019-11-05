@@ -70,7 +70,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if err != nil {
 		return err
 	}
-	installation.Bundle = bndl
+	installation.Bundle = bndl.Bundle
 	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
 	if err != nil {
 		return err

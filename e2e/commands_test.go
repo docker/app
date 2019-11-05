@@ -12,6 +12,7 @@ import (
 
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/relocated"
 	"github.com/docker/app/internal/yaml"
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
@@ -205,7 +206,7 @@ func TestRunOnlyOne(t *testing.T) {
 		Err:      `"docker app run" requires exactly 1 argument.`,
 	})
 
-	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", "bundle.json", "myapp")
+	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", relocated.BundleFilename, "myapp")
 	icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 		ExitCode: 1,
 		Err:      `"docker app run" cannot run a bundle and an App image`,
@@ -348,14 +349,14 @@ func TestCredentials(t *testing.T) {
 	assert.NilError(t, err)
 	bundleJSON := golden.Get(t, "credential-install-bundle.json")
 	tmpDir := fs.NewDir(t, t.Name(),
-		fs.WithFile("bundle.json", "", fs.WithBytes(bundleJSON)),
+		fs.WithFile(relocated.BundleFilename, "", fs.WithBytes(bundleJSON)),
 		fs.WithDir("local",
 			fs.WithFile("test-creds.yaml", "", fs.WithBytes(buf)),
 		),
 	)
 	defer tmpDir.Remove()
 
-	bundle := tmpDir.Join("bundle.json")
+	bundle := tmpDir.Join(relocated.BundleFilename)
 
 	t.Run("missing", func(t *testing.T) {
 		cmd.Command = dockerCli.Command(

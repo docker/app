@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/docker/app/internal/relocated"
+
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types"
@@ -71,7 +73,7 @@ func MakeCNABImageName(appName, appVersion, suffix string) (string, error) {
 }
 
 // PersistInBundleStore do store a bundle with optional reference and return it's ID
-func PersistInBundleStore(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error) {
+func PersistInBundleStore(ref reference.Reference, bndl *bundle.Bundle) (reference.Digested, error) {
 	appstore, err := store.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, err
@@ -80,7 +82,7 @@ func PersistInBundleStore(ref reference.Reference, bndle *bundle.Bundle) (refere
 	if err != nil {
 		return nil, err
 	}
-	return bundleStore.Store(ref, bndle)
+	return bundleStore.Store(ref, relocated.FromBundle(bndl))
 }
 
 func GetNamedTagged(tag string) (reference.NamedTagged, error) {

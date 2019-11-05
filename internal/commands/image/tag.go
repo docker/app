@@ -3,7 +3,8 @@ package image
 import (
 	"fmt"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/app/internal/relocated"
+
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/config"
@@ -46,7 +47,7 @@ func runTag(bundleStore store.BundleStore, srcAppImage, destAppImage string) err
 	return storeBundle(srcRef, destAppImage, bundleStore)
 }
 
-func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, error) {
+func readBundle(name string, bundleStore store.BundleStore) (*relocated.Bundle, error) {
 	cnabRef, err := bundleStore.LookUp(name)
 	if err != nil {
 		switch err.(type) {
@@ -65,7 +66,7 @@ func readBundle(name string, bundleStore store.BundleStore) (*bundle.Bundle, err
 	return bundle, nil
 }
 
-func storeBundle(bundle *bundle.Bundle, name string, bundleStore store.BundleStore) error {
+func storeBundle(bundle *relocated.Bundle, name string, bundleStore store.BundleStore) error {
 	cnabRef, err := store.StringToNamedRef(name)
 	if err != nil {
 		return err

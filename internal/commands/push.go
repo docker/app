@@ -8,8 +8,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/store"
+
 	"github.com/containerd/containerd/platforms"
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/log"
@@ -51,9 +53,14 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runPush(dockerCli command.Cli, name string) error {
+	bundleStore, err := prepareBundleStore()
+	if err != nil {
+		return err
+	}
+
 	defer muteDockerCli(dockerCli)()
 	// Get the bundle
-	bndl, ref, err := resolveReferenceAndBundle(dockerCli, name)
+	bndl, ref, err := resolveReferenceAndBundle(dockerCli, bundleStore, name)
 	if err != nil {
 		return err
 	}
@@ -68,12 +75,7 @@ func runPush(dockerCli command.Cli, name string) error {
 	return pushBundle(dockerCli, bndl, cnabRef)
 }
 
-func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bundle, string, error) {
-	bundleStore, err := prepareBundleStore()
-	if err != nil {
-		return nil, "", err
-	}
-
+func resolveReferenceAndBundle(dockerCli command.Cli, bundleStore store.BundleStore, name string) (*relocated.Bundle, string, error) {
 	bndl, ref, err := cnab.ResolveBundle(dockerCli, bundleStore, name)
 	if err != nil {
 		return nil, "", err
@@ -84,7 +86,7 @@ func resolveReferenceAndBundle(dockerCli command.Cli, name string) (*bundle.Bund
 	return bndl, ref, err
 }
 
-func pushBundle(dockerCli command.Cli, bndl *bundle.Bundle, cnabRef reference.Named) error {
+func pushBundle(dockerCli command.Cli, bndl *relocated.Bundle, cnabRef reference.Named) error {
 	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
 		return errors.Wrap(err, "could not retrieve insecure registries")
@@ -100,13 +102,14 @@ func pushBundle(dockerCli command.Cli, bndl *bundle.Bundle, cnabRef reference.Na
 		remotes.WithPushImages(dockerCli.Client(), dockerCli.Out()),
 	}
 	// bundle fixup
-	relocationMap, err := remotes.FixupBundle(context.Background(), bndl, cnabRef, resolver, fixupOptions...)
+	relocationMap, err := remotes.FixupBundle(context.Background(), bndl.Bundle, cnabRef, resolver, fixupOptions...)
 	if err != nil {
 		return errors.Wrapf(err, "fixing up %q for push", cnabRef)
 	}
+	bndl.RelocationMap = relocationMap
 	// push bundle manifest
 	logrus.Debugf("Pushing the bundle %q", cnabRef)
-	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl, relocationMap, cnabRef, resolver, true, withAppAnnotations)
+	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl.Bundle, bndl.RelocationMap, cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %q", cnabRef)
 	}

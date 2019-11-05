@@ -95,7 +95,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	installation.Bundle = bundle
+	installation.Bundle = bundle.Bundle
 
 	if err := bdl.MergeBundleParameters(installation,
 		bdl.WithFileParameters(opts.ParametersFiles),

@@ -1,15 +1,14 @@
 package store
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/app/internal/relocated"
+
 	"github.com/docker/distribution/reference"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
@@ -18,8 +17,8 @@ import (
 //
 type BundleStore interface {
 	// Store do store the bundle with optional reference, and return it's unique ID
-	Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error)
-	Read(ref reference.Reference) (*bundle.Bundle, error)
+	Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error)
+	Read(ref reference.Reference) (*relocated.Bundle, error)
 	List() ([]reference.Reference, error)
 	Remove(ref reference.Reference) error
 	LookUp(refOrID string) (reference.Reference, error)
@@ -63,8 +62,8 @@ func NewBundleStore(path string) (BundleStore, error) {
 //      \_ bundle.json
 //
 
-func (b *bundleStore) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error) {
-	id, err := FromBundle(bndle)
+func (b *bundleStore) Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error) {
+	id, err := FromBundle(bndl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
@@ -75,28 +74,25 @@ func (b *bundleStore) Store(ref reference.Reference, bndle *bundle.Bundle) (refe
 	if err != nil {
 		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
-	path := filepath.Join(dir, "bundle.json")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
-	if err = bndle.WriteFile(path, 0644); err != nil {
-		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
+
+	if err := bndl.Store(dir); err != nil {
+		return id, errors.Wrapf(err, "failed to store reloacted bundle %q", ref)
 	}
+
 	b.refsMap.appendRef(id, ref)
 	return id, nil
 }
 
-func (b *bundleStore) Read(ref reference.Reference) (*bundle.Bundle, error) {
+func (b *bundleStore) Read(ref reference.Reference) (*relocated.Bundle, error) {
 	paths, err := b.storePaths(ref)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
 	}
 
-	bndl, err := b.fetchBundleJSON(filepath.Join(paths[0], "bundle.json"))
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
-	}
-	return bndl, nil
+	return relocated.BundleFromFile(filepath.Join(paths[0], relocated.BundleFilename))
 }
 
 // Returns the list of all bundles present in the bundle store
@@ -256,6 +252,10 @@ func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err 
 		return nil
 	}
 
+	if info.Name() == relocated.RelocationMapFilename {
+		return nil
+	}
+
 	if !strings.HasSuffix(info.Name(), ".json") {
 		return nil
 	}
@@ -272,7 +272,7 @@ func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err 
 	if err != nil {
 		return err
 	}
-	bndl, err := b.fetchBundleJSON(path)
+	bndl, err := relocated.BundleFromFile(path)
 	if err != nil {
 		return err
 	}
@@ -283,18 +283,6 @@ func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err 
 	b.refsMap[id] = append(b.refsMap[id], ref)
 
 	return nil
-}
-
-func (b *bundleStore) fetchBundleJSON(bundlePath string) (*bundle.Bundle, error) {
-	data, err := ioutil.ReadFile(bundlePath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read file %s", bundlePath)
-	}
-	var bndl bundle.Bundle
-	if err := json.Unmarshal(data, &bndl); err != nil {
-		return nil, errors.Wrapf(err, "failed to read file %s", bundlePath)
-	}
-	return &bndl, nil
 }
 
 func (b *bundleStore) pathToReference(path string) (reference.Named, error) {

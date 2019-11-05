@@ -6,7 +6,8 @@ import (
 	"io"
 	"regexp"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/app/internal/relocated"
+
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
@@ -49,8 +50,8 @@ func FromString(s string) (ID, error) {
 	return ID{digest}, nil
 }
 
-func FromBundle(bndle *bundle.Bundle) (ID, error) {
-	digest, err := ComputeDigest(bndle)
+func FromBundle(bndl *relocated.Bundle) (ID, error) {
+	digest, err := ComputeDigest(bndl)
 	return ID{digest}, err
 }
 
