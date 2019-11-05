@@ -63,7 +63,7 @@ $ docker app build . -f myapp.dockerapp -t myrepo/myapp:1.0.0`,
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
 	flags.BoolVar(&opts.noResolveImage, "no-resolve-image", false, "Do not query the registry to resolve image digest")
 	flags.StringVarP(&opts.tag, "tag", "t", "", "App image tag, optionally in the 'repo:tag' format")
-	flags.StringVarP(&opts.folder, "folder", "f", "", "App definition as a .dockerapp directory")
+	flags.StringVarP(&opts.folder, "file", "f", "", "App definition as a .dockerapp directory")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the App image")
 	flags.StringArrayVar(&opts.args, "build-arg", []string{}, "Set build-time variables")
 	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Suppress the build output and print App image ID on success")
