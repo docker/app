@@ -121,6 +121,12 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/wadey/gocovmerge"
   branch = "master"
 
+[[constraint]]
+  # see https://github.com/jackpal/gateway/pull/21
+  source = "github.com/ndeloof/gateway"
+  name = "github.com/jackpal/gateway"
+  revision = "10816db7ab2f4b71e71dba9420bfa67d5be27b33"
+
 [prune]
   non-go = true
   unused-packages = true

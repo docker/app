@@ -637,6 +637,14 @@
   version = "v1.0"
 
 [[projects]]
+  digest = "1:c145f317274ab1a430e40f427402ca812219dbd4fa548a60fe1e09820c51d8cd"
+  name = "github.com/jackpal/gateway"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "10816db7ab2f4b71e71dba9420bfa67d5be27b33"
+  source = "github.com/ndeloof/gateway"
+
+[[projects]]
   digest = "1:fbfb539de947ebc48768d413ee811e3ff34d32636ff0965a517e7786e559f66b"
   name = "github.com/jaguilar/vt100"
   packages = ["."]
@@ -1457,6 +1465,7 @@
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/imdario/mergo",
+    "github.com/jackpal/gateway",
     "github.com/moby/buildkit/client",
     "github.com/moby/buildkit/session",
     "github.com/moby/buildkit/session/auth/authprovider",
@@ -1478,7 +1487,6 @@
     "gotest.tools/icmd",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
-    "k8s.io/apimachinery/pkg/util/net",
     "k8s.io/client-go/kubernetes/typed/core/v1",
   ]
   solver-name = "gps-cdcl"
