@@ -72,7 +72,7 @@ my.registry:5000/c-myapp latest [a-f0-9]{12} push-pull
 func TestImageListQuiet(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
-		insertBundles(t, cmd, info)
+		insertBundles(t, cmd)
 		verifyImageIDListOutput(t, cmd, 3, 2)
 	})
 }
@@ -80,14 +80,13 @@ func TestImageListQuiet(t *testing.T) {
 func TestImageListDigests(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
-		insertBundles(t, cmd, info)
-		expected := `REPOSITORY             TAG    DIGEST APP IMAGE ID APP NAME
-%s latest <none> [a-f0-9]{12} push-pull
-a-simple-app           latest <none> [a-f0-9]{12} simple
-b-simple-app           latest <none> [a-f0-9]{12} simple
+		insertBundles(t, cmd)
+		expected := `REPOSITORY               TAG    DIGEST APP IMAGE ID APP NAME
+a-simple-app             latest <none> [a-f0-9]{12} simple
+b-simple-app             latest <none> [a-f0-9]{12} simple
+my.registry:5000/c-myapp latest <none> [a-f0-9]{12} push-pull
 `
-		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp")
-		expectImageListDigestsOutput(t, cmd, expectedOutput)
+		expectImageListDigestsOutput(t, cmd, expected)
 	})
 }
 

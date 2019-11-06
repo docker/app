@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/app/internal/cnab"
+
+	"github.com/docker/app/internal/cliopts"
+
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/cli/cli"
@@ -13,7 +17,7 @@ import (
 
 type removeOptions struct {
 	credentialOptions
-	installerContextOptions
+	cliopts.InstallerContextOptions
 	force bool
 }
 
@@ -31,7 +35,7 @@ func removeCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.installerContextOptions.addFlags(cmd.Flags())
+	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().BoolVar(&opts.force, "force", false, "Force the removal of a running App")
 
 	return cmd
@@ -61,7 +65,7 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 			fmt.Fprintf(os.Stderr, "deletion forced for running App %q\n", installationName)
 		}()
 	}
-	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions, os.Stdout)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
 	if err != nil {
 		return err
 	}

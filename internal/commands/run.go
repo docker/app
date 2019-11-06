@@ -23,7 +23,7 @@ import (
 type runOptions struct {
 	cliopts.ParametersOptions
 	credentialOptions
-	installerContextOptions
+	cliopts.InstallerContextOptions
 	orchestrator  string
 	kubeNamespace string
 	stackName     string
@@ -63,7 +63,7 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.installerContextOptions.addFlags(cmd.Flags())
+	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Assign a name to the installation")
@@ -109,7 +109,7 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	logrus.Debugf(`Looking for a previous installation "%q"`, installationName)
 	if installation, err := installationStore.Read(installationName); err == nil {
 		// A failed installation can be overridden, but with a warning
-		if isInstallationFailed(installation) {
+		if IsInstallationFailed(installation) {
 			fmt.Fprintf(dockerCli.Err(), "WARNING: installing over previously failed installation %q\n", installationName)
 		} else {
 			// Return an error in case of successful installation, or even failed upgrade, which means
@@ -124,7 +124,7 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 		return err
 	}
 
-	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions, os.Stdout)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
 	if err != nil {
 		return err
 	}

@@ -6,11 +6,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/docker/app/internal/cliopts"
-
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
 	bdl "github.com/docker/app/internal/bundle"
+	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
@@ -22,7 +21,7 @@ import (
 
 type renderOptions struct {
 	cliopts.ParametersOptions
-	installerContextOptions
+	cliopts.InstallerContextOptions
 	formatDriver string
 	renderOutput string
 }
@@ -40,7 +39,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
-	opts.installerContextOptions.addFlags(cmd.Flags())
+	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().StringVarP(&opts.renderOutput, "output", "o", "-", "Output file")
 	cmd.Flags().StringVar(&opts.formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
 
@@ -98,7 +97,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 		return nil, nil, nil, err
 	}
 
-	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions, stdout)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, stdout)
 	if err != nil {
 		return nil, nil, nil, err
 	}
