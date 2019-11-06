@@ -49,7 +49,7 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		defer dir.Remove()
 
 		// Build the App
-		cmd.Command = dockerCli.Command("app", "build", ".", "--folder", filepath.Join(appPath, "my.dockerapp"), "--tag", "a-simple-tag", "--no-resolve-image")
+		cmd.Command = dockerCli.Command("app", "build", ".", "--file", filepath.Join(appPath, "my.dockerapp"), "--tag", "a-simple-tag", "--no-resolve-image")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		// Render the App
