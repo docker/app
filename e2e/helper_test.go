@@ -3,16 +3,17 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/docker/app/internal"
+	"github.com/jackpal/gateway"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 	"gotest.tools/icmd"
-	net2 "k8s.io/apimachinery/pkg/util/net"
 )
 
 // readFile returns the content of the file at the designated path normalizing
@@ -157,9 +158,23 @@ func (c *Container) getIP(t *testing.T) string {
 	if host != "" {
 		return host
 	}
-	ip, err := net2.ChooseHostInterface()
+	// Discover default gateway
+	gw, err := gateway.DiscoverGateway()
 	assert.NilError(t, err)
-	host = ip.String()
+
+	// Search for the interface configured on the same network as the gateway
+	addrs, err := net.InterfaceAddrs()
+	assert.NilError(t, err)
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			net1 := ipnet.IP.Mask(ipnet.Mask).String()
+			net2 := gw.Mask(ipnet.Mask).String()
+			if net1 == net2 {
+				host = ipnet.IP.String()
+				break
+			}
+		}
+	}
 	return host
 }
 
