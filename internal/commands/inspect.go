@@ -1,25 +1,25 @@
 package commands
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/deislabs/cnab-go/action"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/inspect"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/stack"
-	"github.com/docker/cli/cli/command/stack/options"
-	"github.com/docker/cli/opts"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 type inspectOptions struct {
 	credentialOptions
+	cliopts.InstallerContextOptions
 	pretty        bool
 	orchestrator  string
 	kubeNamespace string
@@ -29,10 +29,10 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	var opts inspectOptions
 	cmd := &cobra.Command{
 		Use:   "inspect [OPTIONS] RUNNING_APP",
-		Short: "Shows installation and application metadata, parameters and the containers list of a running application",
+		Short: "Shows installation and App metadata, parameters and the service list of a running App",
 		Example: `$ docker app inspect my-running-app
 $ docker app inspect my-running-app:1.0.0`,
-		Args:   cli.RequiresMaxArgs(1),
+		Args:   cli.ExactArgs(1),
 		Hidden: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInspect(dockerCli, firstOrEmpty(args), opts)
@@ -42,6 +42,7 @@ $ docker app inspect my-running-app:1.0.0`,
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator where the App is running on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace in which to find the App")
 	opts.credentialOptions.addFlags(cmd.Flags())
+	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	return cmd
 }
 
@@ -50,18 +51,9 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 	if err != nil {
 		return err
 	}
-	services, err := stack.GetServices(dockerCli, pflag.NewFlagSet("", pflag.ContinueOnError), orchestrator, options.Services{
-		Filter:    opts.NewFilterOpt(),
-		Namespace: inspectOptions.kubeNamespace,
-	})
-	if err != nil {
-		return err
-	}
-	println(services)
 
-	inspectOptions.SetDefaultTargetContext(dockerCli)
 	defer muteDockerCli(dockerCli)()
-	_, installationStore, credentialStore, err := prepareStores(inspectOptions.targetContext)
+	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
 	}
@@ -75,47 +67,52 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 		orchestratorName = string(orchestrator)
 	}
 
-	format := "json"
-	actionName := internal.ActionStatusJSONName
-	if inspectOptions.pretty {
-		format = "pretty"
-		actionName = internal.ActionStatusName
-	}
-
-	if err := inspect.Inspect(os.Stdout, installation.Claim, format, orchestratorName); err != nil {
-		return err
-	}
-
-	var statusAction bool
-	for key := range installation.Bundle.Actions {
-		if strings.HasPrefix(key, "io.cnab.status") {
-			statusAction = true
-		}
-	}
-	if !statusAction {
-		return nil
-	}
-
-	bind, err := cnab.RequiredBindMount(inspectOptions.targetContext, orchestratorName, dockerCli.ContextStore())
-	if err != nil {
-		return err
-	}
-
-	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
-	a := &action.RunCustom{
-		Action: actionName,
-		Driver: driverImpl,
-	}
-
 	creds, err := prepareCredentialSet(installation.Bundle, inspectOptions.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
 
-	installation.SetParameter(internal.ParameterInspectFormatName, format)
-	println()
+	var buf bytes.Buffer
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, inspectOptions.InstallerContextOptions, &buf)
+	if err != nil {
+		return err
+	}
+
+	a := &action.RunCustom{
+		Driver: driverImpl,
+	}
+	if inspectOptions.pretty && hasAction(installation.Bundle, internal.ActionStatusName) {
+		a.Action = internal.ActionStatusName
+	} else if hasAction(installation.Bundle, internal.ActionStatusJSONName) {
+		a.Action = internal.ActionStatusJSONName
+	} else {
+		return fmt.Errorf("inspect failed: status action is not supported by the App")
+	}
 	if err := a.Run(&installation.Claim, creds, nil); err != nil {
 		return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
+	}
+
+	if inspectOptions.pretty {
+		if err := inspect.Inspect(os.Stdout, installation, "pretty", orchestratorName); err != nil {
+			return err
+		}
+		fmt.Fprint(os.Stdout, buf.String())
+	} else {
+		var statusJSON interface{}
+		if err := json.Unmarshal(buf.Bytes(), &statusJSON); err != nil {
+			return err
+		}
+		js, err := json.MarshalIndent(struct {
+			AppInfo  inspect.AppInfo `json:",omitempty"`
+			Services interface{}     `json:",omitempty"`
+		}{
+			inspect.GetAppInfo(installation, orchestratorName),
+			statusJSON,
+		}, "", "    ")
+		if err != nil {
+			return err
+		}
+		fmt.Fprint(os.Stdout, string(js))
 	}
 	return nil
 }
@@ -131,4 +128,13 @@ func getContextOrchestrator(dockerCli command.Cli, orchestratorFlag string) (com
 		return orchestrator, nil
 	}
 	return orchestrator, nil
+}
+
+func hasAction(bndl *bundle.Bundle, actionName string) bool {
+	for key := range bndl.Actions {
+		if key == actionName {
+			return true
+		}
+	}
+	return false
 }
