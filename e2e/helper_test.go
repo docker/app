@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"strconv"
 	"strings"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 	"gotest.tools/icmd"
+	net2 "k8s.io/apimachinery/pkg/util/net"
 )
 
 // readFile returns the content of the file at the designated path normalizing
@@ -151,20 +151,16 @@ func (c *Container) getPort(t *testing.T) string {
 	return port
 }
 
+var host string
+
 func (c *Container) getIP(t *testing.T) string {
-	ip := "127.0.0.1"
-	// This won't work, but we can't guarantee computer has another IP
-	addrs, err := net.InterfaceAddrs()
-	assert.NilError(t, err)
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				ip = ipnet.IP.String()
-				break
-			}
-		}
+	if host != "" {
+		return host
 	}
-	return ip
+	ip, err := net2.ChooseHostInterface()
+	assert.NilError(t, err)
+	host = ip.String()
+	return host
 }
 
 func (c *Container) Logs(t *testing.T) func() string {
