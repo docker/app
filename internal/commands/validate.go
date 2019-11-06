@@ -4,18 +4,19 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/cli/cli"
-	cliopts "github.com/docker/cli/opts"
+	dockercliopts "github.com/docker/cli/opts"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
 type validateOptions struct {
-	parametersOptions
+	cliopts.ParametersOptions
 }
 
 func validateCmd() *cobra.Command {
@@ -29,19 +30,19 @@ func validateCmd() *cobra.Command {
 			return runValidate(args, opts)
 		},
 	}
-	opts.parametersOptions.addFlags(cmd.Flags())
+	opts.ParametersOptions.AddFlags(cmd.Flags())
 	return cmd
 }
 
 func runValidate(args []string, opts validateOptions) error {
 	app, err := packager.Extract(firstOrEmpty(args),
-		types.WithParametersFiles(opts.parametersFiles...),
+		types.WithParametersFiles(opts.ParametersFiles...),
 	)
 	if err != nil {
 		return err
 	}
 	defer app.Cleanup()
-	argParameters := cliopts.ConvertKVStringsToMap(opts.overrides)
+	argParameters := dockercliopts.ConvertKVStringsToMap(opts.Overrides)
 	_, err = render.Render(app, argParameters, nil)
 	if err != nil {
 		return err

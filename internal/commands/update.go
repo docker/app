@@ -7,13 +7,14 @@ import (
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/app/internal/bundle"
+	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
 
 type updateOptions struct {
-	parametersOptions
+	cliopts.ParametersOptions
 	credentialOptions
 	bundleOrDockerApp string
 }
@@ -29,7 +30,7 @@ func updateCmd(dockerCli command.Cli) *cobra.Command {
 			return runUpdate(dockerCli, args[0], opts)
 		},
 	}
-	opts.parametersOptions.addFlags(cmd.Flags())
+	opts.ParametersOptions.AddFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "image", "", "Override the running App with another App image")
 
@@ -62,8 +63,8 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		installation.Bundle = b
 	}
 	if err := bundle.MergeBundleParameters(installation,
-		bundle.WithFileParameters(opts.parametersFiles),
-		bundle.WithCommandLineParameters(opts.overrides),
+		bundle.WithFileParameters(opts.ParametersFiles),
+		bundle.WithCommandLineParameters(opts.Overrides),
 		bundle.WithSendRegistryAuth(opts.sendRegistryAuth),
 	); err != nil {
 		return err

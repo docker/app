@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/spf13/pflag"
+	"github.com/docker/app/internal/cliopts"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
@@ -20,18 +20,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type parametersOptions struct {
-	ParametersFiles []string
-	Overrides       []string
-}
-
-func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringArrayVar(&o.ParametersFiles, "parameters-file", []string{}, "Override parameters file")
-	flags.StringArrayVarP(&o.Overrides, "set", "s", []string{}, "Override parameter value")
-}
-
 type renderOptions struct {
-	parametersOptions
+	cliopts.ParametersOptions
 	formatDriver string
 	renderOutput string
 }
@@ -48,7 +38,7 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 			return runRender(dockerCli, args[0], opts)
 		},
 	}
-	opts.parametersOptions.addFlags(cmd.Flags())
+	opts.ParametersOptions.AddFlags(cmd.Flags())
 	cmd.Flags().StringVarP(&opts.renderOutput, "output", "o", "-", "Output file")
 	cmd.Flags().StringVar(&opts.formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
 
@@ -68,7 +58,7 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		w = f
 	}
 
-	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts.parametersOptions)
+	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts.ParametersOptions)
 	if err != nil {
 		return err
 	}
@@ -80,7 +70,8 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 	return nil
 }
 
-func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer, paramsOpts parametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
+func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer,
+	paramsOpts cliopts.ParametersOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err

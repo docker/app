@@ -110,16 +110,6 @@ func prepareBundleStore() (store.BundleStore, error) {
 	return bundleStore, nil
 }
 
-type parametersOptions struct {
-	parametersFiles []string
-	overrides       []string
-}
-
-func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringArrayVar(&o.parametersFiles, "parameters-file", []string{}, "Override parameters file")
-	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameter value")
-}
-
 type targetContextOptions struct {
 	targetContext string
 }
