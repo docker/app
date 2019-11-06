@@ -3,6 +3,9 @@ package image
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+
+	"github.com/docker/app/internal/cliopts"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
@@ -16,6 +19,7 @@ import (
 
 type inspectOptions struct {
 	pretty bool
+	cliopts.InstallerContextOptions
 }
 
 func muteDockerCli(dockerCli command.Cli) func() {
@@ -41,6 +45,7 @@ $ docker app image inspect 34be4a0c5f50`,
 			return runInspect(dockerCli, args[0], opts)
 		},
 	}
+	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().BoolVar(&opts.pretty, "pretty", false, "Print the information in a human friendly format")
 
 	return cmd
@@ -66,8 +71,10 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 		return err
 	}
 	installation.Bundle = bndl
-
-	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, cnab.BindMount{}, nil)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
+	if err != nil {
+		return err
+	}
 	a := &action.RunCustom{
 		Action: internal.ActionInspectName,
 		Driver: driverImpl,

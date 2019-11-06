@@ -16,7 +16,7 @@ import (
 type updateOptions struct {
 	cliopts.ParametersOptions
 	credentialOptions
-	installerContextOptions
+	cliopts.InstallerContextOptions
 	bundleOrDockerApp string
 }
 
@@ -33,7 +33,7 @@ func updateCmd(dockerCli command.Cli) *cobra.Command {
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.installerContextOptions.addFlags(cmd.Flags())
+	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "image", "", "Override the running App with another App image")
 
 	return cmd
@@ -52,7 +52,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		return err
 	}
 
-	if isInstallationFailed(installation) {
+	if IsInstallationFailed(installation) {
 		return fmt.Errorf("Running App %q cannot be updated, please use 'docker app run' instead", installationName)
 	}
 
@@ -71,7 +71,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		return err
 	}
 
-	driverImpl, errBuf, err := setupDriver(installation, dockerCli, opts.installerContextOptions, os.Stdout)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
 	if err != nil {
 		return err
 	}

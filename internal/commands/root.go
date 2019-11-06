@@ -1,25 +1,18 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 
 	"github.com/deislabs/cnab-go/claim"
-	"github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/commands/build"
 	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/cli/cli/flags"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -117,72 +110,6 @@ func prepareBundleStore() (store.BundleStore, error) {
 	return bundleStore, nil
 }
 
-func setupDriver(installation *appstore.Installation, dockerCli command.Cli, opts installerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
-	dockerCli, err := opts.setInstallerContext(dockerCli)
-	if err != nil {
-		return nil, nil, err
-	}
-	bind, err := cnab.RequiredClaimBindMount(installation.Claim, dockerCli)
-	if err != nil {
-		return nil, nil, err
-	}
-	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, stdout)
-	return driverImpl, errBuf, nil
-}
-
-type parametersOptions struct {
-	parametersFiles []string
-	overrides       []string
-}
-
-func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringArrayVar(&o.parametersFiles, "parameters-file", []string{}, "Override parameters file")
-	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameter value")
-}
-
-type installerContextOptions struct {
-	installerContext string
-}
-
-func (o *installerContextOptions) addFlags(flags *pflag.FlagSet) {
-	defaultContext, ok := os.LookupEnv("DOCKER_INSTALLER_CONTEXT")
-	if !ok {
-		defaultContext = "default"
-	}
-	flags.StringVar(&o.installerContext, "installer-context", defaultContext, "Context on which the installer image is ran")
-}
-
-func (o *installerContextOptions) setInstallerContext(dockerCli command.Cli) (command.Cli, error) {
-	if o.installerContext != dockerCli.CurrentContext() {
-		if _, err := dockerCli.ContextStore().GetMetadata(o.installerContext); err != nil {
-			return nil, errors.Wrapf(err, "Unknown docker context %s", o.installerContext)
-		}
-		fmt.Fprintf(dockerCli.Out(), "Using context %q to run installer image", o.installerContext)
-		cli, err := command.NewDockerCli()
-		if err != nil {
-			return nil, err
-		}
-		opts := flags.ClientOptions{
-			Common: &flags.CommonOptions{
-				Context:  o.installerContext,
-				LogLevel: logrus.GetLevel().String(),
-			},
-			ConfigDir: config.Dir(),
-		}
-		if err = cli.Apply(
-			command.WithInputStream(dockerCli.In()),
-			command.WithOutputStream(dockerCli.Out()),
-			command.WithErrorStream(dockerCli.Err())); err != nil {
-			return nil, err
-		}
-		if err = cli.Initialize(&opts); err != nil {
-			return nil, err
-		}
-		return cli, nil
-	}
-	return dockerCli, nil
-}
-
 type credentialOptions struct {
 	credentialsets   []string
 	credentials      []string
@@ -204,7 +131,7 @@ func (o *credentialOptions) CredentialSetOpts(dockerCli command.Cli, credentialS
 	}
 }
 
-func isInstallationFailed(installation *appstore.Installation) bool {
+func IsInstallationFailed(installation *appstore.Installation) bool {
 	return installation.Result.Action == claim.ActionInstall &&
 		installation.Result.Status == claim.StatusFailure
 }

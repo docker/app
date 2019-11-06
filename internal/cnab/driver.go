@@ -6,6 +6,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/docker/app/internal/cliopts"
+	store2 "github.com/docker/app/internal/store"
+
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/driver"
 	dockerDriver "github.com/deislabs/cnab-go/driver/docker"
@@ -80,8 +83,8 @@ func isDockerHostLocal(host string) bool {
 	return host == "" || strings.HasPrefix(host, "unix://") || strings.HasPrefix(host, "npipe://")
 }
 
-// PrepareDriver prepares a driver per the user's request.
-func PrepareDriver(dockerCli command.Cli, bindMount BindMount, stdout io.Writer) (driver.Driver, *bytes.Buffer) {
+// prepareDriver prepares a driver per the user's request.
+func prepareDriver(dockerCli command.Cli, bindMount BindMount, stdout io.Writer) (driver.Driver, *bytes.Buffer) {
 	d := &dockerDriver.Driver{}
 	errBuf := bytes.NewBuffer(nil)
 	d.SetDockerCli(dockerCli)
@@ -112,4 +115,17 @@ func PrepareDriver(dockerCli command.Cli, bindMount BindMount, stdout io.Writer)
 	d.SetConfig(driverCfg)
 
 	return d, errBuf
+}
+
+func SetupDriver(installation *store2.Installation, dockerCli command.Cli, opts cliopts.InstallerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
+	dockerCli, err := opts.SetInstallerContext(dockerCli)
+	if err != nil {
+		return nil, nil, err
+	}
+	bind, err := RequiredClaimBindMount(installation.Claim, dockerCli)
+	if err != nil {
+		return nil, nil, err
+	}
+	driverImpl, errBuf := prepareDriver(dockerCli, bind, stdout)
+	return driverImpl, errBuf, nil
 }
