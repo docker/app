@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"bufio"
-	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -12,9 +11,9 @@ import (
 	"gotest.tools/icmd"
 )
 
-func insertBundles(t *testing.T, cmd icmd.Cmd, info dindSwarmAndRegistryInfo) {
+func insertBundles(t *testing.T, cmd icmd.Cmd) {
 	// Push an application so that we can later pull it by digest
-	cmd.Command = dockerCli.Command("app", "build", "--no-resolve-image", "--tag", info.registryAddress+"/c-myapp", filepath.Join("testdata", "push-pull"))
+	cmd.Command = dockerCli.Command("app", "build", "--no-resolve-image", "--tag", "my.registry:5000/c-myapp", filepath.Join("testdata", "push-pull"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	cmd.Command = dockerCli.Command("app", "build", "--no-resolve-image", "--tag", "b-simple-app", filepath.Join("testdata", "simple"))
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -59,15 +58,14 @@ func TestImageList(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 
-		insertBundles(t, cmd, info)
+		insertBundles(t, cmd)
 
-		expected := `REPOSITORY             TAG    APP IMAGE ID APP NAME
-%s latest [a-f0-9]{12} push-pull
-a-simple-app           latest [a-f0-9]{12} simple
-b-simple-app           latest [a-f0-9]{12} simple
+		expected := `REPOSITORY               TAG    APP IMAGE ID APP NAME
+a-simple-app             latest [a-f0-9]{12} simple
+b-simple-app             latest [a-f0-9]{12} simple
+my.registry:5000/c-myapp latest [a-f0-9]{12} push-pull
 `
-		expectedOutput := fmt.Sprintf(expected, info.registryAddress+"/c-myapp")
-		expectImageListOutput(t, cmd, expectedOutput)
+		expectImageListOutput(t, cmd, expected)
 	})
 }
 
@@ -97,12 +95,12 @@ func TestImageRm(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 
-		insertBundles(t, cmd, info)
+		insertBundles(t, cmd)
 
-		cmd.Command = dockerCli.Command("app", "image", "rm", info.registryAddress+"/c-myapp:latest")
+		cmd.Command = dockerCli.Command("app", "image", "rm", "my.registry:5000/c-myapp:latest")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 0,
-			Out:      "Deleted: " + info.registryAddress + "/c-myapp:latest",
+			Out:      "Deleted: my.registry:5000/c-myapp:latest",
 		})
 
 		cmd.Command = dockerCli.Command("app", "image", "rm", "a-simple-app", "b-simple-app:latest")
