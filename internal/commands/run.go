@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/docker/cli/cli"
+	"github.com/docker/app/internal/cliopts"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/cnab-go/credentials"
+	bdl "github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/store"
+	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/pkg/errors"
@@ -19,7 +21,7 @@ import (
 )
 
 type runOptions struct {
-	parametersOptions
+	cliopts.ParametersOptions
 	credentialOptions
 	orchestrator  string
 	kubeNamespace string
@@ -58,7 +60,7 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 			return runCnab(dockerCli, opts)
 		},
 	}
-	opts.parametersOptions.addFlags(cmd.Flags())
+	opts.ParametersOptions.AddFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
@@ -129,12 +131,12 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	driverImpl, errBuf := cnab.PrepareDriver(dockerCli, bind, nil)
 	installation.Bundle = bndl
 
-	if err := mergeBundleParameters(installation,
-		withFileParameters(opts.parametersFiles),
-		withCommandLineParameters(opts.overrides),
-		withLabels(opts.labels),
-		withOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
-		withSendRegistryAuth(opts.sendRegistryAuth),
+	if err := bdl.MergeBundleParameters(installation,
+		bdl.WithFileParameters(opts.ParametersFiles),
+		bdl.WithCommandLineParameters(opts.Overrides),
+		bdl.WithLabels(opts.labels),
+		bdl.WithOrchestratorParameters(opts.orchestrator, opts.kubeNamespace),
+		bdl.WithSendRegistryAuth(opts.sendRegistryAuth),
 	); err != nil {
 		return err
 	}

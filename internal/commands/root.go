@@ -54,7 +54,6 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		removeCmd(dockerCli),
 		listCmd(dockerCli),
 		initCmd(dockerCli),
-		renderCmd(dockerCli),
 		validateCmd(),
 		pushCmd(dockerCli),
 		pullCmd(dockerCli),
@@ -109,16 +108,6 @@ func prepareBundleStore() (store.BundleStore, error) {
 		return nil, err
 	}
 	return bundleStore, nil
-}
-
-type parametersOptions struct {
-	parametersFiles []string
-	overrides       []string
-}
-
-func (o *parametersOptions) addFlags(flags *pflag.FlagSet) {
-	flags.StringArrayVar(&o.parametersFiles, "parameters-file", []string{}, "Override parameters file")
-	flags.StringArrayVarP(&o.overrides, "set", "s", []string{}, "Override parameter value")
 }
 
 type targetContextOptions struct {

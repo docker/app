@@ -17,6 +17,7 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 		rmCmd(),
 		tagCmd(),
 		inspectCmd(dockerCli),
+		renderCmd(dockerCli),
 	)
 
 	return cmd

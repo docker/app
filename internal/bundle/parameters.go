@@ -1,4 +1,4 @@
-package commands
+package bundle
 
 import (
 	"encoding/json"
@@ -16,16 +16,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-type mergeBundleConfig struct {
+// MergeBundleConfig is the actual parameters and bundle parameters to be merged
+type MergeBundleConfig struct {
 	bundle *bundle.Bundle
 	params map[string]string
 	stderr io.Writer
 }
 
-type mergeBundleOpt func(c *mergeBundleConfig) error
+// MergeBundleOpt is a functional option of the bundle parameter merge function
+type MergeBundleOpt func(c *MergeBundleConfig) error
 
-func withFileParameters(parametersFiles []string) mergeBundleOpt {
-	return func(c *mergeBundleConfig) error {
+func WithFileParameters(parametersFiles []string) MergeBundleOpt {
+	return func(c *MergeBundleConfig) error {
 		p, err := parameters.LoadFiles(parametersFiles)
 		if err != nil {
 			return err
@@ -37,8 +39,8 @@ func withFileParameters(parametersFiles []string) mergeBundleOpt {
 	}
 }
 
-func withCommandLineParameters(overrides []string) mergeBundleOpt {
-	return func(c *mergeBundleConfig) error {
+func WithCommandLineParameters(overrides []string) MergeBundleOpt {
+	return func(c *MergeBundleConfig) error {
 		d := cliopts.ConvertKVStringsToMap(overrides)
 		for k, v := range d {
 			c.params[k] = v
@@ -47,8 +49,8 @@ func withCommandLineParameters(overrides []string) mergeBundleOpt {
 	}
 }
 
-func withLabels(labels []string) mergeBundleOpt {
-	return func(c *mergeBundleConfig) error {
+func WithLabels(labels []string) MergeBundleOpt {
+	return func(c *MergeBundleConfig) error {
 		for _, l := range labels {
 			if strings.HasPrefix(l, internal.Namespace) {
 				return errors.Errorf("labels cannot start with %q", internal.Namespace)
@@ -68,8 +70,8 @@ func withLabels(labels []string) mergeBundleOpt {
 	}
 }
 
-func withSendRegistryAuth(sendRegistryAuth bool) mergeBundleOpt {
-	return func(c *mergeBundleConfig) error {
+func WithSendRegistryAuth(sendRegistryAuth bool) MergeBundleOpt {
+	return func(c *MergeBundleConfig) error {
 		if _, ok := c.bundle.Definitions[internal.ParameterShareRegistryCredsName]; ok {
 			val := "false"
 			if sendRegistryAuth {
@@ -81,8 +83,8 @@ func withSendRegistryAuth(sendRegistryAuth bool) mergeBundleOpt {
 	}
 }
 
-func withOrchestratorParameters(orchestrator string, kubeNamespace string) mergeBundleOpt {
-	return func(c *mergeBundleConfig) error {
+func WithOrchestratorParameters(orchestrator string, kubeNamespace string) MergeBundleOpt {
+	return func(c *MergeBundleConfig) error {
 		if _, ok := c.bundle.Definitions[internal.ParameterOrchestratorName]; ok {
 			c.params[internal.ParameterOrchestratorName] = orchestrator
 		}
@@ -93,20 +95,21 @@ func withOrchestratorParameters(orchestrator string, kubeNamespace string) merge
 	}
 }
 
-func withErrorWriter(w io.Writer) mergeBundleOpt {
-	return func(c *mergeBundleConfig) error {
+func WithErrorWriter(w io.Writer) MergeBundleOpt {
+	return func(c *MergeBundleConfig) error {
 		c.stderr = w
 		return nil
 	}
 }
 
-func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleOpt) error {
+// MergeBundleParameters merges current, provided and bundle default parameters
+func MergeBundleParameters(installation *store.Installation, ops ...MergeBundleOpt) error {
 	bndl := installation.Bundle
 	if installation.Parameters == nil {
 		installation.Parameters = make(map[string]interface{})
 	}
 	userParams := map[string]string{}
-	cfg := &mergeBundleConfig{
+	cfg := &MergeBundleConfig{
 		bundle: bndl,
 		params: userParams,
 		stderr: os.Stderr,
@@ -124,7 +127,7 @@ func mergeBundleParameters(installation *store.Installation, ops ...mergeBundleO
 	return err
 }
 
-func matchAndMergeParametersDefinition(currentValues map[string]interface{}, cfg *mergeBundleConfig) (map[string]interface{}, error) {
+func matchAndMergeParametersDefinition(currentValues map[string]interface{}, cfg *MergeBundleConfig) (map[string]interface{}, error) {
 	mergedValues := make(map[string]interface{})
 	for k, v := range currentValues {
 		mergedValues[k] = v

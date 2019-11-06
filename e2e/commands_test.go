@@ -57,7 +57,7 @@ func testRenderApp(appPath string, env ...string) func(*testing.T) {
 		data, err := ioutil.ReadFile(filepath.Join(appPath, "env.yml"))
 		assert.NilError(t, err)
 		assert.NilError(t, yaml.Unmarshal(data, &envParameters))
-		args := dockerCli.Command("app", "render", "a-simple-tag", "--parameters-file", filepath.Join(appPath, "parameters-0.yml"))
+		args := dockerCli.Command("app", "image", "render", "a-simple-tag", "--parameters-file", filepath.Join(appPath, "parameters-0.yml"))
 		for k, v := range envParameters {
 			args = append(args, "--set", fmt.Sprintf("%s=%s", k, v))
 		}
@@ -80,7 +80,7 @@ func TestRenderAppNotFound(t *testing.T) {
 	defer cleanup()
 
 	appName := "non_existing_app:some_tag"
-	cmd.Command = dockerCli.Command("app", "render", appName)
+	cmd.Command = dockerCli.Command("app", "image", "render", appName)
 	checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Expected{ExitCode: 1}).Combined(),
 		[]string{fmt.Sprintf("could not render %q: no such App image", appName)})
 }
@@ -93,11 +93,11 @@ func TestRenderFormatters(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-tag", "--no-resolve-image", contextPath)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-		cmd.Command = dockerCli.Command("app", "render", "--formatter", "json", "a-simple-tag")
+		cmd.Command = dockerCli.Command("app", "image", "render", "--formatter", "json", "a-simple-tag")
 		result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		golden.Assert(t, result.Stdout(), "expected-json-render.golden")
 
-		cmd.Command = dockerCli.Command("app", "render", "--formatter", "yaml", "a-simple-tag")
+		cmd.Command = dockerCli.Command("app", "image", "render", "--formatter", "yaml", "a-simple-tag")
 		result = icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		golden.Assert(t, result.Stdout(), "expected-yaml-render.golden")
 	})
