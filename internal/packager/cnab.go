@@ -16,13 +16,6 @@ const (
 	CNABVersion1_0_0 = "v1.0.0"
 )
 
-// DockerAppCustom contains extension custom data that docker app injects
-// in the bundle.
-type DockerAppCustom struct {
-	Version string          `json:"version,omitempty"`
-	Payload json.RawMessage `json:"payload,omitempty"`
-}
-
 // DockerAppArgs represent the object passed to the invocation image
 // by Docker App.
 type DockerAppArgs struct {
@@ -170,11 +163,17 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		return nil, err
 	}
 
+	payload, err := newCustomPayload()
+	if err != nil {
+		return nil, err
+	}
+
 	bndl := &bundle.Bundle{
 		SchemaVersion: CNABVersion1_0_0,
 		Custom: map[string]interface{}{
 			internal.CustomDockerAppName: DockerAppCustom{
-				Version: internal.Version,
+				Version: DockerAppCustomVersion1_0_0,
+				Payload: payload,
 			},
 		},
 		Credentials: map[string]bundle.Credential{

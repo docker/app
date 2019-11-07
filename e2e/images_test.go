@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"bufio"
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -23,7 +24,11 @@ func insertBundles(t *testing.T, cmd icmd.Cmd) {
 
 func assertImageListOutput(t *testing.T, cmd icmd.Cmd, expected string) {
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	match, _ := regexp.MatchString(expected, result.Stdout())
+	stdout := result.Stdout()
+	match, _ := regexp.MatchString(expected, stdout)
+	if !match {
+		fmt.Println(stdout)
+	}
 	assert.Assert(t, match)
 }
 
@@ -46,6 +51,7 @@ func verifyImageIDListOutput(t *testing.T, cmd icmd.Cmd, count int, distinct int
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 		counter[scanner.Text()]++
+		fmt.Println(scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		assert.Error(t, err, "Verification failed")
@@ -60,10 +66,10 @@ func TestImageList(t *testing.T) {
 
 		insertBundles(t, cmd)
 
-		expected := `REPOSITORY               TAG    APP IMAGE ID APP NAME
-a-simple-app             latest [a-f0-9]{12} simple
-b-simple-app             latest [a-f0-9]{12} simple
-my.registry:5000/c-myapp latest [a-f0-9]{12} push-pull
+		expected := `REPOSITORY               TAG    APP IMAGE ID APP NAME  CREATED
+a-simple-app             latest [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+b-simple-app             latest [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+my.registry:5000/c-myapp latest [a-f0-9]{12} push-pull [La-z0-9 ]+ ago
 `
 		expectImageListOutput(t, cmd, expected)
 	})
@@ -73,7 +79,7 @@ func TestImageListQuiet(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 		insertBundles(t, cmd)
-		verifyImageIDListOutput(t, cmd, 3, 2)
+		verifyImageIDListOutput(t, cmd, 3, 3)
 	})
 }
 
@@ -81,10 +87,10 @@ func TestImageListDigests(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 		insertBundles(t, cmd)
-		expected := `REPOSITORY               TAG    DIGEST APP IMAGE ID APP NAME
-a-simple-app             latest <none> [a-f0-9]{12} simple
-b-simple-app             latest <none> [a-f0-9]{12} simple
-my.registry:5000/c-myapp latest <none> [a-f0-9]{12} push-pull
+		expected := `REPOSITORY               TAG    DIGEST APP IMAGE ID APP NAME  CREATED
+a-simple-app             latest <none> [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+b-simple-app             latest <none> [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+my.registry:5000/c-myapp latest <none> [a-f0-9]{12} push-pull [La-z0-9 ]+ ago
 `
 		expectImageListDigestsOutput(t, cmd, expected)
 	})
@@ -115,7 +121,7 @@ Deleted: b-simple-app:latest`,
 			Err:      `b-simple-app:latest: reference not found`,
 		})
 
-		expectedOutput := "REPOSITORY TAG APP IMAGE ID APP NAME\n"
+		expectedOutput := "REPOSITORY TAG APP IMAGE ID APP NAME CREATED\n"
 		expectImageListOutput(t, cmd, expectedOutput)
 	})
 }
@@ -133,8 +139,8 @@ func TestImageTag(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-app", filepath.Join("testdata", "simple"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
-		singleImageExpectation := `REPOSITORY   TAG    APP IMAGE ID APP NAME
-a-simple-app latest [a-f0-9]{12} simple
+		singleImageExpectation := `REPOSITORY   TAG    APP IMAGE ID APP NAME CREATED
+a-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
 `
 		expectImageListOutput(t, cmd, singleImageExpectation)
 
@@ -183,63 +189,63 @@ a-simple-app latest [a-f0-9]{12} simple
 		// tag image with only names
 		dockerAppImageTag("a-simple-app", "b-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME
-a-simple-app latest [a-f0-9]{12} simple
-b-simple-app latest [a-f0-9]{12} simple
+		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME CREATED
+a-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+b-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
 `)
 
 		// target tag
 		dockerAppImageTag("a-simple-app", "a-simple-app:0.1")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME
-a-simple-app 0.1    [a-f0-9]{12} simple
-a-simple-app latest [a-f0-9]{12} simple
-b-simple-app latest [a-f0-9]{12} simple
+		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME CREATED
+a-simple-app 0.1    [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+a-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+b-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
 `)
 
 		// source tag
 		dockerAppImageTag("a-simple-app:0.1", "c-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME
-a-simple-app 0.1    [a-f0-9]{12} simple
-a-simple-app latest [a-f0-9]{12} simple
-b-simple-app latest [a-f0-9]{12} simple
-c-simple-app latest [a-f0-9]{12} simple
+		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME CREATED
+a-simple-app 0.1    [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+a-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+b-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+c-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
 `)
 
 		// source and target tags
 		dockerAppImageTag("a-simple-app:0.1", "b-simple-app:0.2")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME
-a-simple-app 0.1    [a-f0-9]{12} simple
-a-simple-app latest [a-f0-9]{12} simple
-b-simple-app 0.2    [a-f0-9]{12} simple
-b-simple-app latest [a-f0-9]{12} simple
-c-simple-app latest [a-f0-9]{12} simple
+		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME CREATED
+a-simple-app 0.1    [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+a-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+b-simple-app 0.2    [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+b-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
+c-simple-app latest [a-f0-9]{12} simple   [La-z0-9 ]+ ago
 `)
 
 		// given a new application
 		cmd.Command = dockerCli.Command("app", "build", "--tag", "push-pull", filepath.Join("testdata", "push-pull"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME
-a-simple-app 0.1    [a-f0-9]{12} simple
-a-simple-app latest [a-f0-9]{12} simple
-b-simple-app 0.2    [a-f0-9]{12} simple
-b-simple-app latest [a-f0-9]{12} simple
-c-simple-app latest [a-f0-9]{12} simple
-push-pull    latest [a-f0-9]{12} push-pull
+		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME  CREATED
+a-simple-app 0.1    [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+a-simple-app latest [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+b-simple-app 0.2    [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+b-simple-app latest [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+c-simple-app latest [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+push-pull    latest [a-f0-9]{12} push-pull [La-z0-9 ]+ ago
 `)
 
 		// can be tagged to an existing tag
 		dockerAppImageTag("push-pull", "b-simple-app:0.2")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME
-a-simple-app 0.1    [a-f0-9]{12} simple
-a-simple-app latest [a-f0-9]{12} simple
-b-simple-app 0.2    [a-f0-9]{12} push-pull
-b-simple-app latest [a-f0-9]{12} simple
-c-simple-app latest [a-f0-9]{12} simple
-push-pull    latest [a-f0-9]{12} push-pull
+		expectImageListOutput(t, cmd, `REPOSITORY   TAG    APP IMAGE ID APP NAME  CREATED
+a-simple-app 0.1    [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+a-simple-app latest [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+b-simple-app 0.2    [a-f0-9]{12} push-pull [La-z0-9 ]+ ago
+b-simple-app latest [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+c-simple-app latest [a-f0-9]{12} simple    [La-z0-9 ]+ ago
+push-pull    latest [a-f0-9]{12} push-pull [La-z0-9 ]+ ago
 `)
 	})
 }

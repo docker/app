@@ -6,14 +6,16 @@ import (
 	"io"
 	"strings"
 	"text/tabwriter"
+	"time"
 
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/relocated"
-
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/stringid"
+	units "github.com/docker/go-units"
 	"github.com/spf13/cobra"
 )
 
@@ -176,6 +178,16 @@ func getImageListColumns(options imageListOption) []imageListColumn {
 		}},
 		imageListColumn{"APP NAME", func(p pkg) string {
 			return p.bundle.Name
+		}},
+		imageListColumn{"CREATED", func(p pkg) string {
+			payload, err := packager.CustomPayload(p.bundle.Bundle)
+			if err != nil {
+				return ""
+			}
+			if createdPayload, ok := payload.(packager.CustomPayloadCreated); ok {
+				return units.HumanDuration(time.Now().UTC().Sub(createdPayload.CreatedTime())) + " ago"
+			}
+			return ""
 		}},
 	)
 	return columns
