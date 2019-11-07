@@ -16,9 +16,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type listOptions struct {
-}
-
 var (
 	listColumns = []struct {
 		header string
@@ -39,22 +36,20 @@ var (
 )
 
 func listCmd(dockerCli command.Cli) *cobra.Command {
-	var opts listOptions
-
 	cmd := &cobra.Command{
 		Use:     "ls [OPTIONS]",
 		Short:   "List running Apps",
 		Aliases: []string{"list"},
 		Args:    cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runList(dockerCli, opts)
+			return runList(dockerCli)
 		},
 	}
 
 	return cmd
 }
 
-func runList(dockerCli command.Cli, opts listOptions) error {
+func runList(dockerCli command.Cli) error {
 	installations, err := getInstallations(dockerCli.CurrentContext(), config.Dir())
 	if err != nil {
 		return err
