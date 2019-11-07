@@ -93,9 +93,12 @@ coverage-test-e2e: coverage-bin
 	@echo "Running e2e tests (coverage)..."
 	@$(call mkdir,_build/cov)
 	@$(call mkdir,$(TEST_RESULTS_DIR))
-	DOCKERAPP_BINARY=../e2e/coverage-bin $(call GO_TESTSUM,e2e-coverage.xml) -v ./e2e
+	DOCKERAPP_BINARY=../e2e/coverage-bin $(call GO_TESTSUM,e2e-coverage.xml) -v ./e2e $(INCLUDE_E2E)
 
 coverage: coverage-test-unit coverage-test-e2e ## run tests with coverage
+	@echo "Fixing coverage files..."
+	find _build/cov/ -type f -name "*.out" -print0 | xargs -0 sed -i '/^coverage/d'
+	grep coverage _build/cov/*.out || true
 	go install ./vendor/github.com/wadey/gocovmerge/
 	gocovmerge _build/cov/*.out > _build/cov/all.out
 	go tool cover -func _build/cov/all.out
@@ -131,7 +134,7 @@ schemas: specification/bindata.go ## generate specification/bindata.go from json
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor schemas help
+.PHONY: cross e2e-cross test check lint test-unit test-e2e coverage coverage-bin coverage-test-unit coverage-test-e2e clean vendor schemas help fix-coverage
 .DEFAULT: all
 
 

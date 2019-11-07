@@ -9,7 +9,7 @@ $BUILD_DIR/docker-app.cov \
     -test.coverprofile=$BUILD_DIR/cov/$(uuidgen).out \
     "$@" \
 | grep -vE '^PASS$' \
-| grep -vE '^coverage: [0-9]+\.[0-9]+% of statements in .+$' \
+| grep -vE '^coverage:.*$' \
 | grep -v '^=== RUN   TestRunMain$'
 
 exit ${PIPESTATUS[0]}
