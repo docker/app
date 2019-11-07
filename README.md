@@ -188,6 +188,14 @@ $ docker app inspect myrepo/hello:0.1.0
 **Note**: Commands like `install`, `upgrade`, `render`, etc. can also be used
 directly on Application Packages that are in a registry.
 
+You can specify the Docker endpoint where an application is installed using a
+context and the `--context` option. If you do not specify one, it will	
+use the currently active context.
+
+Whenever you define such a context, the installer image will run in the `default`
+context (i.e. on local host). You can use the `--installer-context` to target
+another context to run the installer image.
+
 More examples are available in the [examples](examples) directory.
 
 ## CNAB
