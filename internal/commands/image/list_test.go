@@ -75,19 +75,19 @@ func TestListCmd(t *testing.T) {
 	}{
 		{
 			name: "TestList",
-			expectedOutput: `REPOSITORY                                                       TAG    APP IMAGE ID APP NAME
-foo/bar                                                          <none> 3f825b2d0657 Digested App
-foo/bar                                                          1.0    9aae408ee04f Foo App
-a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087 <none> a855ac937f2e Quiet App
+			expectedOutput: `REPOSITORY TAG    APP IMAGE ID APP NAME
+foo/bar    <none> 3f825b2d0657 Digested App
+foo/bar    1.0    9aae408ee04f Foo App
+<none>     <none> a855ac937f2e Quiet App
 `,
 			options: imageListOption{},
 		},
 		{
 			name: "TestListWithDigests",
-			expectedOutput: `REPOSITORY                                                       TAG    DIGEST                                                                  APP IMAGE ID APP NAME
-foo/bar                                                          <none> sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865 3f825b2d0657 Digested App
-foo/bar                                                          1.0    <none>                                                                  9aae408ee04f Foo App
-a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087 <none> sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087 a855ac937f2e Quiet App
+			expectedOutput: `REPOSITORY TAG    DIGEST                                                                  APP IMAGE ID APP NAME
+foo/bar    <none> sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865 3f825b2d0657 Digested App
+foo/bar    1.0    <none>                                                                  9aae408ee04f Foo App
+<none>     <none> sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087 a855ac937f2e Quiet App
 `,
 			options: imageListOption{digests: true},
 		},

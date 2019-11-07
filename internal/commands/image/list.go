@@ -148,7 +148,7 @@ func getImageListColumns(options imageListOption) []imageListColumn {
 			if n, ok := p.ref.(reference.Named); ok {
 				return reference.FamiliarName(n)
 			}
-			return reference.FamiliarString(p.ref)
+			return "<none>"
 		}},
 		{"TAG", func(p pkg) string {
 			if t, ok := p.ref.(reference.Tagged); ok {
