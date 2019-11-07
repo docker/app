@@ -69,8 +69,12 @@ Please refer to its documentation if you need to update a dependency.
 ## Build using Docker
 
 If you don't have Go installed but Docker is present, you can also use
-`docker.Makefile` to build `docker-app` and run tests. This
-`docker.Makefile` is used by our continuous integration too.
+`docker.Makefile` to build `docker-app` and run tests.
+
+To use `docker.Makefile` you will need to enable BuildKit.
+This is done by setting the environment variable `DOCKER_BUILDKIT=1`
+
+This `docker.Makefile` is used by our continuous integration too.
 
 ```sh
 make -f docker.Makefile           # builds cross binaries build and tests
