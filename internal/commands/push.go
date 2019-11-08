@@ -13,7 +13,6 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/log"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -53,37 +52,40 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runPush(dockerCli command.Cli, name string) error {
+	defer muteDockerCli(dockerCli)()
 	bundleStore, err := prepareBundleStore()
 	if err != nil {
 		return err
 	}
 
-	defer muteDockerCli(dockerCli)()
 	// Get the bundle
-	bndl, ref, err := resolveReferenceAndBundle(dockerCli, bundleStore, name)
+	ref, err := reference.ParseDockerRef(name)
+	if err != nil {
+		return errors.Wrapf(err, "could not push %q", name)
+	}
+
+	bndl, err := resolveReferenceAndBundle(bundleStore, ref)
 	if err != nil {
 		return err
 	}
 
-	cnabRef, err := reference.ParseNormalizedNamed(ref)
-	if err != nil {
-		return err
-	}
-	cnabRef = reference.TagNameOnly(cnabRef)
+	cnabRef := reference.TagNameOnly(ref)
 
 	// Push the bundle
 	return pushBundle(dockerCli, bndl, cnabRef)
 }
 
-func resolveReferenceAndBundle(dockerCli command.Cli, bundleStore store.BundleStore, name string) (*relocated.Bundle, string, error) {
-	bndl, ref, err := cnab.ResolveBundle(dockerCli, bundleStore, name)
+func resolveReferenceAndBundle(bundleStore store.BundleStore, ref reference.Reference) (*relocated.Bundle, error) {
+	bndl, err := bundleStore.Read(ref)
 	if err != nil {
-		return nil, "", err
+		return nil, errors.Wrapf(err, "could not push %q: no such App image", reference.FamiliarString(ref))
 	}
+
 	if err := bndl.Validate(); err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	return bndl, ref, err
+
+	return bndl, err
 }
 
 func pushBundle(dockerCli command.Cli, bndl *relocated.Bundle, cnabRef reference.Named) error {
