@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/app/internal/relocated"
+
+	"github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal/cliopts"
 
 	"github.com/deislabs/cnab-go/action"
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/cnab-go/credentials"
 	bdl "github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cnab"
@@ -74,7 +76,7 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 }
 
 func runCnab(dockerCli command.Cli, opts runOptions) error {
-	bndl, err := cnab.LoadBundleFromFile(opts.cnabBundle)
+	bndl, err := relocated.BundleFromFile(opts.cnabBundle)
 	if err != nil {
 		return errors.Wrapf(err, "failed to read bundle %q", opts.cnabBundle)
 	}
@@ -94,7 +96,7 @@ func runDockerApp(dockerCli command.Cli, appname string, opts runOptions) error 
 	return runBundle(dockerCli, bndl, opts, ref.String())
 }
 
-func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref string) (err error) {
+func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, ref string) (err error) {
 	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
@@ -119,7 +121,7 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	} else {
 		logrus.Debug(err)
 	}
-	installation, err := store.NewInstallation(installationName, ref)
+	installation, err := store.NewInstallation(installationName, ref, bndl)
 	if err != nil {
 		return err
 	}
@@ -128,7 +130,6 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	if err != nil {
 		return err
 	}
-	installation.Bundle = bndl
 
 	if err := bdl.MergeBundleParameters(installation,
 		bdl.WithFileParameters(opts.ParametersFiles),
@@ -139,7 +140,7 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	); err != nil {
 		return err
 	}
-	creds, err := prepareCredentialSet(bndl, opts.CredentialSetOpts(dockerCli, credentialStore)...)
+	creds, err := prepareCredentialSet(bndl.Bundle, opts.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
 	}
@@ -152,7 +153,11 @@ func runBundle(dockerCli command.Cli, bndl *bundle.Bundle, opts runOptions, ref 
 	}
 	{
 		defer muteDockerCli(dockerCli)()
-		err = inst.Run(&installation.Claim, creds, os.Stdout)
+		cfgFunc := func(op *driver.Operation) error {
+			op.Out = dockerCli.Out()
+			return nil
+		}
+		err = inst.Run(&installation.Claim, creds, cfgFunc)
 	}
 	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.

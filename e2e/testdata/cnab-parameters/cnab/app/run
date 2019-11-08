@@ -9,7 +9,6 @@ case $action in
     echo "boolParam=$BOOL_PARAM" 
     echo "stringParam=$STRING_PARAM" 
     echo "intParam=$INT_PARAM" 
-    echo "floatParam=$FLOAT_PARAM" 
     ;;
     uninstall)
     echo "uninstall action"

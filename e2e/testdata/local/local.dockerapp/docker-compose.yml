@@ -1,0 +1,15 @@
+version: "3.6"
+services:
+  web:
+    image: web
+    build: ./web
+    ports:
+      - "${services.web.port}:8080"
+  worker:
+    image: worker
+    build:
+      context: ./worker
+      args:
+        - REPLACE_BY_BUILD_ARG=original
+        - STATIC_ARG=static
+      dockerfile: Dockerfile.worker

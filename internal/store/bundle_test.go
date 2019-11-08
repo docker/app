@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/docker/app/internal/relocated"
+
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
 	"gotest.tools/assert"
@@ -26,7 +28,7 @@ func TestStoreAndReadBundle(t *testing.T) {
 	bundleStore, err := appstore.BundleStore()
 	assert.NilError(t, err)
 
-	expectedBundle := &bundle.Bundle{Name: "bundle-name"}
+	expectedBundle := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 
 	testcases := []struct {
 		name string
@@ -36,12 +38,12 @@ func TestStoreAndReadBundle(t *testing.T) {
 		{
 			name: "tagged",
 			ref:  parseRefOrDie(t, "my-repo/my-bundle:my-tag"),
-			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag", "bundle.json"),
+			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag", relocated.BundleFilename),
 		},
 		{
 			name: "digested",
 			ref:  parseRefOrDie(t, "my-repo/my-bundle@sha256:"+testSha),
-			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_digests", "sha256", testSha, "bundle.json"),
+			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_digests", "sha256", testSha, relocated.BundleFilename),
 		},
 	}
 
@@ -222,7 +224,7 @@ func TestList(t *testing.T) {
 		assert.Equal(t, len(bundles), 0)
 	})
 
-	bndl := &bundle.Bundle{Name: "bundle-name"}
+	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	for _, ref := range refs {
 		_, err = bundleStore.Store(ref, bndl)
 		assert.NilError(t, err)
@@ -260,7 +262,7 @@ func TestRemove(t *testing.T) {
 		parseRefOrDie(t, "my-repo/b-bundle@sha256:"+testSha),
 	}
 
-	bndl := &bundle.Bundle{Name: "bundle-name"}
+	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	for _, ref := range refs {
 		_, err = bundleStore.Store(ref, bndl)
 		assert.NilError(t, err)
@@ -300,7 +302,7 @@ func TestLookUp(t *testing.T) {
 	assert.NilError(t, err)
 	bundleStore, err := appstore.BundleStore()
 	assert.NilError(t, err)
-	bndl := &bundle.Bundle{Name: "bundle-name"}
+	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	// Adding the bundle referenced by id
 	id, err := bundleStore.Store(nil, bndl)
 	assert.NilError(t, err)
@@ -384,23 +386,23 @@ func TestScanBundles(t *testing.T) {
 	defer dockerConfigDir.Remove()
 
 	// Adding a bundle which should be referenced by id only
-	bndl1 := &bundle.Bundle{Name: "bundle-1"}
+	bndl1 := relocated.FromBundle(&bundle.Bundle{Name: "bundle-1"})
 	id1, err := FromBundle(bndl1)
 	assert.NilError(t, err)
 	dir1 := dockerConfigDir.Join("app", "bundles", "_ids", id1.String())
 	assert.NilError(t, os.MkdirAll(dir1, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir1, "bundle.json"), []byte(`{"name": "bundle-1"}`), 0644))
+	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir1, relocated.BundleFilename), []byte(`{"name": "bundle-1"}`), 0644))
 
 	// Adding a bundle which should be referenced by id and tag
-	bndl2 := &bundle.Bundle{Name: "bundle-2"}
+	bndl2 := relocated.FromBundle(&bundle.Bundle{Name: "bundle-2"})
 	id2, err := FromBundle(bndl2)
 	assert.NilError(t, err)
 	dir2 := dockerConfigDir.Join("app", "bundles", "_ids", id2.String())
 	assert.NilError(t, os.MkdirAll(dir2, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, "bundle.json"), []byte(`{"name": "bundle-2"}`), 0644))
+	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, relocated.BundleFilename), []byte(`{"name": "bundle-2"}`), 0644))
 	dir2 = dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag")
 	assert.NilError(t, os.MkdirAll(dir2, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, "bundle.json"), []byte(`{"name": "bundle-2"}`), 0644))
+	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, relocated.BundleFilename), []byte(`{"name": "bundle-2"}`), 0644))
 
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)

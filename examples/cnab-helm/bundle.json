@@ -1,7 +1,7 @@
 {
     "name": "hellohelm",
     "version": "0.1.0",
-    "schemaVersion": "v1.0.0-WD",
+    "schemaVersion": "v1.0.0",
     "invocationImages": [
         {
         "imageType": "docker",

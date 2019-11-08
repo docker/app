@@ -114,6 +114,7 @@ func MergeBundleParameters(installation *store.Installation, ops ...MergeBundleO
 		params: userParams,
 		stderr: os.Stderr,
 	}
+
 	for _, op := range ops {
 		if err := op(cfg); err != nil {
 			return err

@@ -12,23 +12,28 @@ import (
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cli/opts"
 	"github.com/docker/cnab-to-oci/converter"
+	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/client/auth"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // Pull pulls a bundle from an OCI Image Index manifest
-func Pull(ctx context.Context, ref reference.Named, resolver remotes.Resolver) (*bundle.Bundle, error) {
+func Pull(ctx context.Context, ref reference.Named, resolver remotes.Resolver) (*bundle.Bundle, relocation.ImageRelocationMap, error) {
 	log.G(ctx).Debugf("Pulling CNAB Bundle %s", ref)
 	index, err := getIndex(ctx, ref, resolver)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	config, err := getConfig(ctx, ref, resolver, index)
+	b, err := getBundle(ctx, ref, resolver, index)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return converter.ConvertOCIIndexToBundle(&index, &config, ref)
+	relocationMap, err := converter.GenerateRelocationMap(&index, b, ref)
+	if err != nil {
+		return nil, nil, err
+	}
+	return b, relocationMap, nil
 }
 
 func getIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (ocischemav1.Index, error) {
@@ -58,25 +63,25 @@ func getIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (o
 	return index, nil
 }
 
-func getConfig(ctx context.Context, ref opts.NamedOption, resolver remotes.Resolver, index ocischemav1.Index) (converter.BundleConfig, error) {
+func getBundle(ctx context.Context, ref opts.NamedOption, resolver remotes.Resolver, index ocischemav1.Index) (*bundle.Bundle, error) {
 	repoOnly, err := reference.ParseNormalizedNamed(ref.Name())
 	if err != nil {
-		return converter.BundleConfig{}, fmt.Errorf("invalid bundle config manifest reference name %q: %s", ref, err)
+		return nil, fmt.Errorf("invalid bundle manifest reference name %q: %s", ref, err)
 	}
 
 	// config is wrapped in an image manifest. So we first pull the manifest
 	// and then the config blob within it
 	configManifestDescriptor, err := getConfigManifestDescriptor(ctx, ref, index)
 	if err != nil {
-		return converter.BundleConfig{}, err
+		return nil, err
 	}
 
 	manifest, err := getConfigManifest(ctx, ref, repoOnly, resolver, configManifestDescriptor)
 	if err != nil {
-		return converter.BundleConfig{}, err
+		return nil, err
 	}
 
-	// Pull now the config itself
+	// Pull now the bundle itself
 	return getBundleConfig(ctx, ref, repoOnly, resolver, manifest)
 }
 
@@ -114,13 +119,13 @@ func getConfigManifest(ctx context.Context, ref opts.NamedOption, repoOnly refer
 	return manifest, err
 }
 
-func getBundleConfig(ctx context.Context, ref opts.NamedOption, repoOnly reference.Named, resolver remotes.Resolver, manifest ocischemav1.Manifest) (converter.BundleConfig, error) {
+func getBundleConfig(ctx context.Context, ref opts.NamedOption, repoOnly reference.Named, resolver remotes.Resolver, manifest ocischemav1.Manifest) (*bundle.Bundle, error) {
 	logger := log.G(ctx)
 
-	logger.Debugf("Fetching Bundle Config %s", manifest.Config.Digest)
+	logger.Debugf("Fetching Bundle %s", manifest.Config.Digest)
 	configRef, err := reference.WithDigest(repoOnly, manifest.Config.Digest)
 	if err != nil {
-		return converter.BundleConfig{}, fmt.Errorf("invalid bundle config reference name %q: %s", ref, err)
+		return nil, fmt.Errorf("invalid bundle reference name %q: %s", ref, err)
 	}
 	configPayload, err := pullPayload(ctx, resolver, configRef.String(), ocischemav1.Descriptor{
 		Digest:    manifest.Config.Digest,
@@ -128,15 +133,15 @@ func getBundleConfig(ctx context.Context, ref opts.NamedOption, repoOnly referen
 		Size:      manifest.Config.Size,
 	})
 	if err != nil {
-		return converter.BundleConfig{}, fmt.Errorf("failed to pull bundle config %q: %s", ref, err)
+		return nil, fmt.Errorf("failed to pull bundle %q: %s", ref, err)
 	}
-	var config converter.BundleConfig
-	if err := json.Unmarshal(configPayload, &config); err != nil {
-		return converter.BundleConfig{}, fmt.Errorf("failed to pull bundle config %q: %s", ref, err)
+	var b bundle.Bundle
+	if err := json.Unmarshal(configPayload, &b); err != nil {
+		return nil, fmt.Errorf("failed to pull bundle %q: %s", ref, err)
 	}
-	logPayload(logger, config)
+	logPayload(logger, b)
 
-	return config, nil
+	return &b, nil
 }
 
 func pullPayload(ctx context.Context, resolver remotes.Resolver, reference string, descriptor ocischemav1.Descriptor) ([]byte, error) {
@@ -150,5 +155,7 @@ func pullPayload(ctx context.Context, resolver remotes.Resolver, reference strin
 		return nil, err
 	}
 	defer reader.Close()
-	return ioutil.ReadAll(reader)
+
+	result, err := ioutil.ReadAll(reader)
+	return result, err
 }

@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/deislabs/cnab-go/driver"
+
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
 	bdl "github.com/docker/app/internal/bundle"
@@ -59,13 +61,18 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		w = f
 	}
 
+	cfgFunc := func(op *driver.Operation) error {
+		op.Out = w
+		return nil
+	}
+
 	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts)
 	if err != nil {
 		return err
 	}
 	installation.Parameters[internal.ParameterRenderFormatName] = opts.formatDriver
 
-	if err := action.Run(&installation.Claim, nil, w); err != nil {
+	if err := action.Run(&installation.Claim, nil, cfgFunc); err != nil {
 		return fmt.Errorf("render failed: %s\n%s", err, errBuf)
 	}
 	return nil
@@ -84,11 +91,10 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "could not render %q: no such App image", appname)
 	}
-	installation, err := appstore.NewInstallation("custom-action", ref.String())
+	installation, err := appstore.NewInstallation("custom-action", ref.String(), bundle)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	installation.Bundle = bundle
 
 	if err := bdl.MergeBundleParameters(installation,
 		bdl.WithFileParameters(opts.ParametersFiles),

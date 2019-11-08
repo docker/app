@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/docker/app/internal/relocated"
+
 	"gotest.tools/assert"
 
 	"github.com/deislabs/cnab-go/bundle"
@@ -15,18 +17,18 @@ import (
 )
 
 type bundleStoreStubForListCmd struct {
-	refMap map[reference.Reference]*bundle.Bundle
+	refMap map[reference.Reference]*relocated.Bundle
 	// in order to keep the reference in the same order between tests
 	refList []reference.Reference
 }
 
-func (b *bundleStoreStubForListCmd) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error) {
-	b.refMap[ref] = bndle
+func (b *bundleStoreStubForListCmd) Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error) {
+	b.refMap[ref] = bndl
 	b.refList = append(b.refList, ref)
-	return store.FromBundle(bndle)
+	return store.FromBundle(bndl)
 }
 
-func (b *bundleStoreStubForListCmd) Read(ref reference.Reference) (*bundle.Bundle, error) {
+func (b *bundleStoreStubForListCmd) Read(ref reference.Reference) (*relocated.Bundle, error) {
 	bndl, ok := b.refMap[ref]
 	if ok {
 		return bndl, nil
@@ -54,17 +56,23 @@ func TestListCmd(t *testing.T) {
 		parseReference(t, "foo/bar:1.0"),
 		ref,
 	}
-	bundles := []bundle.Bundle{
+	bundles := []relocated.Bundle{
 		{
-			Name: "Digested App",
+			Bundle: &bundle.Bundle{
+				Name: "Digested App",
+			},
 		},
 		{
-			Version:       "1.0.0",
-			SchemaVersion: "1.0.0",
-			Name:          "Foo App",
+			Bundle: &bundle.Bundle{
+				Version:       "1.0.0",
+				SchemaVersion: "1.0.0",
+				Name:          "Foo App",
+			},
 		},
 		{
-			Name: "Quiet App",
+			Bundle: &bundle.Bundle{
+				Name: "Quiet App",
+			},
 		},
 	}
 
@@ -114,13 +122,13 @@ func parseReference(t *testing.T, s string) reference.Reference {
 	return ref
 }
 
-func testRunList(t *testing.T, refs []reference.Reference, bundles []bundle.Bundle, options imageListOption, expectedOutput string) {
+func testRunList(t *testing.T, refs []reference.Reference, bundles []relocated.Bundle, options imageListOption, expectedOutput string) {
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 	dockerCli, err := command.NewDockerCli(command.WithOutputStream(w))
 	assert.NilError(t, err)
 	bundleStore := &bundleStoreStubForListCmd{
-		refMap:  make(map[reference.Reference]*bundle.Bundle),
+		refMap:  make(map[reference.Reference]*relocated.Bundle),
 		refList: []reference.Reference{},
 	}
 	for i, ref := range refs {

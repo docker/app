@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/docker/app/internal/relocated"
+
 	"gotest.tools/assert"
 
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
 )
 
@@ -18,7 +19,7 @@ func parseRefOrDie(t *testing.T, ref string) reference.Named {
 }
 
 type bundleStoreStub struct {
-	ReadBundle   *bundle.Bundle
+	ReadBundle   *relocated.Bundle
 	ReadError    error
 	StoredBundle string
 	StoredError  error
@@ -27,7 +28,7 @@ type bundleStoreStub struct {
 	LookUpError  error
 }
 
-func (b *bundleStoreStub) Store(ref reference.Reference, bndle *bundle.Bundle) (reference.Digested, error) {
+func (b *bundleStoreStub) Store(ref reference.Reference, bndle *relocated.Bundle) (reference.Digested, error) {
 	defer func() {
 		b.StoredError = nil
 	}()
@@ -37,7 +38,7 @@ func (b *bundleStoreStub) Store(ref reference.Reference, bndle *bundle.Bundle) (
 	return b.StoredID, b.StoredError
 }
 
-func (b *bundleStoreStub) Read(ref reference.Reference) (*bundle.Bundle, error) {
+func (b *bundleStoreStub) Read(ref reference.Reference) (*relocated.Bundle, error) {
 	defer func() {
 		b.ReadBundle = nil
 		b.ReadError = nil
@@ -88,7 +89,7 @@ func TestUnexistingSource(t *testing.T) {
 func TestInvalidDestinationReference(t *testing.T) {
 	// given a reference and a bundle is returned by bundleStore.LookUp and bundleStore.Read
 	mockedBundleStore.LookUpRef = parseRefOrDie(t, "ref")
-	mockedBundleStore.ReadBundle = &bundle.Bundle{}
+	mockedBundleStore.ReadBundle = &relocated.Bundle{}
 	// and given a bad destination reference
 	const badRef = "b@d reference"
 
@@ -100,7 +101,7 @@ func TestInvalidDestinationReference(t *testing.T) {
 func TestBundleNotStored(t *testing.T) {
 	// given a reference and a bundle is returned by bundleStore.LookUp and bundleStore.Read
 	mockedBundleStore.LookUpRef = parseRefOrDie(t, "src-app")
-	mockedBundleStore.ReadBundle = &bundle.Bundle{}
+	mockedBundleStore.ReadBundle = &relocated.Bundle{}
 	// and given bundleStore.Store will return an error
 	mockedBundleStore.StoredError = fmt.Errorf("error from bundleStore.Store")
 
@@ -112,7 +113,7 @@ func TestBundleNotStored(t *testing.T) {
 func TestSuccessfulyTag(t *testing.T) {
 	// given a reference and a bundle is returned by bundleStore.LookUp and bundleStore.Read
 	mockedBundleStore.LookUpRef = parseRefOrDie(t, "src-app")
-	mockedBundleStore.ReadBundle = &bundle.Bundle{}
+	mockedBundleStore.ReadBundle = &relocated.Bundle{}
 	// and given valid source and output references
 	const (
 		srcRef            = "src-app"

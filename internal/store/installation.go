@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/docker/app/internal/relocated"
+
+	"github.com/docker/cnab-to-oci/relocation"
+
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/utils/crud"
 )
@@ -20,18 +24,24 @@ type InstallationStore interface {
 // It persists the result of an installation and its parameters and context.
 type Installation struct {
 	claim.Claim
-	Reference string `json:"reference,omitempty"`
+	RelocationMap relocation.ImageRelocationMap
+	Reference     string `json:"reference,omitempty"`
 }
 
-func NewInstallation(name string, reference string) (*Installation, error) {
+func NewInstallation(name string, reference string, bndl *relocated.Bundle) (*Installation, error) {
 	c, err := claim.New(name)
 	if err != nil {
 		return nil, err
 	}
-	return &Installation{
-		Claim:     *c,
-		Reference: reference,
-	}, nil
+	c.Bundle = bndl.Bundle
+	i := &Installation{
+		Claim:         *c,
+		Reference:     reference,
+		RelocationMap: bndl.RelocationMap,
+	}
+	i.applyRelocationMap()
+
+	return i, nil
 }
 
 // SetParameter sets the parameter value if the installation bundle has
@@ -39,6 +49,21 @@ func NewInstallation(name string, reference string) (*Installation, error) {
 func (i Installation) SetParameter(name string, value string) {
 	if _, ok := i.Bundle.Parameters[name]; ok {
 		i.Parameters[name] = value
+	}
+}
+
+func (i *Installation) applyRelocationMap() {
+	for idx, def := range i.Bundle.InvocationImages {
+		if img, ok := i.RelocationMap[def.Image]; ok {
+			def.Image = img
+			i.Bundle.InvocationImages[idx] = def
+		}
+	}
+	for name, def := range i.Bundle.Images {
+		if img, ok := i.RelocationMap[def.Image]; ok {
+			def.Image = img
+			i.Bundle.Images[name] = def
+		}
 	}
 }
 

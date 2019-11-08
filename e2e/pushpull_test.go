@@ -1,135 +1,32 @@
 package e2e
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/docker/cnab-to-oci/converter"
-	"github.com/docker/distribution/manifest/manifestlist"
-	"github.com/opencontainers/go-digest"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
 	"gotest.tools/assert/cmp"
 	"gotest.tools/icmd"
 )
 
-type dindSwarmAndRegistryInfo struct {
-	swarmAddress    string
-	registryAddress string
-	configuredCmd   icmd.Cmd
-	stopRegistry    func()
-	registryLogs    func() string
-}
-
-func TestPushArchs(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
-		testCases := []struct {
-			name              string
-			args              []string
-			expectedPlatforms []manifestlist.PlatformSpec
-		}{
-			{
-				name: "default",
-				args: []string{},
-				expectedPlatforms: []manifestlist.PlatformSpec{
-					{
-						OS:           "linux",
-						Architecture: "amd64",
-					},
-				},
-			},
-			{
-				name: "all-platforms",
-				args: []string{"--all-platforms"},
-				expectedPlatforms: []manifestlist.PlatformSpec{
-					{
-						OS:           "linux",
-						Architecture: "amd64",
-					},
-					{
-						OS:           "linux",
-						Architecture: "386",
-					},
-					{
-						OS:           "linux",
-						Architecture: "ppc64le",
-					},
-					{
-						OS:           "linux",
-						Architecture: "s390x",
-					},
-					{
-						OS:           "linux",
-						Architecture: "arm",
-						Variant:      "v5",
-					},
-					{
-						OS:           "linux",
-						Architecture: "arm",
-						Variant:      "v6",
-					},
-					{
-						OS:           "linux",
-						Architecture: "arm",
-						Variant:      "v7",
-					},
-					{
-						OS:           "linux",
-						Architecture: "arm64",
-						Variant:      "v8",
-					},
-				},
-			},
-		}
-
-		for _, testCase := range testCases {
-			t.Run(testCase.name, func(t *testing.T) {
-				cmd := info.configuredCmd
-				ref := info.registryAddress + "/test/push-pull:1"
-				args := []string{"app", "push", "--tag", ref}
-				args = append(args, testCase.args...)
-				args = append(args, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
-				cmd.Command = dockerCli.Command(args...)
-				icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-				var index v1.Index
-				headers := map[string]string{
-					"Accept": "application/vnd.docker.distribution.manifest.list.v2+json",
-				}
-				err := httpGet("http://"+info.registryAddress+"/v2/test/push-pull/manifests/1", headers, &index)
-				assert.NilError(t, err, info.registryLogs())
-				digest, err := getManifestListDigest(index)
-				assert.NilError(t, err, info.registryLogs())
-				var manifestList manifestlist.ManifestList
-				err = httpGet("http://"+info.registryAddress+"/v2/test/push-pull/manifests/"+digest.String(), headers, &manifestList)
-				assert.NilError(t, err)
-				assert.Equal(t, len(manifestList.Manifests), len(testCase.expectedPlatforms), "Unexpected number of platforms")
-				for _, m := range manifestList.Manifests {
-					assert.Assert(t, cmp.Contains(testCase.expectedPlatforms, m.Platform), "Platform expected but not found: %s", m.Platform)
-				}
-			})
-		}
-	})
-}
-
 func TestPushInsecureRegistry(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		path := filepath.Join("testdata", "local")
 		ref := info.registryAddress + "/test/push-insecure"
 
 		// create a command outside of the dind context so without the insecure registry configured
 		cmdNoInsecureRegistry, cleanupNoInsecureRegistryCommand := dockerCli.createTestCmd()
 		defer cleanupNoInsecureRegistryCommand()
-		cmdNoInsecureRegistry.Command = dockerCli.Command("app", "push", "--tag", ref, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		build(t, cmdNoInsecureRegistry, dockerCli, ref, path)
+		cmdNoInsecureRegistry.Command = dockerCli.Command("app", "push", ref)
 		icmd.RunCmd(cmdNoInsecureRegistry).Assert(t, icmd.Expected{ExitCode: 1})
 
-		// run the push with the command inside dind context configured to allow access to the insecure registry
+		// run the push with the command inside dind context configured to allow access to the insecure registr
 		cmd := info.configuredCmd
-		cmd.Command = dockerCli.Command("app", "push", "--tag", ref, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		build(t, cmd, dockerCli, ref, path)
+		cmd.Command = dockerCli.Command("app", "push", ref)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	})
 }
@@ -138,13 +35,15 @@ func TestPushInstall(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 		ref := info.registryAddress + "/test/push-pull"
-		cmd.Command = dockerCli.Command("app", "push", "--tag", ref, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		build(t, cmd, dockerCli, ref, filepath.Join("testdata", "push-pull"))
+
+		cmd.Command = dockerCli.Command("app", "push", ref)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		cmd.Command = dockerCli.Command("app", "run", ref, "--name", t.Name())
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		cmd.Command = dockerCli.Command("service", "ls")
-		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
+		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), t.Name()))
 	})
 }
 
@@ -153,7 +52,9 @@ func TestPushPullInstall(t *testing.T) {
 		cmd := info.configuredCmd
 		ref := info.registryAddress + "/test/push-pull"
 		tag := ":v.0.0.1"
-		cmd.Command = dockerCli.Command("app", "push", "--tag", ref+tag, filepath.Join("testdata", "push-pull", "push-pull.dockerapp"))
+		build(t, cmd, dockerCli, ref+tag, filepath.Join("testdata", "push-pull"))
+
+		cmd.Command = dockerCli.Command("app", "push", ref+tag)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		cmd.Command = dockerCli.Command("app", "pull", ref+tag)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
@@ -164,8 +65,6 @@ func TestPushPullInstall(t *testing.T) {
 		// install from local store
 		cmd.Command = dockerCli.Command("app", "run", ref+tag, "--name", t.Name())
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-		cmd.Command = dockerCli.Command("service", "ls")
-		assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
 
 		// listing the installed application shows the pulled application reference
 		cmd.Command = dockerCli.Command("app", "ls")
@@ -193,39 +92,42 @@ func TestPushInstallBundle(t *testing.T) {
 		ref := info.registryAddress + "/test/push-bundle"
 
 		// render the app to a bundle, we use the app from the push pull test above.
-		cmd.Command = dockerCli.Command("app", "build", "--tag", "a-simple-app:1.0.0", filepath.Join("testdata", "push-pull"))
-		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		build(t, cmd, dockerCli, "a-simple-app:1.0.0", filepath.Join("testdata", "push-pull"))
 
 		// push it and install to check it is available
 		t.Run("push-bundle", func(t *testing.T) {
 			name := strings.Replace(t.Name(), "/", "_", 1)
-			cmd.Command = dockerCli.Command("app", "push", "--tag", ref, "a-simple-app:1.0.0")
+			cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app:1.0.0", ref)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			cmd.Command = dockerCli.Command("app", "push", ref)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			cmd.Command = dockerCli.Command("app", "run", ref, "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
-			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
+			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), name))
 
 			// ensure it doesn't confuse the next test
 			cmd.Command = dockerCli.Command("app", "rm", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			cmd.Command = dockerCli.Command("service", "ls")
-			assert.Check(t, !strings.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
+			assert.Check(t, !strings.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), name))
 		})
 
 		// push it again using the first ref and install from the new ref to check it is also available
 		t.Run("push-ref", func(t *testing.T) {
 			name := strings.Replace(t.Name(), "/", "_", 1)
 			ref2 := info.registryAddress + "/test/push-ref"
-			cmd.Command = dockerCli.Command("app", "push", "--tag", ref2, ref+":latest")
+			cmd.Command = dockerCli.Command("app", "image", "tag", ref+":latest", ref2)
+			icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			cmd.Command = dockerCli.Command("app", "push", ref2)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			cmd.Command = dockerCli.Command("app", "run", ref2, "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
-			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref2))
+			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), name))
 		})
 
 		// push it again using an app pre-bundled and tagged in the bundle store and install it to check it is also available
@@ -241,8 +143,7 @@ func TestPushInstallBundle(t *testing.T) {
 			cmdIsolatedStore.Env = append(cmdIsolatedStore.Env, "DOCKER_CONTEXT=swarm-context")
 
 			// bundle the app again but this time with a tag to store it into the bundle store
-			cmdIsolatedStore.Command = dockerCli.Command("app", "build", "--tag", ref2, filepath.Join("testdata", "push-pull"))
-			icmd.RunCmd(cmdIsolatedStore).Assert(t, icmd.Success)
+			build(t, cmdIsolatedStore, dockerCli, ref2, filepath.Join("testdata", "push-pull"))
 			// Push the app without tagging it explicitly
 			cmdIsolatedStore.Command = dockerCli.Command("app", "push", ref2)
 			icmd.RunCmd(cmdIsolatedStore).Assert(t, icmd.Success)
@@ -252,43 +153,7 @@ func TestPushInstallBundle(t *testing.T) {
 			cmd.Command = dockerCli.Command("app", "run", ref2, "--name", name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 			cmd.Command = dockerCli.Command("service", "ls")
-			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), ref))
+			assert.Check(t, cmp.Contains(icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), name))
 		})
 	})
-}
-
-func httpGet(url string, headers map[string]string, obj interface{}) error {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return err
-	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	r, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("unexpected http error code %d with message %s", r.StatusCode, string(body))
-	}
-	if err := json.NewDecoder(r.Body).Decode(obj); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getManifestListDigest(index v1.Index) (digest.Digest, error) {
-	for _, m := range index.Manifests {
-		if m.Annotations[converter.CNABDescriptorTypeAnnotation] == "component" {
-			return m.Digest, nil
-		}
-	}
-	return "", fmt.Errorf("Service image not found")
 }

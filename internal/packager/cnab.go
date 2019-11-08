@@ -13,7 +13,7 @@ import (
 
 const (
 	// CNABVersion1_0_0 is the CNAB Schema version 1.0.0
-	CNABVersion1_0_0 = "v1.0.0-WD"
+	CNABVersion1_0_0 = "v1.0.0"
 )
 
 // DockerAppCustom contains extension custom data that docker app injects

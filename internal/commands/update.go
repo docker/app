@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/deislabs/cnab-go/driver"
+
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/app/internal/bundle"
@@ -61,7 +63,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		if err != nil {
 			return err
 		}
-		installation.Bundle = b
+		installation.Bundle = b.Bundle
 	}
 	if err := bundle.MergeBundleParameters(installation,
 		bundle.WithFileParameters(opts.ParametersFiles),
@@ -85,7 +87,11 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 	u := &action.Upgrade{
 		Driver: driverImpl,
 	}
-	err = u.Run(&installation.Claim, creds, os.Stdout)
+	cfgFunc := func(op *driver.Operation) error {
+		op.Out = dockerCli.Out()
+		return nil
+	}
+	err = u.Run(&installation.Claim, creds, cfgFunc)
 	err2 := installationStore.Store(installation)
 	if err != nil {
 		return fmt.Errorf("Update failed: %s\n%s", err, errBuf)

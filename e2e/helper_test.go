@@ -25,6 +25,14 @@ func readFile(t *testing.T, path string) string {
 	return strings.Replace(string(content), "\r", "", -1)
 }
 
+type dindSwarmAndRegistryInfo struct {
+	swarmAddress    string
+	registryAddress string
+	configuredCmd   icmd.Cmd
+	stopRegistry    func()
+	registryLogs    func() string
+}
+
 func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInfo)) {
 	cmd, cleanup := dockerCli.createTestCmd()
 	defer cleanup()
@@ -81,6 +89,11 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 		registryLogs:    registry.Logs(t),
 	}
 	todo(info)
+}
+
+func build(t *testing.T, cmd icmd.Cmd, dockerCli dockerCliCommand, ref, path string) {
+	cmd.Command = dockerCli.Command("app", "build", "-t", ref, path)
+	icmd.RunCmd(cmd).Assert(t, icmd.Success)
 }
 
 // Container represents a docker container

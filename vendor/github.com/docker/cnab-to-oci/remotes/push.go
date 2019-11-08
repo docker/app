@@ -2,8 +2,19 @@ package remotes
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+
+	"github.com/docker/cnab-to-oci/internal"
+
+	"github.com/docker/cli/cli/config"
+	configtypes "github.com/docker/cli/cli/config/types"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/docker/docker/registry"
 
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
@@ -11,7 +22,9 @@ import (
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/converter"
+	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/reference"
+	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -21,7 +34,13 @@ import (
 type ManifestOption func(*ocischemav1.Index) error
 
 // Push pushes a bundle as an OCI Image Index manifest
-func Push(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, allowFallbacks bool, options ...ManifestOption) (ocischemav1.Descriptor, error) {
+func Push(ctx context.Context,
+	b *bundle.Bundle,
+	relocationMap relocation.ImageRelocationMap,
+	ref reference.Named,
+	resolver remotes.Resolver,
+	allowFallbacks bool,
+	options ...ManifestOption) (ocischemav1.Descriptor, error) {
 	log.G(ctx).Debugf("Pushing CNAB Bundle %s", ref)
 
 	confManifestDescriptor, err := pushConfig(ctx, b, ref, resolver, allowFallbacks)
@@ -29,7 +48,7 @@ func Push(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver r
 		return ocischemav1.Descriptor{}, err
 	}
 
-	indexDescriptor, err := pushIndex(ctx, b, ref, resolver, allowFallbacks, confManifestDescriptor, options...)
+	indexDescriptor, err := pushIndex(ctx, b, relocationMap, ref, resolver, allowFallbacks, confManifestDescriptor, options...)
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
@@ -46,7 +65,7 @@ func pushConfig(ctx context.Context,
 	logger := log.G(ctx)
 	logger.Debugf("Pushing CNAB Bundle Config")
 
-	bundleConfig, err := converter.CreateBundleConfig(b).PrepareForPush()
+	bundleConfig, err := converter.PrepareForPush(b)
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
@@ -59,12 +78,12 @@ func pushConfig(ctx context.Context,
 	return confManifestDescriptor, nil
 }
 
-func pushIndex(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, allowFallbacks bool,
+func pushIndex(ctx context.Context, b *bundle.Bundle, relocationMap relocation.ImageRelocationMap, ref reference.Named, resolver remotes.Resolver, allowFallbacks bool,
 	confManifestDescriptor ocischemav1.Descriptor, options ...ManifestOption) (ocischemav1.Descriptor, error) {
 	logger := log.G(ctx)
 	logger.Debug("Pushing CNAB Index")
 
-	indexDescriptor, indexPayload, err := prepareIndex(b, ref, confManifestDescriptor, options...)
+	indexDescriptor, indexPayload, err := prepareIndex(b, relocationMap, ref, confManifestDescriptor, options...)
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
@@ -81,18 +100,18 @@ func pushIndex(ctx context.Context, b *bundle.Bundle, ref reference.Named, resol
 		}
 		logger.Debugf("Unable to push OCI Index: %v", err)
 		// retry with a docker manifestlist
-		return pushDockerManifestList(ctx, b, ref, resolver, confManifestDescriptor, options...)
+		return pushDockerManifestList(ctx, b, relocationMap, ref, resolver, confManifestDescriptor, options...)
 	}
 
 	logger.Debugf("CNAB Index pushed")
 	return indexDescriptor, nil
 }
 
-func pushDockerManifestList(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver,
+func pushDockerManifestList(ctx context.Context, b *bundle.Bundle, relocationMap relocation.ImageRelocationMap, ref reference.Named, resolver remotes.Resolver,
 	confManifestDescriptor ocischemav1.Descriptor, options ...ManifestOption) (ocischemav1.Descriptor, error) {
 	logger := log.G(ctx)
 
-	indexDescriptor, indexPayload, err := prepareIndexNonOCI(b, ref, confManifestDescriptor, options...)
+	indexDescriptor, indexPayload, err := prepareIndexNonOCI(b, relocationMap, ref, confManifestDescriptor, options...)
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
@@ -101,15 +120,21 @@ func pushDockerManifestList(ctx context.Context, b *bundle.Bundle, ref reference
 	logger.Debug("Manifest list Descriptor")
 	logPayload(logger, indexDescriptor)
 
-	if err := pushPayload(ctx, resolver, ref.String(), indexDescriptor, indexPayload); err != nil {
-		logger.Debugf("Unable to push Index with Manifest list: %v", err)
+	if err := pushPayload(ctx,
+		resolver, ref.String(),
+		indexDescriptor,
+		indexPayload); err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
 	return indexDescriptor, nil
 }
 
-func prepareIndex(b *bundle.Bundle, ref reference.Named, confDescriptor ocischemav1.Descriptor, options ...ManifestOption) (ocischemav1.Descriptor, []byte, error) {
-	ix, err := convertIndexAndApplyOptions(b, ref, confDescriptor, options...)
+func prepareIndex(b *bundle.Bundle,
+	relocationMap relocation.ImageRelocationMap,
+	ref reference.Named,
+	confDescriptor ocischemav1.Descriptor,
+	options ...ManifestOption) (ocischemav1.Descriptor, []byte, error) {
+	ix, err := convertIndexAndApplyOptions(b, relocationMap, ref, confDescriptor, options...)
 	if err != nil {
 		return ocischemav1.Descriptor{}, nil, err
 	}
@@ -130,8 +155,12 @@ type ociIndexWrapper struct {
 	MediaType string `json:"mediaType,omitempty"`
 }
 
-func convertIndexAndApplyOptions(b *bundle.Bundle, ref reference.Named, confDescriptor ocischemav1.Descriptor, options ...ManifestOption) (*ocischemav1.Index, error) {
-	ix, err := converter.ConvertBundleToOCIIndex(b, ref, confDescriptor)
+func convertIndexAndApplyOptions(b *bundle.Bundle,
+	relocationMap relocation.ImageRelocationMap,
+	ref reference.Named,
+	confDescriptor ocischemav1.Descriptor,
+	options ...ManifestOption) (*ocischemav1.Index, error) {
+	ix, err := converter.ConvertBundleToOCIIndex(b, ref, confDescriptor, relocationMap)
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +172,12 @@ func convertIndexAndApplyOptions(b *bundle.Bundle, ref reference.Named, confDesc
 	return ix, nil
 }
 
-func prepareIndexNonOCI(b *bundle.Bundle, ref reference.Named, confDescriptor ocischemav1.Descriptor, options ...ManifestOption) (ocischemav1.Descriptor, []byte, error) {
-	ix, err := convertIndexAndApplyOptions(b, ref, confDescriptor, options...)
+func prepareIndexNonOCI(b *bundle.Bundle,
+	relocationMap relocation.ImageRelocationMap,
+	ref reference.Named,
+	confDescriptor ocischemav1.Descriptor,
+	options ...ManifestOption) (ocischemav1.Descriptor, []byte, error) {
+	ix, err := convertIndexAndApplyOptions(b, relocationMap, ref, confDescriptor, options...)
 	if err != nil {
 		return ocischemav1.Descriptor{}, nil, err
 	}
@@ -213,4 +246,54 @@ func pushBundleConfigDescriptor(ctx context.Context, name string, resolver remot
 		return ocischemav1.Descriptor{}, err
 	}
 	return descriptor, nil
+}
+
+func pushTaggedImage(ctx context.Context, imageClient internal.ImageClient, targetRef reference.Named, out io.Writer) error {
+	repoInfo, err := registry.ParseRepositoryInfo(targetRef)
+	if err != nil {
+		return err
+	}
+
+	authConfig := resolveAuthConfig(repoInfo.Index)
+	encodedAuth, err := encodeAuthToBase64(authConfig)
+	if err != nil {
+		return err
+	}
+
+	reader, err := imageClient.ImagePush(ctx, targetRef.String(), types.ImagePushOptions{
+		RegistryAuth: encodedAuth,
+	})
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	return jsonmessage.DisplayJSONMessagesStream(reader, out, 0, false, nil)
+}
+
+func encodeAuthToBase64(authConfig configtypes.AuthConfig) (string, error) {
+	buf, err := json.Marshal(authConfig)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(buf), nil
+}
+
+func resolveAuthConfig(index *registrytypes.IndexInfo) configtypes.AuthConfig {
+	cfg := config.LoadDefaultConfigFile(os.Stderr)
+
+	hostName := index.Name
+	if index.Official {
+		hostName = registry.IndexServer
+	}
+
+	configs, err := cfg.GetAllCredentials()
+	if err != nil {
+		return configtypes.AuthConfig{}
+	}
+
+	authConfig, ok := configs[hostName]
+	if !ok {
+		return configtypes.AuthConfig{}
+	}
+	return authConfig
 }

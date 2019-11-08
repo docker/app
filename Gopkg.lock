@@ -82,14 +82,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:fdd135f63857b858859a5a2e361a117622824826a78ce9d8c058144a0f89c7ba"
-  name = "github.com/containerd/cgroups"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "d596c78861b15c27a9ac82975aca4413390b9b49"
-
-[[projects]]
-  branch = "master"
   digest = "1:da4daad2ec1737eec4ebeeed7afedb631711f96bbac0c361a17a4d0369d00c6d"
   name = "github.com/containerd/console"
   packages = ["."]
@@ -97,8 +89,7 @@
   revision = "0650fd9eeb50bab4fc99dceb9f2e14cf58f36e7f"
 
 [[projects]]
-  branch = "master"
-  digest = "1:4bda9967609021b43808181e8606bf60e15fd19500f9a0b2bbf74e4c6e4114c5"
+  digest = "1:a40540af5e9f6f578a0473156f6ddb554aba4e96de5527648cfcc4d074f3120a"
   name = "github.com/containerd/containerd"
   packages = [
     ".",
@@ -155,7 +146,8 @@
     "version",
   ]
   pruneopts = "NUT"
-  revision = "f2b6c31d0fa7f5541f6a37d525ed461b294d785f"
+  revision = "36cf5b690dcc00ff0f34ff7799209050c3d0c59a"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
@@ -203,14 +195,6 @@
   version = "v3.3.12"
 
 [[projects]]
-  digest = "1:84c51760e27ff758724218a0b234a8264aa0992f49af4da50bedd682e196f996"
-  name = "github.com/coreos/go-systemd"
-  packages = ["dbus"]
-  pruneopts = "NUT"
-  revision = "e64a0ec8b42a61e2a9801dc1d0abe539dea79197"
-  version = "v20"
-
-[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -219,7 +203,7 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:c0a6ed57acd48a4a3ef5cfe1089fd2278827600415ab05af13444cd710881d6e"
+  digest = "1:e7719c3f4db444af314e43231f9bff4c4c9bcbb327faffe186bf2e026473abd9"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "action",
@@ -232,8 +216,8 @@
     "utils/crud",
   ]
   pruneopts = "NUT"
-  revision = "0ce7659aab8dbd37cc912ea64cb78f403534de42"
-  version = "v0.3.2-beta1"
+  revision = "a1f17dcdaaff3e06c95ed85c3a34c21c35833831"
+  version = "v0.7.1-beta1"
 
 [[projects]]
   digest = "1:fdf76ff539694e8aba8e9c60e7cc1dead88d21c9dc09e5a330104adad0887440"
@@ -308,15 +292,17 @@
   revision = "d83cd90464377d4164c8f70248d064b979e5ca98"
 
 [[projects]]
-  digest = "1:47edc537d608c0ad4ef8e9cebfec7c74ccc0986af115ff53ea26b18b4605a878"
+  digest = "1:3314fe819a33c59d1d8c25b35297da7d3137dadef098699e087c50be3ecdd867"
   name = "github.com/docker/cnab-to-oci"
   packages = [
     "converter",
+    "internal",
+    "relocation",
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "27701312d17158eea04c079e7ffcc75259741264"
-  version = "v0.1.0-beta2"
+  revision = "5a97c84cb618aae63d98e5fb29b3116fbb01d358"
+  version = "v0.3.0-beta1"
 
 [[projects]]
   digest = "1:d29e07dc6fff1d592442bdf6b947f3a89d418ac6d65344d4e048c64a7cdd511c"
@@ -491,14 +477,6 @@
   ]
   pruneopts = "NUT"
   revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
-
-[[projects]]
-  digest = "1:08a552769d7194c0268ba31010f5da91878212603d11b4b551583a7586a76632"
-  name = "github.com/godbus/dbus"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "2ff6f7ffd60f0f2410b3105864bdd12c7894f844"
-  version = "v5.0.1"
 
 [[projects]]
   digest = "1:2dcc32af5bf38c37286c96f0077efa98007f67946b690fce98a3e07b9659bdf1"
@@ -1449,9 +1427,8 @@
     "github.com/docker/cli/cli/context/store",
     "github.com/docker/cli/cli/flags",
     "github.com/docker/cli/opts",
-    "github.com/docker/cnab-to-oci/converter",
+    "github.com/docker/cnab-to-oci/relocation",
     "github.com/docker/cnab-to-oci/remotes",
-    "github.com/docker/distribution/manifest/manifestlist",
     "github.com/docker/distribution/reference",
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/api/types/container",
@@ -1464,6 +1441,7 @@
     "github.com/docker/docker/pkg/term",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
+    "github.com/docker/go/canonical/json",
     "github.com/imdario/mergo",
     "github.com/jackpal/gateway",
     "github.com/moby/buildkit/client",

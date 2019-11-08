@@ -2,8 +2,8 @@ version: "3.6"
 services:
   web:
     build: ./web
-    port:
-      ${services.web.port}:8080
+    ports:
+      - "${services.web.port}:8080"
   worker:
     build:
       context: ./worker

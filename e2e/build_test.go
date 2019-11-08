@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/docker/app/internal/relocated"
+
 	"gotest.tools/fs"
 
 	"github.com/docker/app/internal/store"
@@ -30,11 +32,8 @@ func TestBuild(t *testing.T) {
 
 		cfg := getDockerConfigDir(t, cmd)
 
-		f := path.Join(cfg, "app", "bundles", "docker.io", "library", "single", "_tags", "1.0.0", "bundle.json")
-		data, err := ioutil.ReadFile(f)
-		assert.NilError(t, err)
-		var bndl bundle.Bundle
-		err = json.Unmarshal(data, &bndl)
+		f := path.Join(cfg, "app", "bundles", "docker.io", "library", "single", "_tags", "1.0.0", relocated.BundleFilename)
+		bndl, err := relocated.BundleFromFile(f)
 		assert.NilError(t, err)
 
 		built := []string{bndl.InvocationImages[0].Digest, bndl.Images["web"].Digest, bndl.Images["worker"].Digest}
@@ -53,7 +52,7 @@ func TestBuild(t *testing.T) {
 		bytes, err := ioutil.ReadFile(iidfile)
 		assert.NilError(t, err)
 		iid := string(bytes)
-		actualID, err := store.FromBundle(&bndl)
+		actualID, err := store.FromBundle(bndl)
 		assert.NilError(t, err)
 		assert.Equal(t, iid, fmt.Sprintf("sha256:%s", actualID.String()))
 	})
@@ -96,7 +95,7 @@ func TestBuildWithoutTag(t *testing.T) {
 		assert.Equal(t, len(infos), 1)
 		id := infos[0].Name()
 
-		f = path.Join(cfg, "app", "bundles", "_ids", id, "bundle.json")
+		f = path.Join(cfg, "app", "bundles", "_ids", id, relocated.BundleFilename)
 		data, err := ioutil.ReadFile(f)
 		assert.NilError(t, err)
 		var bndl bundle.Bundle
@@ -127,7 +126,7 @@ func TestBuildWithArgs(t *testing.T) {
 		assert.Equal(t, len(infos), 1)
 		id := infos[0].Name()
 
-		f = path.Join(cfg, "app", "bundles", "_ids", id, "bundle.json")
+		f = path.Join(cfg, "app", "bundles", "_ids", id, relocated.BundleFilename)
 		data, err := ioutil.ReadFile(f)
 		assert.NilError(t, err)
 		var bndl bundle.Bundle

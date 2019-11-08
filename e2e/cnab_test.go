@@ -5,6 +5,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/docker/app/internal/relocated"
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
 	"gotest.tools/icmd"
@@ -50,7 +51,7 @@ func TestCallCustomStatusAction(t *testing.T) {
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			// docker app install
-			cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, "bundle.json"), "--name", testCase.name)
+			cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, relocated.BundleFilename), "--name", testCase.name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			// docker app uninstall
@@ -78,15 +79,13 @@ func TestCnabParameters(t *testing.T) {
 	}()
 
 	// docker app install
-	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, "bundle.json"), "--name", "cnab-parameters",
+	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, relocated.BundleFilename), "--name", "cnab-parameters",
 		"--set", "boolParam=true",
 		"--set", "stringParam=value",
-		"--set", "intParam=42",
-		"--set", "floatParam=3.14")
+		"--set", "intParam=42")
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	expectedOutput := `boolParam=true
 stringParam=value
-intParam=42
-floatParam=3.14`
+intParam=42`
 	assert.Assert(t, is.Contains(result.Combined(), expectedOutput))
 }

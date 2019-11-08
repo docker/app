@@ -7,7 +7,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/app/internal/relocated"
+
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
@@ -182,5 +183,5 @@ func getImageListColumns(options imageListOption) []imageListColumn {
 
 type pkg struct {
 	ref    reference.Reference
-	bundle *bundle.Bundle
+	bundle *relocated.Bundle
 }

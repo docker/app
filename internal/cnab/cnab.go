@@ -3,13 +3,12 @@ package cnab
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/log"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/relocated"
 	"github.com/docker/app/internal/store"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
@@ -48,30 +47,20 @@ func getAppNameKind(name string) (string, nameKind) {
 	return name, nameKindReference
 }
 
-func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*bundle.Bundle, string, error) {
+func extractAndLoadAppBasedBundle(dockerCli command.Cli, name string) (*relocated.Bundle, string, error) {
 	app, err := packager.Extract(name)
 	if err != nil {
 		return nil, "", err
 	}
 	defer app.Cleanup()
 	bndl, err := packager.MakeBundleFromApp(dockerCli, app, nil)
-	return bndl, "", err
-}
-
-// LoadBundleFromFile loads a bundle from a file
-func LoadBundleFromFile(filename string) (*bundle.Bundle, error) {
-	b := &bundle.Bundle{}
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return b, err
-	}
-	return bundle.Unmarshal(data)
+	return relocated.FromBundle(bndl), "", err
 }
 
 // ResolveBundle looks for a CNAB bundle which can be in a Docker App Package format or
 // a bundle stored locally or in the bundle store. It returns a built or found bundle,
 // a reference to the bundle if it is found in the bundlestore, and an error.
-func ResolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, string, error) {
+func ResolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*relocated.Bundle, string, error) {
 	// resolution logic:
 	// - if there is a docker-app package in working directory or if a directory is given use packager.Extract
 	// - pull the bundle from the registry and add it to the bundle store
@@ -90,7 +79,7 @@ func ResolveBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name
 }
 
 // GetBundle searches for the bundle locally and tries to pull it if not found
-func GetBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*bundle.Bundle, reference.Reference, error) {
+func GetBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name string) (*relocated.Bundle, reference.Reference, error) {
 	bndl, ref, err := getBundleFromStore(bundleStore, name)
 	if err != nil {
 		named, err := store.StringToNamedRef(name)
@@ -108,7 +97,7 @@ func GetBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, name str
 	return bndl, ref, nil
 }
 
-func getBundleFromStore(bundleStore appstore.BundleStore, name string) (*bundle.Bundle, reference.Reference, error) {
+func getBundleFromStore(bundleStore appstore.BundleStore, name string) (*relocated.Bundle, reference.Reference, error) {
 	ref, err := bundleStore.LookUp(name)
 	if err != nil {
 		logrus.Debugf("Unable to find reference %q in the bundle store", name)
@@ -123,17 +112,19 @@ func getBundleFromStore(bundleStore appstore.BundleStore, name string) (*bundle.
 }
 
 // PullBundle pulls the bundle and stores it into the bundle store
-func PullBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, tagRef reference.Named) (*bundle.Bundle, error) {
+func PullBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, tagRef reference.Named) (*relocated.Bundle, error) {
 	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve insecure registries: %v", err)
 	}
-	bndl, err := remotes.Pull(log.WithLogContext(context.Background()), reference.TagNameOnly(tagRef), remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...))
+
+	bndl, relocationMap, err := remotes.Pull(log.WithLogContext(context.Background()), reference.TagNameOnly(tagRef), remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...))
 	if err != nil {
 		return nil, err
 	}
-	if _, err := bundleStore.Store(tagRef, bndl); err != nil {
+	relocatedBundle := &relocated.Bundle{Bundle: bndl, RelocationMap: relocationMap}
+	if _, err := bundleStore.Store(tagRef, relocatedBundle); err != nil {
 		return nil, err
 	}
-	return bndl, nil
+	return relocatedBundle, nil
 }
