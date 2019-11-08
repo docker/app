@@ -12,6 +12,7 @@ Management Commands:
 Commands:
   build       Build an App image from an App definition (.dockerapp)
   init        Initialize an App definition
+  inspect     Shows status, metadata, parameters and the list of services of a running App
   ls          List running Apps
   pull        Pull an App image from a registry
   push        Push an App image to a registry

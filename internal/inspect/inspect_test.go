@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/deislabs/cnab-go/bundle"
+	"github.com/deislabs/cnab-go/claim"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
@@ -22,7 +26,7 @@ type inspectTestCase struct {
 	args map[string]string
 }
 
-func TestInspect(t *testing.T) {
+func TestImageInspect(t *testing.T) {
 	dir := fs.NewDir(t, "inspect",
 		fs.WithDir("no-maintainers",
 			fs.WithFile(internal.ComposeFileName, composeYAML),
@@ -121,14 +125,14 @@ text: hello`),
 			{name: "full"},
 		} {
 			os.Setenv(internal.DockerInspectFormatEnvVar, "pretty")
-			testInspect(t, dir, testcase, "")
+			testImageInspect(t, dir, testcase, "")
 			os.Setenv(internal.DockerInspectFormatEnvVar, "json")
-			testInspect(t, dir, testcase, "-json")
+			testImageInspect(t, dir, testcase, "-json")
 		}
 	})
 }
 
-func testInspect(t *testing.T, dir *fs.Dir, testcase inspectTestCase, suffix string) {
+func testImageInspect(t *testing.T, dir *fs.Dir, testcase inspectTestCase, suffix string) {
 	app, err := types.NewAppFromDefaultFiles(dir.Join(testcase.name))
 	assert.NilError(t, err)
 	// Inspect twice to ensure output is stable (e.g. sorting of maps)
@@ -138,6 +142,69 @@ func testInspect(t *testing.T, dir *fs.Dir, testcase inspectTestCase, suffix str
 			err = ImageInspect(outBuffer, app, testcase.args, nil)
 			assert.NilError(t, err)
 			golden.Assert(t, outBuffer.String(), fmt.Sprintf("inspect-%s%s.golden", testcase.name, suffix))
+		})
+	}
+}
+
+func getInstallation() store.Installation {
+	created := time.Now().Add(time.Hour * -24)
+	modified := time.Now().Add(time.Hour * -17)
+	b := bundle.Bundle{
+		SchemaVersion: "1.0.0",
+		Name:          "hello-world",
+		Version:       "0.1.0",
+		Description:   "Hello, World!",
+	}
+	i := store.Installation{
+		Claim: claim.Claim{
+			Name:     "hello-world",
+			Revision: "01DS2ZW4QKPXHTZXZ8YAP6S9W2",
+			Created:  created,
+			Modified: modified,
+			Bundle:   &b,
+			Result: claim.Result{
+				Action: "upgrade",
+				Status: "success",
+			},
+			Parameters: map[string]interface{}{
+				"com.docker.app.args":                 "{}",
+				"com.docker.app.inspect-format":       "json",
+				"com.docker.app.kubernetes-namespace": "default",
+				"com.docker.app.orchestrator":         "",
+				"com.docker.app.render-format":        "yaml",
+				"com.docker.app.share-registry-creds": false,
+				"port":                                "8080",
+				"text":                                "Hello, World!",
+			},
+		},
+		Reference: "docker.io/sirot/hello-world:0.1.0",
+	}
+	return i
+}
+
+func TestInspect(t *testing.T) {
+	i := getInstallation()
+
+	testCases := []struct {
+		name   string
+		format string
+	}{
+		{
+			name:   "pretty",
+			format: "pretty",
+		},
+		{
+			name:   "json",
+			format: "json",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			var out bytes.Buffer
+			err := Inspect(&out, &i, testCase.format, "swarm")
+			assert.NilError(t, err)
+			golden.Assert(t, out.String(), fmt.Sprintf("inspect-app-%s.golden", testCase.name))
 		})
 	}
 }

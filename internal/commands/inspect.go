@@ -29,11 +29,10 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	var opts inspectOptions
 	cmd := &cobra.Command{
 		Use:   "inspect [OPTIONS] RUNNING_APP",
-		Short: "Shows installation and App metadata, parameters and the service list of a running App",
+		Short: "Shows status, metadata, parameters and the list of services of a running App",
 		Example: `$ docker app inspect my-running-app
 $ docker app inspect my-running-app:1.0.0`,
-		Args:   cli.ExactArgs(1),
-		Hidden: true,
+		Args: cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInspect(dockerCli, firstOrEmpty(args), opts)
 		},
@@ -88,7 +87,7 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 	} else {
 		return fmt.Errorf("inspect failed: status action is not supported by the App")
 	}
-	if err := a.Run(&installation.Claim, creds, nil); err != nil {
+	if err := a.Run(&installation.Claim, creds); err != nil {
 		return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
 	}
 

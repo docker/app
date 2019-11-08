@@ -50,7 +50,7 @@ var (
 			return reference.FamiliarString(ref)
 		}},
 		{"PORTS", func(s *swarmtypes.Service) string {
-			return Ports(s.Endpoint.Ports)
+			return ports(s.Endpoint.Ports)
 		}},
 	}
 )
@@ -84,7 +84,7 @@ func (pr portRange) String() string {
 
 // Ports formats port configuration. This function is copied et adapted from docker CLI
 // see https://github.com/docker/cli/blob/d6edc912ce/cli/command/service/formatter.go#L655
-func Ports(servicePorts []swarmtypes.PortConfig) string {
+func ports(servicePorts []swarmtypes.PortConfig) string {
 	if servicePorts == nil {
 		return ""
 	}
