@@ -38,7 +38,7 @@ const (
 	ActionRenderName = Namespace + "render"
 
 	// CredentialDockerContextName is the name of the credential containing a Docker context
-	CredentialDockerContextName = "docker.context"
+	CredentialDockerContextName = Namespace + "context"
 	// CredentialDockerContextPath is the path to the credential containing a Docker context
 	CredentialDockerContextPath = "/cnab/app/context.dockercontext"
 	// CredentialRegistryName is the name of the credential containing registry credentials
