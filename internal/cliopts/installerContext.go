@@ -22,6 +22,7 @@ func (o *InstallerContextOptions) AddFlags(flags *pflag.FlagSet) {
 		defaultContext = "default"
 	}
 	flags.StringVar(&o.installerContext, "installer-context", defaultContext, "Context on which the installer image is ran")
+	flags.SetAnnotation("installer-context", "experimentalCLI", []string{"true"}) //nolint:errcheck
 }
 
 func (o *InstallerContextOptions) SetInstallerContext(dockerCli command.Cli) (command.Cli, error) {
