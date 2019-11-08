@@ -1,5 +1,7 @@
 FROM dockercore/golang-cross:1.12.9@sha256:3ea9dcef4dd2c46d80445c0b22d6177817f4cfce22c523cc12a5a1091cb37705 AS cli-build
-ENV     DISABLE_WARN_OUTSIDE_CONTAINER=1
+ENV DISABLE_WARN_OUTSIDE_CONTAINER=1
+ARG CLI_CHANNEL=stable
+ARG CLI_VERSION=19.03.4
 
 RUN apt-get install -y -q --no-install-recommends \
   coreutils \
@@ -8,10 +10,13 @@ RUN apt-get install -y -q --no-install-recommends \
 
 WORKDIR /go/src/github.com/docker/cli
 
-RUN git clone https://github.com/docker/cli . && git checkout a1b83ffd2cbeefc0752e5aa7a543d49c1ddfd2cb
+RUN git clone https://github.com/docker/cli . && git checkout v${CLI_VERSION}
+RUN mkdir build
+RUN curl -fL https://download.docker.com/linux/static/${CLI_CHANNEL}/x86_64/docker-${CLI_VERSION}.tgz | tar xzO docker/docker > build/docker-linux-amd64 && chmod +x build/docker-linux-amd64
+RUN curl -fL https://download.docker.com/mac/static/${CLI_CHANNEL}/x86_64/docker-${CLI_VERSION}.tgz | tar xzO docker/docker > build/docker-darwin-amd64
 
 ARG GOPROXY
-RUN make binary-osx binary-windows binary
+RUN make binary-windows
 
 # main dev image
 FROM golang:1.13.3 AS dev
