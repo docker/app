@@ -1,0 +1,2 @@
+nginx.env_file "myenv1.env" will not be copied into app-test.dockerapp. Please copy it manually and update the path accordingly in the compose file.
+nginx.env_file "myenv2.env" will not be copied into app-test.dockerapp. Please copy it manually and update the path accordingly in the compose file.

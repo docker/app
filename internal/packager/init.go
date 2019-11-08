@@ -3,6 +3,7 @@ package packager
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -27,7 +28,7 @@ import (
 // Init is the entrypoint initialization function.
 // It generates a new application definition based on the provided parameters
 // and returns the path to the created application definition.
-func Init(name string, composeFile string) (string, error) {
+func Init(errWriter io.Writer, name string, composeFile string) (string, error) {
 	if err := internal.ValidateAppName(name); err != nil {
 		return "", err
 	}
@@ -48,7 +49,7 @@ func Init(name string, composeFile string) (string, error) {
 	if composeFile == "" {
 		err = initFromScratch(name)
 	} else {
-		err = initFromComposeFile(name, composeFile)
+		err = initFromComposeFile(errWriter, name, composeFile)
 	}
 	if err != nil {
 		return "", err
@@ -79,22 +80,52 @@ func checkComposeFileVersion(compose map[string]interface{}) error {
 	return schema.Validate(compose, fmt.Sprintf("%v", version))
 }
 
-func initFromComposeFile(name string, composeFile string) error {
-	logrus.Debugf("Initializing from compose file %s", composeFile)
+func getEnvFiles(svcName string, envFileEntry interface{}) ([]string, error) {
+	var envFiles []string
+	switch envFileEntry.(type) {
+	case string:
+		envFiles = append(envFiles, envFileEntry.(string))
+	case []interface{}:
+		for _, env := range envFileEntry.([]interface{}) {
+			envFiles = append(envFiles, env.(string))
+		}
+	default:
+		return nil, fmt.Errorf("unknown entries in 'env_file' for service %s -> %v",
+			svcName, envFileEntry)
+	}
+	return envFiles, nil
+}
 
-	dirName := internal.DirNameFromAppName(name)
+func checkEnvFiles(errWriter io.Writer, appName string, cfgMap map[string]interface{}) error {
+	services := cfgMap["services"]
+	servicesMap, ok := services.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid Compose file")
+	}
+	for svcName, svc := range servicesMap {
+		svcContent, ok := svc.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid service %q", svcName)
+		}
+		envFileEntry, ok := svcContent["env_file"]
+		if !ok {
+			continue
+		}
+		envFiles, err := getEnvFiles(svcName, envFileEntry)
+		if err != nil {
+			return errors.Wrap(err, "invalid Compose file")
+		}
+		for _, envFilePath := range envFiles {
+			fmt.Fprintf(errWriter,
+				"%s.env_file %q will not be copied into %s.dockerapp. "+
+					"Please copy it manually and update the path accordingly in the compose file.\n",
+				svcName, envFilePath, appName)
+		}
+	}
+	return nil
+}
 
-	composeRaw, err := ioutil.ReadFile(composeFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to read compose file")
-	}
-	cfgMap, err := composeloader.ParseYAML(composeRaw)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse compose file")
-	}
-	if err := checkComposeFileVersion(cfgMap); err != nil {
-		return err
-	}
+func getParamsFromDefaultEnvFile(composeFile string, composeRaw []byte) (map[string]string, bool, error) {
 	params := make(map[string]string)
 	envs, err := opts.ParseEnvFile(filepath.Join(filepath.Dir(composeFile), ".env"))
 	if err == nil {
@@ -107,7 +138,7 @@ func initFromComposeFile(name string, composeFile string) error {
 	}
 	vars, err := compose.ExtractVariables(composeRaw, compose.ExtrapolationPattern)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse compose file")
+		return nil, false, errors.Wrap(err, "failed to parse compose file")
 	}
 	needsFilling := false
 	for k, v := range vars {
@@ -119,6 +150,32 @@ func initFromComposeFile(name string, composeFile string) error {
 				needsFilling = true
 			}
 		}
+	}
+	return params, needsFilling, nil
+}
+
+func initFromComposeFile(errWriter io.Writer, name string, composeFile string) error {
+	logrus.Debugf("Initializing from compose file %s", composeFile)
+
+	dirName := internal.DirNameFromAppName(name)
+
+	composeRaw, err := ioutil.ReadFile(composeFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to read compose file %q", composeFile)
+	}
+	cfgMap, err := composeloader.ParseYAML(composeRaw)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse compose file")
+	}
+	if err := checkComposeFileVersion(cfgMap); err != nil {
+		return err
+	}
+	if err := checkEnvFiles(errWriter, name, cfgMap); err != nil {
+		return err
+	}
+	params, needsFilling, err := getParamsFromDefaultEnvFile(composeFile, composeRaw)
+	if err != nil {
+		return err
 	}
 	expandedParams, err := parameters.FromFlatten(params)
 	if err != nil {

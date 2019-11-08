@@ -21,7 +21,7 @@ func initCmd(dockerCli command.Cli) *cobra.Command {
 $ docker app init myapp --compose-file docker-compose.yml`,
 		Args: cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			created, err := packager.Init(args[0], initComposeFile)
+			created, err := packager.Init(dockerCli.Err(), args[0], initComposeFile)
 			if err != nil {
 				return err
 			}
