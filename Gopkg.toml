@@ -50,7 +50,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cli"
-  revision = "6318939f30e01585b34eb6a68a54b890a8d54eb0"
+  revision = "37f9a88c696ae81be14c1697bd083d6421b4933c"
 
 [[override]]
   name = "github.com/deislabs/cnab-go"
@@ -71,7 +71,7 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "github.com/xeipuuv/gojsonschema"
   version = "v1.2.0"
-
+  
 [[override]]
   name = "github.com/docker/go-metrics"
   revision = "d466d4f6fd960e01820085bd7e1a24426ee7ef18"
@@ -116,6 +116,7 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "github.com/Microsoft/hcsshim"
   revision = "2226e083fc390003ae5aa8325c3c92789afa0e7a"
+
 
 [[constraint]]
   name = "github.com/spf13/pflag"
