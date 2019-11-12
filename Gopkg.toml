@@ -50,7 +50,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/docker/cli"
-  revision = "d83cd90464377d4164c8f70248d064b979e5ca98"
+  revision = "6318939f30e01585b34eb6a68a54b890a8d54eb0"
 
 [[override]]
   name = "github.com/deislabs/cnab-go"
@@ -70,7 +70,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/xeipuuv/gojsonschema"
-  revision = "93e72a773fade158921402d6a24c819b48aba29d"
+  version = "v1.2.0"
 
 [[override]]
   name = "github.com/docker/go-metrics"
@@ -113,6 +113,10 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/opencontainers/runtime-spec"
   revision = "29686dbc5559d93fb1ef402eeda3e35c38d75af4"
 
+[[override]]
+  name = "github.com/Microsoft/hcsshim"
+  revision = "2226e083fc390003ae5aa8325c3c92789afa0e7a"
+
 [[constraint]]
   name = "github.com/spf13/pflag"
   branch = "master"
@@ -126,6 +130,10 @@ required = ["github.com/wadey/gocovmerge"]
   source = "github.com/ndeloof/gateway"
   name = "github.com/jackpal/gateway"
   revision = "10816db7ab2f4b71e71dba9420bfa67d5be27b33"
+
+[[constraint]]
+  name = "github.com/dustin/go-humanize"
+  version = "1.0.0"
 
 [prune]
   non-go = true

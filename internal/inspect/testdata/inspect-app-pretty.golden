@@ -1,0 +1,18 @@
+Installation:
+  Name: hello-world
+  Created: 1 day ago
+  Modified: 17 hours ago
+  Revision: 01DS2ZW4QKPXHTZXZ8YAP6S9W2
+  Last Action: upgrade
+  Result: success
+  Ochestrator: swarm
+
+Application:
+  Name: hello-world
+  Version: 0.1.0
+  Image Reference: docker.io/sirot/hello-world:0.1.0
+
+Parameters:
+  port: "8080"
+  text: Hello, World!
+

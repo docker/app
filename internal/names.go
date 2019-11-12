@@ -30,6 +30,8 @@ const (
 	ActionStatusNameDeprecated = Namespace + "status"
 	// ActionStatusName is the name of the CNAB well known custom "status" action - TODO: Extract this constant to the cnab-go library
 	ActionStatusName = CnabNamespace + "status"
+	// ActionStatusJSONName is the name of the CNAB well known custom "status+json" action - TODO: Extract this constant to the cnab-go library
+	ActionStatusJSONName = CnabNamespace + "status+json"
 	// ActionInspectName is the name of the custom "inspect" action
 	ActionInspectName = Namespace + "inspect"
 	// ActionRenderName is the name of the custom "render" action

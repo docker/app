@@ -9,19 +9,22 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"gopkg.in/yaml.v2"
-
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/store"
 	"github.com/docker/app/render"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/app/types/parameters"
+
+	"github.com/deislabs/cnab-go/bundle"
+	"github.com/deislabs/cnab-go/claim"
 	composetypes "github.com/docker/cli/cli/compose/types"
-	units "github.com/docker/go-units"
+	"github.com/docker/go-units"
+	humanize "github.com/dustin/go-humanize"
+	"gopkg.in/yaml.v2"
 )
 
-type service struct {
+type Service struct {
 	Name     string `json:",omitempty"`
 	Image    string `json:",omitempty"`
 	Replicas int    `json:",omitempty"`
@@ -29,24 +32,72 @@ type service struct {
 	Ports    string `json:",omitempty"`
 }
 
-type attachment struct {
+type Attachment struct {
 	Path string `json:",omitempty"`
 	Size int64  `json:",omitempty"`
 }
 
-type appInfo struct {
+type ImageAppInfo struct {
 	Metadata       metadata.AppMetadata `json:",omitempty"`
-	Services       []service            `json:",omitempty"`
+	Services       []Service            `json:",omitempty"`
 	Networks       []string             `json:",omitempty"`
 	Volumes        []string             `json:",omitempty"`
 	Secrets        []string             `json:",omitempty"`
 	parametersKeys []string
 	Parameters     map[string]string `json:",omitempty"`
-	Attachments    []attachment      `json:",omitempty"`
+	Attachments    []Attachment      `json:",omitempty"`
 }
 
-// Inspect dumps the metadata of an app
-func Inspect(out io.Writer, app *types.App, argParameters map[string]string, imageMap map[string]bundle.Image) error {
+type Installation struct {
+	Name         string `yaml:"Name,omitempty" json:",omitempty"`
+	Created      string `yaml:"Created,omitempty" json:",omitempty"`
+	Modified     string `yaml:"Modified,omitempty" json:",omitempty"`
+	Revision     string `yaml:"Revision,omitempty" json:",omitempty"`
+	LastAction   string `yaml:"Last Action,omitempty" json:"Last Action,omitempty"`
+	Result       string `yaml:"Result,omitempty" json:",omitempty"`
+	Orchestrator string `yaml:"Ochestrator,omitempty" json:",omitempty"`
+}
+
+type Application struct {
+	Name           string `yaml:"Name,omitempty" json:",omitempty"`
+	Version        string `yaml:"Version,omitempty" json:",omitempty"`
+	ImageReference string `yaml:"Image Reference,omitempty" json:"ImageReference,omitempty"`
+}
+
+type AppInfo struct {
+	Installation Installation           `yaml:"Installation,omitempty" json:"Installation,omitempty"`
+	Application  Application            `yaml:"Application,omitempty" json:"Application,omitempty"`
+	Parameters   map[string]interface{} `yaml:"Parameters,omitempty" json:"Parameters,omitempty"`
+}
+
+func Inspect(out io.Writer, installation *store.Installation, outputFormat string, cliDefinedOrchestrator string) error {
+	// Collect all the relevant information about the application
+	appInfo := GetAppInfo(installation, cliDefinedOrchestrator)
+	return printAppInfo(out, appInfo, outputFormat)
+}
+
+func GetAppInfo(installation *store.Installation, cliDefinedOrchestrator string) AppInfo {
+	orchestrator := getOrchestrator(installation.Claim, cliDefinedOrchestrator)
+	return AppInfo{
+		Installation: Installation{
+			Name:         installation.Name,
+			Created:      humanize.Time(installation.Created),
+			Modified:     humanize.Time(installation.Modified),
+			Revision:     installation.Revision,
+			LastAction:   installation.Result.Action,
+			Result:       installation.Result.Status,
+			Orchestrator: orchestrator,
+		},
+		Application: Application{
+			Name:           installation.Bundle.Name,
+			Version:        installation.Bundle.Version,
+			ImageReference: installation.Reference,
+		},
+		Parameters: removeDockerAppParameters(installation.Parameters),
+	}
+}
+
+func ImageInspect(out io.Writer, app *types.App, argParameters map[string]string, imageMap map[string]bundle.Image) error {
 	// Render the compose file
 	config, err := render.Render(app, argParameters, imageMap)
 	if err != nil {
@@ -54,16 +105,27 @@ func Inspect(out io.Writer, app *types.App, argParameters map[string]string, ima
 	}
 
 	// Collect all the relevant information about the application
-	appInfo, err := getAppInfo(app, config, argParameters)
+	appInfo, err := getImageAppInfo(app, config, argParameters)
 	if err != nil {
 		return err
 	}
 
 	outputFormat := os.Getenv(internal.DockerInspectFormatEnvVar)
-	return printAppInfo(out, appInfo, outputFormat)
+	return printImageAppInfo(out, appInfo, outputFormat)
 }
 
-func printAppInfo(out io.Writer, app appInfo, format string) error {
+func printAppInfo(out io.Writer, app AppInfo, format string) error {
+	switch format {
+	case "pretty":
+		return printAppTable(out, app)
+	case "json":
+		return printJSON(out, app)
+	default:
+		return fmt.Errorf("unknown format %q", format)
+	}
+}
+
+func printImageAppInfo(out io.Writer, app ImageAppInfo, format string) error {
 	switch format {
 	case "pretty":
 		return printTable(out, app)
@@ -74,7 +136,7 @@ func printAppInfo(out io.Writer, app appInfo, format string) error {
 	}
 }
 
-func printJSON(out io.Writer, appInfo appInfo) error {
+func printJSON(out io.Writer, appInfo interface{}) error {
 	js, err := json.MarshalIndent(appInfo, "", "    ")
 	if err != nil {
 		return err
@@ -83,9 +145,30 @@ func printJSON(out io.Writer, appInfo appInfo) error {
 	return nil
 }
 
-func printTable(out io.Writer, appInfo appInfo) error {
+func printAppTable(out io.Writer, info AppInfo) error {
+
+	printYAML(out, AppInfo{
+		Installation: info.Installation,
+		Application:  Application{},
+		Parameters:   nil,
+	})
+	printYAML(out, AppInfo{
+		Installation: Installation{},
+		Application:  info.Application,
+		Parameters:   nil,
+	})
+	printYAML(out, AppInfo{
+		Installation: Installation{},
+		Application:  Application{},
+		Parameters:   info.Parameters,
+	})
+
+	return nil
+}
+
+func printTable(out io.Writer, appInfo ImageAppInfo) error {
 	// Add Meta data
-	printMetadata(out, appInfo)
+	printYAML(out, appInfo.Metadata)
 
 	// Add Service section
 	printSection(out, len(appInfo.Services), func(w io.Writer) {
@@ -132,10 +215,8 @@ func printTable(out io.Writer, appInfo appInfo) error {
 	return nil
 }
 
-func printMetadata(out io.Writer, app appInfo) {
-	meta := app.Metadata
-
-	if bytes, err := yaml.Marshal(meta); err == nil {
+func printYAML(out io.Writer, info interface{}) {
+	if bytes, err := yaml.Marshal(info); err == nil {
 		fmt.Fprintln(out, string(bytes))
 	}
 }
@@ -151,16 +232,34 @@ func printSection(out io.Writer, len int, printer func(io.Writer), headers ...st
 	w.Flush()
 }
 
-func getAppInfo(app *types.App, config *composetypes.Config, argParameters map[string]string) (appInfo, error) {
-	services := []service{}
+func getOrchestrator(claim claim.Claim, cliDefaultOrchestrator string) string {
+	if orchestrator, ok := claim.Parameters[internal.ParameterOrchestratorName]; ok && orchestrator != "" {
+		return orchestrator.(string)
+	}
+	return cliDefaultOrchestrator
+}
+
+func removeDockerAppParameters(parameters map[string]interface{}) map[string]interface{} {
+	filteredResults := make(map[string]interface{})
+	for key, val := range parameters {
+		if !strings.HasPrefix(key, "com.docker.app") {
+			filteredResults[key] = val
+		}
+	}
+	return filteredResults
+}
+
+func getImageAppInfo(app *types.App, config *composetypes.Config, argParameters map[string]string) (ImageAppInfo, error) {
+	services := []Service{}
 	for _, s := range config.Services {
-		services = append(services, service{
+		services = append(services, Service{
 			Name:     s.Name,
 			Image:    s.Image,
 			Replicas: getReplicas(s),
 			Ports:    getPorts(s.Ports),
 		})
 	}
+
 	sort.SliceStable(services, func(i, j int) bool {
 		return services[i].Name < services[j].Name
 	})
@@ -186,19 +285,19 @@ func getAppInfo(app *types.App, config *composetypes.Config, argParameters map[s
 	// Extract all the parameters
 	parametersKeys, allParameters, err := extractParameters(app, argParameters)
 	if err != nil {
-		return appInfo{}, err
+		return ImageAppInfo{}, err
 	}
 
-	attachments := []attachment{}
+	attachments := []Attachment{}
 	appAttachments := app.Attachments()
 	for _, file := range appAttachments {
-		attachments = append(attachments, attachment{
+		attachments = append(attachments, Attachment{
 			Path: file.Path(),
 			Size: file.Size(),
 		})
 	}
 
-	return appInfo{
+	return ImageAppInfo{
 		Metadata:       app.Metadata(),
 		Services:       services,
 		Networks:       networks,

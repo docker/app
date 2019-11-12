@@ -21,5 +21,5 @@ func inspectAction(instanceName string) error {
 	}
 
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
-	return appinspect.Inspect(os.Stdout, app, parameters, imageMap)
+	return appinspect.ImageInspect(os.Stdout, app, parameters, imageMap)
 }

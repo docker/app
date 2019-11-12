@@ -215,6 +215,9 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			internal.ActionStatusName: {
 				Modifies: false,
 			},
+			internal.ActionStatusJSONName: {
+				Modifies: false,
+			},
 		},
 		Images: bundleImages,
 	}

@@ -15,7 +15,7 @@ func TestValidateInvalidMetadata(t *testing.T) {
 		"name": "_INVALID",
 	}
 	assert.Error(t, Validate(metadata, "v0.2"),
-		`- version: version is required`)
+		`- (root): version is required`)
 }
 
 func TestValidateMetadata(t *testing.T) {
@@ -32,7 +32,7 @@ func TestValidateMetadataNoName(t *testing.T) {
 		// MUST fail! No name
 		"version": "my-version",
 	}
-	assert.Error(t, Validate(metadata, "v0.2"), "- name: name is required")
+	assert.Error(t, Validate(metadata, "v0.2"), "- (root): name is required")
 }
 
 func TestValidateMetadataNoVersion(t *testing.T) {
@@ -41,7 +41,7 @@ func TestValidateMetadataNoVersion(t *testing.T) {
 		//"version": "my-version",
 		// MUST fail! No version
 	}
-	assert.Error(t, Validate(metadata, "v0.2"), "- version: version is required")
+	assert.Error(t, Validate(metadata, "v0.2"), "- (root): version is required")
 }
 
 func TestValidateMetadataV0_2(t *testing.T) {

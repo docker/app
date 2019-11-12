@@ -227,8 +227,8 @@ unknown: property`)
 	app := &App{Path: "my-app"}
 	err := Metadata(r)(app)
 	assert.Error(t, err, `failed to validate metadata:
-- maintainers.2.email: Does not match format 'email'
-- version: version is required`)
+- (root): version is required
+- maintainers.2.email: Does not match format 'email'`)
 }
 
 func TestValidateBrokenParameters(t *testing.T) {
