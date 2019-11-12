@@ -48,7 +48,7 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 }
 
 func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
-	listOfCommands := []*cobra.Command{
+	cmd.AddCommand(
 		runCmd(dockerCli),
 		updateCmd(dockerCli),
 		removeCmd(dockerCli),
@@ -60,18 +60,24 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		image.Cmd(dockerCli),
 		build.Cmd(dockerCli),
 		inspectCmd(dockerCli),
-	}
+	)
 
-	isExperimentalMode := dockerCli.ClientInfo().HasExperimental
-	for _, ccmd := range listOfCommands {
-		switch ccmd.Annotations["experimental"] {
-		case "true":
-			if isExperimentalMode {
-				cmd.AddCommand(ccmd)
-			}
-		default:
-			cmd.AddCommand(ccmd)
+	if !dockerCli.ClientInfo().HasExperimental {
+		hideExperimentalCLI(cmd)
+	}
+}
+
+func hideExperimentalCLI(cmd *cobra.Command) {
+	if _, ok := cmd.Annotations["experimentalCLI"]; ok {
+		cmd.Hidden = true
+	}
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if _, ok := f.Annotations["experimentalCLI"]; ok {
+			f.Hidden = true
 		}
+	})
+	for _, subcmd := range cmd.Commands() {
+		hideExperimentalCLI(subcmd)
 	}
 }
 

@@ -26,7 +26,7 @@ func validateCmd() *cobra.Command {
 		Short:       "Check that an App definition (.dockerapp) is syntactically correct",
 		Example:     `$ docker app validate myapp.dockerapp --set key=value --parameters-file myparam.yml`,
 		Args:        cli.RequiresMaxArgs(1),
-		Annotations: map[string]string{"experimental": "true"},
+		Annotations: map[string]string{"experimentalCLI": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runValidate(args, opts)
 		},
