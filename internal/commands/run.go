@@ -73,7 +73,7 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 	cmd.Flags().StringArrayVar(&opts.labels, "label", nil, "Label to add to services")
 
 	//nolint:errcheck
-	cmd.Flags().SetAnnotation("cnab-bundle-json", "experimental", []string{"true"})
+	cmd.Flags().SetAnnotation("cnab-bundle-json", "experimentalCLI", []string{"true"})
 
 	return cmd
 }
