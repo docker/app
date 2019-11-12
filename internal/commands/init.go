@@ -13,13 +13,15 @@ var (
 	initComposeFile string
 )
 
+const initExample = `- $ docker app init myapp
+- $ docker app init myapp --compose-file docker-compose.yml`
+
 func initCmd(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "init [OPTIONS] APP_DEFINITION",
-		Short: "Initialize an App definition",
-		Example: `$ docker app init myapp
-$ docker app init myapp --compose-file docker-compose.yml`,
-		Args: cli.ExactArgs(1),
+		Use:     "init [OPTIONS] APP_DEFINITION",
+		Short:   "Initialize an App definition",
+		Example: initExample,
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			created, err := packager.Init(dockerCli.Err(), args[0], initComposeFile)
 			if err != nil {

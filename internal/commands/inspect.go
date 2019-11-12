@@ -17,6 +17,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const inspectExample = `- $ docker app inspect my-running-app
+- $ docker app inspect my-running-app:1.0.0`
+
 type inspectOptions struct {
 	credentialOptions
 	cliopts.InstallerContextOptions
@@ -28,11 +31,10 @@ type inspectOptions struct {
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	var opts inspectOptions
 	cmd := &cobra.Command{
-		Use:   "inspect [OPTIONS] RUNNING_APP",
-		Short: "Shows status, metadata, parameters and the list of services of a running App",
-		Example: `$ docker app inspect my-running-app
-$ docker app inspect my-running-app:1.0.0`,
-		Args: cli.ExactArgs(1),
+		Use:     "inspect [OPTIONS] RUNNING_APP",
+		Short:   "Shows status, metadata, parameters and the list of services of a running App",
+		Example: inspectExample,
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInspect(dockerCli, firstOrEmpty(args), opts)
 		},

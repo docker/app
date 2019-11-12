@@ -17,6 +17,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const inspectExample = `- $ docker app image inspect myapp
+- $ docker app image inspect myapp:1.0.0
+- $ docker app image inspect myrepo/myapp:1.0.0
+- $ docker app image inspect 34be4a0c5f50`
+
 type inspectOptions struct {
 	pretty bool
 	cliopts.InstallerContextOptions
@@ -34,13 +39,10 @@ func muteDockerCli(dockerCli command.Cli) func() {
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
 	var opts inspectOptions
 	cmd := &cobra.Command{
-		Use:   "inspect [OPTIONS] APP_IMAGE",
-		Short: "Display detailed information about an App image",
-		Example: `$ docker app image inspect myapp
-$ docker app image inspect myapp:1.0.0
-$ docker app image inspect myrepo/myapp:1.0.0
-$ docker app image inspect 34be4a0c5f50`,
-		Args: cli.ExactArgs(1),
+		Use:     "inspect [OPTIONS] APP_IMAGE",
+		Short:   "Display detailed information about an App image",
+		Example: inspectExample,
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInspect(dockerCli, args[0], opts)
 		},
