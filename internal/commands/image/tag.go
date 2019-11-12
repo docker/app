@@ -12,14 +12,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const tagExample = `- $ docker app image tag myapp myrepo/myapp:mytag
+- $ docker app image tag myapp:tag myrepo/mynewapp:mytag
+- $ docker app image tag 34be4a0c5f50 myrepo/mynewapp:mytag`
+
 func tagCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Short: "Create a new tag from an App image",
-		Use:   "tag SOURCE_APP_IMAGE[:TAG] TARGET_APP_IMAGE[:TAG]",
-		Example: `$ docker app image tag myapp myrepo/myapp:mytag
-$ docker app image tag myapp:tag myrepo/mynewapp:mytag
-$ docker app image tag 34be4a0c5f50 myrepo/mynewapp:mytag`,
-		Args: cli.ExactArgs(2),
+		Short:   "Create a new tag from an App image",
+		Use:     "tag SOURCE_APP_IMAGE[:TAG] TARGET_APP_IMAGE[:TAG]",
+		Example: tagExample,
+		Args:    cli.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appstore, err := store.NewApplicationStore(config.Dir())
 			if err != nil {

@@ -45,14 +45,16 @@ type buildOptions struct {
 	noResolveImage bool
 }
 
+const buildExample = `- $ docker app run --name myrunningapp myrepo/myapp:mytag
+- $ docker app run 34be4a0c5f50 --name myrunningapp`
+
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
 	cmd := &cobra.Command{
-		Use:   "build [OPTIONS] BUILD_PATH",
-		Short: "Build an App image from an App definition (.dockerapp)",
-		Example: `$ docker app build .
-$ docker app build . -f myapp.dockerapp -t myrepo/myapp:1.0.0`,
-		Args: cli.ExactArgs(1),
+		Use:     "build [OPTIONS] BUILD_PATH",
+		Short:   "Build an App image from an App definition (.dockerapp)",
+		Example: buildExample,
+		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runBuild(dockerCli, args[0], opts)
 		},

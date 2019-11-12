@@ -35,8 +35,8 @@ type runOptions struct {
 
 const longDescription = `Run an App from an App image.`
 
-const example = `$ docker app run --name myrunningapp myrepo/myapp:mytag
-$ docker app run 34be4a0c5f50 --name myrunningapp`
+const runExample = `- $ docker app run --name myrunningapp myrepo/myapp:mytag
+- $ docker app run 34be4a0c5f50 --name myrunningapp`
 
 func runCmd(dockerCli command.Cli) *cobra.Command {
 	var opts runOptions
@@ -46,7 +46,7 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 		Aliases: []string{"deploy"},
 		Short:   "Run an App from an App image",
 		Long:    longDescription,
-		Example: example,
+		Example: runExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.cnabBundle != "" && len(args) != 0 {
 				return errors.Errorf(
