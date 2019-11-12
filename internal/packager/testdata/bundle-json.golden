@@ -182,7 +182,10 @@
   },
   "custom": {
     "com.docker.app": {
-      "version": "%s"
+      "version": "%s",
+      "payload": {
+        "created": "%s"
+      }
     }
   }
 }
