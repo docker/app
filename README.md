@@ -1,30 +1,91 @@
-# Docker Application
+# Docker App
 
-A Docker CLI Plugin to configure, share and install applications:
-* Extend [Compose files](https://docs.docker.com/compose/compose-file/) with metadata and parameters
-* Re-use same application across multiple environments (Development/QA/Staging/Production)
-* Multi orchestrator installation (Swarm or Kubernetes)
-* Push/Pull/[Promotion](https://docs.docker.com/ee/dtr/user/promotion-policies/internal-promotion/)/[Signing](https://docs.docker.com/engine/security/trust/content_trust/) supported for application, with same workflow as images
-* Fully [CNAB](https://cnab.io) compliant
-* Full support of Docker Contexts
+Docker App is a Cloud Native application packaging framework with which developers and devops can  build, share, and run a set of microservices as a single entity. Docker Apps are based on the [Compose format](https://docs.docker.com/compose/compose-file/), which permits [docker-compose](https://github.com/docker/compose) users to easily share their Compose-based multiservice applications via container registries. By leveraging containers, Docker App makes it possible to easily change parts of the application and to share the application through container registries.
 
-## The problem Application Packages solves
+### Table of Contents
+- **[What are the benefits offered by Docker App?](#what-are-the-benefits-offered-by-docker-app)**
+- **[How does Docker App work?](#how-does-docker-app-work)**
+- **[Using Docker App](#using-docker-app)**
+    * **[Writing an App definition](#writing-an-app-definition)**
+    * **[Building an App image](#building-an-app-image)**
+    * **[Sharing the App on the Hub](#sharing-the-app-on-the-hub)**
+    * **[Running the App](#running-the-app)**
+- **[Example](#example)**
+    * **[App definition](#app-definition)**
+    * **[Using parameters](#using-parameters)**
+    * **[Building an App image](#building-an-app-image)**
+    * **[Sharing and running the App](#sharing-and-running-the-app)**
+- **[CNAB](#cnab)**
+- **[Installation](#installation)**
+    * **[Linux or macOS](#linux-or-macos)**
+    * **[Windows](#windows)**
+- **[Next steps](#next-steps)**
 
-Compose files do a great job of describing a set of related services. Not only
-are Compose files easy to write, they are generally easy to read as well.
-However, a couple of problems often emerge:
+## What are the benefits offered by Docker App?
 
-1. You have several environments where you want to deploy the application, with small configuration differences
-1. You have lots of similar applications
+* Simple management of Docker Apps across different teams and between different environments (Development/QA/Staging/Production)
+* Easy sharing of multi-service applications to container registries (e.g., [Docker Hub](https://hub.docker.com/) or [Docker Trusted Registry](https://docs.docker.com/ee/dtr/))
+* Having a clear separation of parameters to be modified at runtime 
+* Support for multiple orchestrators (Swarm or Kubernetes)
+* Provides the very same UX flow as the one for Docker images
+* Implements the [CNAB](https://cnab.io) industry standard
+* Offers full support for Docker Contexts
 
-Fundamentally, Compose files are not easy to share between concerns. Docker
-Application Packages aim to solve these problems and make Compose more useful
-for development _and_ production.
+## How does Docker App work?
 
-## Looking at an example
+The Docker App workflow is quite similar to the Docker image workflow. From an App definition, you can build an App image, share it on Docker Hub, and run your App on an orchestrator.
 
-Let's take the following Compose file. It launches an HTTP server which prints
-the specified text when hit on the configured port.
+![Image showing Docker CLI command flow](DockerAppCLIcommands.png)
+
+## Using Docker App
+
+Four primary steps comprise the Docker App process:
+1. Writing an App Definition
+1. Building an App Image
+1. Sharing the App on the Hub (optional)
+1. Running the App
+
+### Writing an App definition
+
+The first step in using Docker App is to write the App definition. This definition can be created (1) from an existing Compose file using the `docker app init` command (2) via  a template from the [Application Designer](https://docs.docker.com/ee/desktop/app-designer/), or (3) from scratch. 
+
+The App definition is a .dockerapp folder that contains three distinct pieces: metadata, a service list, and the parameters. 
+
+| File | Description |
+| :------------ | :------------ |
+| metadata.yml | metadata including the App name and version |
+| docker-compose.yml | Service list defined in a [Compose file](https://docs.docker.com/compose/compose-file/) |
+| parameters.yml | Parameters that can be changed when running the App |
+
+*Note: To store additional files in Docker Apps, such as* `prod.yml`*,* `test.yml` *or other config files, you need only to add these files to the *.dockerapp directory. All files will be packaged into the App image through the use of the* `docker app build`  *command.*
+
+### Building an App image
+
+Once the App definition is written, the next step is to build the App image from the App definition using the `docker app build` command. With this command you can tag your App image, set build-time variables, or make the build quiet. 
+
+Note that service images inside of an App image are immutable, meaning that the App version ties to a fixed list of service images (i.e., updating the images inside of a Docker App requires rebuilding the App image). This makes deploying applications more deterministic.
+
+### Sharing the App on the Hub
+
+You can push any App image already built or pulled to Docker Hub (or any [OCI compliant registry](https://www.opencontainers.org)) using the `docker app push` command. You can also pull App images from any OCI compliant registry using the `docker app pull` command.
+
+When pushing an App image, all the service images used by the application are pushed at the same time inside a single entity. The version of each service image is resolved at build time from its tag.
+
+### Running the App
+
+The final Docker App step is to actually run your App using the `docker app run` command. You can either pick up an App image from Docker Hub or one that you built locally and deploy it to Swarm or Kubernetes.
+
+## Example
+
+Using the [hello-world](./examples/hello-world) application example, we are going to build, share, and run a Docker App that launches an HTTP server that prints the text variable value when hit on the configured port. 
+
+*Note: Before starting, confirm that the Docker App CLI plugin is [installed](#installation) on your machine*
+
+### App definition
+
+First, create an App definition from an existing Compose file.
+
+Create a `docker-compose.yml` file that has the following content: 
 
 ```yaml
 version: '3.2'
@@ -36,22 +97,25 @@ services:
       - 5678:5678
 ```
 
-With `docker app` [installed](#installation) let's create an Application Package
-based on this Compose file:
+Next, create an App definition using the `docker app init` command:
 
 ```console
-$ docker app init hello
-$ ls
-docker-compose.yml
-hello.dockerapp
-```
+$ docker app init --compose-file docker-compose.yml hello
+Created "hello.dockerapp"
+$ tree
+.
+├── docker-compose.yml
+├── hello.dockerapp
+    ├── docker-compose.yml
+    ├── metadata.yml
+    └── parameters.yml
 
-We created a new folder `hello.dockerapp` that contains three YAML documents:
-- metadata
-- the Compose file
-- parameters for your application
+A new folder named `hello.dockerapp` now exists, which contains three YAML documents:
+* metadata
+* a Compose file
+* parameters for your application to be used at runtime
 
-It should look like this:
+The `metadata.yml` file should display as follows:
 
 ```yaml
 version: 0.1.0
@@ -62,25 +126,11 @@ maintainers:
   email:
 ```
 
-```yaml
-version: '3.2'
-services:
-  hello:
-    image: hashicorp/http-echo
-    command: ["-text", "hello world"]
-    ports:
-      - 5678:5678
-```
+The Compose file is the one that was passed in parameters. Thus, if you open `parameters.yml` you will notice that it is empty, as the Compose file isn’t using any variable.
 
-And an empty `parameters.yml. Let's edit and add the following default values for our applicatoin
+### Using parameters
 
-```yaml
-port: 5678
-text: hello development
-```
-
-Then modify the Compose file section in `hello.dockerapp`, adding in the
-variables.
+Edit the `docker-compose.yml` file in the `hello.dockerapp` directory to add some variables:
 
 ```yaml
 version: '3.2'
@@ -92,180 +142,66 @@ services:
       - ${port}:5678
 ```
 
-You can test everything is working, by inspecting the application definition.
-
-```console
-$ docker app inspect
-hello 0.1.0
-
-Maintained by: yourusername
-
-A simple text server
-
-Service (1) Replicas Ports Image
------------ -------- ----- -----
-hello       1        5678  hashicorp/http-echo
-
-Parameters (2) Value
--------------- -----
-port           5678
-text           hello development
-```
-
-You can render the application to a Compose file with the provided default
-values.
-
-```console
-$ docker app render
-version: "3.2"
-services:
-  hello:
-    command:
-    - -text
-    - hello development
-    image: hashicorp/http-echo
-    ports:
-    - mode: ingress
-      target: 5678
-      published: 5678
-      protocol: tcp
-```
-
-You can then use that Compose file like any other. You could save it to disk or
-pipe it straight to `docker stack` or `docker-compose` to run the
-application.
-
-```console
-$ docker app render | docker-compose -f - up
-```
-
-This is where it gets interesting. We can override those parameters at runtime,
-using the `--set` option. Let's specify some different options and run `render`
-again:
-
-```console
-$ docker app render --set port=4567 --set text="hello production"
-version: "3.2"
-services:
-  hello:
-    command:
-    - -text
-    - hello production
-    image: hashicorp/http-echo
-    ports:
-    - mode: ingress
-      target: 5678
-      published: 4567
-      protocol: tcp
-```
-
-If you prefer you can create a standalone configuration file to store those
-parameters. Let's create `prod.yml` with the following contents:
+Next, define the default values for the App in the `parameters.yml` file:
 
 ```yaml
-text: hello production
-port: 4567
+port: 5678
+text: hello development
 ```
 
-You can then run using that configuration file like so:
+### Building an App image
+
+Next, build an App image:
 
 ```console
-$ docker app render --parameters-file prod.yml
-```
+$ docker app build . -f hello.dockerapp -t myrepo/hello:0.1.0
+[+] Building 0.7s (6/6) FINISHED
+(...) (Build output)                                                                                                                sha256:4a492748ae55170daadd1ddfff4db30e0ef3d38bf0f57a913512caa323e140de      
+```                                                                              
 
-You can share your Application Package by pushing it to a container registry.
+At this point, an App image with the `myrepo/hello:1.0.1` tag has been built from the `hello.dockerapp` App definition. This immutable App image includes all the service images at fixed versions that you can run or share.
+
+### Sharing and running the App
+
+To share your App image, push it to a container registry.
 
 ```console
-$ docker app push --tag myrepo/hello:0.1.0
-```
+$ docker app push myrepo/hello:0.1.0
+```  
 
-Others can then use your Application Package by specifying the registry tag.
+Now run your App:
 
 ```console
-$ docker app inspect myrepo/hello:0.1.0
-```
+$ docker app run myrepo/hello:0.1.0 
+``` 
 
-**Note**: Commands like `install`, `upgrade`, `render`, etc. can also be used
-directly on Application Packages that are in a registry.
+You can specify the Docker endpoint where an application is installed using a context. By default, your App will run on the currently active context. You can select another context with the `docker context use` command, and the `docker app run` command will thereafter run your app on this particular context. 
 
-You can specify the Docker endpoint where an application is installed using a
-context and the `--context` option. If you do not specify one, it will	
-use the currently active context.
+Whenever you define such a context, the installer image will run in the default context (i.e., on local host). You can then use the `--installer-context` to target another context to run the installer image.
 
-Whenever you define such a context, the installer image will run in the `default`
-context (i.e. on local host). You can use the `--installer-context` to target
-another context to run the installer image.
+```console
+$ docker context create remote --description "remote cluster" --docker host=tcp://<remote-ip>:<remote-port>
+Successfully created context "remote"
 
-More examples are available in the [examples](examples) directory.
+$ docker context ls
+NAME                DESCRIPTION                               DOCKER ENDPOINT               KUBERNETES ENDPOINT                ORCHESTRATOR
+default *           Current DOCKER_HOST based configuration   unix:///var/run/docker.sock   https://localhost:6443 (default)   swarm
+remote              remote cluster                            tcp://<remote-ip>:<remote-port>
+
+$ docker context use remote
+$ docker app run myrepo/hello:0.1.0
+``` 
 
 ## CNAB
 
-Under the hood `docker app` is [CNAB](https://cnab.io) compliant. It generates a
-CNAB from your application source and is able to install and manage any other
-CNAB too. CNAB specifies three actions which `docker app` provides as commands:
-* `install`
-* `upgrade`
-* `uninstall`
-
-Here is an example installing an Application Package, inspect it and
-then uninstalling it:
-```console
-$ docker app install examples/hello-world/example-hello-world.dockerapp --name hello
-Creating network hello_default
-Creating service hello_hello
-
-$ docker app inspect hello
-{
-    "Metadata": {
-        "version": "0.1.0",
-        "name": "hello-world",
-        "description": "Hello, World!",
-        "maintainers": [
-            {
-                "name": "user",
-                "email": "user@email.com"
-            }
-        ]
-    },
-    "Services": [
-        {
-            "Name": "hello",
-            "Image": "hashicorp/http-echo",
-            "Replicas": 1,
-            "Ports": "8080"
-        }
-    ],
-    "Parameters": {
-        "port": "8080",
-        "text": "Hello, World!"
-    },
-    "Attachments": [
-        {
-            "Path": "bundle.json",
-            "Size": 3189
-        }
-    ]
-}
-
-$ docker app uninstall hello
-Removing service hello_hello
-Removing network hello_default
-```
+Docker Apps are Docker’s implementation of the industry standard Cloud Native Application Bundle (CNAB). [CNAB](https://cnab.io/) is an industry specification put in place to facilitate the bundling, sharing, installing and managing of cloud-native apps that are not only made up of containers but also from such things as hosted databases, functions, etc. 
+Docker App is designed to abstract as many CNAB specifics as possible, to provide users with a tool that is easy to use while alleviating the need to bother with the CNAB specification.
 
 ## Installation
 
-**Note**: Docker app is a _command line_ plugin (not be confused with docker _engine_ plugins), extending the `docker` command with `app` sub-commands.
-It requires [Docker CLI](https://download.docker.com) 19.03.0 or later with experimental features enabled.
-Either set environment variable `DOCKER_CLI_EXPERIMENTAL=enabled`
-or update your [docker CLI configuration](https://docs.docker.com/engine/reference/commandline/cli/#experimental-features).
+Docker App is a *command line* plugin (not be confused with *docker engine plugins*) that extends the `docker` command with `app` sub-commands. It requires [Docker CLI](https://download.docker.com/) 19.03.0 or later, with experimental features enabled. Either set environment variable `DOCKER_CLI_EXPERIMENTAL=enabled` or update your [docker CLI configuration](https://docs.docker.com/engine/reference/commandline/cli/#experimental-features).
 
-**Note**: Docker-app can't be installed using the `docker plugin install` command (yet)
-
-
-Pre-built static binaries are available on
-[GitHub releases](https://github.com/docker/app/releases) for Windows, Linux and
-macOS. Each tarball contains two binaries:
-* `docker-app-plugin-{linux|darwin|windows.exe}` which is a [Docker CLI plugin](https://github.com/docker/cli/issues/1534).
+*Note: The* `docker plugin install` *command cannot be used to install Docker-app.*
 
 ### Linux or macOS
 
@@ -295,81 +231,9 @@ New-Item -ItemType Directory -Path ~/.docker/cli-plugins -ErrorAction SilentlyCo
 cp docker-app-plugin-windows.exe ~/.docker/cli-plugins/docker-app.exe
 ```
 
-## Attachments (Storing additional files)
-
-If you want to store additional files in the application package, such as
-`prod.yml`, `test.yml` or other config files, use the directory format and
-simply place these files inside the *.dockerapp/ directory. These will be
-bundled into the package when using `docker app push`.
-
-## Sharing your application on the Hub
-
-You can push any application to the Hub (or any registry) using
-`docker app push`:
-
-```console
-$ docker app push --tag myhubuser/myimage:latest
-```
-
-This command will push an image named `myhubuser/myimage:latest` to the Docker
-Hub.
-
-If you omit the `--tag myhubuser/myimage:latest` argument, this command uses the
-application `name` and `version` defined in `metadata.yml` as the tag:
-`name:version`.
-
-All `docker app` commands accept an image name as input, which means you can run
-on a different host:
-
-```console
-$ docker app inspect myhubuser/myimage
-```
-
-The first time a command is executed against a given image name the bundle is
-pulled from the registry and put in the local bundle store. You can pre-populate
-this store by running `docker app pull myhubuser/myimage:latest`.
-
-### Multi-arch applications
-
-By default the `docker app push` command only pushes service images for the linux/amd64
-platform to the Docker Hub. By using the the `--all-platforms` flag it is possible to push
-the services images for all platforms:
-
-```console
-$ docker app push --all-platforms myhubuser/myimage
-```
-
-It is also possible to push only a limited subset of platforms with the `--platform` flag:
-
-```console
-$ docker app push --platform linux/amd64 --platform linux/arm64 --platform linux/arm/v7 myhubuser/myimage
-```
-
 ## Next steps
 
 If you're interested in contributing to the project, jump to
 [BUILDING.md](BUILDING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Usage
-
-```
-$ docker app
-
-Usage:  docker app COMMAND
-
-A tool to build and manage Docker Applications.
-
-Commands:
-  bundle      Create a CNAB invocation image and `bundle.json` for the application
-  init        Initialize Docker Application definition
-  inspect     Shows metadata, parameters and a summary of the Compose file for a given application
-  install     Install an application
-  ls          List the installations and their last known installation result
-  pull        Pull an application package from a registry
-  push        Push an application package to a registry
-  rm          Remove an application
-  update      Update a running application
-  validate    Checks the rendered application is syntactically correct
-
-Run 'docker app COMMAND --help' for more information on a command.
-```
+Further examples are available in the [examples](https://github.com/docker/app/blob/master/examples) directory.
