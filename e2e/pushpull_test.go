@@ -11,6 +11,27 @@ import (
 	"gotest.tools/icmd"
 )
 
+func TestPushUnknown(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+
+	t.Run("push unknown reference", func(t *testing.T) {
+		cmd.Command = dockerCli.Command("app", "push", "unknown")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `could not push "unknown:latest": no such App image: failed to read bundle "docker.io/library/unknown:latest": unknown:latest: reference not found`,
+		})
+	})
+
+	t.Run("push invalid reference", func(t *testing.T) {
+		cmd.Command = dockerCli.Command("app", "push", "@")
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      `could not push "@": invalid reference format`,
+		})
+	})
+}
+
 func TestPushInsecureRegistry(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		path := filepath.Join("testdata", "local")
