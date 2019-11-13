@@ -1,6 +1,9 @@
 package main
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/docker/app/internal"
 	app "github.com/docker/app/internal/commands"
 	"github.com/docker/cli/cli-plugins/manager"
@@ -10,6 +13,7 @@ import (
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	plugin.Run(func(dockerCli command.Cli) *cobra.Command {
 		cmd := app.NewRootCmd("app", dockerCli)
 		originalPreRun := cmd.PersistentPreRunE

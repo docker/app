@@ -3,7 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/docker/app/internal"
 )
@@ -38,6 +40,7 @@ func getCnabAction() (cnabAction, string, error) {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	action, actionName, err := getCnabAction()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while parsing CNAB operation: %s", err)
