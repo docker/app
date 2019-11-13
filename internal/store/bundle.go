@@ -116,7 +116,7 @@ func (b *bundleStore) Remove(ref reference.Reference) error {
 		if len(b.refsMap[id]) == 0 {
 			return fmt.Errorf("no such image %q", reference.FamiliarString(ref))
 		} else if len(b.refsMap[id]) > 1 {
-			return fmt.Errorf("unable to delete %s - App is referenced in multiple repositories", reference.FamiliarString(ref))
+			return fmt.Errorf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(ref))
 		}
 		ref = b.refsMap[id][0]
 	}

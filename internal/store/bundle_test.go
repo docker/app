@@ -295,6 +295,52 @@ func TestRemove(t *testing.T) {
 	})
 }
 
+func TestRemoveById(t *testing.T) {
+	dockerConfigDir := fs.NewDir(t, t.Name(), fs.WithMode(0755))
+	defer dockerConfigDir.Remove()
+	appstore, err := NewApplicationStore(dockerConfigDir.Path())
+	assert.NilError(t, err)
+	bundleStore, err := appstore.BundleStore()
+	assert.NilError(t, err)
+
+	t.Run("error when id does not exist", func(t *testing.T) {
+		idRef, err := FromBundle(relocated.FromBundle(&bundle.Bundle{Name: "not-stored-bundle-name"}))
+		assert.NilError(t, err)
+
+		err = bundleStore.Remove(idRef)
+		assert.Equal(t, err.Error(), fmt.Sprintf("no such image %q", reference.FamiliarString(idRef)))
+	})
+
+	t.Run("error on multiple repositories", func(t *testing.T) {
+		bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+		idRef, err := FromBundle(bndl)
+		assert.NilError(t, err)
+		_, err = bundleStore.Store(idRef, bndl)
+		assert.NilError(t, err)
+		_, err = bundleStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), bndl)
+		assert.NilError(t, err)
+
+		err = bundleStore.Remove(idRef)
+		assert.Equal(t, err.Error(), fmt.Sprintf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(idRef)))
+	})
+
+	t.Run("success when only one reference exists", func(t *testing.T) {
+		bndl := relocated.FromBundle(&bundle.Bundle{Name: "other-bundle-name"})
+		ref := parseRefOrDie(t, "my-repo/other-bundle:my-tag")
+		_, err = bundleStore.Store(ref, bndl)
+
+		idRef, err := FromBundle(bndl)
+		assert.NilError(t, err)
+
+		err = bundleStore.Remove(idRef)
+		assert.NilError(t, err)
+		bundles, err := bundleStore.List()
+		assert.NilError(t, err)
+		for _, bref := range bundles {
+			assert.Equal(t, bref == ref, false)
+		}
+	})
+}
 func TestLookUp(t *testing.T) {
 	dockerConfigDir := fs.NewDir(t, t.Name(), fs.WithMode(0755))
 	defer dockerConfigDir.Remove()
