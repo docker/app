@@ -186,3 +186,39 @@ maintainers:
 	)
 	assert.Assert(t, fs.Equal(tmpdir.Path(), manifest))
 }
+
+func TestInitRelativeVolumePath(t *testing.T) {
+	for _, composeData := range []string{`
+version: '3.7'
+services:
+  nginx:
+    image: nginx
+    volumes:
+      - ./foo:/data
+`,
+		`
+version: '3.7'
+services:
+  nginx:
+    image: nginx
+    volumes:
+      - type: bind
+        source: ./foo
+        target: /data
+`,
+	} {
+		inputDir := fs.NewDir(t, "app_input_",
+			fs.WithFile(internal.ComposeFileName, composeData),
+		)
+		defer inputDir.Remove()
+
+		appName := "my.dockerapp"
+		dir := fs.NewDir(t, "app_",
+			fs.WithDir(appName),
+		)
+		defer dir.Remove()
+
+		err := initFromComposeFile(nil, dir.Join(appName), inputDir.Join(internal.ComposeFileName))
+		assert.ErrorContains(t, err, "can't use relative path")
+	}
+}
