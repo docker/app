@@ -2,6 +2,7 @@ package build
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -15,8 +16,14 @@ import (
 type ServiceConfig struct {
 	Name string `yaml:"-" json:"-"`
 
-	Build *ImageBuildConfig
-	Image *string
+	Build   *ImageBuildConfig
+	Image   *string
+	Volumes []ServiceVolumeConfig `yaml:",omitempty" json:"volumes,omitempty"`
+}
+
+type ServiceVolumeConfig struct {
+	Type   string `yaml:",omitempty" json:"type,omitempty"`
+	Source string `yaml:",omitempty" json:"source,omitempty"`
 }
 
 type ImageBuildConfig struct {
@@ -46,6 +53,13 @@ func loadServices(servicesDict map[string]interface{}, buildArgs []string) ([]Se
 			return nil, err
 		}
 		services = append(services, *serviceConfig)
+
+		// Sanity check
+		for _, volume := range serviceConfig.Volumes {
+			if volume.Type == "bind" && !filepath.IsAbs(volume.Source) {
+				return nil, fmt.Errorf("invalid service %q: can't use relative path as volume source", name)
+			}
+		}
 	}
 	return services, nil
 }
@@ -57,6 +71,9 @@ func loadService(name string, serviceDict map[string]interface{}, buildArgs []st
 	if err := loader.Transform(serviceDict, serviceConfig, loader.Transformer{
 		TypeOf: reflect.TypeOf(ImageBuildConfig{}),
 		Func:   transformBuildConfig,
+	}, loader.Transformer{
+		TypeOf: reflect.TypeOf(ServiceVolumeConfig{}),
+		Func:   transformVolumeConfig,
 	}); err != nil {
 		return nil, err
 	}
@@ -74,6 +91,22 @@ func transformBuildConfig(data interface{}) (interface{}, error) {
 		return data, nil
 	default:
 		return data, errors.Errorf("invalid type %T for service build", value)
+	}
+}
+
+func transformVolumeConfig(data interface{}) (interface{}, error) {
+	switch value := data.(type) {
+	case string:
+		spec := data.(string)
+		volume, err := loader.ParseVolume(spec)
+		if err != nil {
+			return nil, err
+		}
+		return ServiceVolumeConfig{Type: volume.Type, Source: volume.Source}, nil
+	case map[string]interface{}:
+		return data, nil
+	default:
+		return data, errors.Errorf("invalid type %T for service volume", value)
 	}
 }
 
