@@ -172,7 +172,7 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 		SchemaVersion: CNABVersion1_0_0,
 		Custom: map[string]interface{}{
 			internal.CustomDockerAppName: DockerAppCustom{
-				Version: DockerAppCustomVersion1_0_0,
+				Version: DockerAppCustomVersionCurrent,
 				Payload: payload,
 			},
 		},
