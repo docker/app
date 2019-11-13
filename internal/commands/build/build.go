@@ -45,8 +45,8 @@ type buildOptions struct {
 	noResolveImage bool
 }
 
-const buildExample = `- $ docker app run --name myrunningapp myrepo/myapp:mytag
-- $ docker app run 34be4a0c5f50 --name myrunningapp`
+const buildExample = `- $ docker app build .
+- $ docker app build --file myapp.dockerapp --tag myrepo/myapp:1.0.0 .`
 
 func Cmd(dockerCli command.Cli) *cobra.Command {
 	var opts buildOptions
