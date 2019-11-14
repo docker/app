@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"bufio"
-	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -25,10 +24,8 @@ func insertBundles(t *testing.T, cmd icmd.Cmd) {
 func assertImageListOutput(t *testing.T, cmd icmd.Cmd, expected string) {
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	stdout := result.Stdout()
-	match, _ := regexp.MatchString(expected, stdout)
-	if !match {
-		fmt.Println(stdout)
-	}
+	match, err := regexp.MatchString(expected, stdout)
+	assert.NilError(t, err)
 	assert.Assert(t, match)
 }
 
@@ -42,22 +39,18 @@ func expectImageListDigestsOutput(t *testing.T, cmd icmd.Cmd, output string) {
 	assertImageListOutput(t, cmd, output)
 }
 
-func verifyImageIDListOutput(t *testing.T, cmd icmd.Cmd, count int, distinct int) {
+func verifyImageIDListOutput(t *testing.T, cmd icmd.Cmd, expectedCount int) {
 	cmd.Command = dockerCli.Command("app", "image", "ls", "-q")
 	result := icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	scanner := bufio.NewScanner(strings.NewReader(result.Stdout()))
-	lines := []string{}
-	counter := make(map[string]int)
+	count := 0
 	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-		counter[scanner.Text()]++
-		fmt.Println(scanner.Text())
+		count++
 	}
 	if err := scanner.Err(); err != nil {
 		assert.Error(t, err, "Verification failed")
 	}
-	assert.Equal(t, len(lines), count)
-	assert.Equal(t, len(counter), distinct)
+	assert.Equal(t, expectedCount, count)
 }
 
 func TestImageList(t *testing.T) {
@@ -79,7 +72,7 @@ func TestImageListQuiet(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
 		insertBundles(t, cmd)
-		verifyImageIDListOutput(t, cmd, 3, 3)
+		verifyImageIDListOutput(t, cmd, 3)
 	})
 }
 
