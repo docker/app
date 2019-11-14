@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/docker/cnab-to-oci/relocation"
+
 	"github.com/docker/cnab-to-oci/internal"
 
 	"github.com/containerd/containerd/platforms"
@@ -24,6 +26,7 @@ func noopEventCallback(FixupEvent) {}
 // fixupConfig defines the input required for a Fixup operation
 type fixupConfig struct {
 	bundle                        *bundle.Bundle
+	relocationMap                 relocation.ImageRelocationMap
 	targetRef                     reference.Named
 	eventCallback                 func(FixupEvent)
 	maxConcurrentJobs             int
@@ -43,6 +46,7 @@ type FixupOption func(*fixupConfig) error
 func newFixupConfig(b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, options ...FixupOption) (fixupConfig, error) {
 	cfg := fixupConfig{
 		bundle:            b,
+		relocationMap:     relocation.ImageRelocationMap{},
 		targetRef:         ref,
 		resolver:          resolver,
 		eventCallback:     noopEventCallback,
@@ -142,6 +146,17 @@ func WithPushImages(imageClient internal.ImageClient, out io.Writer) FixupOption
 		} else {
 			cfg.pushOut = out
 		}
+		return nil
+	}
+}
+
+// WithRelocationMap stores a previously generated relocation map. This map will be used to copy or mount images
+// based on local images but already pushed on a registry.
+// This way if a bundle is pulled on a machine that doesn't contain the images, when the bundle is pushed and images
+// are not found the fixup will try to resolve the corresponding images from the relocation map.
+func WithRelocationMap(relocationMap relocation.ImageRelocationMap) FixupOption {
+	return func(cfg *fixupConfig) error {
+		cfg.relocationMap = relocationMap
 		return nil
 	}
 }

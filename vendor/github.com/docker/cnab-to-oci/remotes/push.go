@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/docker/cli/cli/config/credentials"
+
 	"github.com/docker/cnab-to-oci/internal"
 
 	"github.com/docker/cli/cli/config"
@@ -291,8 +293,16 @@ func resolveAuthConfig(index *registrytypes.IndexInfo) configtypes.AuthConfig {
 		return configtypes.AuthConfig{}
 	}
 
+	// See https://github.com/docker/cli/blob/23446275646041f9b598d64c51be24d5d0e49376/cli/config/credentials/file_store.go#L32-L47
+	// We are looking for the hostname in the configuration, and if not we are trying with a pure hostname (so without
+	// http/https).
 	authConfig, ok := configs[hostName]
 	if !ok {
+		for reg, config := range configs {
+			if hostName == credentials.ConvertToHostname(reg) {
+				return config
+			}
+		}
 		return configtypes.AuthConfig{}
 	}
 	return authConfig
