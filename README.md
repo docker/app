@@ -99,7 +99,7 @@ services:
 
 Next, create an App definition using the `docker app init` command:
 
-```console
+```shell
 $ docker app init --compose-file docker-compose.yml hello
 Created "hello.dockerapp"
 $ tree
@@ -154,7 +154,7 @@ text: hello development
 
 Next, build an App image:
 
-```console
+```shell
 $ docker app build . -f hello.dockerapp -t myrepo/hello:0.1.0
 [+] Building 0.7s (6/6) FINISHED
 (...) (Build output)
@@ -167,13 +167,13 @@ At this point, an App image with the `myrepo/hello:1.0.1` tag has been built fro
 
 To share your App image, push it to a container registry.
 
-```console
+```shell
 $ docker app push myrepo/hello:0.1.0
 ```  
 
 Now run your App:
 
-```console
+```shell
 $ docker app run myrepo/hello:0.1.0 
 ``` 
 
@@ -181,7 +181,7 @@ You can specify the Docker endpoint where an application is installed using a co
 
 Whenever you define such a context, the installer image will run in the default context (i.e., on local host). You can then use the `--installer-context` to target another context to run the installer image.
 
-```console
+```shell
 $ docker context create remote --description "remote cluster" --docker host=tcp://<remote-ip>:<remote-port>
 Successfully created context "remote"
 
@@ -208,14 +208,14 @@ Docker App is a *command line* plugin (not be confused with *docker engine plugi
 ### Linux or macOS
 
 Download your OS tarball:
-```console
+```shell
 export OSTYPE="$(uname | tr A-Z a-z)"
 curl -fsSL --output "/tmp/docker-app-${OSTYPE}.tar.gz" "https://github.com/docker/app/releases/download/v0.8.0/docker-app-${OSTYPE}.tar.gz"
 tar xf "/tmp/docker-app-${OSTYPE}.tar.gz" -C /tmp/
 ```
 
 Install as a Docker CLI plugin:
-```console
+```shell
 mkdir -p ~/.docker/cli-plugins && cp "/tmp/docker-app-plugin-${OSTYPE}" ~/.docker/cli-plugins/docker-app
 ```
 
