@@ -112,6 +112,14 @@ func (b *bundleStore) List() ([]reference.Reference, error) {
 
 // Remove removes a bundle from the bundle store.
 func (b *bundleStore) Remove(ref reference.Reference) error {
+	if id, ok := ref.(ID); ok {
+		if len(b.refsMap[id]) == 0 {
+			return fmt.Errorf("no such image %q", reference.FamiliarString(ref))
+		} else if len(b.refsMap[id]) > 1 {
+			return fmt.Errorf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(ref))
+		}
+		ref = b.refsMap[id][0]
+	}
 	path, err := b.storePath(ref)
 	if err != nil {
 		return err
