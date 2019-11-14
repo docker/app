@@ -47,17 +47,17 @@ Four primary steps comprise the Docker App process:
 
 ### Writing an App definition
 
-The first step in using Docker App is to write the App definition. This definition can be created (1) from an existing Compose file using the `docker app init` command (2) via  a template from the [Application Designer](https://docs.docker.com/ee/desktop/app-designer/), or (3) from scratch. 
+The first step in using Docker App is to write the App definition. This definition can be created (1) from an existing [Compose file](https://docs.docker.com/compose/compose-file/) using the `docker app init` command (2) via  a template from the [Application Designer](https://docs.docker.com/ee/desktop/app-designer/), or (3) from scratch. 
 
 The App definition is a .dockerapp folder that contains three distinct pieces: metadata, a service list, and the parameters. 
 
 | File | Description |
 | :------------ | :------------ |
 | metadata.yml | metadata including the App name and version |
-| docker-compose.yml | Service list defined in a [Compose file](https://docs.docker.com/compose/compose-file/) |
+| docker-compose.yml | Service list defined in a Compose file |
 | parameters.yml | Parameters that can be changed when running the App |
 
-*Note: To store additional files in Docker Apps, such as* `prod.yml`*,* `test.yml` *or other config files, you need only to add these files to the *.dockerapp directory. All files will be packaged into the App image through the use of the* `docker app build`  *command.*
+*Note: To store additional files in Docker Apps, such as `prod.yml`, `test.yml` or other config files, you need only to add these files to the *.dockerapp directory. All files will be packaged into the App image through the use of the `docker app build`  command.*
 
 ### Building an App image
 
@@ -88,7 +88,7 @@ First, create an App definition from an existing Compose file.
 Create a `docker-compose.yml` file that has the following content: 
 
 ```yaml
-version: '3.2'
+version: '3.6'
 services:
   hello:
     image: hashicorp/http-echo
@@ -109,6 +109,7 @@ $ tree
     ├── docker-compose.yml
     ├── metadata.yml
     └── parameters.yml
+```
 
 A new folder named `hello.dockerapp` now exists, which contains three YAML documents:
 * metadata
@@ -133,7 +134,7 @@ The Compose file is the one that was passed in parameters. Thus, if you open `pa
 Edit the `docker-compose.yml` file in the `hello.dockerapp` directory to add some variables:
 
 ```yaml
-version: '3.2'
+version: '3.6'
 services:
   hello:
     image: hashicorp/http-echo
@@ -156,7 +157,8 @@ Next, build an App image:
 ```console
 $ docker app build . -f hello.dockerapp -t myrepo/hello:0.1.0
 [+] Building 0.7s (6/6) FINISHED
-(...) (Build output)                                                                                                                sha256:4a492748ae55170daadd1ddfff4db30e0ef3d38bf0f57a913512caa323e140de      
+(...) (Build output)
+sha256:4a492748ae55170daadd1ddfff4db30e0ef3d38bf0f57a913512caa323e140de
 ```                                                                              
 
 At this point, an App image with the `myrepo/hello:1.0.1` tag has been built from the `hello.dockerapp` App definition. This immutable App image includes all the service images at fixed versions that you can run or share.
