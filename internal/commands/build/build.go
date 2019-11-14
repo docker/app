@@ -22,6 +22,7 @@ import (
 	"github.com/docker/buildx/util/progress"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	compose "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/moby/buildkit/client"
@@ -194,7 +195,7 @@ func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions,
 	return bundle, nil
 }
 
-func fixServiceImageReferences(ctx context.Context, dockerCli command.Cli, bundle *bundle.Bundle, pulledServices []ServiceConfig) error {
+func fixServiceImageReferences(ctx context.Context, dockerCli command.Cli, bundle *bundle.Bundle, pulledServices []compose.ServiceConfig) error {
 	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
 		return errors.Wrapf(err, "could not retrieve insecure registries")
@@ -202,9 +203,9 @@ func fixServiceImageReferences(ctx context.Context, dockerCli command.Cli, bundl
 	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...)
 	for _, service := range pulledServices {
 		image := bundle.Images[service.Name]
-		ref, err := reference.ParseDockerRef(*service.Image)
+		ref, err := reference.ParseDockerRef(service.Image)
 		if err != nil {
-			return errors.Wrapf(err, "could not resolve image %s", *service.Image)
+			return errors.Wrapf(err, "could not resolve image %s", service.Image)
 		}
 		_, desc, err := resolver.Resolve(ctx, ref.String())
 		if err != nil {
