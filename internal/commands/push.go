@@ -102,6 +102,7 @@ func pushBundle(dockerCli command.Cli, bndl *relocated.Bundle, cnabRef reference
 		remotes.WithEventCallback(display.onEvent),
 		remotes.WithAutoBundleUpdate(),
 		remotes.WithPushImages(dockerCli.Client(), dockerCli.Out()),
+		remotes.WithRelocationMap(bndl.RelocationMap),
 	}
 	// bundle fixup
 	relocationMap, err := remotes.FixupBundle(context.Background(), bndl.Bundle, cnabRef, resolver, fixupOptions...)
