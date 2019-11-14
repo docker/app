@@ -3,36 +3,43 @@ package build
 import (
 	"fmt"
 	"path"
+	"path/filepath"
+	"strings"
+
+	"github.com/docker/app/render"
 
 	"github.com/docker/app/types"
 	"github.com/docker/buildx/build"
-	"github.com/docker/cli/cli/compose/loader"
 	compose "github.com/docker/cli/cli/compose/types"
 )
 
 // parseCompose do parse app compose file and extract buildx Options
 // We don't rely on bake's ReadTargets + TargetsToBuildOpt here as we have to skip environment variable interpolation
-func parseCompose(app *types.App, contextPath string, options buildOptions) (map[string]build.Options, []ServiceConfig, error) {
-	parsed, err := loader.ParseYAML(app.Composes()[0])
+func parseCompose(app *types.App, contextPath string, options buildOptions) (map[string]build.Options, []compose.ServiceConfig, error) {
+	comp, err := render.Render(app, nil, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	services, err := load(parsed, options.args)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to parse compose file: %s", err)
-	}
+	buildArgs := buildArgsToMap(options.args)
 
-	pulledServices := []ServiceConfig{}
+	pulledServices := []compose.ServiceConfig{}
 	opts := map[string]build.Options{}
-	for _, service := range services {
-		if service.Build == nil {
+	for _, service := range comp.Services {
+		// Sanity check
+		for _, vol := range service.Volumes {
+			if vol.Type == "bind" && !filepath.IsAbs(vol.Source) {
+				return nil, nil, fmt.Errorf("invalid service %q: can't use relative path as volume source", service.Name)
+			}
+		}
+
+		if service.Build.Context == "" {
 			pulledServices = append(pulledServices, service)
 			continue
 		}
 		var tags []string
-		if service.Image != nil {
-			tags = append(tags, *service.Image)
+		if service.Image != "" {
+			tags = append(tags, service.Image)
 		}
 
 		if service.Build.Dockerfile == "" {
@@ -43,13 +50,40 @@ func parseCompose(app *types.App, contextPath string, options buildOptions) (map
 				ContextPath:    path.Join(contextPath, service.Build.Context),
 				DockerfilePath: path.Join(contextPath, service.Build.Context, service.Build.Dockerfile),
 			},
-			BuildArgs: flatten(service.Build.Args),
+			BuildArgs: flatten(mergeArgs(service.Build.Args, buildArgs)),
 			NoCache:   options.noCache,
 			Pull:      options.pull,
 			Tags:      tags,
 		}
 	}
 	return opts, pulledServices, nil
+}
+
+func buildArgsToMap(array []string) map[string]string {
+	result := make(map[string]string)
+	for _, value := range array {
+		parts := strings.SplitN(value, "=", 2)
+		key := parts[0]
+		if len(parts) == 1 {
+			result[key] = ""
+		} else {
+			result[key] = parts[1]
+		}
+	}
+	return result
+}
+
+func mergeArgs(src compose.MappingWithEquals, values map[string]string) compose.MappingWithEquals {
+	for key := range src {
+		if val, ok := values[key]; ok {
+			if val == "" {
+				src[key] = nil
+			} else {
+				src[key] = &val
+			}
+		}
+	}
+	return src
 }
 
 func flatten(in compose.MappingWithEquals) map[string]string {
