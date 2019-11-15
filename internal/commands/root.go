@@ -63,21 +63,31 @@ func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 	)
 
 	if !dockerCli.ClientInfo().HasExperimental {
-		hideExperimentalCLI(cmd)
+		removeExperimentalCmdsAndFlags(cmd)
 	}
 }
 
-func hideExperimentalCLI(cmd *cobra.Command) {
-	if _, ok := cmd.Annotations["experimentalCLI"]; ok {
-		cmd.Hidden = true
-	}
+func removeExperimentalCmdsAndFlags(cmd *cobra.Command) {
+	enabledFlags := []*pflag.Flag{}
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
-		if _, ok := f.Annotations["experimentalCLI"]; ok {
-			f.Hidden = true
+		if _, disabled := f.Annotations["experimentalCLI"]; !disabled {
+			enabledFlags = append(enabledFlags, f)
 		}
 	})
+
+	if len(enabledFlags) != cmd.Flags().NFlag() {
+		cmd.ResetFlags()
+		for _, f := range enabledFlags {
+			cmd.Flags().AddFlag(f)
+		}
+	}
+
 	for _, subcmd := range cmd.Commands() {
-		hideExperimentalCLI(subcmd)
+		if _, ok := subcmd.Annotations["experimentalCLI"]; ok {
+			cmd.RemoveCommand(subcmd)
+		} else {
+			removeExperimentalCmdsAndFlags(subcmd)
+		}
 	}
 }
 
