@@ -1,31 +1,24 @@
 package image
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"strings"
-	"text/tabwriter"
 	"time"
+
+	"github.com/docker/cli/cli/command/formatter"
 
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/relocated"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/cli/templates"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/stringid"
-	units "github.com/docker/go-units"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
 type imageListOption struct {
-	quiet    bool
-	digests  bool
-	template string
+	quiet   bool
+	digests bool
+	format  string
 }
 
 func listCmd(dockerCli command.Cli) *cobra.Command {
@@ -51,7 +44,7 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 	flags := cmd.Flags()
 	flags.BoolVarP(&options.quiet, "quiet", "q", false, "Only show numeric IDs")
 	flags.BoolVarP(&options.digests, "digests", "", false, "Show image digests")
-	cmd.Flags().StringVarP(&options.template, "format", "f", "", "Format the output using the given syntax or Go template")
+	cmd.Flags().StringVarP(&options.format, "format", "f", "table", "Format the output using the given syntax or Go template")
 	cmd.Flags().SetAnnotation("format", "experimentalCLI", []string{"true"}) //nolint:errcheck
 
 	return cmd
@@ -63,10 +56,12 @@ func runList(dockerCli command.Cli, options imageListOption, bundleStore store.B
 		return err
 	}
 
-	if options.quiet {
-		return printImageIDs(dockerCli, images)
+	ctx := formatter.Context{
+		Output: dockerCli.Out(),
+		Format: NewImageFormat(options.format, options.quiet, options.digests),
 	}
-	return printImages(dockerCli, images, options)
+
+	return ImageWrite(ctx, images)
 }
 
 func getImageDescriptors(bundleStore store.BundleStore) ([]imageDesc, error) {
@@ -86,41 +81,6 @@ func getImageDescriptors(bundleStore store.BundleStore) ([]imageDesc, error) {
 	return images, nil
 }
 
-func printImages(dockerCli command.Cli, list []imageDesc, options imageListOption) error {
-	if options.template == "json" {
-		bytes, err := json.MarshalIndent(list, "", "  ")
-		if err != nil {
-			return errors.Errorf("Failed to marshall json: %s", err)
-		}
-		_, err = dockerCli.Out().Write(bytes)
-		return err
-	}
-	if options.template != "" {
-		tmpl, err := templates.Parse(options.template)
-		if err != nil {
-			return errors.Errorf("Template parsing error: %s", err)
-		}
-		return tmpl.Execute(dockerCli.Out(), list)
-	}
-
-	w := tabwriter.NewWriter(dockerCli.Out(), 0, 0, 1, ' ', 0)
-	printHeaders(w, options.digests)
-	for _, desc := range list {
-		desc.println(w, options.digests)
-	}
-
-	return w.Flush()
-}
-
-func printImageIDs(dockerCli command.Cli, refs []imageDesc) error {
-	var buf bytes.Buffer
-	for _, ref := range refs {
-		fmt.Fprintln(&buf, ref.ID)
-	}
-	fmt.Fprint(dockerCli.Out(), buf.String())
-	return nil
-}
-
 func getImageID(bundle *relocated.Bundle, ref reference.Reference) (string, error) {
 	id, ok := ref.(store.ID)
 	if !ok {
@@ -133,22 +93,13 @@ func getImageID(bundle *relocated.Bundle, ref reference.Reference) (string, erro
 	return stringid.TruncateID(id.String()), nil
 }
 
-func printHeaders(w io.Writer, digests bool) {
-	headers := []string{"REPOSITORY", "TAG"}
-	if digests {
-		headers = append(headers, "DIGEST")
-	}
-	headers = append(headers, "APP IMAGE ID", "APP NAME", "CREATED")
-	fmt.Fprintln(w, strings.Join(headers, "\t"))
-}
-
 type imageDesc struct {
-	ID         string        `json:"id,omitempty"`
-	Name       string        `json:"name,omitempty"`
-	Repository string        `json:"repository,omitempty"`
-	Tag        string        `json:"tag,omitempty"`
-	Digest     string        `json:"digest,omitempty"`
-	Created    time.Duration `json:"created,omitempty"`
+	ID         string    `json:"id,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	Repository string    `json:"repository,omitempty"`
+	Tag        string    `json:"tag,omitempty"`
+	Digest     string    `json:"digest,omitempty"`
+	Created    time.Time `json:"created,omitempty"`
 }
 
 func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
@@ -166,10 +117,10 @@ func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
 	if t, ok := ref.(reference.Digested); ok {
 		digest = t.Digest().String()
 	}
-	var created time.Duration
+	var created time.Time
 	if payload, err := packager.CustomPayload(bundle.Bundle); err == nil {
 		if createdPayload, ok := payload.(packager.CustomPayloadCreated); ok {
-			created = time.Now().UTC().Sub(createdPayload.CreatedTime())
+			created = createdPayload.CreatedTime()
 		}
 	}
 	return imageDesc{
@@ -180,28 +131,4 @@ func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
 		Digest:     digest,
 		Created:    created,
 	}
-}
-
-func (desc imageDesc) humanDuration() string {
-	if desc.Created > 0 {
-		return units.HumanDuration(desc.Created) + " ago"
-	}
-	return ""
-}
-
-func (desc imageDesc) println(w io.Writer, digests bool) {
-	values := []string{}
-	values = append(values, orNone(desc.Repository), orNone(desc.Tag))
-	if digests {
-		values = append(values, orNone(desc.Digest))
-	}
-	values = append(values, desc.ID, desc.Name, desc.humanDuration())
-	fmt.Fprintln(w, strings.Join(values, "\t"))
-}
-
-func orNone(s string) string {
-	if s != "" {
-		return s
-	}
-	return "<none>"
 }
