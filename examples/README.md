@@ -1,28 +1,19 @@
 ## Examples
 
-This folder contains several examples of applications built using Docker
-Application, from a simple `hello-world` application to more complex,
-multi-service applications.
+This is a collection of [Docker App](./README.MD) examples. Most of them are fairly simple, and intended to illustrate various aspects of the Docker App product.
 
-### [Hello world!](hello-world)
+### [Hello World: Starting example](hello-world)
 
-Learn how the basics of how to write a simple Docker Application.
+Learn how to write your first Docker App.
 
-### [Convert an existing Compose file](voting-app)
+### [Voting App: Bootstraping a Docker App from an existing Compose file](voting-app)
 
-Learn how to create a Docker Application from an existing Compose file using the
-Docker voting app from [Docker samples](https://github.com/dockersamples).
+Learn how to create a Docker App having multiple services from an existing Compose file.
 
-### [Build service containers and package application](dockercoins)
+### [Docker Coins: Build service images](dockercoins)
 
-Learn how to organize your application so docker app will build the services docker images and the application image.
+Learn how Docker App can build the service images along with the App image.
 
-### [Docker Application CNAB generation](cnab-simple)
+### [CNAB Simple: Starting example for CNAB](cnab-simple)
 
-Create a [CNAB](https://cnab.io) `bundle.json` and invocation image from a
-Docker Application.
-
-### [Deploy a Helm Chart CNAB using Docker App](cnab-helm)
-
-As Docker App is a [CNAB](https://cnab.io) compliant client, you can deploy any
-CNAB.
+Create a [CNAB](https://cnab.io) bundle and an invocation image from a Docker App.

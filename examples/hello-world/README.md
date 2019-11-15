@@ -1,18 +1,31 @@
-## Hello world!
+# Example: Hello World
 
-### Initialize project
-
-In this example, we will create a single service application that deploys a web
+In this example, we will create a Docker App which is a single service application deploying a web
 server with a configurable text message.
 
-First, we will initialize the project.
+## Creating an App definition
 
-```console
+First, we create an App definition using the `docker app init` command:
+
+```shell
 $ docker app init hello-world
-$ ls -l
--rw-r--r-- 1 README.md
-drw-r--r-- 1 example-hello-world.dockerapp
-$ cat hello-world.dockerapp/metadata.yml
+Created "hello-world.dockerapp"
+$ tree
+.
+├── hello-world.dockerapp
+    ├── docker-compose.yml
+    ├── metadata.yml
+    └── parameters.yml
+```
+
+A new folder named `hello-world.dockerapp` now exists, which contains three YAML documents:
+* metadata
+* a [Compose file](https://docs.docker.com/compose/compose-file/)
+* parameters to be used at runtime
+
+The `metadata.yml` file should display as follows:
+
+```yaml
 # Version of the application
 version: 0.1.0
 # Name of the application
@@ -23,27 +36,30 @@ description:
 maintainers:
   - name: user
     email:
+```
 
-$ cat hello-world.dockerapp/services.yml
-# This section contains the Compose file that describes your application services.
+The `docker-compose.yml` should contain the following:
+
+```yaml
 version: "3.6"
 services: {}
-
-$ cat hello-world.dockerapp/parameters.yml
 ```
+
+The `parameters.yml`file should be empty.
+
+## Editing App definition
 
 Open `hello-world.dockerapp` with your favorite text editor.
 
-### Edit metadata
+### Editing the metadata
 
-Edit the `description` and `maintainers` fields in the metadata section.
+Open the `metadata.yml` file and edit the `description` and `maintainers` fields in the metadata section.
 
-### Edit the services
+### Editing the list of services
 
-Add a service `hello` to the `services` section.
+Open the `docker-compose.yml` file and add a `hello` service to the `services` section.
 
 ```yaml
-[...]
 version: "3.6"
 services:
   hello:
@@ -51,83 +67,104 @@ services:
     command: ["-text", "${text}"]
     ports:
       - ${port}:5678
-
-[...]
 ```
 
-### Edit the parameters
+### Editing the parameters
 
-In the parameters section, add every variables with the default value you want,
-e.g.:
+In the `parameters.yml` file, add variables with their default value:
 
 ```yaml
-[...]
 port: 8080
 text: Hello, World!
 ```
 
-### Inspect
+## Building an App image
 
-Inspecting a Docker Application gives you a summary of what the application
-includes.
+Next, build an App image from the App definition we have created:
 
-```console
-$ docker app inspect hello-world.dockerapp
-hello-world 0.1.0
-
-Maintained by: user <user@email.com>
-
-Hello, World!
-
-Service (1) Replicas Ports Image
------------ -------- ----- -----
-hello       1        8080  hashicorp/http-echo
-
-Parameters (2) Value
--------------- -----
-port           8080
-text           Hello, World!
+```shell
+$ docker app build . -f hello-world.dockerapp -t myrepo/hello:0.1.0
+[+] Building 0.6s (6/6) FINISHED
+(...) (Build output)
+sha256:7b48c121fcafa0543b7e88c222304f9fada9911011694b041a7f0e096536db6c
 ```
 
-### Install
+At this point, an App image with the `myrepo/hello:1.0.1` tag has been built from the `hello-world.dockerapp` App definition. This immutable App image includes all the service images at fixed versions that you can run or share.
 
-You directly install your application by running
-`docker app deploy --set text="Hello user!"`.
+## Inspecting an App image
 
-Navigate to `http://<ip_of_your_node>:8080` with a web browser and you will see
-the text message. Note that `<ip_of_your_node>` is `127.0.0.1` if you installed
-to your local Docker endpoint.
+Now let's get detailed information about the App image we just built using the `docker app image inspect` command. Note that the `--pretty` option allows to get a human friendly output rather than the JSON default output.
 
-```console
-$ curl 127.0.0.1:8080
-Hello user!
+```shell
+$ docker  app image inspect myrepo/hello-world:0.1.0 --pretty
+version: 0.1.0
+name: hello-world
+description: This is an Hello World example
+maintainers:
+- name: user
+  email: user@email.com
+
+SERVICE   REPLICAS   PORTS   IMAGE
+hello     1          8080    docker.io/hashicorp/http-echo:latest@sha256:ba27d460cd1f22a1a4331bdf74f4fccbc025552357e8a3249c40ae216275de96
+
+PARAMETER VALUE
+port      8080
+text      Hello, World!
 ```
 
-### Push
+## Sharing the App
 
-You can share your application by pushing it to a container registry such as
-the Docker Hub.
+Share your App image by pushing it to a container registry such as Docker Hub.
 
-```console
-$ docker app push hello-world --tag myrepo/hello-world:0.1.0
+```shell
+$ docker app push myrepo/hello:0.1.0
 ```
 
-You can then use your application package directly from the repository:
+## Running the App
 
-```console
-$ docker app inspect myrepo/hello-world:0.1.0
-hello-world 0.1.0
+Now run your App:
 
-Maintained by: user <user@email.com>
+```shell
+$ docker app run myrepo/hello:0.1.0  --name myhelloworld
+Creating network myhelloworld_default
+Creating service myhelloworld_hello
+App "myhelloworld" running on context "default"
+```
 
-Hello, World!
+You can specify the Docker endpoint where an application is installed using a context. By default, your App will run on the currently active context. You can select another context with the docker context use command, and the docker app run command will thereafter run your app on this particular context.
 
-Service (1) Replicas Ports Image
------------ -------- ----- -----
-hello       1        8080  myrepo/hello-world@sha256:ba27d460cd1f22a1a4331bdf74f4fccbc025552357e8a3249c40ae216275de96
+Next, you can check the list of running Apps:
 
-Parameters (2) Value
--------------- -----
-port           8080
-text           Hello, World!
+```shell
+$ docker app ls
+INSTALLATION   APPLICATION         LAST ACTION   RESULT    CREATED              MODIFIED             REFERENCE
+myhelloworld   hello-world (0.1.0) install       success   About a minute ago   About a minute ago   docker.io/myrepo/hello-world:0.1.0
+```
+
+## Inspecting a running App
+
+Finally you can get detailed information about a running App using the `docker app inspect` command. Note that the `--pretty` option allows to get a human friendly output rather than the JSON default output.
+
+```shell
+$ docker app inspect myhelloworld --pretty
+Installation:
+  Name: myhelloworld
+  Created: 3 minutes ago
+  Modified: 3 minutes ago
+  Revision: 01DSQMWWABCM27K3FWSCES3H76
+  Last Action: install
+  Result: success
+  Ochestrator: swarm
+
+Application:
+  Name: hello-world
+  Version: 0.1.0
+  Image Reference: docker.io/myrepo/hello-world:0.1.0
+
+Parameters:
+  port: "8080"
+  text: Hello, World!
+
+ID            NAME                MODE        REPLICAS  IMAGE                PORTS
+mocfqnkadxw3  myhelloworld_hello  replicated  1/1       hashicorp/http-echo  *:8080->5678/tcp
 ```
