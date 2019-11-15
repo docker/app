@@ -1,3 +1,0 @@
-name = "hellohelm"
-registry = "cnab"
-components = ["cnab"]

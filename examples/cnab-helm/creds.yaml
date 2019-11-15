@@ -1,5 +1,0 @@
-name: mycreds
-credentials:
-  - name: kubeconfig
-    source:
-      path: $HOME/.kube/config
