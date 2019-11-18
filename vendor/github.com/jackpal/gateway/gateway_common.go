@@ -1,8 +1,12 @@
 package gateway
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -53,58 +57,43 @@ func parseWindowsRoutePrint(output []byte) (net.IP, error) {
 	return nil, errNoGateway
 }
 
-func parseLinuxIPRouteShow(output []byte) (net.IP, error) {
-	// Linux '/usr/bin/ip route show' format looks like this:
-	// default via 192.168.178.1 dev wlp3s0  metric 303
-	// 192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		fields := strings.Fields(line)
-		if len(fields) >= 3 && fields[0] == "default" {
-			ip := net.ParseIP(fields[2])
-			if ip != nil {
-				return ip, nil
-			}
+
+func parseLinuxProcNetRoute(f []byte) (net.IP, error) {
+	/* /proc/net/route file:
+	   Iface   Destination Gateway     Flags   RefCnt  Use Metric  Mask
+	   eno1    00000000    C900A8C0    0003    0   0   100 00000000    0   00
+	   eno1    0000A8C0    00000000    0001    0   0   100 00FFFFFF    0   00
+	*/
+	const (
+		sep   = "\t" // field separator
+		field = 2    // field containing hex gateway address
+	)
+	scanner := bufio.NewScanner(bytes.NewReader(f))
+	for scanner.Scan() {
+		// Skip header line
+		if !scanner.Scan() {
+			return nil, errors.New("Invalid linux route file")
 		}
-	}
 
-	return nil, errNoGateway
-}
-
-func parseLinuxIPRouteGet(output []byte) (net.IP, error) {
-	// Linux '/usr/bin/ip route get 8.8.8.8' format looks like this:
-	// 8.8.8.8 via 10.0.1.1 dev eth0  src 10.0.1.36  uid 2000
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		fields := strings.Fields(line)
-		if len(fields) >= 2 && fields[1] == "via" {
-			ip := net.ParseIP(fields[2])
-			if ip != nil {
-				return ip, nil
-			}
+		// get field containing gateway address
+		tokens := strings.Split(scanner.Text(), sep)
+		if len(tokens) <= field {
+			return nil, errors.New("Invalid linux route file")
 		}
+		gatewayHex := "0x" + tokens[field]
+
+		// cast hex address to uint32
+		d, _ := strconv.ParseInt(gatewayHex, 0, 64)
+		d32 := uint32(d)
+
+		// make net.IP address from uint32
+		ipd32 := make(net.IP, 4)
+		binary.LittleEndian.PutUint32(ipd32, d32)
+
+		// format net.IP to dotted ipV4 string
+		return net.IP(ipd32), nil
 	}
-
-	return nil, errNoGateway
-}
-
-func parseLinuxRoute(output []byte) (net.IP, error) {
-	// Linux route out format is always like this:
-	// Kernel IP routing table
-	// Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
-	// 0.0.0.0         192.168.1.1     0.0.0.0         UG    0      0        0 eth0
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		fields := strings.Fields(line)
-		if len(fields) >= 2 && fields[0] == "0.0.0.0" {
-			ip := net.ParseIP(fields[1])
-			if ip != nil {
-				return ip, nil
-			}
-		}
-	}
-
-	return nil, errNoGateway
+	return nil, errors.New("Failed to parse linux route file")
 }
 
 func parseDarwinRouteGet(output []byte) (net.IP, error) {

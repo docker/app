@@ -620,12 +620,11 @@
   version = "v1.0"
 
 [[projects]]
-  digest = "1:c145f317274ab1a430e40f427402ca812219dbd4fa548a60fe1e09820c51d8cd"
+  digest = "1:8e34e38aafc5f66eb68ba2ece587d5a8267cae283f68591869cb8714eb27a2c0"
   name = "github.com/jackpal/gateway"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "10816db7ab2f4b71e71dba9420bfa67d5be27b33"
-  source = "github.com/ndeloof/gateway"
+  revision = "5ceb358a720efa82a5692470f37874b1f48035ad"
 
 [[projects]]
   digest = "1:fbfb539de947ebc48768d413ee811e3ff34d32636ff0965a517e7786e559f66b"
