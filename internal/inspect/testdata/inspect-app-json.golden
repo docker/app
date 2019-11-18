@@ -1,5 +1,5 @@
 {
-    "Installation": {
+    "RunningApp": {
         "Name": "hello-world",
         "Created": "1 day ago",
         "Modified": "17 hours ago",
@@ -8,7 +8,7 @@
         "Result": "success",
         "Orchestrator": "swarm"
     },
-    "Application": {
+    "App": {
         "Name": "hello-world",
         "Version": "0.1.0",
         "ImageReference": "docker.io/sirot/hello-world:0.1.0"

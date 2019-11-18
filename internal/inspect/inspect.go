@@ -65,8 +65,8 @@ type Application struct {
 }
 
 type AppInfo struct {
-	Installation Installation           `yaml:"Installation,omitempty" json:"Installation,omitempty"`
-	Application  Application            `yaml:"Application,omitempty" json:"Application,omitempty"`
+	Installation Installation           `yaml:"Running App,omitempty" json:"RunningApp,omitempty"`
+	Application  Application            `yaml:"App,omitempty" json:"App,omitempty"`
 	Parameters   map[string]interface{} `yaml:"Parameters,omitempty" json:"Parameters,omitempty"`
 }
 

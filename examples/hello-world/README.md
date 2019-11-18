@@ -137,7 +137,7 @@ Next, you can check the list of running Apps:
 
 ```shell
 $ docker app ls
-INSTALLATION   APPLICATION         LAST ACTION   RESULT    CREATED              MODIFIED             REFERENCE
+RUNNING APP    APP NAME            LAST ACTION   RESULT    CREATED              MODIFIED             REFERENCE
 myhelloworld   hello-world (0.1.0) install       success   About a minute ago   About a minute ago   docker.io/myrepo/hello-world:0.1.0
 ```
 
@@ -147,7 +147,7 @@ Finally you can get detailed information about a running App using the `docker a
 
 ```shell
 $ docker app inspect myhelloworld --pretty
-Installation:
+Running App:
   Name: myhelloworld
   Created: 3 minutes ago
   Modified: 3 minutes ago
@@ -156,7 +156,7 @@ Installation:
   Result: success
   Ochestrator: swarm
 
-Application:
+App:
   Name: hello-world
   Version: 0.1.0
   Image Reference: docker.io/myrepo/hello-world:0.1.0

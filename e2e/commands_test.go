@@ -316,7 +316,7 @@ func TestDockerAppLifecycle(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "ls")
 		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 			[]string{
-				`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
+				`RUNNING APP\s+APP NAME\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
 				fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+failure\s+.+second[s]?\sago\s+.+second[s]?\sago\s+`, appName),
 			})
 
@@ -344,7 +344,7 @@ func TestDockerAppLifecycle(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "ls")
 		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 			[]string{
-				`INSTALLATION\s+APPLICATION\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
+				`RUNNING APP\s+APP NAME\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
 				fmt.Sprintf(`%s\s+simple \(1.1.0-beta1\)\s+install\s+success\s+.+second[s]?\sago\s+.+second[s]?\sago\s+`, appName),
 			})
 

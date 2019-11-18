@@ -21,8 +21,8 @@ var (
 		header string
 		value  func(i *store.Installation) string
 	}{
-		{"INSTALLATION", func(i *store.Installation) string { return i.Name }},
-		{"APPLICATION", func(i *store.Installation) string { return fmt.Sprintf("%s (%s)", i.Bundle.Name, i.Bundle.Version) }},
+		{"RUNNING APP", func(i *store.Installation) string { return i.Name }},
+		{"APP NAME", func(i *store.Installation) string { return fmt.Sprintf("%s (%s)", i.Bundle.Name, i.Bundle.Version) }},
 		{"LAST ACTION", func(i *store.Installation) string { return i.Result.Action }},
 		{"RESULT", func(i *store.Installation) string { return i.Result.Status }},
 		{"CREATED", func(i *store.Installation) string {
