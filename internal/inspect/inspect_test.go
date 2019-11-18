@@ -170,7 +170,7 @@ func getInstallation() store.Installation {
 				"com.docker.app.args":                 "{}",
 				"com.docker.app.inspect-format":       "json",
 				"com.docker.app.kubernetes-namespace": "default",
-				"com.docker.app.orchestrator":         "",
+				"com.docker.app.orchestrator":         "swarm",
 				"com.docker.app.render-format":        "yaml",
 				"com.docker.app.share-registry-creds": false,
 				"port":                                "8080",
@@ -202,7 +202,7 @@ func TestInspect(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			var out bytes.Buffer
-			err := Inspect(&out, &i, testCase.format, "swarm")
+			err := Inspect(&out, &i, testCase.format)
 			assert.NilError(t, err)
 			golden.Assert(t, out.String(), fmt.Sprintf("inspect-app-%s.golden", testCase.name))
 		})
