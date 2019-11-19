@@ -83,21 +83,31 @@ func TestListCmd(t *testing.T) {
 	}{
 		{
 			name: "TestList",
-			expectedOutput: `REPOSITORY TAG    APP IMAGE ID APP NAME     CREATED
-foo/bar    <none> 3f825b2d0657 Digested App 
-foo/bar    1.0    9aae408ee04f Foo App      
-<none>     <none> a855ac937f2e Quiet App    
+			expectedOutput: `REPOSITORY          TAG                 APP IMAGE ID        APP NAME            CREATED             
+foo/bar             <none>              3f825b2d0657        Digested App        N/A                 
+foo/bar             1.0                 9aae408ee04f        Foo App             N/A                 
+<none>              <none>              a855ac937f2e        Quiet App           N/A                 
 `,
-			options: imageListOption{},
+			options: imageListOption{format: "table"},
+		},
+		{
+			name: "TestTemplate",
+			expectedOutput: `APP IMAGE ID        DIGEST
+3f825b2d0657        sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865
+9aae408ee04f        <none>
+a855ac937f2e        sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087
+`,
+			options: imageListOption{format: "table {{.ID}}", digests: true},
 		},
 		{
 			name: "TestListWithDigests",
-			expectedOutput: `REPOSITORY TAG    DIGEST                                                                  APP IMAGE ID APP NAME     CREATED
-foo/bar    <none> sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865 3f825b2d0657 Digested App 
-foo/bar    1.0    <none>                                                                  9aae408ee04f Foo App      
-<none>     <none> sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087 a855ac937f2e Quiet App    
+			//nolint:lll
+			expectedOutput: `REPOSITORY          TAG                 DIGEST                                                                    APP IMAGE ID        APP NAME                                CREATED             
+foo/bar             <none>              sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865   3f825b2d0657        Digested App                            N/A                 
+foo/bar             1.0                 <none>                                                                    9aae408ee04f        Foo App                                 N/A                 
+<none>              <none>              sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087   a855ac937f2e        Quiet App                               N/A                 
 `,
-			options: imageListOption{digests: true},
+			options: imageListOption{format: "table", digests: true},
 		},
 		{
 			name: "TestListWithQuiet",
@@ -105,7 +115,7 @@ foo/bar    1.0    <none>                                                        
 9aae408ee04f
 a855ac937f2e
 `,
-			options: imageListOption{quiet: true},
+			options: imageListOption{format: "table", quiet: true},
 		},
 	}
 

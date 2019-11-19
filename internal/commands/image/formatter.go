@@ -10,9 +10,9 @@ import (
 
 const (
 	defaultImageTableFormat           = "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Name}}\t{{if .CreatedSince }}{{.CreatedSince}}{{else}}N/A{{end}}\t"
-	defaultImageTableFormatWithDigest = "table {{.Repository}}\t{{.Tag}}\t{{.Digest}}\t{{.ID}}{{.Name}}\t\t{{if .CreatedSince }}{{.CreatedSince}}{{else}}N/A{{end}}\t"
+	defaultImageTableFormatWithDigest = "table {{.Repository}}\t{{.Tag}}\t{{.Digest}}\t{{.ID}}\t{{.Name}}\t\t{{if .CreatedSince }}{{.CreatedSince}}{{else}}N/A{{end}}\t"
 
-	imageIDHeader    = "APP ID"
+	imageIDHeader    = "APP IMAGE ID"
 	repositoryHeader = "REPOSITORY"
 	tagHeader        = "TAG"
 	digestHeader     = "DIGEST"
@@ -112,6 +112,9 @@ func (c *imageContext) Tag() string {
 }
 
 func (c *imageContext) Digest() string {
+	if c.i.Digest == "" {
+		return "<none>"
+	}
 	return c.i.Digest
 }
 
