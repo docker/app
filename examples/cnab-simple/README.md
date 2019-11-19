@@ -23,7 +23,7 @@ $ docker app build . -f hello.dockerapp -t myrepo/cnab-example:1.0.0
 sha256:ee61121d6bff0266404cc0077599c1ef7130289fec721
 ```                                                                              
 
-*Note that a `bundle.json` file has been created in the `/Users/username/.docker/app/bundles/docker.io/myrepo/cnab-example/_tags/1.0.0` directory.*
+*Note that a `bundle.json` file has been created in the `~/.docker/app/bundles/docker.io/myrepo/cnab-example/_tags/1.0.0` directory.*
 
 Open the open the `bundle.json` file in your favorite text editor and you'll see this is a [CNAB bundle](https://github.com/cnabio/cnab-spec).
 
@@ -74,7 +74,7 @@ To demonstrate that Docker App is an implementation of [CNAB](https://cnab.io/),
 
 *Note: To use this flag, you have to enable the experimental mode for the Docker CLI first.*
 
-Open the `/Users/username/.docker/config.json` file in a text editor and change the `"experimental"` field to `"enabled"`.
+Open the `~/.docker/config.json` file in a text editor and change the `"experimental"` field to `"enabled"`.
 
 Run your app passing a `bundle.json` file.
 
@@ -98,7 +98,7 @@ Inspect your running app using the `docker app inspect`command.
 ```shell
 $ docker app inspect mycnabexample --pretty
 Running App:
-  Name: titi
+  Name: mycnabexample
   Created: 1 minute ago
   Modified: 1 minute ago
   Revision: 01DT28SRQZF12FN5YFQ36XCBYS
