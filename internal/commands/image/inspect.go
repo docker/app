@@ -10,6 +10,7 @@ import (
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/inspect"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -88,7 +89,12 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 
 	installation.SetParameter(internal.ParameterInspectFormatName, format)
 
-	if err := a.Run(&installation.Claim, nil); err != nil {
+	err = a.Run(&installation.Claim, nil)
+	if err == action.ErrUndefinedAction {
+		err = inspect.ImageInspectCNAB(os.Stdout, bndl.Bundle, format)
+	}
+
+	if err != nil {
 		return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
 	}
 	return nil

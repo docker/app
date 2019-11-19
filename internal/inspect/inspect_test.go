@@ -2,6 +2,7 @@ package inspect
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -130,6 +131,22 @@ text: hello`),
 			testImageInspect(t, dir, testcase, "-json")
 		}
 	})
+}
+
+func TestImageInspectCNAB(t *testing.T) {
+	s := golden.Get(t, "bundle-json.golden")
+	var bndl bundle.Bundle
+	err := json.Unmarshal(s, &bndl)
+	assert.NilError(t, err)
+
+	expected := golden.Get(t, "inspect-bundle-json.golden")
+
+	outBuffer := new(bytes.Buffer)
+	err = ImageInspectCNAB(outBuffer, &bndl, "json")
+	assert.NilError(t, err)
+
+	result := outBuffer.String()
+	assert.Equal(t, string(expected), result)
 }
 
 func testImageInspect(t *testing.T, dir *fs.Dir, testcase inspectTestCase, suffix string) {

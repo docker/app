@@ -114,6 +114,49 @@ func ImageInspect(out io.Writer, app *types.App, argParameters map[string]string
 	return printImageAppInfo(out, appInfo, outputFormat)
 }
 
+func ImageInspectCNAB(out io.Writer, bndl *bundle.Bundle, outputFormat string) error {
+	meta := metadata.AppMetadata{
+		Description: bndl.Description,
+		Name:        bndl.Name,
+		Version:     bndl.Version,
+		Maintainers: []metadata.Maintainer{},
+	}
+	for _, m := range bndl.Maintainers {
+		meta.Maintainers = append(meta.Maintainers, metadata.Maintainer{
+			Name:  m.Name,
+			Email: m.Email,
+		})
+	}
+
+	paramKeys := []string{}
+	params := map[string]string{}
+	for _, v := range bndl.Parameters {
+		paramKeys = append(paramKeys, v.Definition)
+		if d, ok := bndl.Definitions[v.Definition]; ok && d.Default != nil {
+			params[v.Definition] = fmt.Sprint(d.Default)
+		} else {
+			params[v.Definition] = ""
+		}
+	}
+
+	services := []Service{}
+	for k, v := range bndl.Images {
+		services = append(services, Service{
+			Name:  k,
+			Image: v.Image,
+		})
+	}
+
+	appInfo := ImageAppInfo{
+		Metadata:       meta,
+		parametersKeys: paramKeys,
+		Parameters:     params,
+		Services:       services,
+	}
+
+	return printImageAppInfo(out, appInfo, outputFormat)
+}
+
 func printAppInfo(out io.Writer, app AppInfo, format string) error {
 	switch format {
 	case "pretty":

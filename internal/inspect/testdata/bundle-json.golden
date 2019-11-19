@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "v1.0.0",
+  "name": "packing",
+  "version": "0.1.0",
+  "description": "hello",
+  "maintainers": [
+    {
+      "name": "dev1",
+      "email": "dev1@example.com"
+    },
+    {
+      "name": "dev2",
+      "email": "dev2@example.com"
+    }
+  ],
+  "invocationImages": [
+    {
+      "imageType": "docker",
+      "image": "test-image"
+    }
+  ],
+  "images": {
+    "app-watcher": {
+      "imageType": "docker",
+      "image": "watcher",
+      "description": "watcher"
+    },
+    "debug": {
+      "imageType": "docker",
+      "image": "busybox:latest",
+      "description": "busybox:latest"
+    },
+    "front": {
+      "imageType": "docker",
+      "image": "nginx",
+      "description": "nginx"
+    },
+    "monitor": {
+      "imageType": "docker",
+      "image": "busybox:latest",
+      "description": "busybox:latest"
+    }
+  },
+  "actions": {
+    "com.docker.app.inspect": {
+      "stateless": true
+    },
+    "com.docker.app.render": {
+      "stateless": true
+    },
+    "io.cnab.status": {},
+    "io.cnab.status+json": {}
+  },
+  "parameters": {
+    "com.docker.app.args": {
+      "definition": "com.docker.app.args",
+      "applyTo": [
+        "install",
+        "upgrade"
+      ],
+      "destination": {
+        "path": "/cnab/app/args.json"
+      }
+    },
+    "com.docker.app.inspect-format": {
+      "definition": "com.docker.app.inspect-format",
+      "applyTo": [
+        "com.docker.app.inspect"
+      ],
+      "destination": {
+        "env": "DOCKER_INSPECT_FORMAT"
+      }
+    },
+    "com.docker.app.kubernetes-namespace": {
+      "definition": "com.docker.app.kubernetes-namespace",
+      "applyTo": [
+        "install",
+        "upgrade",
+        "uninstall",
+        "io.cnab.status"
+      ],
+      "destination": {
+        "env": "DOCKER_KUBERNETES_NAMESPACE"
+      }
+    },
+    "com.docker.app.orchestrator": {
+      "definition": "com.docker.app.orchestrator",
+      "applyTo": [
+        "install",
+        "upgrade",
+        "uninstall",
+        "io.cnab.status"
+      ],
+      "destination": {
+        "env": "DOCKER_STACK_ORCHESTRATOR"
+      }
+    },
+    "com.docker.app.render-format": {
+      "definition": "com.docker.app.render-format",
+      "applyTo": [
+        "com.docker.app.render"
+      ],
+      "destination": {
+        "env": "DOCKER_RENDER_FORMAT"
+      }
+    },
+    "com.docker.app.share-registry-creds": {
+      "definition": "com.docker.app.share-registry-creds",
+      "destination": {
+        "env": "DOCKER_SHARE_REGISTRY_CREDS"
+      }
+    },
+    "watcher.cmd": {
+      "definition": "watcher.cmd",
+      "destination": {
+        "env": "docker_param1"
+      }
+    }
+  },
+  "credentials": {
+    "com.docker.app.registry-creds": {
+      "path": "/cnab/app/registry-creds.json"
+    },
+    "docker.context": {
+      "path": "/cnab/app/context.dockercontext"
+    }
+  },
+  "definitions": {
+    "com.docker.app.args": {
+      "default": "",
+      "description": "Arguments that are passed by file to the invocation image",
+      "title": "Arguments",
+      "type": "string"
+    },
+    "com.docker.app.inspect-format": {
+      "default": "json",
+      "description": "Output format for the inspect command",
+      "enum": [
+        "json",
+        "pretty"
+      ],
+      "title": "Inspect format",
+      "type": "string"
+    },
+    "com.docker.app.kubernetes-namespace": {
+      "default": "",
+      "description": "Namespace in which to deploy",
+      "title": "Namespace",
+      "type": "string"
+    },
+    "com.docker.app.orchestrator": {
+      "default": "",
+      "description": "Orchestrator on which to deploy",
+      "enum": [
+        "",
+        "swarm",
+        "kubernetes"
+      ],
+      "title": "Orchestrator",
+      "type": "string"
+    },
+    "com.docker.app.render-format": {
+      "default": "yaml",
+      "description": "Output format for the render command",
+      "enum": [
+        "yaml",
+        "json"
+      ],
+      "title": "Render format",
+      "type": "string"
+    },
+    "com.docker.app.share-registry-creds": {
+      "default": false,
+      "description": "Share registry credentials with the invocation image",
+      "title": "Share registry credentials",
+      "type": "boolean"
+    },
+    "watcher.cmd": {
+      "default": "foo",
+      "type": "string"
+    }
+  }
+}
