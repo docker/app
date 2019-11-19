@@ -23,9 +23,7 @@ const inspectExample = `- $ docker app inspect my-running-app
 type inspectOptions struct {
 	credentialOptions
 	cliopts.InstallerContextOptions
-	pretty        bool
-	orchestrator  string
-	kubeNamespace string
+	pretty bool
 }
 
 func inspectCmd(dockerCli command.Cli) *cobra.Command {
@@ -40,19 +38,12 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&opts.pretty, "pretty", false, "Pretty print the output")
-	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator where the App is running on (swarm, kubernetes)")
-	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace in which to find the App")
 	opts.credentialOptions.addFlags(cmd.Flags())
 	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	return cmd
 }
 
 func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOptions) error {
-	orchestrator, err := getContextOrchestrator(dockerCli, inspectOptions.orchestrator)
-	if err != nil {
-		return err
-	}
-
 	defer muteDockerCli(dockerCli)()
 	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
@@ -61,11 +52,6 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 	installation, err := installationStore.Read(appName)
 	if err != nil {
 		return err
-	}
-
-	orchestratorName, ok := installation.Parameters[internal.ParameterOrchestratorName].(string)
-	if !ok || orchestratorName == "" {
-		orchestratorName = string(orchestrator)
 	}
 
 	creds, err := prepareCredentialSet(installation.Bundle, inspectOptions.CredentialSetOpts(dockerCli, credentialStore)...)
@@ -94,7 +80,7 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 	}
 
 	if inspectOptions.pretty {
-		if err := inspect.Inspect(os.Stdout, installation, "pretty", orchestratorName); err != nil {
+		if err := inspect.Inspect(os.Stdout, installation, "pretty"); err != nil {
 			return err
 		}
 		fmt.Fprint(os.Stdout, buf.String())
@@ -107,7 +93,7 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 			AppInfo  inspect.AppInfo `json:",omitempty"`
 			Services interface{}     `json:",omitempty"`
 		}{
-			inspect.GetAppInfo(installation, orchestratorName),
+			inspect.GetAppInfo(installation),
 			statusJSON,
 		}, "", "    ")
 		if err != nil {
@@ -116,19 +102,6 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 		fmt.Fprint(os.Stdout, string(js))
 	}
 	return nil
-}
-
-func getContextOrchestrator(dockerCli command.Cli, orchestratorFlag string) (command.Orchestrator, error) {
-	var orchestrator command.Orchestrator
-	orchestrator, _ = command.NormalizeOrchestrator(orchestratorFlag)
-	if string(orchestrator) == "" {
-		orchestrator, err := dockerCli.StackOrchestrator("")
-		if err != nil {
-			return "", err
-		}
-		return orchestrator, nil
-	}
-	return orchestrator, nil
 }
 
 func hasAction(bndl *bundle.Bundle, actionName string) bool {

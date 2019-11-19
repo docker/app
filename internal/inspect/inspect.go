@@ -70,14 +70,13 @@ type AppInfo struct {
 	Parameters   map[string]interface{} `yaml:"Parameters,omitempty" json:"Parameters,omitempty"`
 }
 
-func Inspect(out io.Writer, installation *store.Installation, outputFormat string, cliDefinedOrchestrator string) error {
+func Inspect(out io.Writer, installation *store.Installation, outputFormat string) error {
 	// Collect all the relevant information about the application
-	appInfo := GetAppInfo(installation, cliDefinedOrchestrator)
+	appInfo := GetAppInfo(installation)
 	return printAppInfo(out, appInfo, outputFormat)
 }
 
-func GetAppInfo(installation *store.Installation, cliDefinedOrchestrator string) AppInfo {
-	orchestrator := getOrchestrator(installation.Claim, cliDefinedOrchestrator)
+func GetAppInfo(installation *store.Installation) AppInfo {
 	return AppInfo{
 		Installation: Installation{
 			Name:         installation.Name,
@@ -86,7 +85,7 @@ func GetAppInfo(installation *store.Installation, cliDefinedOrchestrator string)
 			Revision:     installation.Revision,
 			LastAction:   installation.Result.Action,
 			Result:       installation.Result.Status,
-			Orchestrator: orchestrator,
+			Orchestrator: getOrchestrator(installation.Claim),
 		},
 		Application: Application{
 			Name:           installation.Bundle.Name,
@@ -232,11 +231,11 @@ func printSection(out io.Writer, len int, printer func(io.Writer), headers ...st
 	w.Flush()
 }
 
-func getOrchestrator(claim claim.Claim, cliDefaultOrchestrator string) string {
-	if orchestrator, ok := claim.Parameters[internal.ParameterOrchestratorName]; ok && orchestrator != "" {
+func getOrchestrator(claim claim.Claim) string {
+	if orchestrator, ok := claim.Parameters[internal.ParameterOrchestratorName]; ok && orchestrator != nil {
 		return orchestrator.(string)
 	}
-	return cliDefaultOrchestrator
+	return ""
 }
 
 func removeDockerAppParameters(parameters map[string]interface{}) map[string]interface{} {
