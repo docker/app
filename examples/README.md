@@ -1,6 +1,6 @@
 ## Examples
 
-This is a collection of [Docker App](../README.MD) examples. Most of them are fairly simple, and intended to illustrate various aspects of the Docker App product.
+This is a collection of Docker App examples. Most of them are fairly simple, and intended to illustrate various aspects of the Docker App product.
 
 ### [Hello World: Starting example](hello-world)
 
