@@ -3,12 +3,11 @@ package image
 import (
 	"time"
 
-	"github.com/docker/cli/cli/command/formatter"
-
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/relocated"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/stringid"
@@ -61,7 +60,7 @@ func runList(dockerCli command.Cli, options imageListOption, bundleStore store.B
 		Format: NewImageFormat(options.format, options.quiet, options.digests),
 	}
 
-	return ImageWrite(ctx, images)
+	return Write(ctx, images)
 }
 
 func getImageDescriptors(bundleStore store.BundleStore) ([]imageDesc, error) {

@@ -40,8 +40,8 @@ func NewImageFormat(source string, quiet bool, digest bool) formatter.Format {
 	return format
 }
 
-// ImageWrite writes the formatter images using the ImageContext
-func ImageWrite(ctx formatter.Context, images []imageDesc) error {
+// Write writes the formatter images using the ImageContext
+func Write(ctx formatter.Context, images []imageDesc) error {
 	render := func(format func(subContext formatter.SubContext) error) error {
 		return imageFormat(ctx, images, format)
 	}
