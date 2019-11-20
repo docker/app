@@ -87,7 +87,7 @@ func runList(dockerCli command.Cli, opts listOptions, installerContext *cliopts.
 		return err
 	}
 	if err != nil {
-		return err
+		fmt.Fprintf(dockerCli.Err(), "%s\n", err)
 	}
 
 	if opts.template == "json" {
@@ -142,6 +142,7 @@ func getInstallations(installationStore store.InstallationStore, fetcher Service
 		return nil, err
 	}
 	installations := make([]Installation, len(installationNames))
+	var errs []string
 	for i, name := range installationNames {
 		installation, err := installationStore.Read(name)
 		if err != nil {
@@ -149,7 +150,7 @@ func getInstallations(installationStore store.InstallationStore, fetcher Service
 		}
 		services, err := fetcher.getServices(installation)
 		if err != nil {
-			return nil, err
+			errs = append(errs, err.Error())
 		}
 		installations[i] = Installation{Installation: installation, Services: services}
 	}
@@ -157,8 +158,10 @@ func getInstallations(installationStore store.InstallationStore, fetcher Service
 	sort.Slice(installations, func(i, j int) bool {
 		return installations[i].Modified.After(installations[j].Modified)
 	})
-
-	return installations, nil
+	if len(errs) > 0 {
+		err = errors.New(strings.Join(errs, "\n"))
+	}
+	return installations, err
 }
 
 type ServiceStatus struct {
