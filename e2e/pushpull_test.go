@@ -91,7 +91,7 @@ func TestPushPullInstall(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "ls")
 		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
 			[]string{
-				fmt.Sprintf(`%s\s+push-pull \(1.1.0-beta1\)\s+install\s+success\s+.+second[s]?\sago\s+.+second[s]?\sago\s+%s`, t.Name(), ref+tag),
+				fmt.Sprintf(`%s\s+push-pull \(1.1.0-beta1\)\s+\d/1\s+install\s+success\s+.+second[s]?\sago\s+.+second[s]?\sago\s+%s`, t.Name(), ref+tag),
 			})
 
 		// install should fail (registry is stopped)
