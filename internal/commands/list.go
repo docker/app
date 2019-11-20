@@ -12,7 +12,10 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
+	"github.com/docker/cli/templates"
 	units "github.com/docker/go-units"
+	"github.com/docker/go/canonical/json"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -36,23 +39,42 @@ var (
 )
 
 func listCmd(dockerCli command.Cli) *cobra.Command {
+	var template string
 	cmd := &cobra.Command{
 		Use:     "ls [OPTIONS]",
 		Short:   "List running Apps",
 		Aliases: []string{"list"},
 		Args:    cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runList(dockerCli)
+			return runList(dockerCli, template)
 		},
 	}
 
+	cmd.Flags().StringVarP(&template, "format", "f", "", "Format the output using the given syntax or Go template")
+	cmd.Flags().SetAnnotation("format", "experimentalCLI", []string{"true"}) //nolint:errcheck
 	return cmd
 }
 
-func runList(dockerCli command.Cli) error {
+func runList(dockerCli command.Cli, template string) error {
 	installations, err := getInstallations(dockerCli.CurrentContext(), config.Dir())
 	if err != nil {
 		return err
+	}
+
+	if template == "json" {
+		bytes, err := json.MarshalIndent(installations, "", "  ")
+		if err != nil {
+			return errors.Errorf("Failed to marshall json: %s", err)
+		}
+		_, err = dockerCli.Out().Write(bytes)
+		return err
+	}
+	if template != "" {
+		tmpl, err := templates.Parse(template)
+		if err != nil {
+			return errors.Errorf("Template parsing error: %s", err)
+		}
+		return tmpl.Execute(dockerCli.Out(), installations)
 	}
 
 	w := tabwriter.NewWriter(dockerCli.Out(), 0, 0, 1, ' ', 0)

@@ -1,32 +1,23 @@
 package image
 
 import (
-	"bytes"
-	"fmt"
-	"io"
-	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/relocated"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/stringid"
-	units "github.com/docker/go-units"
 	"github.com/spf13/cobra"
 )
 
 type imageListOption struct {
 	quiet   bool
 	digests bool
-}
-
-type imageListColumn struct {
-	header string
-	value  func(p pkg) string
+	format  string
 }
 
 func listCmd(dockerCli command.Cli) *cobra.Command {
@@ -52,76 +43,48 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 	flags := cmd.Flags()
 	flags.BoolVarP(&options.quiet, "quiet", "q", false, "Only show numeric IDs")
 	flags.BoolVarP(&options.digests, "digests", "", false, "Show image digests")
+	cmd.Flags().StringVarP(&options.format, "format", "f", "table", "Format the output using the given syntax or Go template")
+	cmd.Flags().SetAnnotation("format", "experimentalCLI", []string{"true"}) //nolint:errcheck
 
 	return cmd
 }
 
 func runList(dockerCli command.Cli, options imageListOption, bundleStore store.BundleStore) error {
-	bundles, err := bundleStore.List()
+	images, err := getImageDescriptors(bundleStore)
 	if err != nil {
 		return err
 	}
 
-	pkgs, err := getPackages(bundleStore, bundles)
-	if err != nil {
-		return err
+	ctx := formatter.Context{
+		Output: dockerCli.Out(),
+		Format: NewImageFormat(options.format, options.quiet, options.digests),
 	}
 
-	if options.quiet {
-		return printImageIDs(dockerCli, pkgs)
-	}
-	return printImages(dockerCli, pkgs, options)
+	return Write(ctx, images)
 }
 
-func getPackages(bundleStore store.BundleStore, references []reference.Reference) ([]pkg, error) {
-	packages := make([]pkg, len(references))
+func getImageDescriptors(bundleStore store.BundleStore) ([]imageDesc, error) {
+	references, err := bundleStore.List()
+	if err != nil {
+		return nil, err
+	}
+	images := make([]imageDesc, len(references))
 	for i, ref := range references {
 		b, err := bundleStore.Read(ref)
 		if err != nil {
 			return nil, err
 		}
 
-		pk := pkg{
-			bundle: b,
-			ref:    ref,
-		}
-
-		packages[i] = pk
+		images[i] = getImageDesc(b, ref)
 	}
-
-	return packages, nil
+	return images, nil
 }
 
-func printImages(dockerCli command.Cli, refs []pkg, options imageListOption) error {
-	w := tabwriter.NewWriter(dockerCli.Out(), 0, 0, 1, ' ', 0)
-	listColumns := getImageListColumns(options)
-	printHeaders(w, listColumns)
-	for _, ref := range refs {
-		printValues(w, ref, listColumns)
-	}
-
-	return w.Flush()
-}
-
-func printImageIDs(dockerCli command.Cli, refs []pkg) error {
-	var buf bytes.Buffer
-
-	for _, ref := range refs {
-		id, err := getImageID(ref)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintln(&buf, id)
-	}
-	fmt.Fprint(dockerCli.Out(), buf.String())
-	return nil
-}
-
-func getImageID(p pkg) (string, error) {
-	id, ok := p.ref.(store.ID)
+func getImageID(bundle *relocated.Bundle, ref reference.Reference) (string, error) {
+	id, ok := ref.(store.ID)
 	if !ok {
 		var err error
-		id, err = store.FromBundle(p.bundle)
+		id, err = store.FromBundle(bundle)
 		if err != nil {
 			return "", err
 		}
@@ -129,71 +92,42 @@ func getImageID(p pkg) (string, error) {
 	return stringid.TruncateID(id.String()), nil
 }
 
-func printHeaders(w io.Writer, listColumns []imageListColumn) {
-	var headers []string
-	for _, column := range listColumns {
-		headers = append(headers, column.header)
-	}
-	fmt.Fprintln(w, strings.Join(headers, "\t"))
+type imageDesc struct {
+	ID         string    `json:"id,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	Repository string    `json:"repository,omitempty"`
+	Tag        string    `json:"tag,omitempty"`
+	Digest     string    `json:"digest,omitempty"`
+	Created    time.Time `json:"created,omitempty"`
 }
 
-func printValues(w io.Writer, ref pkg, listColumns []imageListColumn) {
-	var values []string
-	for _, column := range listColumns {
-		values = append(values, column.value(ref))
+func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
+	var id string
+	id, _ = getImageID(bundle, ref)
+	var repository string
+	if n, ok := ref.(reference.Named); ok {
+		repository = reference.FamiliarName(n)
 	}
-	fmt.Fprintln(w, strings.Join(values, "\t"))
-}
-
-func getImageListColumns(options imageListOption) []imageListColumn {
-	columns := []imageListColumn{
-		{"REPOSITORY", func(p pkg) string {
-			if n, ok := p.ref.(reference.Named); ok {
-				return reference.FamiliarName(n)
-			}
-			return "<none>"
-		}},
-		{"TAG", func(p pkg) string {
-			if t, ok := p.ref.(reference.Tagged); ok {
-				return t.Tag()
-			}
-			return "<none>"
-		}},
+	var tag string
+	if t, ok := ref.(reference.Tagged); ok {
+		tag = t.Tag()
 	}
-	if options.digests {
-		columns = append(columns, imageListColumn{"DIGEST", func(p pkg) string {
-			if t, ok := p.ref.(reference.Digested); ok {
-				return t.Digest().String()
-			}
-			return "<none>"
-		}})
+	var digest string
+	if t, ok := ref.(reference.Digested); ok {
+		digest = t.Digest().String()
 	}
-	columns = append(columns,
-		imageListColumn{"APP IMAGE ID", func(p pkg) string {
-			id, err := getImageID(p)
-			if err != nil {
-				return ""
-			}
-			return id
-		}},
-		imageListColumn{"APP NAME", func(p pkg) string {
-			return p.bundle.Name
-		}},
-		imageListColumn{"CREATED", func(p pkg) string {
-			payload, err := packager.CustomPayload(p.bundle.Bundle)
-			if err != nil {
-				return ""
-			}
-			if createdPayload, ok := payload.(packager.CustomPayloadCreated); ok {
-				return units.HumanDuration(time.Now().UTC().Sub(createdPayload.CreatedTime())) + " ago"
-			}
-			return ""
-		}},
-	)
-	return columns
-}
-
-type pkg struct {
-	ref    reference.Reference
-	bundle *relocated.Bundle
+	var created time.Time
+	if payload, err := packager.CustomPayload(bundle.Bundle); err == nil {
+		if createdPayload, ok := payload.(packager.CustomPayloadCreated); ok {
+			created = createdPayload.CreatedTime()
+		}
+	}
+	return imageDesc{
+		ID:         id,
+		Name:       bundle.Name,
+		Repository: repository,
+		Tag:        tag,
+		Digest:     digest,
+		Created:    created,
+	}
 }
