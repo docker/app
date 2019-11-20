@@ -1,0 +1,24 @@
+version: 0.1.0
+name: packing
+description: hello
+maintainers:
+- name: dev1
+  email: dev1@example.com
+- name: dev2
+  email: dev2@example.com
+
+
+SERVICE     IMAGE
+app-watcher watcher
+debug       busybox:latest
+front       nginx
+monitor     busybox:latest
+
+PARAMETER                           VALUE
+com.docker.app.args                 
+com.docker.app.inspect-format       json
+com.docker.app.kubernetes-namespace 
+com.docker.app.orchestrator         
+com.docker.app.render-format        yaml
+com.docker.app.share-registry-creds false
+watcher.cmd                         foo

@@ -133,16 +133,24 @@ text: hello`),
 	})
 }
 
-func TestImageInspectCNAB(t *testing.T) {
+func TestImageInspectCNABFormatJSON(t *testing.T) {
+	testImageInspectCNAB(t, "json")
+}
+
+func TestImageInspectCNABFormatPretty(t *testing.T) {
+	testImageInspectCNAB(t, "pretty")
+}
+
+func testImageInspectCNAB(t *testing.T, format string) {
 	s := golden.Get(t, "bundle-json.golden")
 	var bndl bundle.Bundle
 	err := json.Unmarshal(s, &bndl)
 	assert.NilError(t, err)
 
-	expected := golden.Get(t, "inspect-bundle-json.golden")
+	expected := golden.Get(t, fmt.Sprintf("inspect-bundle-%s.golden", format))
 
 	outBuffer := new(bytes.Buffer)
-	err = ImageInspectCNAB(outBuffer, &bndl, "json")
+	err = ImageInspectCNAB(outBuffer, &bndl, format)
 	assert.NilError(t, err)
 
 	result := outBuffer.String()
