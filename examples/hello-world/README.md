@@ -168,3 +168,11 @@ Parameters:
 ID            NAME                MODE        REPLICAS  IMAGE                PORTS
 mocfqnkadxw3  myhelloworld_hello  replicated  1/1       hashicorp/http-echo  *:8080->5678/tcp
 ```
+
+Finally, remove the current running App using the `docker app rm`command.
+
+```shell
+$ docker app rm myhelloworld
+Removing service myhelloworld_hello
+Removing network myhelloworld_default
+```
