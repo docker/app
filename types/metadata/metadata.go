@@ -8,8 +8,8 @@ import (
 
 // Maintainer represents one of the apps's maintainers
 type Maintainer struct {
-	Name  string `json:"name"`
-	Email string `json:"email,omitempty"`
+	Name  string
+	Email string `json:",omitempty"`
 }
 
 // Maintainers is a list of maintainers
@@ -35,13 +35,13 @@ func (m Maintainer) String() string {
 
 // AppMetadata is the format of the data found inside the metadata.yml file
 type AppMetadata struct {
-	Version     string      `json:"version"`
-	Name        string      `json:"name"`
-	Description string      `json:"description,omitempty"`
-	Maintainers Maintainers `json:"maintainers,omitempty"`
+	Version     string
+	Name        string
+	Description string      `json:",omitempty"`
+	Maintainers Maintainers `json:",omitempty"`
 }
 
-// Metadata extracts the docker-app metadata from the bundle
+// FromBundle extracts the docker-app metadata from the bundle
 func FromBundle(bndl *bundle.Bundle) AppMetadata {
 	meta := AppMetadata{
 		Name:        bndl.Name,

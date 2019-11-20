@@ -1,12 +1,12 @@
 {
     "Metadata": {
-        "version": "0.1.0",
-        "name": "myapp",
-        "description": "some description",
-        "maintainers": [
+        "Version": "0.1.0",
+        "Name": "myapp",
+        "Description": "some description",
+        "Maintainers": [
             {
-                "name": "dev",
-                "email": "dev@example.com"
+                "Name": "dev",
+                "Email": "dev@example.com"
             }
         ]
     }

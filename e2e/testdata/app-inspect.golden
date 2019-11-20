@@ -1,16 +1,16 @@
 {
     "Metadata": {
-        "version": "1.1.0-beta1",
-        "name": "simple",
-        "description": "new fancy webapp with microservices",
-        "maintainers": [
+        "Version": "1.1.0-beta1",
+        "Name": "simple",
+        "Description": "new fancy webapp with microservices",
+        "Maintainers": [
             {
-                "name": "John Developer",
-                "email": "john.dev@example.com"
+                "Name": "John Developer",
+                "Email": "john.dev@example.com"
             },
             {
-                "name": "Jane Developer",
-                "email": "jane.dev@example.com"
+                "Name": "Jane Developer",
+                "Email": "jane.dev@example.com"
             }
         ]
     },

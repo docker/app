@@ -1,16 +1,16 @@
 {
     "Metadata": {
-        "version": "0.1.0",
-        "name": "packing",
-        "description": "hello",
-        "maintainers": [
+        "Version": "0.1.0",
+        "Name": "packing",
+        "Description": "hello",
+        "Maintainers": [
             {
-                "name": "dev1",
-                "email": "dev1@example.com"
+                "Name": "dev1",
+                "Email": "dev1@example.com"
             },
             {
-                "name": "dev2",
-                "email": "dev2@example.com"
+                "Name": "dev2",
+                "Email": "dev2@example.com"
             }
         ]
     },
