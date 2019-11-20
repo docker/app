@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/docker/app/internal/relocated"
 
@@ -124,6 +125,22 @@ a855ac937f2e
 			testRunList(t, refs, bundles, tc.options, tc.expectedOutput)
 		})
 	}
+}
+
+func TestSortImages(t *testing.T) {
+	images := []imageDesc{
+		{ID: "1", Created: time.Date(2016, time.August, 15, 0, 0, 0, 0, time.UTC)},
+		{ID: "2"},
+		{ID: "3"},
+		{ID: "4", Created: time.Date(2018, time.August, 15, 0, 0, 0, 0, time.UTC)},
+		{ID: "5", Created: time.Date(2017, time.August, 15, 0, 0, 0, 0, time.UTC)},
+	}
+	sortImages(images)
+	assert.Equal(t, "4", images[0].ID)
+	assert.Equal(t, "5", images[1].ID)
+	assert.Equal(t, "1", images[2].ID)
+	assert.Equal(t, "2", images[3].ID)
+	assert.Equal(t, "3", images[4].ID)
 }
 
 func parseReference(t *testing.T, s string) reference.Reference {
