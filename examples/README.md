@@ -8,7 +8,7 @@ Learn how to write your first Docker App.
 
 ### [Voting App: Bootstraping a Docker App from an existing Compose file](voting-app)
 
-Learn how to create a Docker App having multiple services from an existing Compose file.
+Learn how to create a Docker App having multiple services from an existing [Compose file](https://docs.docker.com/compose/compose-file/).
 
 ### [Docker Coins: Build service images](dockercoins)
 
