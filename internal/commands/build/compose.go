@@ -1,9 +1,7 @@
 package build
 
 import (
-	"fmt"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/docker/app/render"
@@ -26,13 +24,6 @@ func parseCompose(app *types.App, contextPath string, options buildOptions) (map
 	pulledServices := []compose.ServiceConfig{}
 	opts := map[string]build.Options{}
 	for _, service := range comp.Services {
-		// Sanity check
-		for _, vol := range service.Volumes {
-			if vol.Type == "bind" && !filepath.IsAbs(vol.Source) {
-				return nil, nil, fmt.Errorf("invalid service %q: can't use relative path as volume source", service.Name)
-			}
-		}
-
 		if service.Build.Context == "" {
 			pulledServices = append(pulledServices, service)
 			continue
