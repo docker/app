@@ -1,6 +1,7 @@
 package image
 
 import (
+	"sort"
 	"time"
 
 	"github.com/docker/app/internal/packager"
@@ -60,6 +61,7 @@ func runList(dockerCli command.Cli, options imageListOption, bundleStore store.B
 		Format: NewImageFormat(options.format, options.quiet, options.digests),
 	}
 
+	sortImages(images)
 	return Write(ctx, images)
 }
 
@@ -90,6 +92,18 @@ func getImageID(bundle *relocated.Bundle, ref reference.Reference) (string, erro
 		}
 	}
 	return stringid.TruncateID(id.String()), nil
+}
+
+func sortImages(images []imageDesc) {
+	sort.SliceStable(images, func(i, j int) bool {
+		if images[i].Created.IsZero() {
+			return false
+		}
+		if images[j].Created.IsZero() {
+			return true
+		}
+		return images[i].Created.After(images[j].Created)
+	})
 }
 
 type imageDesc struct {

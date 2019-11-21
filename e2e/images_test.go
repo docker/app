@@ -26,7 +26,7 @@ func assertImageListOutput(t *testing.T, cmd icmd.Cmd, expected string) {
 	stdout := result.Stdout()
 	match, err := regexp.MatchString(expected, stdout)
 	assert.NilError(t, err)
-	assert.Assert(t, match)
+	assert.Assert(t, match, expected, stdout)
 }
 
 func expectImageListOutput(t *testing.T, cmd icmd.Cmd, output string) {
@@ -222,24 +222,24 @@ c-simple-app        latest              [a-f0-9]{12}        simple              
 		cmd.Command = dockerCli.Command("app", "build", "--tag", "push-pull", filepath.Join("testdata", "push-pull"))
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `REPOSITORY          TAG                 APP IMAGE ID        APP NAME            CREATED[ ]*
+push-pull           latest              [a-f0-9]{12}        push-pull           [La-z0-9 ]+ ago[ ]*
 a-simple-app        0.1                 [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
 a-simple-app        latest              [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
 b-simple-app        0.2                 [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
 b-simple-app        latest              [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
 c-simple-app        latest              [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
-push-pull           latest              [a-f0-9]{12}        push-pull           [La-z0-9 ]+ ago[ ]*
 `)
 
 		// can be tagged to an existing tag
 		dockerAppImageTag("push-pull", "b-simple-app:0.2")
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		expectImageListOutput(t, cmd, `REPOSITORY          TAG                 APP IMAGE ID        APP NAME            CREATED[ ]*
+b-simple-app        0.2                 [a-f0-9]{12}        push-pull           [La-z0-9 ]+ ago[ ]*
+push-pull           latest              [a-f0-9]{12}        push-pull           [La-z0-9 ]+ ago[ ]*
 a-simple-app        0.1                 [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
 a-simple-app        latest              [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
-b-simple-app        0.2                 [a-f0-9]{12}        push-pull           [La-z0-9 ]+ ago[ ]*
 b-simple-app        latest              [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
 c-simple-app        latest              [a-f0-9]{12}        simple              [La-z0-9 ]+ ago[ ]*
-push-pull           latest              [a-f0-9]{12}        push-pull           [La-z0-9 ]+ ago[ ]*
 `)
 	})
 }
