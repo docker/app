@@ -93,7 +93,7 @@ At this point, an App image with the `myrepo/hello:1.0.1` tag has been built fro
 
 ## Inspecting an App image
 
-Now let's get detailed information about the App image we just built using the `docker app image inspect` command. Note that the `--pretty` option allows to get a human friendly output rather than the JSON default output.
+Now let's get detailed information about the App image we just built using the `docker app image inspect` command. Note that the `--pretty` option allows to get a human friendly output rather than the default JSON output.
 
 ```shell
 $ docker  app image inspect myrepo/hello-world:0.1.0 --pretty
@@ -143,7 +143,7 @@ myhelloworld   hello-world (0.1.0) install       success   About a minute ago   
 
 ## Inspecting a running App
 
-Finally you can get detailed information about a running App using the `docker app inspect` command. Note that the `--pretty` option allows to get a human friendly output rather than the JSON default output.
+Finally you can get detailed information about a running App using the `docker app inspect` command. Note that the `--pretty` option allows to get a human friendly output rather than the default JSON output.
 
 ```shell
 $ docker app inspect myhelloworld --pretty
