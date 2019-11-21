@@ -1,0 +1,44 @@
+{
+    "Metadata": {
+        "Version": "0.1.0",
+        "Name": "packing",
+        "Description": "hello",
+        "Maintainers": [
+            {
+                "Name": "dev1",
+                "Email": "dev1@example.com"
+            },
+            {
+                "Name": "dev2",
+                "Email": "dev2@example.com"
+            }
+        ]
+    },
+    "Services": [
+        {
+            "Name": "app-watcher",
+            "Image": "watcher"
+        },
+        {
+            "Name": "debug",
+            "Image": "busybox:latest"
+        },
+        {
+            "Name": "front",
+            "Image": "nginx"
+        },
+        {
+            "Name": "monitor",
+            "Image": "busybox:latest"
+        }
+    ],
+    "Parameters": {
+        "com.docker.app.args": "",
+        "com.docker.app.inspect-format": "json",
+        "com.docker.app.kubernetes-namespace": "",
+        "com.docker.app.orchestrator": "",
+        "com.docker.app.render-format": "yaml",
+        "com.docker.app.share-registry-creds": "false",
+        "watcher.cmd": "foo"
+    }
+}

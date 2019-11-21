@@ -10,6 +10,7 @@ import (
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/inspect"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -68,28 +69,35 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	if err != nil {
 		return err
 	}
-	installation, err := appstore.NewInstallation("custom-action", ref.String(), bndl)
-	if err != nil {
-		return err
-	}
-	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
-	if err != nil {
-		return err
-	}
-	a := &action.RunCustom{
-		Action: internal.ActionInspectName,
-		Driver: driverImpl,
-	}
 
 	format := "json"
 	if opts.pretty {
 		format = "pretty"
 	}
 
-	installation.SetParameter(internal.ParameterInspectFormatName, format)
+	installation, err := appstore.NewInstallation("custom-action", ref.String(), bndl)
+	if err != nil {
+		return err
+	}
 
-	if err := a.Run(&installation.Claim, nil); err != nil {
-		return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
+	if _, hasAction := installation.Bundle.Actions[internal.ActionInspectName]; hasAction {
+		driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
+		if err != nil {
+			return err
+		}
+		a := &action.RunCustom{
+			Action: internal.ActionInspectName,
+			Driver: driverImpl,
+		}
+
+		installation.SetParameter(internal.ParameterInspectFormatName, format)
+		if err = a.Run(&installation.Claim, nil); err != nil {
+			return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
+		}
+	} else {
+		if err = inspect.ImageInspectCNAB(os.Stdout, bndl.Bundle, format); err != nil {
+			return fmt.Errorf("inspect failed: %s", err)
+		}
 	}
 	return nil
 }

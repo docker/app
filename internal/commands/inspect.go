@@ -105,10 +105,6 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 }
 
 func hasAction(bndl *bundle.Bundle, actionName string) bool {
-	for key := range bndl.Actions {
-		if key == actionName {
-			return true
-		}
-	}
-	return false
+	_, ok := bndl.Actions[actionName]
+	return ok
 }

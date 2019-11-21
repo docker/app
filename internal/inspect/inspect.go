@@ -110,7 +110,54 @@ func ImageInspect(out io.Writer, app *types.App, argParameters map[string]string
 	}
 
 	outputFormat := os.Getenv(internal.DockerInspectFormatEnvVar)
-	return printImageAppInfo(out, appInfo, outputFormat)
+	return printImageAppInfo(out, appInfo, outputFormat, true)
+}
+
+func ImageInspectCNAB(out io.Writer, bndl *bundle.Bundle, outputFormat string) error {
+	meta := metadata.AppMetadata{
+		Description: bndl.Description,
+		Name:        bndl.Name,
+		Version:     bndl.Version,
+		Maintainers: []metadata.Maintainer{},
+	}
+	for _, m := range bndl.Maintainers {
+		meta.Maintainers = append(meta.Maintainers, metadata.Maintainer{
+			Name:  m.Name,
+			Email: m.Email,
+		})
+	}
+
+	paramKeys := []string{}
+	params := map[string]string{}
+	for _, v := range bndl.Parameters {
+		paramKeys = append(paramKeys, v.Definition)
+		if d, ok := bndl.Definitions[v.Definition]; ok && d.Default != nil {
+			params[v.Definition] = fmt.Sprint(d.Default)
+		} else {
+			params[v.Definition] = ""
+		}
+	}
+	sort.Strings(paramKeys)
+
+	services := []Service{}
+	for k, v := range bndl.Images {
+		services = append(services, Service{
+			Name:  k,
+			Image: v.Image,
+		})
+	}
+	sort.SliceStable(services, func(i, j int) bool {
+		return services[i].Name < services[j].Name
+	})
+
+	appInfo := ImageAppInfo{
+		Metadata:       meta,
+		parametersKeys: paramKeys,
+		Parameters:     params,
+		Services:       services,
+	}
+
+	return printImageAppInfo(out, appInfo, outputFormat, false)
 }
 
 func printAppInfo(out io.Writer, app AppInfo, format string) error {
@@ -124,10 +171,10 @@ func printAppInfo(out io.Writer, app AppInfo, format string) error {
 	}
 }
 
-func printImageAppInfo(out io.Writer, app ImageAppInfo, format string) error {
+func printImageAppInfo(out io.Writer, app ImageAppInfo, format string, isApp bool) error {
 	switch format {
 	case "pretty":
-		return printTable(out, app)
+		return printTable(out, app, isApp)
 	case "json":
 		return printJSON(out, app)
 	default:
@@ -165,16 +212,24 @@ func printAppTable(out io.Writer, info AppInfo) error {
 	return nil
 }
 
-func printTable(out io.Writer, appInfo ImageAppInfo) error {
+func printTable(out io.Writer, appInfo ImageAppInfo, isApp bool) error {
 	// Add Meta data
 	printYAML(out, appInfo.Metadata)
 
 	// Add Service section
-	printSection(out, len(appInfo.Services), func(w io.Writer) {
-		for _, service := range appInfo.Services {
-			fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, service.Replicas, service.Ports, service.Image)
-		}
-	}, "SERVICE", "REPLICAS", "PORTS", "IMAGE")
+	if isApp {
+		printSection(out, len(appInfo.Services), func(w io.Writer) {
+			for _, service := range appInfo.Services {
+				fmt.Fprintf(w, "%s\t%d\t%s\t%s\n", service.Name, service.Replicas, service.Ports, service.Image)
+			}
+		}, "SERVICE", "REPLICAS", "PORTS", "IMAGE")
+	} else {
+		printSection(out, len(appInfo.Services), func(w io.Writer) {
+			for _, service := range appInfo.Services {
+				fmt.Fprintf(w, "%s\t%s\n", service.Name, service.Image)
+			}
+		}, "SERVICE", "IMAGE")
+	}
 
 	// Add Network section
 	printSection(out, len(appInfo.Networks), func(w io.Writer) {
@@ -325,7 +380,7 @@ func extractParameters(app *types.App, argParameters map[string]string) ([]strin
 	for k := range allParameters {
 		parametersKeys = append(parametersKeys, k)
 	}
-	sort.Slice(parametersKeys, func(i, j int) bool { return parametersKeys[i] < parametersKeys[j] })
+	sort.Strings(parametersKeys)
 	return parametersKeys, allParameters, nil
 }
 
