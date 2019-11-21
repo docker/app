@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/validator"
 	"github.com/docker/app/loader"
 	"github.com/docker/app/types"
 	"github.com/pkg/errors"
@@ -64,12 +65,19 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 		return nil, errors.Wrapf(err, "cannot locate application %q in filesystem", name)
 	}
 	if s.IsDir() {
+		v := validator.NewValidatorWithDefaults()
+		err := v.Validate(filepath.Join(appname, internal.ComposeFileName))
+		if err != nil {
+			return nil, err
+		}
+
 		// directory: already decompressed
 		appOpts := append(ops,
 			types.WithPath(appname),
 			types.WithSource(types.AppSourceSplit),
 		)
-		return loader.LoadFromDirectory(appname, appOpts...)
+		app, err := loader.LoadFromDirectory(appname, appOpts...)
+		return app, err
 	}
 	// not a dir: a tarball package, extract that in a temp dir
 	app, err := loader.LoadFromTar(appname, ops...)
