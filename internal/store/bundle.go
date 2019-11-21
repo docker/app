@@ -79,7 +79,7 @@ func (b *bundleStore) Store(ref reference.Reference, bndl *relocated.Bundle) (re
 	}
 
 	if err := bndl.Store(dir); err != nil {
-		return id, errors.Wrapf(err, "failed to store reloacted bundle %q", ref)
+		return id, errors.Wrapf(err, "failed to store relocated bundle %q", ref)
 	}
 
 	b.refsMap.appendRef(id, ref)
