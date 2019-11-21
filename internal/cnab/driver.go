@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal/cliopts"
-	store2 "github.com/docker/app/internal/store"
+	"github.com/docker/app/internal/store"
 
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/driver"
@@ -15,7 +15,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context/docker"
-	"github.com/docker/cli/cli/context/store"
+	cliContext "github.com/docker/cli/cli/context/store"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 )
@@ -39,7 +39,7 @@ func RequiredClaimBindMount(c claim.Claim, dockerCli command.Cli) (BindMount, er
 
 // RequiredBindMount Returns the path required to bind mount when running
 // the invocation image.
-func RequiredBindMount(targetContextName string, targetOrchestrator string, s store.Store) (BindMount, error) {
+func RequiredBindMount(targetContextName string, targetOrchestrator string, s cliContext.Store) (BindMount, error) {
 	if targetOrchestrator == "kubernetes" {
 		return BindMount{}, nil
 	}
@@ -119,7 +119,7 @@ func prepareDriver(dockerCli command.Cli, bindMount BindMount, stdout io.Writer)
 	return d, errBuf
 }
 
-func SetupDriver(installation *store2.Installation, dockerCli command.Cli, opts *cliopts.InstallerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
+func SetupDriver(installation *store.Installation, dockerCli command.Cli, opts *cliopts.InstallerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
 	dockerCli, err := opts.SetInstallerContext(dockerCli)
 	if err != nil {
 		return nil, nil, err
