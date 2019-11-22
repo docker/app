@@ -22,11 +22,10 @@ const inspectExample = `- $ docker app inspect my-running-app
 
 type inspectOptions struct {
 	credentialOptions
-	cliopts.InstallerContextOptions
 	pretty bool
 }
 
-func inspectCmd(dockerCli command.Cli) *cobra.Command {
+func inspectCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContextOptions) *cobra.Command {
 	var opts inspectOptions
 	cmd := &cobra.Command{
 		Use:     "inspect [OPTIONS] RUNNING_APP",
@@ -34,16 +33,15 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		Example: inspectExample,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInspect(dockerCli, firstOrEmpty(args), opts)
+			return runInspect(dockerCli, args[0], opts, installerContext)
 		},
 	}
 	cmd.Flags().BoolVar(&opts.pretty, "pretty", false, "Pretty print the output")
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	return cmd
 }
 
-func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOptions) error {
+func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOptions, installerContext *cliopts.InstallerContextOptions) error {
 	defer muteDockerCli(dockerCli)()
 	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
@@ -60,7 +58,7 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 	}
 
 	var buf bytes.Buffer
-	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, inspectOptions.InstallerContextOptions, &buf)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, &buf)
 	if err != nil {
 		return err
 	}

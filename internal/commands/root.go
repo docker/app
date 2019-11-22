@@ -7,6 +7,7 @@ import (
 
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/commands/build"
 	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
@@ -17,19 +18,21 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var (
+type mainOptions struct {
+	cliopts.InstallerContextOptions
 	showVersion bool
-)
+}
 
 // NewRootCmd returns the base root command.
 func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
+	var opts mainOptions
 	cmd := &cobra.Command{
 		Short:       "Docker App",
 		Long:        `A tool to build, share and run a Docker App`,
 		Use:         use,
 		Annotations: map[string]string{"experimentalCLI": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if showVersion {
+			if opts.showVersion {
 				fmt.Fprintln(os.Stdout, internal.FullVersion()) //nolint:errcheck
 				return nil
 			}
@@ -41,25 +44,27 @@ func NewRootCmd(use string, dockerCli command.Cli) *cobra.Command {
 			return nil
 		},
 	}
-	addCommands(cmd, dockerCli)
+	addCommands(cmd, dockerCli, &opts.InstallerContextOptions)
 
-	cmd.Flags().BoolVar(&showVersion, "version", false, "Print version information")
+	cmd.Flags().BoolVar(&opts.showVersion, "version", false, "Print version information")
+	opts.InstallerContextOptions.AddFlags(cmd.Flags())
+
 	return cmd
 }
 
-func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
+func addCommands(cmd *cobra.Command, dockerCli command.Cli, installerContext *cliopts.InstallerContextOptions) {
 	cmd.AddCommand(
-		runCmd(dockerCli),
-		updateCmd(dockerCli),
-		removeCmd(dockerCli),
-		listCmd(dockerCli),
+		runCmd(dockerCli, installerContext),
+		updateCmd(dockerCli, installerContext),
+		removeCmd(dockerCli, installerContext),
+		listCmd(dockerCli, installerContext),
 		initCmd(dockerCli),
 		validateCmd(),
 		pushCmd(dockerCli),
 		pullCmd(dockerCli),
-		image.Cmd(dockerCli),
+		image.Cmd(dockerCli, installerContext),
 		build.Cmd(dockerCli),
-		inspectCmd(dockerCli),
+		inspectCmd(dockerCli, installerContext),
 	)
 
 	if !dockerCli.ClientInfo().HasExperimental {

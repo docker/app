@@ -23,12 +23,11 @@ import (
 
 type renderOptions struct {
 	cliopts.ParametersOptions
-	cliopts.InstallerContextOptions
 	formatDriver string
 	renderOutput string
 }
 
-func renderCmd(dockerCli command.Cli) *cobra.Command {
+func renderCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContextOptions) *cobra.Command {
 	var opts renderOptions
 	cmd := &cobra.Command{
 		Use:     "render [OPTIONS] APP_IMAGE",
@@ -37,18 +36,17 @@ func renderCmd(dockerCli command.Cli) *cobra.Command {
 		Args:    cli.ExactArgs(1),
 		Hidden:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRender(dockerCli, args[0], opts)
+			return runRender(dockerCli, args[0], opts, installerContext)
 		},
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
-	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().StringVarP(&opts.renderOutput, "output", "o", "-", "Output file")
 	cmd.Flags().StringVar(&opts.formatDriver, "formatter", "yaml", "Configure the output format (yaml|json)")
 
 	return cmd
 }
 
-func runRender(dockerCli command.Cli, appname string, opts renderOptions) error {
+func runRender(dockerCli command.Cli, appname string, opts renderOptions, installerContext *cliopts.InstallerContextOptions) error {
 	defer muteDockerCli(dockerCli)()
 
 	var w io.Writer = os.Stdout
@@ -66,7 +64,7 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 		return nil
 	}
 
-	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts)
+	action, installation, errBuf, err := prepareCustomAction(internal.ActionRenderName, dockerCli, appname, w, opts, installerContext)
 	if err != nil {
 		return err
 	}
@@ -78,7 +76,7 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions) error 
 	return nil
 }
 
-func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer, opts renderOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
+func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer, opts renderOptions, installerContext *cliopts.InstallerContextOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err
@@ -103,7 +101,7 @@ func prepareCustomAction(actionName string, dockerCli command.Cli, appname strin
 		return nil, nil, nil, err
 	}
 
-	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, stdout)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, stdout)
 	if err != nil {
 		return nil, nil, nil, err
 	}

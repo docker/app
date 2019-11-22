@@ -4,7 +4,9 @@ Usage:	docker app [OPTIONS] COMMAND
 A tool to build, share and run a Docker App
 
 Options:
-      --version   Print version information
+      --installer-context string   Context on which the installer image
+                                   is ran (default "default")
+      --version                    Print version information
 
 Management Commands:
   image       Manage App images

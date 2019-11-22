@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 
 	"github.com/deislabs/cnab-go/driver"
-	"github.com/docker/app/internal/cliopts"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
@@ -18,11 +18,10 @@ import (
 
 type removeOptions struct {
 	credentialOptions
-	cliopts.InstallerContextOptions
 	force bool
 }
 
-func removeCmd(dockerCli command.Cli) *cobra.Command {
+func removeCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContextOptions) *cobra.Command {
 	var opts removeOptions
 
 	cmd := &cobra.Command{
@@ -32,17 +31,16 @@ func removeCmd(dockerCli command.Cli) *cobra.Command {
 		Example: `$ docker app rm myrunningapp`,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRemove(dockerCli, args[0], opts)
+			return runRemove(dockerCli, args[0], opts, installerContext)
 		},
 	}
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().BoolVar(&opts.force, "force", false, "Force the removal of a running App")
 
 	return cmd
 }
 
-func runRemove(dockerCli command.Cli, installationName string, opts removeOptions) (mainErr error) {
+func runRemove(dockerCli command.Cli, installationName string, opts removeOptions, installerContext *cliopts.InstallerContextOptions) (mainErr error) {
 	defer muteDockerCli(dockerCli)()
 
 	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
@@ -66,7 +64,7 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 			fmt.Fprintf(os.Stderr, "deletion forced for running App %q\n", installationName)
 		}()
 	}
-	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, os.Stdout)
 	if err != nil {
 		return err
 	}

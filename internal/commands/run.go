@@ -25,7 +25,6 @@ import (
 type runOptions struct {
 	cliopts.ParametersOptions
 	credentialOptions
-	cliopts.InstallerContextOptions
 	orchestrator  string
 	kubeNamespace string
 	stackName     string
@@ -38,7 +37,7 @@ const longDescription = `Run an App from an App image.`
 const runExample = `- $ docker app run --name myrunningapp myrepo/myapp:mytag
 - $ docker app run 34be4a0c5f50 --name myrunningapp`
 
-func runCmd(dockerCli command.Cli) *cobra.Command {
+func runCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContextOptions) *cobra.Command {
 	var opts runOptions
 
 	cmd := &cobra.Command{
@@ -58,14 +57,13 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 				if err := cli.ExactArgs(1)(cmd, args); err != nil {
 					return err
 				}
-				return runDockerApp(dockerCli, args[0], opts)
+				return runDockerApp(dockerCli, args[0], opts, installerContext)
 			}
-			return runCnab(dockerCli, opts)
+			return runCnab(dockerCli, opts, installerContext)
 		},
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.orchestrator, "orchestrator", "", "Orchestrator to install on (swarm, kubernetes)")
 	cmd.Flags().StringVar(&opts.kubeNamespace, "namespace", "default", "Kubernetes namespace to install into")
 	cmd.Flags().StringVar(&opts.stackName, "name", "", "Assign a name to the installation")
@@ -78,15 +76,15 @@ func runCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runCnab(dockerCli command.Cli, opts runOptions) error {
+func runCnab(dockerCli command.Cli, opts runOptions, installerContext *cliopts.InstallerContextOptions) error {
 	bndl, err := relocated.BundleFromFile(opts.cnabBundle)
 	if err != nil {
 		return errors.Wrapf(err, "failed to read bundle %q", opts.cnabBundle)
 	}
-	return runBundle(dockerCli, bndl, opts, "")
+	return runBundle(dockerCli, bndl, opts, installerContext, "")
 }
 
-func runDockerApp(dockerCli command.Cli, appname string, opts runOptions) error {
+func runDockerApp(dockerCli command.Cli, appname string, opts runOptions, installerContext *cliopts.InstallerContextOptions) error {
 	bundleStore, err := prepareBundleStore()
 	if err != nil {
 		return err
@@ -96,10 +94,10 @@ func runDockerApp(dockerCli command.Cli, appname string, opts runOptions) error 
 	if err != nil {
 		return errors.Wrapf(err, "Unable to find App %q", appname)
 	}
-	return runBundle(dockerCli, bndl, opts, ref.String())
+	return runBundle(dockerCli, bndl, opts, installerContext, ref.String())
 }
 
-func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, ref string) (err error) {
+func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, installerContext *cliopts.InstallerContextOptions, ref string) (err error) {
 	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
@@ -129,7 +127,7 @@ func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, r
 		return err
 	}
 
-	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, os.Stdout)
 	if err != nil {
 		return err
 	}
