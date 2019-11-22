@@ -76,7 +76,13 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions, instal
 	return nil
 }
 
-func prepareCustomAction(actionName string, dockerCli command.Cli, appname string, stdout io.Writer, opts renderOptions, installerContext *cliopts.InstallerContextOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
+func prepareCustomAction(actionName string,
+	dockerCli command.Cli,
+	appname string,
+	stdout io.Writer,
+	opts renderOptions,
+	installerContext *cliopts.InstallerContextOptions) (*action.RunCustom, *appstore.Installation, *bytes.Buffer, error) {
+
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err
