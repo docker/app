@@ -15,10 +15,16 @@ import (
 const rmExample = `- $ docker app image rm myapp
 - $ docker app image rm myapp:1.0.0
 - $ docker app image rm myrepo/myapp@sha256:c0de...
-- $ docker app image rm 34be4a0c5f50`
+- $ docker app image rm 34be4a0c5f50
+- $ docker app image rm --force 34be4a0c5f50`
+
+type rmOptions struct {
+	force bool
+}
 
 func rmCmd() *cobra.Command {
-	return &cobra.Command{
+	options := rmOptions{}
+	cmd := &cobra.Command{
 		Short:   "Remove an App image",
 		Use:     "rm APP_IMAGE [APP_IMAGE...]",
 		Aliases: []string{"remove"},
@@ -37,7 +43,7 @@ func rmCmd() *cobra.Command {
 
 			errs := []string{}
 			for _, arg := range args {
-				if err := runRm(bundleStore, arg); err != nil {
+				if err := runRm(bundleStore, arg, options); err != nil {
 					errs = append(errs, fmt.Sprintf("Error: %s", err))
 				}
 			}
@@ -47,15 +53,17 @@ func rmCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().BoolVarP(&options.force, "force", "f", false, "")
+	return cmd
 }
 
-func runRm(bundleStore store.BundleStore, app string) error {
+func runRm(bundleStore store.BundleStore, app string, options rmOptions) error {
 	ref, err := bundleStore.LookUp(app)
 	if err != nil {
 		return err
 	}
 
-	if err := bundleStore.Remove(ref); err != nil {
+	if err := bundleStore.Remove(ref, options.force); err != nil {
 		return err
 	}
 

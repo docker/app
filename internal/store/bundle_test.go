@@ -269,7 +269,7 @@ func TestRemove(t *testing.T) {
 	}
 
 	t.Run("error on unknown", func(t *testing.T) {
-		err := bundleStore.Remove(parseRefOrDie(t, "my-repo/some-bundle:1.0.0"))
+		err := bundleStore.Remove(parseRefOrDie(t, "my-repo/some-bundle:1.0.0"), false)
 		assert.Equal(t, err.Error(), "no such image my-repo/some-bundle:1.0.0")
 	})
 
@@ -278,7 +278,7 @@ func TestRemove(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Equal(t, len(bundles), 2)
 
-		err = bundleStore.Remove(refs[0])
+		err = bundleStore.Remove(refs[0], false)
 
 		// Once removed there should be none left
 		assert.NilError(t, err)
@@ -286,7 +286,7 @@ func TestRemove(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Equal(t, len(bundles), 1)
 
-		err = bundleStore.Remove(refs[1])
+		err = bundleStore.Remove(refs[1], false)
 		assert.NilError(t, err)
 
 		bundles, err = bundleStore.List()
@@ -307,7 +307,7 @@ func TestRemoveById(t *testing.T) {
 		idRef, err := FromBundle(relocated.FromBundle(&bundle.Bundle{Name: "not-stored-bundle-name"}))
 		assert.NilError(t, err)
 
-		err = bundleStore.Remove(idRef)
+		err = bundleStore.Remove(idRef, false)
 		assert.Equal(t, err.Error(), fmt.Sprintf("no such image %q", reference.FamiliarString(idRef)))
 	})
 
@@ -320,8 +320,21 @@ func TestRemoveById(t *testing.T) {
 		_, err = bundleStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), bndl)
 		assert.NilError(t, err)
 
-		err = bundleStore.Remove(idRef)
+		err = bundleStore.Remove(idRef, false)
 		assert.Equal(t, err.Error(), fmt.Sprintf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(idRef)))
+	})
+
+	t.Run("success on multiple repositories but force", func(t *testing.T) {
+		bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+		idRef, err := FromBundle(bndl)
+		assert.NilError(t, err)
+		_, err = bundleStore.Store(idRef, bndl)
+		assert.NilError(t, err)
+		_, err = bundleStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), bndl)
+		assert.NilError(t, err)
+
+		err = bundleStore.Remove(idRef, true)
+		assert.NilError(t, err)
 	})
 
 	t.Run("success when only one reference exists", func(t *testing.T) {
@@ -332,7 +345,7 @@ func TestRemoveById(t *testing.T) {
 		idRef, err := FromBundle(bndl)
 		assert.NilError(t, err)
 
-		err = bundleStore.Remove(idRef)
+		err = bundleStore.Remove(idRef, false)
 		assert.NilError(t, err)
 		bundles, err := bundleStore.List()
 		assert.NilError(t, err)

@@ -2,10 +2,16 @@ package e2e
 
 import (
 	"bufio"
+	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/opencontainers/go-digest"
+
+	"gotest.tools/fs"
 
 	"gotest.tools/assert"
 	"gotest.tools/icmd"
@@ -87,6 +93,33 @@ b-simple-app               latest              <none>              [a-f0-9]{12} 
 my.registry:5000/c-myapp   latest              <none>              [a-f0-9]{12}        push-pull                               [La-z0-9 ]+ ago[ ]*
 `
 		expectImageListDigestsOutput(t, cmd, expected)
+	})
+}
+
+func TestImageRmForce(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		iidfile := fs.NewFile(t, "iid").Path()
+
+		cmd.Command = dockerCli.Command("app", "build", "--no-resolve-image", "--tag", "a-simple-app", "--iidfile", iidfile, filepath.Join("testdata", "simple"))
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "b-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+		cmd.Command = dockerCli.Command("app", "image", "tag", "a-simple-app", "c-simple-app")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		bytes, err := ioutil.ReadFile(iidfile)
+		assert.NilError(t, err)
+
+		imageID := digest.Digest(bytes).Encoded()
+		cmd.Command = dockerCli.Command("app", "image", "rm", imageID)
+		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+			ExitCode: 1,
+			Err:      fmt.Sprintf("Error: unable to delete %q - App is referenced in multiple repositories", imageID),
+		})
+
+		cmd.Command = dockerCli.Command("app", "image", "rm", "--force", imageID)
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 	})
 }
 
