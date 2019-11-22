@@ -50,7 +50,7 @@ func (b *bundleStoreStub) List() ([]reference.Reference, error) {
 	return nil, nil
 }
 
-func (b *bundleStoreStub) Remove(ref reference.Reference) error {
+func (b *bundleStoreStub) Remove(ref reference.Reference, force bool) error {
 	return nil
 }
 

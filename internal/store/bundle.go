@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -20,7 +21,7 @@ type BundleStore interface {
 	Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error)
 	Read(ref reference.Reference) (*relocated.Bundle, error)
 	List() ([]reference.Reference, error)
-	Remove(ref reference.Reference) error
+	Remove(ref reference.Reference, force bool) error
 	LookUp(refOrID string) (reference.Reference, error)
 }
 
@@ -111,15 +112,30 @@ func (b *bundleStore) List() ([]reference.Reference, error) {
 }
 
 // Remove removes a bundle from the bundle store.
-func (b *bundleStore) Remove(ref reference.Reference) error {
+func (b *bundleStore) Remove(ref reference.Reference, force bool) error {
 	if id, ok := ref.(ID); ok {
-		if len(b.refsMap[id]) == 0 {
+		refs := b.refsMap[id]
+		if len(refs) == 0 {
 			return fmt.Errorf("no such image %q", reference.FamiliarString(ref))
-		} else if len(b.refsMap[id]) > 1 {
+		} else if len(refs) > 1 {
+			var failure error
+			if force {
+				toDelete := append([]reference.Reference{}, refs...)
+				for _, r := range toDelete {
+					if err := b.doRemove(r); err != nil {
+						failure = err
+					}
+				}
+				return failure
+			}
 			return fmt.Errorf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(ref))
 		}
-		ref = b.refsMap[id][0]
+		ref = refs[0]
 	}
+	return b.doRemove(ref)
+}
+
+func (b *bundleStore) doRemove(ref reference.Reference) error {
 	path, err := b.storePath(ref)
 	if err != nil {
 		return err
@@ -128,7 +144,36 @@ func (b *bundleStore) Remove(ref reference.Reference) error {
 		return errors.New("no such image " + reference.FamiliarString(ref))
 	}
 	b.refsMap.removeRef(ref)
-	return os.RemoveAll(path)
+
+	if err := os.RemoveAll(path); err != nil {
+		return nil
+	}
+	return cleanupParentTree(path)
+}
+
+func cleanupParentTree(path string) error {
+	for {
+		path = filepath.Dir(path)
+		if empty, err := isEmpty(path); err != nil || !empty {
+			return err
+		}
+		if err := os.RemoveAll(path); err != nil {
+			return nil
+		}
+	}
+}
+
+func isEmpty(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	if _, err = f.Readdir(1); err == io.EOF {
+		// dir is empty
+		return true, nil
+	}
+	return false, nil
 }
 
 func (b *bundleStore) LookUp(refOrID string) (reference.Reference, error) {

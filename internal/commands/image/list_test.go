@@ -41,7 +41,7 @@ func (b *bundleStoreStubForListCmd) List() ([]reference.Reference, error) {
 	return b.refList, nil
 }
 
-func (b *bundleStoreStubForListCmd) Remove(ref reference.Reference) error {
+func (b *bundleStoreStubForListCmd) Remove(ref reference.Reference, force bool) error {
 	return nil
 }
 
