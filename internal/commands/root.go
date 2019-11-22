@@ -96,13 +96,6 @@ func removeExperimentalCmdsAndFlags(cmd *cobra.Command) {
 	}
 }
 
-func firstOrEmpty(list []string) string {
-	if len(list) != 0 {
-		return list[0]
-	}
-	return ""
-}
-
 func muteDockerCli(dockerCli command.Cli) func() {
 	stdout := dockerCli.Out()
 	stderr := dockerCli.Err()
