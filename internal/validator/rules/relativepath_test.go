@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"fmt"
 	"testing"
 
 	"gotest.tools/assert"
@@ -62,7 +61,6 @@ func TestRelativePathRule(t *testing.T) {
 			1,
 		}
 		errs := s.Validate(input)
-		fmt.Println(errs)
 		assert.Equal(t, len(errs), 1)
 
 		assert.ErrorContains(t, errs[0], `invalid volume in service "test"`)

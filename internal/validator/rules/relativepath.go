@@ -39,7 +39,7 @@ func (s *relativePathRule) Validate(value interface{}) []error {
 		}
 		_, volumeExists := s.volumes[src.(string)]
 		if !filepath.IsAbs(src.(string)) && !volumeExists {
-			return []error{fmt.Errorf("1 can't use relative path as volume source (%q) in service %q", src, s.service)}
+			return []error{fmt.Errorf("can't use relative path as volume source (%q) in service %q", src, s.service)}
 		}
 	}
 

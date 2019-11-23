@@ -1,4 +1,4 @@
 Compose file validation failed:
 * can't use relative path as volume source ("./src:/src") in service "api"
 * can't use relative path as volume source ("./static:/opt/${static_subdir}") in service "web"
-* secret "my_secret" should be external
+* secret "my_secret" must be external

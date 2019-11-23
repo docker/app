@@ -35,7 +35,7 @@ func TestExternalSecrets(t *testing.T) {
 
 		errs := s.Validate(input)
 		assert.Equal(t, len(errs), 1)
-		assert.ErrorContains(t, errs[0], `secret "my_secret" should be external`)
+		assert.ErrorContains(t, errs[0], `secret "my_secret" must be external`)
 	})
 
 	t.Run("should return all errors", func(t *testing.T) {
