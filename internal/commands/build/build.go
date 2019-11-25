@@ -169,7 +169,9 @@ func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions,
 		out = os.NewFile(dockerCli.Out().FD(), "/dev/stdout")
 	}
 
-	pw := progress.NewPrinter(ctx, out, opt.progress)
+	ctx2, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+	pw := progress.NewPrinter(ctx2, out, opt.progress)
 
 	// We rely on buildx "docker" builder integrated in docker engine, so don't need a DockerAPI here
 	resp, err := build.Build(ctx, driverInfo, buildopts, nil, dockerCli.ConfigFile(), pw)
