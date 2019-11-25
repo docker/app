@@ -15,11 +15,11 @@ func inspectAction(instanceName string) error {
 	}
 	defer app.Cleanup()
 
-	bndl, err := getBundle()
+	bndl, err := getRelocatedBundle()
 	if err != nil {
 		return err
 	}
 
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
-	return appinspect.ImageInspect(os.Stdout, app, parameters, bndl.Images)
+	return appinspect.ImageInspect(os.Stdout, app, parameters, bndl.RelocatedImages())
 }

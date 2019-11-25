@@ -38,7 +38,7 @@ func BundleFromFile(filename string) (*Bundle, error) {
 	}
 
 	relocationMapFileName := filepath.Join(filepath.Dir(filename), RelocationMapFilename)
-	relocationMap, err := relocationMapJSON(relocationMapFileName)
+	relocationMap, err := RelocationMapJSON(relocationMapFileName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read relocation map")
 	}
@@ -87,10 +87,11 @@ func BundleJSON(bundlePath string) (*bundle.Bundle, error) {
 	return bndl, nil
 }
 
-func relocationMapJSON(relocationMapPath string) (relocation.ImageRelocationMap, error) {
+func RelocationMapJSON(relocationMapPath string) (relocation.ImageRelocationMap, error) {
 	relocationMap := relocation.ImageRelocationMap{}
 	_, err := os.Stat(relocationMapPath)
 	if os.IsNotExist(err) {
+		// it's ok to not have a relocation map, just act as if the file were empty
 		return relocationMap, nil
 	}
 	data, err := ioutil.ReadFile(relocationMapPath)
@@ -101,4 +102,16 @@ func relocationMapJSON(relocationMapPath string) (relocation.ImageRelocationMap,
 		return nil, errors.Wrapf(err, "failed to unmarshal file %s", relocationMapPath)
 	}
 	return relocationMap, nil
+}
+
+func (b *Bundle) RelocatedImages() map[string]bundle.Image {
+	images := b.Images
+	for name, def := range images {
+		if img, ok := b.RelocationMap[def.Image]; ok {
+			def.Image = img
+			images[name] = def
+		}
+	}
+
+	return images
 }
