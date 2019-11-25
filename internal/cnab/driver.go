@@ -119,7 +119,7 @@ func prepareDriver(dockerCli command.Cli, bindMount BindMount, stdout io.Writer)
 	return d, errBuf
 }
 
-func SetupDriver(installation *store2.Installation, dockerCli command.Cli, opts cliopts.InstallerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
+func SetupDriver(installation *store2.Installation, dockerCli command.Cli, opts *cliopts.InstallerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
 	dockerCli, err := opts.SetInstallerContext(dockerCli)
 	if err != nil {
 		return nil, nil, err

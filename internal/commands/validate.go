@@ -62,3 +62,10 @@ func runValidate(args []string, opts validateOptions) error {
 	fmt.Fprintf(os.Stdout, "Validated %q\n", app.Path)
 	return nil
 }
+
+func firstOrEmpty(list []string) string {
+	if len(list) != 0 {
+		return list[0]
+	}
+	return ""
+}

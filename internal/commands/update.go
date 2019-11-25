@@ -18,11 +18,10 @@ import (
 type updateOptions struct {
 	cliopts.ParametersOptions
 	credentialOptions
-	cliopts.InstallerContextOptions
 	bundleOrDockerApp string
 }
 
-func updateCmd(dockerCli command.Cli) *cobra.Command {
+func updateCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContextOptions) *cobra.Command {
 	var opts updateOptions
 	cmd := &cobra.Command{
 		Use:     "update [OPTIONS] RUNNING_APP",
@@ -30,18 +29,17 @@ func updateCmd(dockerCli command.Cli) *cobra.Command {
 		Example: `$ docker app update myrunningapp --set key=value`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runUpdate(dockerCli, args[0], opts)
+			return runUpdate(dockerCli, args[0], opts, installerContext)
 		},
 	}
 	opts.ParametersOptions.AddFlags(cmd.Flags())
 	opts.credentialOptions.addFlags(cmd.Flags())
-	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().StringVar(&opts.bundleOrDockerApp, "image", "", "Override the running App with another App image")
 
 	return cmd
 }
 
-func runUpdate(dockerCli command.Cli, installationName string, opts updateOptions) error {
+func runUpdate(dockerCli command.Cli, installationName string, opts updateOptions, installerContext *cliopts.InstallerContextOptions) error {
 	defer muteDockerCli(dockerCli)()
 
 	bundleStore, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
@@ -73,7 +71,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		return err
 	}
 
-	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
+	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, os.Stdout)
 	if err != nil {
 		return err
 	}

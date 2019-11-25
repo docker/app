@@ -5,10 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/docker/app/internal/cliopts"
-
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/inspect"
 	appstore "github.com/docker/app/internal/store"
@@ -25,7 +24,6 @@ const inspectExample = `- $ docker app image inspect myapp
 
 type inspectOptions struct {
 	pretty bool
-	cliopts.InstallerContextOptions
 }
 
 func muteDockerCli(dockerCli command.Cli) func() {
@@ -37,7 +35,7 @@ func muteDockerCli(dockerCli command.Cli) func() {
 	}
 }
 
-func inspectCmd(dockerCli command.Cli) *cobra.Command {
+func inspectCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContextOptions) *cobra.Command {
 	var opts inspectOptions
 	cmd := &cobra.Command{
 		Use:     "inspect [OPTIONS] APP_IMAGE",
@@ -45,16 +43,15 @@ func inspectCmd(dockerCli command.Cli) *cobra.Command {
 		Example: inspectExample,
 		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInspect(dockerCli, args[0], opts)
+			return runInspect(dockerCli, args[0], opts, installerContext)
 		},
 	}
-	opts.InstallerContextOptions.AddFlags(cmd.Flags())
 	cmd.Flags().BoolVar(&opts.pretty, "pretty", false, "Print the information in a human friendly format")
 
 	return cmd
 }
 
-func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) error {
+func runInspect(dockerCli command.Cli, appname string, opts inspectOptions, installerContext *cliopts.InstallerContextOptions) error {
 	defer muteDockerCli(dockerCli)()
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
@@ -81,7 +78,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions) erro
 	}
 
 	if _, hasAction := installation.Bundle.Actions[internal.ActionInspectName]; hasAction {
-		driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, opts.InstallerContextOptions, os.Stdout)
+		driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, os.Stdout)
 		if err != nil {
 			return err
 		}
