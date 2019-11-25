@@ -137,11 +137,28 @@ func SetupDriver(installation *store.Installation, dockerCli command.Cli, opts *
 
 func WithRelocationMap(installation *store.Installation) func(op *driver.Operation) error {
 	return func(op *driver.Operation) error {
-		data, err := json.Marshal(installation.RelocationMap)
-		if err != nil {
-			return errors.Wrap(err, "could not marshal relocation map")
+		if err := addRelocationMapToFiles(op, installation); err != nil {
+			return err
 		}
-		op.Files["/cnab/app/relocation-mapping.json"] = string(data)
+		relocateInvocationImage(op, installation)
 		return nil
+	}
+}
+
+func addRelocationMapToFiles(op *driver.Operation, installation *store.Installation) error {
+	data, err := json.Marshal(installation.RelocationMap)
+	if err != nil {
+		return errors.Wrap(err, "could not marshal relocation map")
+	}
+	op.Files["/cnab/app/relocation-mapping.json"] = string(data)
+
+	return nil
+}
+
+func relocateInvocationImage(op *driver.Operation, installation *store.Installation) {
+	invocImage := op.Image
+	if relocatedImage, ok := installation.RelocationMap[invocImage.Image]; ok {
+		invocImage.Image = relocatedImage
+		op.Image = invocImage
 	}
 }
