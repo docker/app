@@ -82,7 +82,7 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 		op.Out = dockerCli.Out()
 		return nil
 	}
-	if err := uninst.Run(&installation.Claim, creds, cfgFunc); err != nil {
+	if err := uninst.Run(&installation.Claim, creds, cfgFunc, cnab.WithRelocationMap(installation)); err != nil {
 		if err2 := installationStore.Store(installation); err2 != nil {
 			return fmt.Errorf("%s while %s", err2, errBuf)
 		}

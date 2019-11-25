@@ -73,7 +73,7 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 	} else {
 		return fmt.Errorf("inspect failed: status action is not supported by the App")
 	}
-	if err := a.Run(&installation.Claim, creds); err != nil {
+	if err := a.Run(&installation.Claim, creds, cnab.WithRelocationMap(installation)); err != nil {
 		return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
 	}
 

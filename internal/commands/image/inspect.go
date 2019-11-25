@@ -88,7 +88,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions, inst
 		}
 
 		installation.SetParameter(internal.ParameterInspectFormatName, format)
-		if err = a.Run(&installation.Claim, nil); err != nil {
+		if err = a.Run(&installation.Claim, nil, cnab.WithRelocationMap(installation)); err != nil {
 			return fmt.Errorf("inspect failed: %s\n%s", err, errBuf)
 		}
 	} else {

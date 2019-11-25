@@ -39,7 +39,6 @@ func NewInstallation(name string, reference string, bndl *relocated.Bundle) (*In
 		Reference:     reference,
 		RelocationMap: bndl.RelocationMap,
 	}
-	i.applyRelocationMap()
 
 	return i, nil
 }
@@ -49,21 +48,6 @@ func NewInstallation(name string, reference string, bndl *relocated.Bundle) (*In
 func (i Installation) SetParameter(name string, value string) {
 	if _, ok := i.Bundle.Parameters[name]; ok {
 		i.Parameters[name] = value
-	}
-}
-
-func (i *Installation) applyRelocationMap() {
-	for idx, def := range i.Bundle.InvocationImages {
-		if img, ok := i.RelocationMap[def.Image]; ok {
-			def.Image = img
-			i.Bundle.InvocationImages[idx] = def
-		}
-	}
-	for name, def := range i.Bundle.Images {
-		if img, ok := i.RelocationMap[def.Image]; ok {
-			def.Image = img
-			i.Bundle.Images[name] = def
-		}
 	}
 }
 

@@ -89,7 +89,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		op.Out = dockerCli.Out()
 		return nil
 	}
-	err = u.Run(&installation.Claim, creds, cfgFunc)
+	err = u.Run(&installation.Claim, creds, cfgFunc, cnab.WithRelocationMap(installation))
 	err2 := installationStore.Store(installation)
 	if err != nil {
 		return fmt.Errorf("Update failed: %s\n%s", err, errBuf)

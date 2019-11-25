@@ -2,9 +2,12 @@ package cnab
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/store"
@@ -130,4 +133,15 @@ func SetupDriver(installation *store.Installation, dockerCli command.Cli, opts *
 	}
 	driverImpl, errBuf := prepareDriver(dockerCli, bind, stdout)
 	return driverImpl, errBuf, nil
+}
+
+func WithRelocationMap(installation *store.Installation) func(op *driver.Operation) error {
+	return func(op *driver.Operation) error {
+		data, err := json.Marshal(installation.RelocationMap)
+		if err != nil {
+			return errors.Wrap(err, "could not marshal relocation map")
+		}
+		op.Files["/cnab/app/relocation-mapping.json"] = string(data)
+		return nil
+	}
 }
