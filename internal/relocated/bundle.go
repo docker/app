@@ -32,7 +32,7 @@ func FromBundle(bndl *bundle.Bundle) *Bundle {
 
 // BundleFromFile creates a relocated bundle based on the bundle file and relocation map.
 func BundleFromFile(filename string) (*Bundle, error) {
-	bndl, err := bundleJSON(filename)
+	bndl, err := BundleJSON(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read bundle")
 	}
@@ -75,7 +75,7 @@ func (b *Bundle) Store(dir string) error {
 	return nil
 }
 
-func bundleJSON(bundlePath string) (*bundle.Bundle, error) {
+func BundleJSON(bundlePath string) (*bundle.Bundle, error) {
 	data, err := ioutil.ReadFile(bundlePath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read file %s", bundlePath)

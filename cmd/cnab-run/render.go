@@ -19,7 +19,7 @@ func renderAction(instanceName string) error {
 	}
 	defer app.Cleanup()
 
-	imageMap, err := getBundleImageMap()
+	bndl, err := getBundle()
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func renderAction(instanceName string) error {
 
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
 
-	rendered, err := render.Render(app, parameters, imageMap)
+	rendered, err := render.Render(app, parameters, bndl.Images)
 	if err != nil {
 		return err
 	}
