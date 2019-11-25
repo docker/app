@@ -42,7 +42,7 @@ func TestCustomPayloadNil(t *testing.T) {
 		},
 		{
 			testName: "NoPayload",
-			version:  DockerAppCustomVersionCurrent,
+			version:  DockerAppPayloadVersionCurrent,
 			payload:  nil,
 		},
 	}
@@ -58,12 +58,13 @@ func TestCustomPayloadNil(t *testing.T) {
 
 func TestCustomPayloadV1_0_0(t *testing.T) {
 	now := time.Now().UTC()
-	b := createBundle(t, DockerAppCustomVersion1_0_0, payloadV1_0{now})
+	b := createBundle(t, DockerAppPayloadVersion1_0_0, payloadV1_0{now, "version"})
 	payload, err := CustomPayload(&b)
 	assert.NilError(t, err)
 	v1, ok := payload.(payloadV1_0)
 	assert.Assert(t, ok)
 	assert.Assert(t, now.Equal(v1.CreatedTime()))
+	assert.Equal(t, "version", v1.AppVersion())
 }
 
 func createBundle(t *testing.T, version string, payload interface{}) bundle.Bundle {
