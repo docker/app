@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/remotes"
@@ -16,6 +17,7 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/client/auth"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 )
 
 // Pull pulls a bundle from an OCI Image Index manifest
@@ -42,6 +44,9 @@ func getIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (o
 	logger.Debug("Getting OCI Index Descriptor")
 	resolvedRef, indexDescriptor, err := resolver.Resolve(withMutedContext(ctx), ref.String())
 	if err != nil {
+		if errors.Cause(err) == errdefs.ErrNotFound {
+			return ocischemav1.Index{}, err
+		}
 		return ocischemav1.Index{}, fmt.Errorf("failed to resolve bundle manifest %q: %s", ref, err)
 	}
 	if indexDescriptor.MediaType != ocischemav1.MediaTypeImageIndex && indexDescriptor.MediaType != images.MediaTypeDockerSchema2ManifestList {

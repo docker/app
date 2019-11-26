@@ -204,47 +204,94 @@ func fixupBaseImage(ctx context.Context, name string, baseImage *bundle.BaseImag
 		return imageFixupInfo{}, false, err
 	}
 
-	var (
-		descriptor     ocischemav1.Descriptor
-		pushed         bool
-		sourceImageRef reference.Named
-	)
+	fixups := []func(context.Context, reference.Named, *bundle.BaseImage, fixupConfig) (imageFixupInfo, bool, bool, error){
+		pushByDigest,
+		resolveImageInRelocationMap,
+		resolveImage,
+		pushLocalImage,
+	}
 
-	if baseImage.Image == "" && cfg.pushImages {
-		// no image is defined for the service, try to push by digest from local docker image store
-		descriptor, err = pushImageToTarget(ctx, baseImage.Digest, cfg)
+	for _, f := range fixups {
+		info, pushed, ok, err := f(ctx, targetRepoOnly, baseImage, cfg)
 		if err != nil {
-			return imageFixupInfo{}, false, err
+			log.G(ctx).Debug(err)
 		}
-		pushed = true
-	} else {
-		// try to resolve
-		sourceImageRef, err = reference.ParseNormalizedNamed(baseImage.Image)
-		if err != nil {
-			return imageFixupInfo{}, false, fmt.Errorf("%q is not a valid image reference for %q: %s", baseImage.Image, cfg.targetRef, err)
-		}
-		sourceImageRef = reference.TagNameOnly(sourceImageRef)
-
-		// Try to fetch the image descriptor
-		_, descriptor, err = cfg.resolver.Resolve(ctx, sourceImageRef.String())
-		if err != nil {
-			if cfg.pushImages {
-				// try to push from local docker image store
-				descriptor, err = pushImageToTarget(ctx, baseImage.Image, cfg)
-				if err != nil {
-					return imageFixupInfo{}, false, err
-				}
-				pushed = true
-			} else {
-				return imageFixupInfo{}, false, fmt.Errorf("failed to resolve %q, push the image for service %q to the registry before pushing the bundle: %s", sourceImageRef, name, err)
-			}
+		if ok {
+			return info, pushed, nil
 		}
 	}
+
+	return imageFixupInfo{}, false, fmt.Errorf("failed to resolve or push image for service %q", name)
+}
+
+func pushByDigest(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
+	if baseImage.Image != "" || !cfg.pushImages {
+		return imageFixupInfo{}, false, false, nil
+	}
+	descriptor, err := pushImageToTarget(ctx, baseImage.Digest, cfg)
 	return imageFixupInfo{
-		targetRepo:         targetRepoOnly,
+		targetRepo:         target,
+		sourceRef:          nil,
+		resolvedDescriptor: descriptor,
+	}, true, err == nil, err
+}
+
+func resolveImage(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
+	sourceImageRef, err := ref(baseImage.Image)
+	if err != nil {
+		return imageFixupInfo{}, false, false, err
+	}
+	_, descriptor, err := cfg.resolver.Resolve(ctx, sourceImageRef.String())
+	return imageFixupInfo{
+		targetRepo:         target,
 		sourceRef:          sourceImageRef,
 		resolvedDescriptor: descriptor,
-	}, pushed, nil
+	}, false, err == nil, err
+}
+
+func resolveImageInRelocationMap(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
+	sourceImageRef, err := ref(baseImage.Image)
+	if err != nil {
+		return imageFixupInfo{}, false, false, err
+	}
+	relocatedRef, ok := cfg.relocationMap[baseImage.Image]
+	if !ok {
+		return imageFixupInfo{}, false, false, nil
+	}
+	relocatedImageRef, err := ref(relocatedRef)
+	if err != nil {
+		return imageFixupInfo{}, false, false, err
+	}
+	_, descriptor, err := cfg.resolver.Resolve(ctx, relocatedImageRef.String())
+	return imageFixupInfo{
+		targetRepo:         target,
+		sourceRef:          sourceImageRef,
+		resolvedDescriptor: descriptor,
+	}, false, err == nil, err
+}
+
+func pushLocalImage(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
+	if !cfg.pushImages {
+		return imageFixupInfo{}, false, false, nil
+	}
+	sourceImageRef, err := ref(baseImage.Image)
+	if err != nil {
+		return imageFixupInfo{}, false, false, err
+	}
+	descriptor, err := pushImageToTarget(ctx, baseImage.Image, cfg)
+	return imageFixupInfo{
+		targetRepo:         target,
+		sourceRef:          sourceImageRef,
+		resolvedDescriptor: descriptor,
+	}, true, err == nil, err
+}
+
+func ref(str string) (reference.Named, error) {
+	r, err := reference.ParseNormalizedNamed(str)
+	if err != nil {
+		return nil, fmt.Errorf("%q is not a valid reference: %v", str, err)
+	}
+	return reference.TagNameOnly(r), nil
 }
 
 // pushImageToTarget pushes the image from the local docker daemon store to the target defined in the configuration.
