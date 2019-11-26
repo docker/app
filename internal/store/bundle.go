@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/docker/app/internal/relocated"
-
 	"github.com/docker/distribution/reference"
+	multierror "github.com/hashicorp/go-multierror"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
@@ -118,15 +118,15 @@ func (b *bundleStore) Remove(ref reference.Reference, force bool) error {
 		if len(refs) == 0 {
 			return fmt.Errorf("no such image %q", reference.FamiliarString(ref))
 		} else if len(refs) > 1 {
-			var failure error
 			if force {
+				var failures *multierror.Error
 				toDelete := append([]reference.Reference{}, refs...)
 				for _, r := range toDelete {
 					if err := b.doRemove(r); err != nil {
-						failure = err
+						failures = multierror.Append(failures, err)
 					}
 				}
-				return failure
+				return failures.ErrorOrNil()
 			}
 			return fmt.Errorf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(ref))
 		}
