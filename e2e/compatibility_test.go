@@ -118,9 +118,7 @@ func TestBackwardsCompatibilityV1(t *testing.T) {
 		// Status check -- poll app list
 		checkStatus := func(lastAction string) {
 			err = wait.Poll(2*time.Second, pollTimeout, func() (bool, error) {
-				fmt.Println("Polling app status...")
 				output = info.dockerCmd("app", "ls")
-				fmt.Println(output)
 				expectedLines := []string{
 					`RUNNING APP\s+APP NAME\s+SERVICES\s+LAST ACTION\s+RESULT\s+CREATED\s+MODIFIED\s+REFERENCE`,
 					fmt.Sprintf(`%s\s+%s \(0.1.0\)\s+2/2\s+%s\s+success\s+.+second[s]?\sago\s+.+second[s]?\sago\s+`, appName, appName, lastAction),
@@ -137,18 +135,10 @@ func TestBackwardsCompatibilityV1(t *testing.T) {
 
 		queryService := func(port string) {
 			err = wait.Poll(2*time.Second, pollTimeout, func() (bool, error) {
-				fmt.Println("Querying service ...")
 				// Check the frontend service responds
 				url := `http://localhost:` + port
 				output = info.execCmd("/usr/bin/wget", "-O", "-", url)
-				fmt.Println(output)
-				expectedLines := []string{`Hi there, I love Docker!`}
-				matches := true
-				for _, expected := range expectedLines {
-					exp := regexp.MustCompile(expected)
-					matches = matches && exp.MatchString(output)
-				}
-				return matches, nil
+				return strings.Contains(output, `Hi there, I love Docker!`), nil
 			})
 			assert.NilError(t, err)
 		}
