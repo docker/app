@@ -120,6 +120,9 @@ func TestImageRmForce(t *testing.T) {
 
 		cmd.Command = dockerCli.Command("app", "image", "rm", "--force", imageID)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		expectedOutput := "REPOSITORY          TAG                 APP IMAGE ID        APP NAME            CREATED             \n"
+		expectImageListOutput(t, cmd, expectedOutput)
 	})
 }
 

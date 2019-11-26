@@ -134,6 +134,10 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/dustin/go-humanize"
   version = "1.0.0"
 
+[[constraint]]
+  name = "github.com/hashicorp/go-multierror"
+  version = "1.0.0"
+
 [prune]
   non-go = true
   unused-packages = true
