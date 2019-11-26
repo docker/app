@@ -95,7 +95,7 @@ func AppNameFromDir(dirName string) string {
 // DirNameFromAppName takes an application name and returns the
 // corresponding directory name
 func DirNameFromAppName(appName string) string {
-	if strings.HasSuffix(strings.TrimSuffix(appName, "/"), AppExtension) {
+	if strings.HasSuffix(filepath.Clean(appName), AppExtension) {
 		return appName
 	}
 	return appName + AppExtension

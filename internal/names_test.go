@@ -37,6 +37,7 @@ func TestDirNameFromAppName(t *testing.T) {
 		{name: "", expected: ".dockerapp"},
 		{name: "foo/bar", expected: "foo/bar.dockerapp"},
 		{name: "foo/bar.dockerapp", expected: "foo/bar.dockerapp"},
+		{name: "foo/bar.dockerapp/", expected: "foo/bar.dockerapp/"},
 		// FIXME(vdemeester) we should fail here
 		{name: "foo/bar/", expected: "foo/bar/.dockerapp"},
 		{name: "/foo/bar.dockerapp", expected: "/foo/bar.dockerapp"},
