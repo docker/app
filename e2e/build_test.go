@@ -58,6 +58,43 @@ func TestBuild(t *testing.T) {
 	})
 }
 
+func TestBuildMultiTag(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		tmp := fs.NewDir(t, "TestBuild")
+		testDir := path.Join("testdata", "build")
+		iidfile := tmp.Join("iidfile")
+		tags := []string{"1.0.0", "latest"}
+		cmd.Command = dockerCli.Command("app", "build", "--tag", "single:"+tags[0], "--tag", "single:"+tags[1], "--iidfile", iidfile, "-f", path.Join(testDir, "single.dockerapp"), testDir)
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		cfg := getDockerConfigDir(t, cmd)
+
+		for _, tag := range tags {
+			f := path.Join(cfg, "app", "bundles", "docker.io", "library", "single", "_tags", tag, relocated.BundleFilename)
+			bndl, err := relocated.BundleFromFile(f)
+			assert.NilError(t, err)
+			built := []string{bndl.InvocationImages[0].Digest, bndl.Images["web"].Digest, bndl.Images["worker"].Digest}
+			for _, ref := range built {
+				cmd.Command = dockerCli.Command("inspect", ref)
+				icmd.RunCmd(cmd).Assert(t, icmd.Success)
+			}
+			for _, img := range bndl.Images {
+				// Check all image not being built locally get a fixed reference
+				assert.Assert(t, img.Image == "" || strings.Contains(img.Image, "@sha256:"))
+			}
+			_, err = os.Stat(iidfile)
+			assert.NilError(t, err)
+			bytes, err := ioutil.ReadFile(iidfile)
+			assert.NilError(t, err)
+			iid := string(bytes)
+			actualID, err := store.FromBundle(bndl)
+			assert.NilError(t, err)
+			assert.Equal(t, iid, fmt.Sprintf("sha256:%s", actualID.String()))
+		}
+	})
+}
+
 func TestQuietBuild(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd

@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/deislabs/cnab-go/bundle"
 	cnab "github.com/deislabs/cnab-go/driver"
@@ -24,6 +26,7 @@ import (
 	"github.com/docker/cli/cli/command"
 	compose "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/cli/cli/streams"
+	cliOpts "github.com/docker/cli/opts"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/moby/buildkit/client"
@@ -39,19 +42,26 @@ type buildOptions struct {
 	noCache        bool
 	progress       string
 	pull           bool
-	tag            string
+	tags           cliOpts.ListOpts
 	folder         string
 	imageIDFile    string
-	args           []string
+	args           cliOpts.ListOpts
 	quiet          bool
 	noResolveImage bool
 }
 
 const buildExample = `- $ docker app build .
-- $ docker app build --file myapp.dockerapp --tag myrepo/myapp:1.0.0 .`
+- $ docker app build --file myapp.dockerapp --tag myrepo/myapp:1.0.0 --tag myrepo/myapp:latest .`
+
+func newBuildOptions() buildOptions {
+	return buildOptions{
+		tags: cliOpts.NewListOpts(validateTag),
+		args: cliOpts.NewListOpts(nil),
+	}
+}
 
 func Cmd(dockerCli command.Cli) *cobra.Command {
-	var opts buildOptions
+	opts := newBuildOptions()
 	cmd := &cobra.Command{
 		Use:     "build [OPTIONS] BUILD_PATH",
 		Short:   "Build an App image from an App definition (.dockerapp)",
@@ -66,10 +76,10 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&opts.noCache, "no-cache", false, "Do not use cache when building the App image")
 	flags.StringVar(&opts.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output")
 	flags.BoolVar(&opts.noResolveImage, "no-resolve-image", false, "Do not query the registry to resolve image digest")
-	flags.StringVarP(&opts.tag, "tag", "t", "", "App image tag, optionally in the 'repo:tag' format")
+	flags.VarP(&opts.tags, "tag", "t", "Name and optionally a tag in the 'name:tag' format")
 	flags.StringVarP(&opts.folder, "file", "f", "", "App definition as a .dockerapp directory")
 	flags.BoolVar(&opts.pull, "pull", false, "Always attempt to pull a newer version of the App image")
-	flags.StringArrayVar(&opts.args, "build-arg", []string{}, "Set build-time variables")
+	flags.Var(&opts.args, "build-arg", "Set build-time variables")
 	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Suppress the build output and print App image ID on success")
 	flags.StringVar(&opts.imageIDFile, "iidfile", "", "Write the App image ID to the file")
 
@@ -128,37 +138,65 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error
 	}
 	defer app.Cleanup()
 
-	bundle, err := buildImageUsingBuildx(app, contextPath, opt, dockerCli)
+	bndl, err := buildImageUsingBuildx(app, contextPath, opt, dockerCli)
 	if err != nil {
 		return err
 	}
 
-	var ref reference.Reference
-	ref, err = packager.GetNamedTagged(opt.tag)
+	out, err := getOutputFile(dockerCli.Out(), opt.quiet)
 	if err != nil {
 		return err
 	}
 
-	id, err := packager.PersistInBundleStore(ref, bundle)
+	id, err := persistTags(bndl, opt.tags, opt.imageIDFile, out, dockerCli.Err())
 	if err != nil {
 		return err
-	}
-
-	if opt.imageIDFile != "" {
-		if err = ioutil.WriteFile(opt.imageIDFile, []byte(id.Digest().String()), 0644); err != nil {
-			fmt.Fprintf(dockerCli.Err(), "Failed to write App image ID in %s: %s", opt.imageIDFile, err)
-		}
 	}
 
 	if opt.quiet {
-		fmt.Fprintln(dockerCli.Out(), id.Digest().String())
-		return err
-	}
-	fmt.Fprintf(dockerCli.Out(), "Successfully built %s\n", id.String())
-	if ref != nil {
-		fmt.Fprintf(dockerCli.Out(), "Successfully tagged %s\n", ref.String())
+		_, err = fmt.Fprintln(dockerCli.Out(), id.Digest().String())
 	}
 	return err
+}
+
+func persistTags(bndl *bundle.Bundle, tags cliOpts.ListOpts, iidFile string, outWriter io.Writer, errWriter io.Writer) (reference.Digested, error) {
+	var (
+		id               reference.Digested
+		onceWriteIIDFile sync.Once
+	)
+	if tags.Len() == 0 {
+		return persistInBundleStore(&onceWriteIIDFile, outWriter, errWriter, bndl, nil, iidFile)
+	}
+	for _, tag := range tags.GetAll() {
+		ref, err := packager.GetNamedTagged(tag)
+		if err != nil {
+			return nil, err
+		}
+		id, err = persistInBundleStore(&onceWriteIIDFile, outWriter, errWriter, bndl, ref, iidFile)
+		if err != nil {
+			return nil, err
+		}
+		if tag != "" {
+			fmt.Fprintf(outWriter, "Successfully tagged app image %s\n", ref.String())
+		}
+	}
+	return id, nil
+}
+
+func persistInBundleStore(once *sync.Once, outWriter io.Writer, errWriter io.Writer, b *bundle.Bundle, ref reference.Reference, iidFileName string) (reference.Digested, error) {
+	id, err := packager.PersistInBundleStore(ref, b)
+	if err != nil {
+		return nil, err
+	}
+	once.Do(func() {
+		fmt.Fprintf(outWriter, "Successfully built app image %s\n", id.String())
+		if iidFileName != "" {
+			if err := ioutil.WriteFile(iidFileName, []byte(id.Digest().String()), 0644); err != nil {
+				fmt.Fprintf(errWriter, "Failed to write App image ID in %s: %s", iidFileName, err)
+			}
+		}
+	})
+	return id, nil
 }
 
 func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions, dockerCli command.Cli) (*bundle.Bundle, error) {
@@ -350,9 +388,9 @@ func debugSolveResponses(resp map[string]*client.SolveResponse) {
 	}
 }
 
-func checkBuildArgsUniqueness(args []string) error {
+func checkBuildArgsUniqueness(args cliOpts.ListOpts) error {
 	set := make(map[string]bool)
-	for _, value := range args {
+	for _, value := range args.GetAllOrEmpty() {
 		key := strings.Split(value, "=")[0]
 		if _, ok := set[key]; ok {
 			return fmt.Errorf("'--build-arg %s' is defined twice", key)
@@ -360,4 +398,13 @@ func checkBuildArgsUniqueness(args []string) error {
 		set[key] = true
 	}
 	return nil
+}
+
+// validateTag checks if the given image name can be resolved.
+func validateTag(rawRepo string) (string, error) {
+	_, err := reference.ParseNormalizedNamed(rawRepo)
+	if err != nil {
+		return "", err
+	}
+	return rawRepo, nil
 }

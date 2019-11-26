@@ -21,7 +21,7 @@ func parseCompose(app *types.App, contextPath string, options buildOptions) (map
 		return nil, nil, err
 	}
 
-	buildArgs := buildArgsToMap(options.args)
+	buildArgs := buildArgsToMap(options.args.GetAllOrEmpty())
 
 	pulledServices := []compose.ServiceConfig{}
 	opts := map[string]build.Options{}
