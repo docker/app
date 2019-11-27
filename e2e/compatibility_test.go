@@ -24,15 +24,13 @@ const (
 )
 
 func loadAndTagImage(info dindSwarmAndRegistryInfo, tmpDir *fs.Dir, tag string, url string) error {
-
 	err := downloadImageTarball(tmpDir.Join("image.tar"), url)
 	if err != nil {
 		return err
 	}
 
-	combined := info.dockerCmd("load", "-q", "-i", tmpDir.Join("image.tar"))
-
 	digest := ""
+	combined := info.dockerCmd("load", "-q", "-i", tmpDir.Join("image.tar"))
 	for _, line := range strings.Split(combined, "\n") {
 		if strings.Contains(line, "sha256:") {
 			digest = strings.Split(line, "sha256:")[1]

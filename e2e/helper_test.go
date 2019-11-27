@@ -87,13 +87,13 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	// Solution found is: use host external IP (not loopback) so accessing from within installer container will reach the right container
 
 	registry := NewContainer("registry:2", 5000)
-	registry.Start(t, "--name", "registry", "-e", "REGISTRY_VALIDATION_MANIFESTS_URLS_ALLOW=[^http]",
+	registry.Start(t, "-e", "REGISTRY_VALIDATION_MANIFESTS_URLS_ALLOW=[^http]",
 		"-e", "REGISTRY_HTTP_ADDR=0.0.0.0:5000")
 	defer registry.StopNoFail()
 	registryAddress := registry.GetAddress(t)
 
 	swarm := NewContainer("docker:19.03.3-dind", 2375, "--insecure-registry", registryAddress)
-	swarm.Start(t, "--name", "dind", "-e", "DOCKER_TLS_CERTDIR=") // Disable certificate generate on DinD startup
+	swarm.Start(t, "-e", "DOCKER_TLS_CERTDIR=") // Disable certificate generate on DinD startup
 	defer swarm.Stop(t)
 	swarmAddress := swarm.GetAddress(t)
 
@@ -117,7 +117,7 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	runner.localCmd = runLocalCmd
 	runner.dockerCmd = runDockerCmd
 	runner.execCmd = func(params ...string) string {
-		args := append([]string{"docker", "exec", "-t", "dind"}, params...)
+		args := append([]string{"docker", "exec", "-t", swarm.container}, params...)
 		return runLocalCmd(args...)
 	}
 	todo(runner)
