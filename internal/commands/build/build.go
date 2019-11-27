@@ -133,13 +133,12 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error
 		return err
 	}
 
-	var ref reference.Reference
-	ref, err = packager.GetNamedTagged(opt.tag)
+	ref, err := packager.GetNamedTagged(opt.tag)
 	if err != nil {
 		return err
 	}
 
-	id, err := packager.PersistInBundleStore(ref, bundle)
+	id, err := packager.PersistInBundleStore(bundle, ref)
 	if err != nil {
 		return err
 	}

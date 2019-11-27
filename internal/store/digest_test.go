@@ -22,13 +22,13 @@ func Test_storeByDigest(t *testing.T) {
 
 	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	ref := parseRefOrDie(t, "test/simple:1.0")
-	_, err = bundleStore.Store(ref, bndl)
+	_, err = bundleStore.Store(bndl, ref)
 	assert.NilError(t, err)
 
 	_, err = os.Stat(dockerConfigDir.Join("app", "bundles", "docker.io", "test", "simple", "_tags", "1.0", relocated.BundleFilename))
 	assert.NilError(t, err)
 
-	_, err = bundleStore.Store(nil, bndl)
+	_, err = bundleStore.Store(bndl, nil)
 	assert.NilError(t, err)
 
 	ids := dockerConfigDir.Join("app", "bundles", "_ids")

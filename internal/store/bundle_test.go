@@ -50,7 +50,7 @@ func TestStoreAndReadBundle(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			// Store the bundle
-			_, err = bundleStore.Store(testcase.ref, expectedBundle)
+			_, err = bundleStore.Store(expectedBundle, testcase.ref)
 			assert.NilError(t, err)
 
 			// Check the file exists
@@ -60,7 +60,7 @@ func TestStoreAndReadBundle(t *testing.T) {
 			// Load it
 			actualBundle, err := bundleStore.Read(testcase.ref)
 			assert.NilError(t, err)
-			assert.DeepEqual(t, expectedBundle, actualBundle)
+			assert.DeepEqual(t, expectedBundle.Bundle, actualBundle.Bundle)
 		})
 	}
 }
@@ -226,7 +226,7 @@ func TestList(t *testing.T) {
 
 	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	for _, ref := range refs {
-		_, err = bundleStore.Store(ref, bndl)
+		_, err = bundleStore.Store(bndl, ref)
 		assert.NilError(t, err)
 	}
 
@@ -264,7 +264,7 @@ func TestRemove(t *testing.T) {
 
 	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	for _, ref := range refs {
-		_, err = bundleStore.Store(ref, bndl)
+		_, err = bundleStore.Store(bndl, ref)
 		assert.NilError(t, err)
 	}
 
@@ -315,9 +315,9 @@ func TestRemoveById(t *testing.T) {
 		bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 		idRef, err := FromBundle(bndl)
 		assert.NilError(t, err)
-		_, err = bundleStore.Store(idRef, bndl)
+		_, err = bundleStore.Store(bndl, parseRefOrDie(t, "my-repo/a-bundle:my-tag"))
 		assert.NilError(t, err)
-		_, err = bundleStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), bndl)
+		_, err = bundleStore.Store(bndl, parseRefOrDie(t, "my-repo/b-bundle:my-tag"))
 		assert.NilError(t, err)
 
 		err = bundleStore.Remove(idRef, false)
@@ -328,9 +328,9 @@ func TestRemoveById(t *testing.T) {
 		bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 		idRef, err := FromBundle(bndl)
 		assert.NilError(t, err)
-		_, err = bundleStore.Store(idRef, bndl)
+		_, err = bundleStore.Store(bndl, parseRefOrDie(t, "my-repo/a-bundle:my-tag"))
 		assert.NilError(t, err)
-		_, err = bundleStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), bndl)
+		_, err = bundleStore.Store(bndl, parseRefOrDie(t, "my-repo/b-bundle:my-tag"))
 		assert.NilError(t, err)
 
 		err = bundleStore.Remove(idRef, true)
@@ -340,7 +340,7 @@ func TestRemoveById(t *testing.T) {
 	t.Run("success when only one reference exists", func(t *testing.T) {
 		bndl := relocated.FromBundle(&bundle.Bundle{Name: "other-bundle-name"})
 		ref := parseRefOrDie(t, "my-repo/other-bundle:my-tag")
-		_, err = bundleStore.Store(ref, bndl)
+		_, err = bundleStore.Store(bndl, ref)
 
 		idRef, err := FromBundle(bndl)
 		assert.NilError(t, err)
@@ -363,15 +363,15 @@ func TestLookUp(t *testing.T) {
 	assert.NilError(t, err)
 	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	// Adding the bundle referenced by id
-	id, err := bundleStore.Store(nil, bndl)
+	id, err := bundleStore.Store(bndl, nil)
 	assert.NilError(t, err)
 	// Adding the same bundle referenced by a tag
 	ref := parseRefOrDie(t, "my-repo/a-bundle:my-tag")
-	_, err = bundleStore.Store(ref, bndl)
+	_, err = bundleStore.Store(bndl, ref)
 	assert.NilError(t, err)
 	// Adding the same bundle referenced by tag prefixed by docker.io/library
 	dockerIoRef := parseRefOrDie(t, "docker.io/library/a-bundle:my-tag")
-	_, err = bundleStore.Store(dockerIoRef, bndl)
+	_, err = bundleStore.Store(bndl, dockerIoRef)
 	assert.NilError(t, err)
 
 	for _, tc := range []struct {

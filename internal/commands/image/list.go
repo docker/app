@@ -126,10 +126,7 @@ func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
 	if t, ok := ref.(reference.Tagged); ok {
 		tag = t.Tag()
 	}
-	var digest string
-	if t, ok := ref.(reference.Digested); ok {
-		digest = t.Digest().String()
-	}
+	digest := bundle.RepoDigest
 	var created time.Time
 	if payload, err := packager.CustomPayload(bundle.Bundle); err == nil {
 		if createdPayload, ok := payload.(packager.CustomPayloadCreated); ok {
@@ -141,7 +138,7 @@ func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
 		Name:       bundle.Name,
 		Repository: repository,
 		Tag:        tag,
-		Digest:     digest,
+		Digest:     digest.String(),
 		Created:    created,
 	}
 }

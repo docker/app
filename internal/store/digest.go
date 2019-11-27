@@ -44,28 +44,24 @@ func StringToNamedRef(s string) (reference.Named, error) {
 
 func FromString(s string) (ID, error) {
 	if ok := identifierRegexp.MatchString(s); !ok {
-		return ID{}, fmt.Errorf("could not parse %q as a valid reference", s)
+		return "", fmt.Errorf("could not parse %q as a valid reference", s)
 	}
 	digest := digest.NewDigestFromEncoded(digest.SHA256, s)
-	return ID{digest}, nil
+	return ID(digest), nil
 }
 
 func FromBundle(bndl *relocated.Bundle) (ID, error) {
-	digest, err := ComputeDigest(bndl)
-	return ID{digest}, err
+	digest, err := ComputeDigest(bndl.Bundle)
+	return ID(digest), err
 }
 
 // ID is an unique identifier for docker app image bundle, implementing reference.Reference
-type ID struct {
-	digest digest.Digest
-}
-
-var _ reference.Reference = ID{}
+type ID digest.Digest
 
 func (id ID) String() string {
-	return id.digest.Encoded()
+	return id.Digest().Encoded()
 }
 
 func (id ID) Digest() digest.Digest {
-	return id.digest
+	return digest.Digest(id)
 }
