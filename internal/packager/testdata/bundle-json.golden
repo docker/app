@@ -118,11 +118,11 @@
     }
   },
   "credentials": {
+    "com.docker.app.context": {
+      "path": "/cnab/app/context.dockercontext"
+    },
     "com.docker.app.registry-creds": {
       "path": "/cnab/app/registry-creds.json"
-    },
-    "docker.context": {
-      "path": "/cnab/app/context.dockercontext"
     }
   },
   "definitions": {

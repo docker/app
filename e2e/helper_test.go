@@ -29,8 +29,13 @@ type dindSwarmAndRegistryInfo struct {
 	swarmAddress    string
 	registryAddress string
 	configuredCmd   icmd.Cmd
+	configDir       string
+	tmpDir          *fs.Dir
 	stopRegistry    func()
 	registryLogs    func() string
+	dockerCmd       func(...string) string
+	execCmd         func(...string) string
+	localCmd        func(...string) string
 }
 
 func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInfo)) {
@@ -40,15 +45,40 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
 
+	var configDir string
+	for _, val := range cmd.Env {
+		if ok := strings.HasPrefix(val, "DOCKER_CONFIG="); ok {
+			configDir = strings.Replace(val, "DOCKER_CONFIG=", "", 1)
+		}
+	}
+
+	// Initialize the info struct
+	runner := dindSwarmAndRegistryInfo{configuredCmd: cmd, configDir: configDir, tmpDir: tmpDir}
+
+	// Func to execute command locally
+	runLocalCmd := func(params ...string) string {
+		if len(params) == 0 {
+			return ""
+		}
+		cmd := icmd.Command(params[0], params[1:]...)
+		result := icmd.RunCmd(cmd)
+		result.Assert(t, icmd.Success)
+		return result.Combined()
+	}
+	// Func to execute docker cli commands
+	runDockerCmd := func(params ...string) string {
+		runner.configuredCmd.Command = dockerCli.Command(params...)
+		result := icmd.RunCmd(runner.configuredCmd)
+		result.Assert(t, icmd.Success)
+		return result.Combined()
+	}
+
 	// The dind doesn't have the cnab-app-base image so we save it in order to load it later
-	saveCmd := icmd.Cmd{Command: dockerCli.Command("save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "-o", tmpDir.Join("cnab-app-base.tar.gz"))}
-	icmd.RunCmd(saveCmd).Assert(t, icmd.Success)
+	runDockerCmd("save", fmt.Sprintf("docker/cnab-app-base:%s", internal.Version), "-o", tmpDir.Join("cnab-app-base.tar.gz"))
 
 	// Busybox is used in a few e2e test, let's pre-load it
-	cmd.Command = dockerCli.Command("pull", "busybox:1.30.1")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
-	saveCmd = icmd.Cmd{Command: dockerCli.Command("save", "busybox:1.30.1", "-o", tmpDir.Join("busybox.tar.gz"))}
-	icmd.RunCmd(saveCmd).Assert(t, icmd.Success)
+	runDockerCmd("pull", "busybox:1.30.1")
+	runDockerCmd("save", "busybox:1.30.1", "-o", tmpDir.Join("busybox.tar.gz"))
 
 	// we have a difficult constraint here:
 	// - the registry must be reachable from the client side (for cnab-to-oci, which does not use the docker daemon to access the registry)
@@ -67,28 +97,30 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	defer swarm.Stop(t)
 	swarmAddress := swarm.GetAddress(t)
 
-	cmd.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarmAddress), "--default-stack-orchestrator", "swarm")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	// Initialize the info struct
+	runner.registryAddress = registryAddress
+	runner.swarmAddress = swarmAddress
+	runner.stopRegistry = registry.StopNoFail
+	runner.registryLogs = registry.Logs(t)
 
-	cmd.Env = append(cmd.Env, "DOCKER_CONTEXT=swarm-context", "DOCKER_INSTALLER_CONTEXT=swarm-context")
+	runDockerCmd("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, swarmAddress), "--default-stack-orchestrator", "swarm")
+
+	runner.configuredCmd.Env = append(runner.configuredCmd.Env, "DOCKER_CONTEXT=swarm-context", "DOCKER_INSTALLER_CONTEXT=swarm-context")
+
 	// Initialize the swarm
-	cmd.Command = dockerCli.Command("swarm", "init")
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	runDockerCmd("swarm", "init")
 	// Load the needed base cnab image into the swarm docker engine
-	cmd.Command = dockerCli.Command("load", "-i", tmpDir.Join("cnab-app-base.tar.gz"))
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	runDockerCmd("load", "-i", tmpDir.Join("cnab-app-base.tar.gz"))
 	// Pre-load busybox image used by a few e2e tests
-	cmd.Command = dockerCli.Command("load", "-i", tmpDir.Join("busybox.tar.gz"))
-	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	runDockerCmd("load", "-i", tmpDir.Join("busybox.tar.gz"))
 
-	info := dindSwarmAndRegistryInfo{
-		configuredCmd:   cmd,
-		registryAddress: registryAddress,
-		swarmAddress:    swarmAddress,
-		stopRegistry:    registry.StopNoFail,
-		registryLogs:    registry.Logs(t),
+	runner.localCmd = runLocalCmd
+	runner.dockerCmd = runDockerCmd
+	runner.execCmd = func(params ...string) string {
+		args := append([]string{"docker", "exec", "-t", swarm.container}, params...)
+		return runLocalCmd(args...)
 	}
-	todo(info)
+	todo(runner)
 }
 
 func build(t *testing.T, cmd icmd.Cmd, dockerCli dockerCliCommand, ref, path string) {

@@ -72,7 +72,7 @@ test-unit: build_dev_image ## run unit tests
 	docker run --rm -v $(CURDIR)/_build/test-results:/test-results $(DEV_IMAGE_NAME) make TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) test-unit
 
 test-e2e: build_dev_image invocation-image ## run end-to-end tests
-	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) bin/$(BIN_NAME) test-e2e
+	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make TEST_RESULTS_PREFIX=$(TEST_RESULTS_PREFIX) bin/$(BIN_NAME) E2E_TESTS=$(E2E_TESTS) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
 coverage-run: build_dev_image ## run tests with coverage

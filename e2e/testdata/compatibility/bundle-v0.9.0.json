@@ -1,0 +1,183 @@
+{
+    "actions": {
+        "com.docker.app.inspect": {
+            "stateless": true
+        },
+        "com.docker.app.render": {
+            "stateless": true
+        },
+        "io.cnab.status": {},
+        "io.cnab.status+json": {}
+    },
+    "credentials": {
+        "com.docker.app.context": {
+            "path": "/cnab/app/context.dockercontext"
+        },
+        "com.docker.app.registry-creds": {
+            "path": "/cnab/app/registry-creds.json"
+        }
+    },
+    "custom": {
+        "com.docker.app": {
+            "payload": {
+                "created": "2019-11-18T08:22:31.570871111Z"
+            },
+            "version": "1.0.0"
+        }
+    },
+    "definitions": {
+        "com.docker.app.args": {
+            "default": "",
+            "description": "Arguments that are passed by file to the invocation image",
+            "title": "Arguments",
+            "type": "string"
+        },
+        "com.docker.app.inspect-format": {
+            "default": "json",
+            "description": "Output format for the inspect command",
+            "enum": [
+                "json",
+                "pretty"
+            ],
+            "title": "Inspect format",
+            "type": "string"
+        },
+        "com.docker.app.kubernetes-namespace": {
+            "default": "",
+            "description": "Namespace in which to deploy",
+            "title": "Namespace",
+            "type": "string"
+        },
+        "com.docker.app.orchestrator": {
+            "default": "",
+            "description": "Orchestrator on which to deploy",
+            "enum": [
+                "",
+                "swarm",
+                "kubernetes"
+            ],
+            "title": "Orchestrator",
+            "type": "string"
+        },
+        "com.docker.app.render-format": {
+            "default": "yaml",
+            "description": "Output format for the render command",
+            "enum": [
+                "yaml",
+                "json"
+            ],
+            "title": "Render format",
+            "type": "string"
+        },
+        "com.docker.app.share-registry-creds": {
+            "default": false,
+            "description": "Share registry credentials with the invocation image",
+            "title": "Share registry credentials",
+            "type": "boolean"
+        },
+        "ports.frontend": {
+            "default": "8080",
+            "type": "string"
+        }
+    },
+    "description": "sample description",
+    "images": {
+        "backend": {
+            "contentDigest": "<digest-backend>",
+            "description": "app-e2e/backend",
+            "image": "app-e2e/backend",
+            "imageType": "docker",
+            "size": 7394886
+        },
+        "frontend": {
+            "contentDigest": "<digest-frontend>",
+            "description": "app-e2e/frontend",
+            "image": "app-e2e/frontend",
+            "imageType": "docker",
+            "size": 21365920
+        }
+    },
+    "invocationImages": [
+        {
+            "contentDigest": "<digest-app-e2e-invoc>",
+            "image": "app-e2e:0.1.0-invoc",
+            "imageType": "docker",
+            "size": 47261342
+        }
+    ],
+    "maintainers": [
+        {
+            "email": "anca.iordache@docker.com",
+            "name": "Anca Iordache"
+        }
+    ],
+    "name": "app-e2e",
+    "parameters": {
+        "com.docker.app.args": {
+            "applyTo": [
+                "install",
+                "upgrade"
+            ],
+            "definition": "com.docker.app.args",
+            "destination": {
+                "path": "/cnab/app/args.json"
+            }
+        },
+        "com.docker.app.inspect-format": {
+            "applyTo": [
+                "com.docker.app.inspect"
+            ],
+            "definition": "com.docker.app.inspect-format",
+            "destination": {
+                "env": "DOCKER_INSPECT_FORMAT"
+            }
+        },
+        "com.docker.app.kubernetes-namespace": {
+            "applyTo": [
+                "install",
+                "upgrade",
+                "uninstall",
+                "io.cnab.status"
+            ],
+            "definition": "com.docker.app.kubernetes-namespace",
+            "destination": {
+                "env": "DOCKER_KUBERNETES_NAMESPACE"
+            }
+        },
+        "com.docker.app.orchestrator": {
+            "applyTo": [
+                "install",
+                "upgrade",
+                "uninstall",
+                "io.cnab.status"
+            ],
+            "definition": "com.docker.app.orchestrator",
+            "destination": {
+                "env": "DOCKER_STACK_ORCHESTRATOR"
+            }
+        },
+        "com.docker.app.render-format": {
+            "applyTo": [
+                "com.docker.app.render"
+            ],
+            "definition": "com.docker.app.render-format",
+            "destination": {
+                "env": "DOCKER_RENDER_FORMAT"
+            }
+        },
+        "com.docker.app.share-registry-creds": {
+            "definition": "com.docker.app.share-registry-creds",
+            "destination": {
+                "env": "DOCKER_SHARE_REGISTRY_CREDS"
+            }
+        },
+        "ports.frontend": {
+            "definition": "ports.frontend",
+            "destination": {
+                "env": "docker_param1"
+            }
+        }
+    },
+    "schemaVersion": "v1.0.0",
+    "version": "0.1.0"
+}
