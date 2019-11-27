@@ -23,6 +23,7 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	compose "github.com/docker/cli/cli/compose/types"
+	"github.com/docker/cli/cli/streams"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/moby/buildkit/client"
@@ -73,6 +74,30 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	flags.StringVar(&opts.imageIDFile, "iidfile", "", "Write the App image ID to the file")
 
 	return cmd
+}
+
+// FIXME: DO NOT SET THIS VARIABLE DIRECTLY! Use `getOutputFile`
+//  This global var prevents the file to be garbage collected and by that invalidated
+// A an alternative fix for this would be writing the output to a bytes buffer and flushing to stdout.
+// The impossibility here is that os.File is not an interface that a buffer can implement.
+// Maybe `progress.NewPrinter` should implement an "os.File-like" interface just for its needs.
+// See https://github.com/golang/go/issues/14106
+var _outputFile *os.File
+
+func getOutputFile(realOut *streams.Out, quiet bool) (*os.File, error) {
+	if _outputFile != nil {
+		return _outputFile, nil
+	}
+	if quiet {
+		var err error
+		_outputFile, err = os.Create(os.DevNull)
+		if err != nil {
+			return nil, err
+		}
+		return _outputFile, nil
+	}
+	_outputFile = os.NewFile(realOut.FD(), os.Stdout.Name())
+	return _outputFile, nil
 }
 
 func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error {
@@ -160,13 +185,9 @@ func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions,
 		},
 	}
 
-	var out *os.File
-	if opt.quiet {
-		if out, err = os.Create(os.DevNull); err != nil {
-			return nil, err
-		}
-	} else {
-		out = os.NewFile(dockerCli.Out().FD(), "/dev/stdout")
+	out, err := getOutputFile(dockerCli.Out(), opt.quiet)
+	if err != nil {
+		return nil, err
 	}
 
 	pw := progress.NewPrinter(ctx, out, opt.progress)
