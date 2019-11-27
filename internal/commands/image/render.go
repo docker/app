@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/docker/app/internal/packager"
+
 	"github.com/deislabs/cnab-go/driver"
 
 	"github.com/deislabs/cnab-go/action"
@@ -91,11 +93,14 @@ func prepareCustomAction(actionName string,
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	bundle, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
+	bndl, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "could not render %q: no such App image", appname)
 	}
-	installation, err := appstore.NewInstallation("custom-action", ref.String(), bundle)
+	if err := packager.CheckAppVersion(dockerCli.Err(), bndl.Bundle); err != nil {
+		return nil, nil, nil, err
+	}
+	installation, err := appstore.NewInstallation("custom-action", ref.String(), bndl)
 	if err != nil {
 		return nil, nil, nil, err
 	}

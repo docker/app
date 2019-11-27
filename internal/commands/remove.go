@@ -6,6 +6,7 @@ import (
 
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/packager"
 
 	"github.com/deislabs/cnab-go/driver"
 
@@ -52,6 +53,10 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 	if err != nil {
 		return err
 	}
+	if err := packager.CheckAppVersion(dockerCli.Err(), installation.Bundle); err != nil {
+		return err
+	}
+
 	if opts.force {
 		defer func() {
 			if mainErr == nil {

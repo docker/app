@@ -11,6 +11,7 @@ import (
 	"github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
@@ -63,6 +64,10 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		}
 		installation.Bundle = b.Bundle
 	}
+	if err := packager.CheckAppVersion(dockerCli.Err(), installation.Bundle); err != nil {
+		return err
+	}
+
 	if err := bundle.MergeBundleParameters(installation,
 		bundle.WithFileParameters(opts.ParametersFiles),
 		bundle.WithCommandLineParameters(opts.Overrides),

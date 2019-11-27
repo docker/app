@@ -2,6 +2,8 @@ package packager
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"time"
 
 	"github.com/deislabs/cnab-go/bundle"
@@ -37,8 +39,8 @@ type CustomPayloadAppVersion interface {
 }
 
 type payloadV1_0 struct {
-	Created time.Time `json:"created"`
 	Version string    `json:"app-version"`
+	Created time.Time `json:"created"`
 }
 
 func (p payloadV1_0) CreatedTime() time.Time {
@@ -56,6 +58,26 @@ func newCustomPayload() (json.RawMessage, error) {
 		return nil, err
 	}
 	return j, nil
+}
+
+// CheckAppVersion
+func CheckAppVersion(stderr io.Writer, bndl *bundle.Bundle) error {
+	payload, err := CustomPayload(bndl)
+	if err != nil {
+		return err
+	}
+	if payload == nil {
+		return nil
+	}
+
+	var version string
+	if versionPayload, ok := payload.(CustomPayloadAppVersion); ok {
+		version = versionPayload.AppVersion()
+	}
+	if version != internal.Version {
+		fmt.Fprintf(stderr, "WARNING: App Image has been built with a different version of docker app: %q\n", version)
+	}
+	return nil
 }
 
 // CustomPayload parses and returns the bundle's custom payload

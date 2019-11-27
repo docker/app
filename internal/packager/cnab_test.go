@@ -22,7 +22,7 @@ func TestToCNAB(t *testing.T) {
 	assert.NilError(t, err)
 	s := golden.Get(t, "bundle-json.golden")
 	expectedLiteral := regexp.QuoteMeta(string(s))
-	expected := fmt.Sprintf(expectedLiteral, DockerAppPayloadVersionCurrent, `\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z`, internal.Version)
+	expected := fmt.Sprintf(expectedLiteral, DockerAppPayloadVersionCurrent, internal.Version, `\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z`)
 	matches, err := regexp.Match(expected, actualJSON)
 	assert.NilError(t, err)
 	assert.Assert(t, matches)

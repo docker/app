@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/docker/app/internal/packager"
+
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cliopts"
@@ -64,6 +66,9 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions, inst
 	bndl, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
 
 	if err != nil {
+		return err
+	}
+	if err := packager.CheckAppVersion(dockerCli.Err(), bndl.Bundle); err != nil {
 		return err
 	}
 

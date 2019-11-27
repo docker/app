@@ -12,6 +12,7 @@ import (
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/inspect"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
@@ -51,7 +52,9 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 	if err != nil {
 		return err
 	}
-
+	if err := packager.CheckAppVersion(dockerCli.Err(), installation.Bundle); err != nil {
+		return err
+	}
 	creds, err := prepareCredentialSet(installation.Bundle, inspectOptions.CredentialSetOpts(dockerCli, credentialStore)...)
 	if err != nil {
 		return err
