@@ -226,6 +226,18 @@ maintainers:
 	golden.Assert(t, stdOut, "validate-output.golden")
 }
 
+func TestInitWithInvalidCompose(t *testing.T) {
+	cmd, cleanup := dockerCli.createTestCmd()
+	defer cleanup()
+	composePath := filepath.Join("testdata", "invalid-compose", "docker-compose.yml")
+
+	cmd.Command = dockerCli.Command("app", "init", "invalid", "--compose-file", composePath)
+	stdOut := icmd.RunCmd(cmd).Assert(t, icmd.Expected{
+		ExitCode: 1,
+	}).Combined()
+	golden.Assert(t, stdOut, "init-invalid-output.golden")
+}
+
 func TestInspectApp(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd

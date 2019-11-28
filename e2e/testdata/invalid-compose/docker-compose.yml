@@ -1,0 +1,15 @@
+version: "3.6"
+services:
+  api:
+    image: python:3.6
+    volumes:
+      - ./src:/src
+  web:
+    image: nginx
+    networks:
+      - front
+    volumes:
+      - ./static:/opt/${static_subdir}
+secrets:
+  my_secret:
+    first: ./path/to/secret.txt

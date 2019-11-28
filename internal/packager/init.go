@@ -14,6 +14,7 @@ import (
 
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
+	"github.com/docker/app/internal/validator"
 	"github.com/docker/app/internal/yaml"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
@@ -49,6 +50,11 @@ func Init(errWriter io.Writer, name string, composeFile string) (string, error) 
 	if composeFile == "" {
 		err = initFromScratch(name)
 	} else {
+		v := validator.NewValidatorWithDefaults()
+		err = v.Validate(composeFile)
+		if err != nil {
+			return "", err
+		}
 		err = initFromComposeFile(errWriter, name, composeFile)
 	}
 	if err != nil {
@@ -82,11 +88,11 @@ func checkComposeFileVersion(compose map[string]interface{}) error {
 
 func getEnvFiles(svcName string, envFileEntry interface{}) ([]string, error) {
 	var envFiles []string
-	switch envFileEntry.(type) {
+	switch envFileEntry := envFileEntry.(type) {
 	case string:
-		envFiles = append(envFiles, envFileEntry.(string))
+		envFiles = append(envFiles, envFileEntry)
 	case []interface{}:
-		for _, env := range envFileEntry.([]interface{}) {
+		for _, env := range envFileEntry {
 			envFiles = append(envFiles, env.(string))
 		}
 	default:
@@ -120,50 +126,6 @@ func checkEnvFiles(errWriter io.Writer, appName string, cfgMap map[string]interf
 				"%s.env_file %q will not be copied into %s.dockerapp. "+
 					"Please copy it manually and update the path accordingly in the compose file.\n",
 				svcName, envFilePath, appName)
-		}
-	}
-	return nil
-}
-
-func checkRelativePaths(cfgMap map[string]interface{}) error {
-	services := cfgMap["services"]
-	servicesMap, ok := services.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid Compose file")
-	}
-	for svcName, svc := range servicesMap {
-		svcContent, ok := svc.(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("invalid service %q", svcName)
-		}
-		v, ok := svcContent["volumes"]
-		if !ok {
-			continue
-		}
-		volumes, ok := v.([]interface{})
-		if !ok {
-			return fmt.Errorf("invalid Compose file")
-		}
-		for _, volume := range volumes {
-			switch volume.(type) {
-			case string:
-				svol := volume.(string)
-				source := strings.TrimRight(svol, ":")
-				if !filepath.IsAbs(source) {
-					return fmt.Errorf("invalid service %q: can't use relative path as volume source", svcName)
-				}
-			case map[string]interface{}:
-				lvol := volume.(map[string]interface{})
-				src, ok := lvol["source"]
-				if !ok {
-					return fmt.Errorf("invalid volume in service %q", svcName)
-				}
-				if !filepath.IsAbs(src.(string)) {
-					return fmt.Errorf("invalid service %q: can't use relative path as volume source", svcName)
-				}
-			default:
-				return fmt.Errorf("invalid Compose file")
-			}
 		}
 	}
 	return nil
@@ -215,9 +177,6 @@ func initFromComposeFile(errWriter io.Writer, name string, composeFile string) e
 		return err
 	}
 	if err := checkEnvFiles(errWriter, name, cfgMap); err != nil {
-		return err
-	}
-	if err := checkRelativePaths(cfgMap); err != nil {
 		return err
 	}
 	params, needsFilling, err := getParamsFromDefaultEnvFile(composeFile, composeRaw)
