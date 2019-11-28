@@ -41,7 +41,7 @@ func updateCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 }
 
 func runUpdate(dockerCli command.Cli, installationName string, opts updateOptions, installerContext *cliopts.InstallerContextOptions) error {
-	bundleStore, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
+	imageStore, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 	}
 
 	if opts.bundleOrDockerApp != "" {
-		b, _, err := cnab.ResolveBundle(dockerCli, bundleStore, opts.bundleOrDockerApp)
+		b, _, err := cnab.ResolveBundle(dockerCli, imageStore, opts.bundleOrDockerApp)
 		if err != nil {
 			return err
 		}

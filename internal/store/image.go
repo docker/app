@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 	"github.com/docker/distribution/reference"
 	multierror "github.com/hashicorp/go-multierror"
 	digest "github.com/opencontainers/go-digest"
@@ -16,34 +16,34 @@ import (
 )
 
 //
-type BundleStore interface {
+type ImageStore interface {
 	// Store do store the bundle with optional reference, and return it's unique ID
-	Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error)
-	Read(ref reference.Reference) (*relocated.Bundle, error)
+	Store(ref reference.Reference, bndl *image.AppImage) (reference.Digested, error)
+	Read(ref reference.Reference) (*image.AppImage, error)
 	List() ([]reference.Reference, error)
 	Remove(ref reference.Reference, force bool) error
 	LookUp(refOrID string) (reference.Reference, error)
 }
 
-var _ BundleStore = &bundleStore{}
+var _ ImageStore = &imageStore{}
 
 type referencesMap map[ID][]reference.Reference
 
-type bundleStore struct {
+type imageStore struct {
 	path    string
 	refsMap referencesMap
 }
 
-// NewBundleStore creates a new bundle store with the given path and initializes it
-func NewBundleStore(path string) (BundleStore, error) {
-	bundleStore := &bundleStore{
+// NewImageStore creates a new bundle store with the given path and initializes it
+func NewImageStore(path string) (ImageStore, error) {
+	imageStore := &imageStore{
 		path:    path,
 		refsMap: make(referencesMap),
 	}
-	if err := bundleStore.scanAllBundles(); err != nil {
+	if err := imageStore.scanAllBundles(); err != nil {
 		return nil, err
 	}
-	return bundleStore, nil
+	return imageStore, nil
 }
 
 // We store bundles either by image:tags, image:digest or by unique ID (actually, bundle's sha256).
@@ -63,8 +63,8 @@ func NewBundleStore(path string) (BundleStore, error) {
 //      \_ bundle.json
 //
 
-func (b *bundleStore) Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error) {
-	id, err := FromBundle(bndl)
+func (b *imageStore) Store(ref reference.Reference, img *image.AppImage) (reference.Digested, error) {
+	id, err := FromAppImage(img)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
@@ -79,25 +79,25 @@ func (b *bundleStore) Store(ref reference.Reference, bndl *relocated.Bundle) (re
 		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
 
-	if err := bndl.Store(dir); err != nil {
-		return id, errors.Wrapf(err, "failed to store relocated bundle %q", ref)
+	if err := img.Store(dir); err != nil {
+		return id, errors.Wrapf(err, "failed to store app image %q", ref)
 	}
 
 	b.refsMap.appendRef(id, ref)
 	return id, nil
 }
 
-func (b *bundleStore) Read(ref reference.Reference) (*relocated.Bundle, error) {
+func (b *imageStore) Read(ref reference.Reference) (*image.AppImage, error) {
 	paths, err := b.storePaths(ref)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
 	}
 
-	return relocated.BundleFromFile(filepath.Join(paths[0], relocated.BundleFilename))
+	return image.FromFile(filepath.Join(paths[0], image.BundleFilename))
 }
 
 // Returns the list of all bundles present in the bundle store
-func (b *bundleStore) List() ([]reference.Reference, error) {
+func (b *imageStore) List() ([]reference.Reference, error) {
 	var references []reference.Reference
 
 	for _, refAliases := range b.refsMap {
@@ -112,7 +112,7 @@ func (b *bundleStore) List() ([]reference.Reference, error) {
 }
 
 // Remove removes a bundle from the bundle store.
-func (b *bundleStore) Remove(ref reference.Reference, force bool) error {
+func (b *imageStore) Remove(ref reference.Reference, force bool) error {
 	if id, ok := ref.(ID); ok {
 		refs := b.refsMap[id]
 		if len(refs) == 0 {
@@ -135,7 +135,7 @@ func (b *bundleStore) Remove(ref reference.Reference, force bool) error {
 	return b.doRemove(ref)
 }
 
-func (b *bundleStore) doRemove(ref reference.Reference) error {
+func (b *imageStore) doRemove(ref reference.Reference) error {
 	path, err := b.storePath(ref)
 	if err != nil {
 		return err
@@ -176,7 +176,7 @@ func isEmpty(path string) (bool, error) {
 	return false, nil
 }
 
-func (b *bundleStore) LookUp(refOrID string) (reference.Reference, error) {
+func (b *imageStore) LookUp(refOrID string) (reference.Reference, error) {
 	ref, err := FromString(refOrID)
 	if err == nil {
 		if _, found := b.refsMap[ref]; !found {
@@ -200,7 +200,7 @@ func (b *bundleStore) LookUp(refOrID string) (reference.Reference, error) {
 	return named, nil
 }
 
-func (b *bundleStore) matchShortID(shortID string) (reference.Reference, error) {
+func (b *imageStore) matchShortID(shortID string) (reference.Reference, error) {
 	var found reference.Reference
 	for id := range b.refsMap {
 		if strings.HasPrefix(id.String(), shortID) {
@@ -216,7 +216,7 @@ func (b *bundleStore) matchShortID(shortID string) (reference.Reference, error) 
 	return found, nil
 }
 
-func (b *bundleStore) referenceToID(ref reference.Reference) (ID, error) {
+func (b *imageStore) referenceToID(ref reference.Reference) (ID, error) {
 	if id, ok := ref.(ID); ok {
 		return id, nil
 	}
@@ -230,7 +230,7 @@ func (b *bundleStore) referenceToID(ref reference.Reference) (ID, error) {
 	return ID{}, unknownReference(reference.FamiliarString(ref))
 }
 
-func (b *bundleStore) storePaths(ref reference.Reference) ([]string, error) {
+func (b *imageStore) storePaths(ref reference.Reference) ([]string, error) {
 	var paths []string
 
 	id, err := b.referenceToID(ref)
@@ -254,7 +254,7 @@ func (b *bundleStore) storePaths(ref reference.Reference) ([]string, error) {
 	return paths, nil
 }
 
-func (b *bundleStore) storePath(ref reference.Reference) (string, error) {
+func (b *imageStore) storePath(ref reference.Reference) (string, error) {
 	named, ok := ref.(reference.Named)
 	if !ok {
 		return filepath.Join(b.path, "_ids", ref.String()), nil
@@ -287,15 +287,15 @@ func (b *bundleStore) storePath(ref reference.Reference) (string, error) {
 }
 
 // scanAllBundles scans the bundle store directories and creates the internal map of App image
-// references. This function must be called before any other public BundleStore interface method.
-func (b *bundleStore) scanAllBundles() error {
-	if err := filepath.Walk(b.path, b.processBundleStoreFile); err != nil {
+// references. This function must be called before any other public ImageStore interface method.
+func (b *imageStore) scanAllBundles() error {
+	if err := filepath.Walk(b.path, b.processImageStoreFile); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err error) error {
+func (b *imageStore) processImageStoreFile(path string, info os.FileInfo, err error) error {
 	if err != nil {
 		return err
 	}
@@ -305,7 +305,7 @@ func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err 
 		return nil
 	}
 
-	if info.Name() == relocated.RelocationMapFilename {
+	if info.Name() == image.RelocationMapFilename {
 		return nil
 	}
 
@@ -325,11 +325,11 @@ func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err 
 	if err != nil {
 		return err
 	}
-	bndl, err := relocated.BundleFromFile(path)
+	img, err := image.FromFile(path)
 	if err != nil {
 		return err
 	}
-	id, err := FromBundle(bndl)
+	id, err := FromAppImage(img)
 	if err != nil {
 		return err
 	}
@@ -338,7 +338,7 @@ func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err 
 	return nil
 }
 
-func (b *bundleStore) pathToReference(path string) (reference.Named, error) {
+func (b *imageStore) pathToReference(path string) (reference.Named, error) {
 	// Clean the path and remove the local bundle store path
 	cleanpath := filepath.ToSlash(path)
 	cleanpath = strings.TrimPrefix(cleanpath, filepath.ToSlash(b.path)+"/")

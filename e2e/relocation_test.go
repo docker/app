@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 	"gotest.tools/assert/cmp"
 
 	"gotest.tools/assert"
@@ -28,7 +28,7 @@ func TestRelocationMapCreatedOnPull(t *testing.T) {
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		// And given application files are remove
 		assert.NilError(t, os.RemoveAll(bundlePath))
-		_, err := os.Stat(filepath.Join(bundlePath, relocated.BundleFilename))
+		_, err := os.Stat(filepath.Join(bundlePath, image.BundleFilename))
 		assert.Assert(t, os.IsNotExist(err))
 
 		// When application is pulled
@@ -36,7 +36,7 @@ func TestRelocationMapCreatedOnPull(t *testing.T) {
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		// Then the relocation map should exist
-		_, err = os.Stat(filepath.Join(bundlePath, relocated.RelocationMapFilename))
+		_, err = os.Stat(filepath.Join(bundlePath, image.RelocationMapFilename))
 		assert.NilError(t, err)
 	})
 }
@@ -56,7 +56,7 @@ func TestRelocationMapRun(t *testing.T) {
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		// And given application files are remove
 		assert.NilError(t, os.RemoveAll(bundlePath))
-		_, err := os.Stat(filepath.Join(bundlePath, relocated.BundleFilename))
+		_, err := os.Stat(filepath.Join(bundlePath, image.BundleFilename))
 		assert.Assert(t, os.IsNotExist(err))
 		// And given local images are removed
 		cmd.Command = dockerCli.Command("rmi", "web", "local:1.1.0-beta1-invoc", "worker")
@@ -82,7 +82,7 @@ func TestRelocationMapRun(t *testing.T) {
 		t.Run("without-relocation-map", func(t *testing.T) {
 			name := "test-relocation-map-run-without-relocation-map"
 			// And given the relocation map is removed after the pull
-			assert.NilError(t, os.RemoveAll(filepath.Join(bundlePath, relocated.RelocationMapFilename)))
+			assert.NilError(t, os.RemoveAll(filepath.Join(bundlePath, image.RelocationMapFilename)))
 
 			// Then the application cannot be run
 			cmd.Command = dockerCli.Command("app", "run", "--name", name, ref)
@@ -109,7 +109,7 @@ func TestPushPulledApplication(t *testing.T) {
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		// And given application files are remove
 		assert.NilError(t, os.RemoveAll(bundlePath))
-		_, err := os.Stat(filepath.Join(bundlePath, relocated.BundleFilename))
+		_, err := os.Stat(filepath.Join(bundlePath, image.BundleFilename))
 		assert.Assert(t, os.IsNotExist(err))
 
 		// And given application is pulled from the registry
@@ -121,7 +121,7 @@ func TestPushPulledApplication(t *testing.T) {
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 		// If relocation map is removed
-		assert.NilError(t, os.RemoveAll(filepath.Join(bundlePath, relocated.RelocationMapFilename)))
+		assert.NilError(t, os.RemoveAll(filepath.Join(bundlePath, image.RelocationMapFilename)))
 
 		// Then the application cannot be pushed
 		cmd.Command = dockerCli.Command("app", "push", ref)
@@ -144,7 +144,7 @@ func TestRelocationMapOnInspect(t *testing.T) {
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 		// And given application files are remove
 		assert.NilError(t, os.RemoveAll(bundlePath))
-		_, err := os.Stat(filepath.Join(bundlePath, relocated.BundleFilename))
+		_, err := os.Stat(filepath.Join(bundlePath, image.BundleFilename))
 		assert.Assert(t, os.IsNotExist(err))
 		// And given local images are removed
 		cmd.Command = dockerCli.Command("rmi", "web", "local:1.1.0-beta1-invoc", "worker")

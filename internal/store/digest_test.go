@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"gotest.tools/assert"
@@ -17,25 +17,25 @@ func Test_storeByDigest(t *testing.T) {
 	defer dockerConfigDir.Remove()
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	assert.NilError(t, err)
 
-	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+	bndl := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	ref := parseRefOrDie(t, "test/simple:1.0")
-	_, err = bundleStore.Store(ref, bndl)
+	_, err = imageStore.Store(ref, bndl)
 	assert.NilError(t, err)
 
-	_, err = os.Stat(dockerConfigDir.Join("app", "bundles", "docker.io", "test", "simple", "_tags", "1.0", relocated.BundleFilename))
+	_, err = os.Stat(dockerConfigDir.Join("app", "bundles", "docker.io", "test", "simple", "_tags", "1.0", image.BundleFilename))
 	assert.NilError(t, err)
 
-	_, err = bundleStore.Store(nil, bndl)
+	_, err = imageStore.Store(nil, bndl)
 	assert.NilError(t, err)
 
 	ids := dockerConfigDir.Join("app", "bundles", "_ids")
 	infos, err := ioutil.ReadDir(ids)
 	assert.NilError(t, err)
 	assert.Equal(t, len(infos), 1)
-	_, err = os.Stat(dockerConfigDir.Join("app", "bundles", "_ids", infos[0].Name(), relocated.BundleFilename))
+	_, err = os.Stat(dockerConfigDir.Join("app", "bundles", "_ids", infos[0].Name(), image.BundleFilename))
 	assert.NilError(t, err)
 }
 

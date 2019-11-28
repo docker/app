@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
@@ -25,10 +25,10 @@ func TestStoreAndReadBundle(t *testing.T) {
 	defer dockerConfigDir.Remove()
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	assert.NilError(t, err)
 
-	expectedBundle := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+	expectedBundle := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 
 	testcases := []struct {
 		name string
@@ -38,19 +38,19 @@ func TestStoreAndReadBundle(t *testing.T) {
 		{
 			name: "tagged",
 			ref:  parseRefOrDie(t, "my-repo/my-bundle:my-tag"),
-			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag", relocated.BundleFilename),
+			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag", image.BundleFilename),
 		},
 		{
 			name: "digested",
 			ref:  parseRefOrDie(t, "my-repo/my-bundle@sha256:"+testSha),
-			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_digests", "sha256", testSha, relocated.BundleFilename),
+			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_digests", "sha256", testSha, image.BundleFilename),
 		},
 	}
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			// Store the bundle
-			_, err = bundleStore.Store(testcase.ref, expectedBundle)
+			_, err = imageStore.Store(testcase.ref, expectedBundle)
 			assert.NilError(t, err)
 
 			// Check the file exists
@@ -58,7 +58,7 @@ func TestStoreAndReadBundle(t *testing.T) {
 			assert.NilError(t, err)
 
 			// Load it
-			actualBundle, err := bundleStore.Read(testcase.ref)
+			actualBundle, err := imageStore.Read(testcase.ref)
 			assert.NilError(t, err)
 			assert.DeepEqual(t, expectedBundle, actualBundle)
 		})
@@ -73,7 +73,7 @@ func parseRefOrDie(t *testing.T, ref string) reference.Named {
 }
 
 func TestStorePath(t *testing.T) {
-	bs := &bundleStore{path: "base-dir"}
+	bs := &imageStore{path: "base-dir"}
 	for _, tc := range []struct {
 		Name            string
 		Ref             reference.Named
@@ -163,7 +163,7 @@ func TestStorePath(t *testing.T) {
 }
 
 func TestPathToReference(t *testing.T) {
-	bundleStore := &bundleStore{path: "base-dir"}
+	imageStore := &imageStore{path: "base-dir"}
 
 	for _, tc := range []struct {
 		Name          string
@@ -190,7 +190,7 @@ func TestPathToReference(t *testing.T) {
 		},
 	} {
 		t.Run(tc.Name, func(t *testing.T) {
-			ref, err := bundleStore.pathToReference(tc.Path)
+			ref, err := imageStore.pathToReference(tc.Path)
 
 			if tc.ExpectedError != "" {
 				assert.Equal(t, err.Error(), tc.ExpectedError)
@@ -210,7 +210,7 @@ func TestList(t *testing.T) {
 	defer dockerConfigDir.Remove()
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	assert.NilError(t, err)
 
 	refs := []reference.Named{
@@ -219,19 +219,19 @@ func TestList(t *testing.T) {
 	}
 
 	t.Run("returns 0 bundles on empty store", func(t *testing.T) {
-		bundles, err := bundleStore.List()
+		bundles, err := imageStore.List()
 		assert.NilError(t, err)
 		assert.Equal(t, len(bundles), 0)
 	})
 
-	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+	img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	for _, ref := range refs {
-		_, err = bundleStore.Store(ref, bndl)
+		_, err = imageStore.Store(ref, img)
 		assert.NilError(t, err)
 	}
 
 	t.Run("Returns the bundles sorted by name", func(t *testing.T) {
-		bundles, err := bundleStore.List()
+		bundles, err := imageStore.List()
 		assert.NilError(t, err)
 		assert.Equal(t, len(bundles), 2)
 		assert.Equal(t, bundles[0].String(), "docker.io/my-repo/a-bundle:my-tag")
@@ -239,11 +239,11 @@ func TestList(t *testing.T) {
 	})
 
 	t.Run("Ignores unknown files in the bundle store", func(t *testing.T) {
-		p := path.Join(dockerConfigDir.Path(), AppConfigDirectory, BundleStoreDirectory)
+		p := path.Join(dockerConfigDir.Path(), AppConfigDirectory, ImageStoreDirectory)
 		//nolint:errcheck
 		os.OpenFile(path.Join(p, "filename"), os.O_CREATE, 06444)
 
-		bundles, err := bundleStore.List()
+		bundles, err := imageStore.List()
 		assert.NilError(t, err)
 		assert.Equal(t, len(bundles), 2)
 	})
@@ -254,7 +254,7 @@ func TestRemove(t *testing.T) {
 	defer dockerConfigDir.Remove()
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	assert.NilError(t, err)
 
 	refs := []reference.Named{
@@ -262,34 +262,34 @@ func TestRemove(t *testing.T) {
 		parseRefOrDie(t, "my-repo/b-bundle@sha256:"+testSha),
 	}
 
-	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+	img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	for _, ref := range refs {
-		_, err = bundleStore.Store(ref, bndl)
+		_, err = imageStore.Store(ref, img)
 		assert.NilError(t, err)
 	}
 
 	t.Run("error on unknown", func(t *testing.T) {
-		err := bundleStore.Remove(parseRefOrDie(t, "my-repo/some-bundle:1.0.0"), false)
+		err := imageStore.Remove(parseRefOrDie(t, "my-repo/some-bundle:1.0.0"), false)
 		assert.Equal(t, err.Error(), "no such image my-repo/some-bundle:1.0.0")
 	})
 
 	t.Run("remove tagged and digested", func(t *testing.T) {
-		bundles, err := bundleStore.List()
+		bundles, err := imageStore.List()
 		assert.NilError(t, err)
 		assert.Equal(t, len(bundles), 2)
 
-		err = bundleStore.Remove(refs[0], false)
+		err = imageStore.Remove(refs[0], false)
 
 		// Once removed there should be none left
 		assert.NilError(t, err)
-		bundles, err = bundleStore.List()
+		bundles, err = imageStore.List()
 		assert.NilError(t, err)
 		assert.Equal(t, len(bundles), 1)
 
-		err = bundleStore.Remove(refs[1], false)
+		err = imageStore.Remove(refs[1], false)
 		assert.NilError(t, err)
 
-		bundles, err = bundleStore.List()
+		bundles, err = imageStore.List()
 		assert.NilError(t, err)
 		assert.Equal(t, len(bundles), 0)
 	})
@@ -300,54 +300,54 @@ func TestRemoveById(t *testing.T) {
 	defer dockerConfigDir.Remove()
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	assert.NilError(t, err)
 
 	t.Run("error when id does not exist", func(t *testing.T) {
-		idRef, err := FromBundle(relocated.FromBundle(&bundle.Bundle{Name: "not-stored-bundle-name"}))
+		idRef, err := FromAppImage(image.FromBundle(&bundle.Bundle{Name: "not-stored-bundle-name"}))
 		assert.NilError(t, err)
 
-		err = bundleStore.Remove(idRef, false)
+		err = imageStore.Remove(idRef, false)
 		assert.Equal(t, err.Error(), fmt.Sprintf("no such image %q", reference.FamiliarString(idRef)))
 	})
 
 	t.Run("error on multiple repositories", func(t *testing.T) {
-		bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
-		idRef, err := FromBundle(bndl)
+		img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+		idRef, err := FromAppImage(img)
 		assert.NilError(t, err)
-		_, err = bundleStore.Store(idRef, bndl)
+		_, err = imageStore.Store(idRef, img)
 		assert.NilError(t, err)
-		_, err = bundleStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), bndl)
+		_, err = imageStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), img)
 		assert.NilError(t, err)
 
-		err = bundleStore.Remove(idRef, false)
+		err = imageStore.Remove(idRef, false)
 		assert.Equal(t, err.Error(), fmt.Sprintf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(idRef)))
 	})
 
 	t.Run("success on multiple repositories but force", func(t *testing.T) {
-		bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
-		idRef, err := FromBundle(bndl)
+		img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+		idRef, err := FromAppImage(img)
 		assert.NilError(t, err)
-		_, err = bundleStore.Store(idRef, bndl)
+		_, err = imageStore.Store(idRef, img)
 		assert.NilError(t, err)
-		_, err = bundleStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), bndl)
+		_, err = imageStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), img)
 		assert.NilError(t, err)
 
-		err = bundleStore.Remove(idRef, true)
+		err = imageStore.Remove(idRef, true)
 		assert.NilError(t, err)
 	})
 
 	t.Run("success when only one reference exists", func(t *testing.T) {
-		bndl := relocated.FromBundle(&bundle.Bundle{Name: "other-bundle-name"})
+		img := image.FromBundle(&bundle.Bundle{Name: "other-bundle-name"})
 		ref := parseRefOrDie(t, "my-repo/other-bundle:my-tag")
-		_, err = bundleStore.Store(ref, bndl)
+		_, err = imageStore.Store(ref, img)
 
-		idRef, err := FromBundle(bndl)
+		idRef, err := FromAppImage(img)
 		assert.NilError(t, err)
 
-		err = bundleStore.Remove(idRef, false)
+		err = imageStore.Remove(idRef, false)
 		assert.NilError(t, err)
-		bundles, err := bundleStore.List()
+		bundles, err := imageStore.List()
 		assert.NilError(t, err)
 		for _, bref := range bundles {
 			assert.Equal(t, bref == ref, false)
@@ -359,19 +359,19 @@ func TestLookUp(t *testing.T) {
 	defer dockerConfigDir.Remove()
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	assert.NilError(t, err)
-	bndl := relocated.FromBundle(&bundle.Bundle{Name: "bundle-name"})
+	img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	// Adding the bundle referenced by id
-	id, err := bundleStore.Store(nil, bndl)
+	id, err := imageStore.Store(nil, img)
 	assert.NilError(t, err)
 	// Adding the same bundle referenced by a tag
 	ref := parseRefOrDie(t, "my-repo/a-bundle:my-tag")
-	_, err = bundleStore.Store(ref, bndl)
+	_, err = imageStore.Store(ref, img)
 	assert.NilError(t, err)
 	// Adding the same bundle referenced by tag prefixed by docker.io/library
 	dockerIoRef := parseRefOrDie(t, "docker.io/library/a-bundle:my-tag")
-	_, err = bundleStore.Store(dockerIoRef, bndl)
+	_, err = imageStore.Store(dockerIoRef, img)
 	assert.NilError(t, err)
 
 	for _, tc := range []struct {
@@ -425,7 +425,7 @@ func TestLookUp(t *testing.T) {
 	} {
 		t.Run(tc.Name, func(t *testing.T) {
 			fmt.Println(tc.refOrID)
-			ref, err := bundleStore.LookUp(tc.refOrID)
+			ref, err := imageStore.LookUp(tc.refOrID)
 
 			if tc.ExpectedError != "" {
 				assert.Equal(t, err.Error(), tc.ExpectedError)
@@ -445,31 +445,31 @@ func TestScanBundles(t *testing.T) {
 	defer dockerConfigDir.Remove()
 
 	// Adding a bundle which should be referenced by id only
-	bndl1 := relocated.FromBundle(&bundle.Bundle{Name: "bundle-1"})
-	id1, err := FromBundle(bndl1)
+	img1 := image.FromBundle(&bundle.Bundle{Name: "bundle-1"})
+	id1, err := FromAppImage(img1)
 	assert.NilError(t, err)
 	dir1 := dockerConfigDir.Join("app", "bundles", "_ids", id1.String())
 	assert.NilError(t, os.MkdirAll(dir1, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir1, relocated.BundleFilename), []byte(`{"name": "bundle-1"}`), 0644))
+	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir1, image.BundleFilename), []byte(`{"name": "bundle-1"}`), 0644))
 
 	// Adding a bundle which should be referenced by id and tag
-	bndl2 := relocated.FromBundle(&bundle.Bundle{Name: "bundle-2"})
-	id2, err := FromBundle(bndl2)
+	img2 := image.FromBundle(&bundle.Bundle{Name: "bundle-2"})
+	id2, err := FromAppImage(img2)
 	assert.NilError(t, err)
 	dir2 := dockerConfigDir.Join("app", "bundles", "_ids", id2.String())
 	assert.NilError(t, os.MkdirAll(dir2, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, relocated.BundleFilename), []byte(`{"name": "bundle-2"}`), 0644))
+	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, image.BundleFilename), []byte(`{"name": "bundle-2"}`), 0644))
 	dir2 = dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag")
 	assert.NilError(t, os.MkdirAll(dir2, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, relocated.BundleFilename), []byte(`{"name": "bundle-2"}`), 0644))
+	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, image.BundleFilename), []byte(`{"name": "bundle-2"}`), 0644))
 
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	assert.NilError(t, err)
 
 	// Ensure List() and Read() function returns expected bundles
-	refs, err := bundleStore.List()
+	refs, err := imageStore.List()
 	assert.NilError(t, err)
 	expectedRefs := []string{id2.String(), "my-repo/my-bundle:my-tag", id1.String()}
 	refsAsString := func(references []reference.Reference) []string {
@@ -480,15 +480,15 @@ func TestScanBundles(t *testing.T) {
 		return rv
 	}
 	assert.DeepEqual(t, refsAsString(refs), expectedRefs)
-	bndl, err := bundleStore.Read(id1)
+	img, err := imageStore.Read(id1)
 	assert.NilError(t, err)
-	assert.DeepEqual(t, bndl, bndl1)
-	bndl, err = bundleStore.Read(id2)
+	assert.DeepEqual(t, img, img1)
+	img, err = imageStore.Read(id2)
 	assert.NilError(t, err)
-	assert.DeepEqual(t, bndl, bndl2)
-	bndl, err = bundleStore.Read(parseRefOrDie(t, "my-repo/my-bundle:my-tag"))
+	assert.DeepEqual(t, img, img2)
+	img, err = imageStore.Read(parseRefOrDie(t, "my-repo/my-bundle:my-tag"))
 	assert.NilError(t, err)
-	assert.DeepEqual(t, bndl, bndl2)
+	assert.DeepEqual(t, img, img2)
 }
 
 func TestAppendRemoveReference(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 
 	"github.com/docker/app/internal/packager"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 
 	"github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal/cliopts"
@@ -79,7 +79,7 @@ func runCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContextOpt
 }
 
 func runCnab(dockerCli command.Cli, opts runOptions, installerContext *cliopts.InstallerContextOptions) error {
-	bndl, err := relocated.BundleFromFile(opts.cnabBundle)
+	bndl, err := image.FromFile(opts.cnabBundle)
 	if err != nil {
 		return errors.Wrapf(err, "failed to read bundle %q", opts.cnabBundle)
 	}
@@ -87,19 +87,19 @@ func runCnab(dockerCli command.Cli, opts runOptions, installerContext *cliopts.I
 }
 
 func runDockerApp(dockerCli command.Cli, appname string, opts runOptions, installerContext *cliopts.InstallerContextOptions) error {
-	bundleStore, err := prepareBundleStore()
+	imageStore, err := prepareImageStore()
 	if err != nil {
 		return err
 	}
 
-	bndl, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
+	bndl, ref, err := cnab.GetBundle(dockerCli, imageStore, appname)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to find App %q", appname)
 	}
 	return runBundle(dockerCli, bndl, opts, installerContext, ref.String())
 }
 
-func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, installerContext *cliopts.InstallerContextOptions, ref string) (err error) {
+func runBundle(dockerCli command.Cli, bndl *image.AppImage, opts runOptions, installerContext *cliopts.InstallerContextOptions, ref string) (err error) {
 	if err := packager.CheckAppVersion(dockerCli.Err(), bndl.Bundle); err != nil {
 		return err
 	}

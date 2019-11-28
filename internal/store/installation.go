@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 
 	"github.com/docker/cnab-to-oci/relocation"
 
@@ -28,7 +28,7 @@ type Installation struct {
 	Reference     string `json:"reference,omitempty"`
 }
 
-func NewInstallation(name string, reference string, bndl *relocated.Bundle) (*Installation, error) {
+func NewInstallation(name string, reference string, bndl *image.AppImage) (*Installation, error) {
 	c, err := claim.New(name)
 	if err != nil {
 		return nil, err

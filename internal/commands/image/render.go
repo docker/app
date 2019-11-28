@@ -60,18 +60,18 @@ func runRender(dockerCli command.Cli, appname string, opts renderOptions, instal
 	if err != nil {
 		return err
 	}
-	bundleStore, err := s.BundleStore()
+	imageStore, err := s.ImageStore()
 	if err != nil {
 		return err
 	}
-	bndl, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
+	img, ref, err := cnab.GetBundle(dockerCli, imageStore, appname)
 	if err != nil {
 		return errors.Wrapf(err, "could not render %q: no such App image", appname)
 	}
-	if err := packager.CheckAppVersion(dockerCli.Err(), bndl.Bundle); err != nil {
+	if err := packager.CheckAppVersion(dockerCli.Err(), img.Bundle); err != nil {
 		return err
 	}
-	installation, err := appstore.NewInstallation("custom-action", ref.String(), bndl)
+	installation, err := appstore.NewInstallation("custom-action", ref.String(), img)
 	if err != nil {
 		return err
 	}

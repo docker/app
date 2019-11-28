@@ -1,7 +1,7 @@
 package image
 
 import (
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/formatter"
@@ -29,12 +29,12 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 				return err
 			}
 
-			bundleStore, err := appstore.BundleStore()
+			imageStore, err := appstore.ImageStore()
 			if err != nil {
 				return err
 			}
 
-			return runList(dockerCli, options, bundleStore)
+			return runList(dockerCli, options, imageStore)
 		},
 	}
 	flags := cmd.Flags()
@@ -46,8 +46,8 @@ func listCmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runList(dockerCli command.Cli, options imageListOption, bundleStore store.BundleStore) error {
-	images, err := getImageDescriptors(bundleStore)
+func runList(dockerCli command.Cli, options imageListOption, imageStore store.ImageStore) error {
+	images, err := getImageDescriptors(imageStore)
 	if err != nil {
 		return err
 	}
@@ -60,14 +60,14 @@ func runList(dockerCli command.Cli, options imageListOption, bundleStore store.B
 	return Write(ctx, images)
 }
 
-func getImageDescriptors(bundleStore store.BundleStore) ([]imageDesc, error) {
-	references, err := bundleStore.List()
+func getImageDescriptors(imageStore store.ImageStore) ([]imageDesc, error) {
+	references, err := imageStore.List()
 	if err != nil {
 		return nil, err
 	}
 	images := make([]imageDesc, len(references))
 	for i, ref := range references {
-		b, err := bundleStore.Read(ref)
+		b, err := imageStore.Read(ref)
 		if err != nil {
 			return nil, err
 		}
@@ -77,11 +77,11 @@ func getImageDescriptors(bundleStore store.BundleStore) ([]imageDesc, error) {
 	return images, nil
 }
 
-func getImageID(bundle *relocated.Bundle, ref reference.Reference) (string, error) {
+func getImageID(bundle *image.AppImage, ref reference.Reference) (string, error) {
 	id, ok := ref.(store.ID)
 	if !ok {
 		var err error
-		id, err = store.FromBundle(bundle)
+		id, err = store.FromAppImage(bundle)
 		if err != nil {
 			return "", err
 		}
@@ -97,7 +97,7 @@ type imageDesc struct {
 	Digest     string `json:"digest,omitempty"`
 }
 
-func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
+func getImageDesc(bundle *image.AppImage, ref reference.Reference) imageDesc {
 	var id string
 	id, _ = getImageID(bundle, ref)
 	var repository string

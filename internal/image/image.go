@@ -1,4 +1,4 @@
-package relocated
+package image
 
 import (
 	"io/ioutil"
@@ -12,7 +12,7 @@ import (
 	"github.com/docker/go/canonical/json"
 )
 
-type Bundle struct {
+type AppImage struct {
 	*bundle.Bundle
 	RelocationMap relocation.ImageRelocationMap
 }
@@ -23,15 +23,15 @@ const (
 )
 
 // FromBundle returns a RelocatedBundle with an empty relocation map.
-func FromBundle(bndl *bundle.Bundle) *Bundle {
-	return &Bundle{
+func FromBundle(bndl *bundle.Bundle) *AppImage {
+	return &AppImage{
 		Bundle:        bndl,
 		RelocationMap: relocation.ImageRelocationMap{},
 	}
 }
 
-// BundleFromFile creates a relocated bundle based on the bundle file and relocation map.
-func BundleFromFile(filename string) (*Bundle, error) {
+// FromFile creates a app image based on the bundle file and relocation map.
+func FromFile(filename string) (*AppImage, error) {
 	bndl, err := BundleJSON(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read bundle")
@@ -43,14 +43,14 @@ func BundleFromFile(filename string) (*Bundle, error) {
 		return nil, errors.Wrapf(err, "failed to read relocation map")
 	}
 
-	return &Bundle{
+	return &AppImage{
 		Bundle:        bndl,
 		RelocationMap: relocationMap,
 	}, nil
 }
 
 // writeRelocationMap serializes the relocation map and writes it to a file as JSON.
-func (b *Bundle) writeRelocationMap(dest string, mode os.FileMode) error {
+func (b *AppImage) writeRelocationMap(dest string, mode os.FileMode) error {
 	d, err := json.MarshalCanonical(b.RelocationMap)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func (b *Bundle) writeRelocationMap(dest string, mode os.FileMode) error {
 }
 
 // Store a bundle with the relocation map as json files.
-func (b *Bundle) Store(dir string) error {
+func (b *AppImage) Store(dir string) error {
 	// store bundle.json
 	path := filepath.Join(dir, BundleFilename)
 	if err := b.WriteFile(path, 0644); err != nil {
@@ -104,7 +104,7 @@ func RelocationMapJSON(relocationMapPath string) (relocation.ImageRelocationMap,
 	return relocationMap, nil
 }
 
-func (b *Bundle) RelocatedImages() map[string]bundle.Image {
+func (b *AppImage) RelocatedImages() map[string]bundle.Image {
 	images := b.Images
 	for name, def := range images {
 		if img, ok := b.RelocationMap[def.Image]; ok {

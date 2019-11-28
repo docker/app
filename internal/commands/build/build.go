@@ -165,14 +165,14 @@ func persistTags(bndl *bundle.Bundle, tags cliOpts.ListOpts, iidFile string, out
 		onceWriteIIDFile sync.Once
 	)
 	if tags.Len() == 0 {
-		return persistInBundleStore(&onceWriteIIDFile, outWriter, errWriter, bndl, nil, iidFile)
+		return persistInImageStore(&onceWriteIIDFile, outWriter, errWriter, bndl, nil, iidFile)
 	}
 	for _, tag := range tags.GetAll() {
 		ref, err := packager.GetNamedTagged(tag)
 		if err != nil {
 			return nil, err
 		}
-		id, err = persistInBundleStore(&onceWriteIIDFile, outWriter, errWriter, bndl, ref, iidFile)
+		id, err = persistInImageStore(&onceWriteIIDFile, outWriter, errWriter, bndl, ref, iidFile)
 		if err != nil {
 			return nil, err
 		}
@@ -183,8 +183,8 @@ func persistTags(bndl *bundle.Bundle, tags cliOpts.ListOpts, iidFile string, out
 	return id, nil
 }
 
-func persistInBundleStore(once *sync.Once, outWriter io.Writer, errWriter io.Writer, b *bundle.Bundle, ref reference.Reference, iidFileName string) (reference.Digested, error) {
-	id, err := packager.PersistInBundleStore(ref, b)
+func persistInImageStore(once *sync.Once, outWriter io.Writer, errWriter io.Writer, b *bundle.Bundle, ref reference.Reference, iidFileName string) (reference.Digested, error) {
+	id, err := packager.PersistInImageStore(ref, b)
 	if err != nil {
 		return nil, err
 	}
