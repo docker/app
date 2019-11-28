@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
@@ -17,12 +16,6 @@ import (
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-)
-
-const (
-	// imageMapFilePath is the path where the CNAB runtime will put the actual
-	// service to image mapping to use
-	imageMapFilePath = "/cnab/app/image-map.json"
 )
 
 func installAction(instanceName string) error {
@@ -42,12 +35,12 @@ func installAction(instanceName string) error {
 	if err != nil {
 		return err
 	}
-	imageMap, err := getBundleImageMap()
+	bndl, err := getRelocatedBundle()
 	if err != nil {
 		return err
 	}
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
-	rendered, err := render.Render(app, parameters, imageMap)
+	rendered, err := render.Render(app, parameters, bndl.RelocatedImages())
 	if err != nil {
 		return err
 	}
@@ -77,18 +70,6 @@ func getFlagset(orchestrator command.Orchestrator) *pflag.FlagSet {
 		result.String("namespace", os.Getenv(internal.DockerKubernetesNamespaceEnvVar), "")
 	}
 	return result
-}
-
-func getBundleImageMap() (map[string]bundle.Image, error) {
-	mapJSON, err := ioutil.ReadFile(imageMapFilePath)
-	if err != nil {
-		return nil, err
-	}
-	var result map[string]bundle.Image
-	if err := json.Unmarshal(mapJSON, &result); err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 func addLabels(rendered *composetypes.Config) error {

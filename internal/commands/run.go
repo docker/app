@@ -158,7 +158,7 @@ func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, i
 			op.Out = dockerCli.Out()
 			return nil
 		}
-		err = inst.Run(&installation.Claim, creds, cfgFunc)
+		err = inst.Run(&installation.Claim, creds, cfgFunc, cnab.WithRelocationMap(installation))
 	}
 	// Even if the installation failed, the installation is persisted with its failure status,
 	// so any installation needs a clean uninstallation.

@@ -2,12 +2,15 @@ package cnab
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/docker/app/internal/cliopts"
-	store2 "github.com/docker/app/internal/store"
+	"github.com/docker/app/internal/store"
 
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/driver"
@@ -15,7 +18,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context/docker"
-	"github.com/docker/cli/cli/context/store"
+	cliContext "github.com/docker/cli/cli/context/store"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 )
@@ -39,7 +42,7 @@ func RequiredClaimBindMount(c claim.Claim, dockerCli command.Cli) (BindMount, er
 
 // RequiredBindMount Returns the path required to bind mount when running
 // the invocation image.
-func RequiredBindMount(targetContextName string, targetOrchestrator string, s store.Store) (BindMount, error) {
+func RequiredBindMount(targetContextName string, targetOrchestrator string, s cliContext.Store) (BindMount, error) {
 	if targetOrchestrator == "kubernetes" {
 		return BindMount{}, nil
 	}
@@ -119,7 +122,7 @@ func prepareDriver(dockerCli command.Cli, bindMount BindMount, stdout io.Writer)
 	return d, errBuf
 }
 
-func SetupDriver(installation *store2.Installation, dockerCli command.Cli, opts *cliopts.InstallerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
+func SetupDriver(installation *store.Installation, dockerCli command.Cli, opts *cliopts.InstallerContextOptions, stdout io.Writer) (driver.Driver, *bytes.Buffer, error) {
 	dockerCli, err := opts.SetInstallerContext(dockerCli)
 	if err != nil {
 		return nil, nil, err
@@ -130,4 +133,32 @@ func SetupDriver(installation *store2.Installation, dockerCli command.Cli, opts 
 	}
 	driverImpl, errBuf := prepareDriver(dockerCli, bind, stdout)
 	return driverImpl, errBuf, nil
+}
+
+func WithRelocationMap(installation *store.Installation) func(op *driver.Operation) error {
+	return func(op *driver.Operation) error {
+		if err := addRelocationMapToFiles(op, installation); err != nil {
+			return err
+		}
+		relocateInvocationImage(op, installation)
+		return nil
+	}
+}
+
+func addRelocationMapToFiles(op *driver.Operation, installation *store.Installation) error {
+	data, err := json.Marshal(installation.RelocationMap)
+	if err != nil {
+		return errors.Wrap(err, "could not marshal relocation map")
+	}
+	op.Files["/cnab/app/relocation-mapping.json"] = string(data)
+
+	return nil
+}
+
+func relocateInvocationImage(op *driver.Operation, installation *store.Installation) {
+	invocImage := op.Image
+	if relocatedImage, ok := installation.RelocationMap[invocImage.Image]; ok {
+		invocImage.Image = relocatedImage
+		op.Image = invocImage
+	}
 }
