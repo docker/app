@@ -42,8 +42,6 @@ func removeCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 }
 
 func runRemove(dockerCli command.Cli, installationName string, opts removeOptions, installerContext *cliopts.InstallerContextOptions) (mainErr error) {
-	defer muteDockerCli(dockerCli)()
-
 	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
@@ -69,6 +67,8 @@ func runRemove(dockerCli command.Cli, installationName string, opts removeOption
 			fmt.Fprintf(os.Stderr, "deletion forced for running App %q\n", installationName)
 		}()
 	}
+
+	defer muteDockerCli(dockerCli)()
 	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, os.Stdout)
 	if err != nil {
 		return err

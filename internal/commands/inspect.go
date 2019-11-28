@@ -43,7 +43,6 @@ func inspectCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContex
 }
 
 func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOptions, installerContext *cliopts.InstallerContextOptions) error {
-	defer muteDockerCli(dockerCli)()
 	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
@@ -60,6 +59,7 @@ func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOpt
 		return err
 	}
 
+	defer muteDockerCli(dockerCli)()
 	var buf bytes.Buffer
 	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, &buf)
 	if err != nil {

@@ -41,8 +41,6 @@ func updateCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 }
 
 func runUpdate(dockerCli command.Cli, installationName string, opts updateOptions, installerContext *cliopts.InstallerContextOptions) error {
-	defer muteDockerCli(dockerCli)()
-
 	bundleStore, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
@@ -76,6 +74,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		return err
 	}
 
+	defer muteDockerCli(dockerCli)()
 	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, os.Stdout)
 	if err != nil {
 		return err
