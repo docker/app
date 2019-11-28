@@ -33,7 +33,7 @@ func runPull(dockerCli command.Cli, name string) error {
 	if err != nil {
 		return err
 	}
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func runPull(dockerCli command.Cli, name string) error {
 	}
 	tagRef := reference.TagNameOnly(ref)
 
-	bndl, err := cnab.PullBundle(dockerCli, bundleStore, tagRef)
+	bndl, err := cnab.PullBundle(dockerCli, imageStore, tagRef)
 	if err != nil {
 		return errors.Wrap(err, name)
 	}

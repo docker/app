@@ -105,7 +105,7 @@ func muteDockerCli(dockerCli command.Cli) func() {
 	}
 }
 
-func prepareStores(targetContext string) (store.BundleStore, store.InstallationStore, store.CredentialStore, error) {
+func prepareStores(targetContext string) (store.ImageStore, store.InstallationStore, store.CredentialStore, error) {
 	appstore, err := store.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err
@@ -114,7 +114,7 @@ func prepareStores(targetContext string) (store.BundleStore, store.InstallationS
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -122,19 +122,19 @@ func prepareStores(targetContext string) (store.BundleStore, store.InstallationS
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return bundleStore, installationStore, credentialStore, nil
+	return imageStore, installationStore, credentialStore, nil
 }
 
-func prepareBundleStore() (store.BundleStore, error) {
+func prepareImageStore() (store.ImageStore, error) {
 	appstore, err := store.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, err
 	}
-	bundleStore, err := appstore.BundleStore()
+	imageStore, err := appstore.ImageStore()
 	if err != nil {
 		return nil, err
 	}
-	return bundleStore, nil
+	return imageStore, nil
 }
 
 type credentialOptions struct {

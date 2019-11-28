@@ -3,7 +3,7 @@ package image
 import (
 	"fmt"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
@@ -28,29 +28,29 @@ func tagCmd() *cobra.Command {
 				return err
 			}
 
-			bundleStore, err := appstore.BundleStore()
+			imageStore, err := appstore.ImageStore()
 			if err != nil {
 				return err
 			}
 
-			return runTag(bundleStore, args[0], args[1])
+			return runTag(imageStore, args[0], args[1])
 		},
 	}
 
 	return cmd
 }
 
-func runTag(bundleStore store.BundleStore, srcAppImage, destAppImage string) error {
-	srcRef, err := readBundle(srcAppImage, bundleStore)
+func runTag(imageStore store.ImageStore, srcAppImage, destAppImage string) error {
+	srcRef, err := readBundle(srcAppImage, imageStore)
 	if err != nil {
 		return err
 	}
 
-	return storeBundle(srcRef, destAppImage, bundleStore)
+	return storeBundle(srcRef, destAppImage, imageStore)
 }
 
-func readBundle(name string, bundleStore store.BundleStore) (*relocated.Bundle, error) {
-	cnabRef, err := bundleStore.LookUp(name)
+func readBundle(name string, imageStore store.ImageStore) (*image.AppImage, error) {
+	cnabRef, err := imageStore.LookUp(name)
 	if err != nil {
 		switch err.(type) {
 		case *store.UnknownReferenceError:
@@ -61,18 +61,18 @@ func readBundle(name string, bundleStore store.BundleStore) (*relocated.Bundle, 
 
 	}
 
-	bundle, err := bundleStore.Read(cnabRef)
+	bundle, err := imageStore.Read(cnabRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not tag %q: no such App image", name)
 	}
 	return bundle, nil
 }
 
-func storeBundle(bundle *relocated.Bundle, name string, bundleStore store.BundleStore) error {
+func storeBundle(bundle *image.AppImage, name string, imageStore store.ImageStore) error {
 	cnabRef, err := store.StringToNamedRef(name)
 	if err != nil {
 		return err
 	}
-	_, err = bundleStore.Store(cnabRef, bundle)
+	_, err = imageStore.Store(cnabRef, bundle)
 	return err
 }

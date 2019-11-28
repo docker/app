@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/cnab-go/bundle/definition"
@@ -115,8 +115,8 @@ func withParameterAndValues(name, typ string, allowedValues []interface{}) bundl
 	}
 }
 
-func prepareBundle(ops ...bundleOperator) *relocated.Bundle {
-	b := relocated.FromBundle(&bundle.Bundle{})
+func prepareBundle(ops ...bundleOperator) *image.AppImage {
+	b := image.FromBundle(&bundle.Bundle{})
 	for _, op := range ops {
 		op(b.Bundle)
 	}
@@ -126,11 +126,11 @@ func prepareBundle(ops ...bundleOperator) *relocated.Bundle {
 func TestWithOrchestratorParameters(t *testing.T) {
 	testCases := []struct {
 		name     string
-		bundle   *relocated.Bundle
+		bundle   *image.AppImage
 		expected map[string]string
 	}{
 		{
-			name:   "Bundle with orchestrator params",
+			name:   "AppImage with orchestrator params",
 			bundle: prepareBundle(withParameter(internal.ParameterOrchestratorName, "string"), withParameter(internal.ParameterKubernetesNamespaceName, "string")),
 			expected: map[string]string{
 				internal.ParameterOrchestratorName:        "kubernetes",
@@ -138,7 +138,7 @@ func TestWithOrchestratorParameters(t *testing.T) {
 			},
 		},
 		{
-			name:     "Bundle without orchestrator params",
+			name:     "AppImage without orchestrator params",
 			bundle:   prepareBundle(),
 			expected: map[string]string{},
 		},

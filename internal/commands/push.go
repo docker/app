@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/store"
 
 	"github.com/containerd/containerd/platforms"
@@ -27,7 +27,7 @@ import (
 )
 
 const ( // Docker specific annotations and values
-	// DockerAppFormatAnnotation is the top level annotation specifying the kind of the App Bundle
+	// DockerAppFormatAnnotation is the top level annotation specifying the kind of the App AppImage
 	DockerAppFormatAnnotation = "io.docker.app.format"
 	// DockerAppFormatCNAB is the DockerAppFormatAnnotation value for CNAB
 	DockerAppFormatCNAB = "cnab"
@@ -53,7 +53,7 @@ func pushCmd(dockerCli command.Cli) *cobra.Command {
 
 func runPush(dockerCli command.Cli, name string) error {
 	defer muteDockerCli(dockerCli)()
-	bundleStore, err := prepareBundleStore()
+	imageStore, err := prepareImageStore()
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func runPush(dockerCli command.Cli, name string) error {
 		return errors.Wrapf(err, "could not push %q", name)
 	}
 
-	bndl, err := resolveReferenceAndBundle(bundleStore, ref)
+	bndl, err := resolveReferenceAndBundle(imageStore, ref)
 	if err != nil {
 		return err
 	}
@@ -75,8 +75,8 @@ func runPush(dockerCli command.Cli, name string) error {
 	return pushBundle(dockerCli, bndl, cnabRef)
 }
 
-func resolveReferenceAndBundle(bundleStore store.BundleStore, ref reference.Reference) (*relocated.Bundle, error) {
-	bndl, err := bundleStore.Read(ref)
+func resolveReferenceAndBundle(imageStore store.ImageStore, ref reference.Reference) (*image.AppImage, error) {
+	bndl, err := imageStore.Read(ref)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not push %q: no such App image", reference.FamiliarString(ref))
 	}
@@ -88,7 +88,7 @@ func resolveReferenceAndBundle(bundleStore store.BundleStore, ref reference.Refe
 	return bndl, err
 }
 
-func pushBundle(dockerCli command.Cli, bndl *relocated.Bundle, cnabRef reference.Named) error {
+func pushBundle(dockerCli command.Cli, bndl *image.AppImage, cnabRef reference.Named) error {
 	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
 		return errors.Wrap(err, "could not retrieve insecure registries")

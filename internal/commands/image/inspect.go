@@ -58,11 +58,11 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions, inst
 	if err != nil {
 		return err
 	}
-	bundleStore, err := s.BundleStore()
+	imageStore, err := s.ImageStore()
 	if err != nil {
 		return err
 	}
-	bndl, ref, err := cnab.GetBundle(dockerCli, bundleStore, appname)
+	bndl, ref, err := cnab.GetBundle(dockerCli, imageStore, appname)
 
 	if err != nil {
 		return err

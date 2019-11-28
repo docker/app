@@ -5,7 +5,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
 	"gotest.tools/icmd"
@@ -51,7 +51,7 @@ func TestCallCustomStatusAction(t *testing.T) {
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			// docker app install
-			cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, relocated.BundleFilename), "--name", testCase.name)
+			cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, image.BundleFilename), "--name", testCase.name)
 			icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
 			// docker app uninstall
@@ -79,7 +79,7 @@ func TestCnabParameters(t *testing.T) {
 	}()
 
 	// docker app install
-	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, relocated.BundleFilename), "--name", "cnab-parameters",
+	cmd.Command = dockerCli.Command("app", "run", "--cnab-bundle-json", path.Join(testDir, image.BundleFilename), "--name", "cnab-parameters",
 		"--set", "boolParam=true",
 		"--set", "stringParam=value",
 		"--set", "intParam=42")

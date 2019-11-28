@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 
 	"gotest.tools/assert"
 
@@ -16,35 +16,35 @@ import (
 	"github.com/docker/distribution/reference"
 )
 
-type bundleStoreStubForListCmd struct {
-	refMap map[reference.Reference]*relocated.Bundle
+type imageStoreStubForListCmd struct {
+	refMap map[reference.Reference]*image.AppImage
 	// in order to keep the reference in the same order between tests
 	refList []reference.Reference
 }
 
-func (b *bundleStoreStubForListCmd) Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error) {
+func (b *imageStoreStubForListCmd) Store(ref reference.Reference, bndl *image.AppImage) (reference.Digested, error) {
 	b.refMap[ref] = bndl
 	b.refList = append(b.refList, ref)
-	return store.FromBundle(bndl)
+	return store.FromAppImage(bndl)
 }
 
-func (b *bundleStoreStubForListCmd) Read(ref reference.Reference) (*relocated.Bundle, error) {
+func (b *imageStoreStubForListCmd) Read(ref reference.Reference) (*image.AppImage, error) {
 	bndl, ok := b.refMap[ref]
 	if ok {
 		return bndl, nil
 	}
-	return nil, fmt.Errorf("Bundle not found")
+	return nil, fmt.Errorf("AppImage not found")
 }
 
-func (b *bundleStoreStubForListCmd) List() ([]reference.Reference, error) {
+func (b *imageStoreStubForListCmd) List() ([]reference.Reference, error) {
 	return b.refList, nil
 }
 
-func (b *bundleStoreStubForListCmd) Remove(ref reference.Reference, force bool) error {
+func (b *imageStoreStubForListCmd) Remove(ref reference.Reference, force bool) error {
 	return nil
 }
 
-func (b *bundleStoreStubForListCmd) LookUp(refOrID string) (reference.Reference, error) {
+func (b *imageStoreStubForListCmd) LookUp(refOrID string) (reference.Reference, error) {
 	return nil, nil
 }
 
@@ -56,7 +56,7 @@ func TestListCmd(t *testing.T) {
 		parseReference(t, "foo/bar:1.0"),
 		ref,
 	}
-	bundles := []relocated.Bundle{
+	bundles := []image.AppImage{
 		{
 			Bundle: &bundle.Bundle{
 				Name: "Digested App",
@@ -132,20 +132,20 @@ func parseReference(t *testing.T, s string) reference.Reference {
 	return ref
 }
 
-func testRunList(t *testing.T, refs []reference.Reference, bundles []relocated.Bundle, options imageListOption, expectedOutput string) {
+func testRunList(t *testing.T, refs []reference.Reference, bundles []image.AppImage, options imageListOption, expectedOutput string) {
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 	dockerCli, err := command.NewDockerCli(command.WithOutputStream(w))
 	assert.NilError(t, err)
-	bundleStore := &bundleStoreStubForListCmd{
-		refMap:  make(map[reference.Reference]*relocated.Bundle),
+	imageStore := &imageStoreStubForListCmd{
+		refMap:  make(map[reference.Reference]*image.AppImage),
 		refList: []reference.Reference{},
 	}
 	for i, ref := range refs {
-		_, err = bundleStore.Store(ref, &bundles[i])
+		_, err = imageStore.Store(ref, &bundles[i])
 		assert.NilError(t, err)
 	}
-	err = runList(dockerCli, options, bundleStore)
+	err = runList(dockerCli, options, imageStore)
 	assert.NilError(t, err)
 	w.Flush()
 	assert.Equal(t, buf.String(), expectedOutput)

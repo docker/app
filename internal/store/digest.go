@@ -6,7 +6,7 @@ import (
 	"io"
 	"regexp"
 
-	"github.com/docker/app/internal/relocated"
+	"github.com/docker/app/internal/image"
 
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
@@ -50,8 +50,8 @@ func FromString(s string) (ID, error) {
 	return ID{digest}, nil
 }
 
-func FromBundle(bndl *relocated.Bundle) (ID, error) {
-	digest, err := ComputeDigest(bndl)
+func FromAppImage(img *image.AppImage) (ID, error) {
+	digest, err := ComputeDigest(img)
 	return ID{digest}, err
 }
 

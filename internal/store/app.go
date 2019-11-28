@@ -13,8 +13,8 @@ import (
 const (
 	// AppConfigDirectory is the Docker App directory name inside Docker config directory
 	AppConfigDirectory = "app"
-	// BundleStoreDirectory is the bundle store directory name
-	BundleStoreDirectory = "bundles"
+	// ImageStoreDirectory is the bundle store directory name
+	ImageStoreDirectory = "bundles"
 	// CredentialStoreDirectory is the credential store directory name
 	CredentialStoreDirectory = "credentials"
 	// InstallationStoreDirectory is the installations store directory name
@@ -38,7 +38,7 @@ func NewApplicationStore(configDir string) (*ApplicationStore, error) {
 		dir  string
 		perm os.FileMode
 	}{
-		{BundleStoreDirectory, 0755},
+		{ImageStoreDirectory, 0755},
 		{CredentialStoreDirectory, 0700},
 		{InstallationStoreDirectory, 0755},
 	}
@@ -68,13 +68,13 @@ func (a ApplicationStore) CredentialStore(context string) (CredentialStore, erro
 	return &credentialStore{path: path}, nil
 }
 
-// BundleStore initializes and returns a bundle store
-func (a ApplicationStore) BundleStore() (BundleStore, error) {
-	path := filepath.Join(a.path, BundleStoreDirectory)
+// ImageStore initializes and returns a bundle store
+func (a ApplicationStore) ImageStore() (ImageStore, error) {
+	path := filepath.Join(a.path, ImageStoreDirectory)
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return nil, errors.Wrapf(err, "failed to create bundle store directory %q", path)
 	}
-	return NewBundleStore(path)
+	return NewImageStore(path)
 }
 
 func makeDigestedDirectory(context string) string {

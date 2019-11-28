@@ -36,14 +36,14 @@ func rmCmd() *cobra.Command {
 				return err
 			}
 
-			bundleStore, err := appstore.BundleStore()
+			imageStore, err := appstore.ImageStore()
 			if err != nil {
 				return err
 			}
 
 			errs := []string{}
 			for _, arg := range args {
-				if err := runRm(bundleStore, arg, options); err != nil {
+				if err := runRm(imageStore, arg, options); err != nil {
 					errs = append(errs, fmt.Sprintf("Error: %s", err))
 				}
 			}
@@ -57,13 +57,13 @@ func rmCmd() *cobra.Command {
 	return cmd
 }
 
-func runRm(bundleStore store.BundleStore, app string, options rmOptions) error {
-	ref, err := bundleStore.LookUp(app)
+func runRm(imageStore store.ImageStore, app string, options rmOptions) error {
+	ref, err := imageStore.LookUp(app)
 	if err != nil {
 		return err
 	}
 
-	if err := bundleStore.Remove(ref, options.force); err != nil {
+	if err := imageStore.Remove(ref, options.force); err != nil {
 		return err
 	}
 
