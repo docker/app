@@ -76,8 +76,7 @@ func Extract(name string, ops ...func(*types.App) error) (*types.App, error) {
 			types.WithPath(appname),
 			types.WithSource(types.AppSourceSplit),
 		)
-		app, err := loader.LoadFromDirectory(appname, appOpts...)
-		return app, err
+		return loader.LoadFromDirectory(appname, appOpts...)
 	}
 	// not a dir: a tarball package, extract that in a temp dir
 	app, err := loader.LoadFromTar(appname, ops...)

@@ -12,7 +12,6 @@ func NewExternalSecretsRule() Rule {
 }
 
 func (s *externalSecretsValidator) Collect(parent string, key string, value interface{}) {
-
 }
 
 func (s *externalSecretsValidator) Accept(parent string, key string) bool {

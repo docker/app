@@ -53,7 +53,7 @@ func (s *relativePathRule) Validate(value interface{}) []error {
 			}
 
 			parts := strings.Split(str, ":")
-			if len(parts) != 2 {
+			if len(parts) <= 1 {
 				errs = append(errs, fmt.Errorf("invalid volume definition (%q) in service %q", str, s.service))
 				continue
 			}
