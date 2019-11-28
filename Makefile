@@ -104,19 +104,6 @@ coverage: coverage-test-unit coverage-test-e2e ## run tests with coverage
 	go tool cover -func _build/cov/all.out
 	go tool cover -html _build/cov/all.out -o _build/cov/coverage.html
 
-fossa-analyze:
-	docker run -i --rm -e FOSSA_API_KEY \
-		-e GO111MODULE=off \
-		-v $(CURDIR)/$*:/go/src/github.com/docker/app \
-		-w /go/src/github.com/docker/app \
-		$(BUILD_ANALYZER) analyze $(FOSSA_OPTS) --branch $(BRANCH_NAME)
-
-fossa-test:
-	docker run -i --rm -e FOSSA_API_KEY \
-	-v $(CURDIR)/$*:/go/src/github.com/docker/app \
-	-w /go/src/github.com/docker/app \
-	$(BUILD_ANALYZER) test --debug
-
 clean: ## clean build artifacts
 	$(call rmdir,bin)
 	$(call rmdir,_build)
