@@ -2,10 +2,6 @@ PKG_NAME := github.com/docker/app
 BIN_NAME ?= docker-app
 E2E_NAME := $(BIN_NAME)-e2e
 
-# Variables for fossa scan
-BUILD_ANALYZER?=dockereng/fossa-analyzer:1.0.10
-FOSSA_OPTS?=--option all-tags:true --option allow-unresolved:true
-
 ALPINE_VERSION=3.10.3
 
 # Failing to resolve sh.exe to a full path denotes a windows vanilla shell.
