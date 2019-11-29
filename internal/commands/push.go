@@ -71,15 +71,19 @@ func runPush(dockerCli command.Cli, name string) error {
 		return err
 	}
 
-	cnabRef := reference.TagNameOnly(ref)
-
 	// Push the bundle
-	dg, err := pushBundle(dockerCli, bndl, cnabRef)
+	dg, err := pushBundle(dockerCli, bndl, ref)
 	if err != nil {
-		return errors.Wrapf(err, "could not push %q", cnabRef)
+		return errors.Wrapf(err, "could not push %q", ref)
+	}
+
+	// we can't just re-use bndl var here, as fixup did rewrite the bundle
+	bndl, err = resolveReferenceAndBundle(bundleStore, ref)
+	if err != nil {
+		return err
 	}
 	bndl.RepoDigest = dg
-	_, err = bundleStore.Store(bndl, cnabRef)
+	_, err = bundleStore.Store(bndl, ref)
 	return err
 }
 

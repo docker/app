@@ -50,7 +50,7 @@ func BundleFromFile(filename string) (*Bundle, error) {
 	digestFileName := filepath.Join(filepath.Dir(filename), DigestFilename)
 	dg, err := repoDigest(digestFileName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read relocation map")
+		return nil, errors.Wrapf(err, "failed to read digest file")
 	}
 
 	return &Bundle{
@@ -72,12 +72,16 @@ func (b *Bundle) writeRelocationMap(dest string, mode os.FileMode) error {
 // writeRepoDigest store the repo digest to a file as plain text.
 func (b *Bundle) writeRepoDigest(dest string, mode os.FileMode) error {
 	if b.RepoDigest == "" {
-		if _, err := os.Stat(dest); os.IsNotExist(err) {
-			return nil
-		}
-		return os.Remove(dest)
+		return cleanRepoDigest(dest)
 	}
 	return ioutil.WriteFile(dest, []byte(b.RepoDigest), mode)
+}
+
+func cleanRepoDigest(dest string) error {
+	if _, err := os.Stat(dest); os.IsNotExist(err) {
+		return nil
+	}
+	return os.Remove(dest)
 }
 
 // Store a bundle with the relocation map as json files.
@@ -153,9 +157,5 @@ func repoDigest(digestFileName string) (digest.Digest, error) {
 	if err != nil {
 		return "", err
 	}
-	dg, err := digest.Parse(string(bytes))
-	if err != nil {
-		return "", err
-	}
-	return dg, nil
+	return digest.Parse(string(bytes))
 }
