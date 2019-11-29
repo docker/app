@@ -6,9 +6,9 @@ maintainers:
   email: dev@example.com
 
 
-SERVICE REPLICAS PORTS     IMAGE
-web1    2        8080-8100 nginx:latest
-web2    2        9080-9100 nginx:latest
+SERVICE             REPLICAS            PORTS               IMAGE
+web1                2                   8080-8100           nginx:latest
+web2                2                   9080-9100           nginx:latest
 
 NETWORK
 my-network1
@@ -22,9 +22,9 @@ SECRET
 my-secret1
 my-secret2
 
-PARAMETER VALUE
-port      8080
-text      hello
+PARAMETER           VALUE
+port                8080
+text                hello
 
-ATTACHMENT SIZE
-config.cfg 9B
+ATTACHMENT          SIZE
+config.cfg          9B
