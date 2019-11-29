@@ -11,6 +11,7 @@ import (
 	"github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
@@ -40,8 +41,6 @@ func updateCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 }
 
 func runUpdate(dockerCli command.Cli, installationName string, opts updateOptions, installerContext *cliopts.InstallerContextOptions) error {
-	defer muteDockerCli(dockerCli)()
-
 	bundleStore, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err
@@ -63,6 +62,10 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		}
 		installation.Bundle = b.Bundle
 	}
+	if err := packager.CheckAppVersion(dockerCli.Err(), installation.Bundle); err != nil {
+		return err
+	}
+
 	if err := bundle.MergeBundleParameters(installation,
 		bundle.WithFileParameters(opts.ParametersFiles),
 		bundle.WithCommandLineParameters(opts.Overrides),
@@ -71,6 +74,7 @@ func runUpdate(dockerCli command.Cli, installationName string, opts updateOption
 		return err
 	}
 
+	defer muteDockerCli(dockerCli)()
 	driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, os.Stdout)
 	if err != nil {
 		return err

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/app/internal/packager"
+
 	"github.com/docker/app/internal/relocated"
 
 	"github.com/deislabs/cnab-go/driver"
@@ -98,6 +100,9 @@ func runDockerApp(dockerCli command.Cli, appname string, opts runOptions, instal
 }
 
 func runBundle(dockerCli command.Cli, bndl *relocated.Bundle, opts runOptions, installerContext *cliopts.InstallerContextOptions, ref string) (err error) {
+	if err := packager.CheckAppVersion(dockerCli.Err(), bndl.Bundle); err != nil {
+		return err
+	}
 	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
 	if err != nil {
 		return err

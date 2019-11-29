@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/docker/app/internal/packager"
+
 	"github.com/deislabs/cnab-go/action"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cliopts"
@@ -52,7 +54,6 @@ func inspectCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContex
 }
 
 func runInspect(dockerCli command.Cli, appname string, opts inspectOptions, installerContext *cliopts.InstallerContextOptions) error {
-	defer muteDockerCli(dockerCli)()
 	s, err := appstore.NewApplicationStore(config.Dir())
 	if err != nil {
 		return err
@@ -66,6 +67,9 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions, inst
 	if err != nil {
 		return err
 	}
+	if err := packager.CheckAppVersion(dockerCli.Err(), bndl.Bundle); err != nil {
+		return err
+	}
 
 	format := "json"
 	if opts.pretty {
@@ -77,6 +81,7 @@ func runInspect(dockerCli command.Cli, appname string, opts inspectOptions, inst
 		return err
 	}
 
+	defer muteDockerCli(dockerCli)()
 	if _, hasAction := installation.Bundle.Actions[internal.ActionInspectName]; hasAction {
 		driverImpl, errBuf, err := cnab.SetupDriver(installation, dockerCli, installerContext, os.Stdout)
 		if err != nil {

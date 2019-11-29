@@ -2,6 +2,8 @@ package packager
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"time"
 
 	"github.com/deislabs/cnab-go/bundle"
@@ -10,16 +12,19 @@ import (
 
 const (
 	// DockerAppCustomVersion1_0_0 is the custom payload version 1.0.0
-	DockerAppCustomVersion1_0_0 = "1.0.0"
+	DockerAppPayloadVersion1_0_0 = "1.0.0"
 
 	// DockerAppCustomVersionCurrent the current payload version
-	DockerAppCustomVersionCurrent = DockerAppCustomVersion1_0_0
+	// The version must be bumped each time the Payload format change.
+	DockerAppPayloadVersionCurrent = DockerAppPayloadVersion1_0_0
 )
 
 // DockerAppCustom contains extension custom data that docker app injects
 // in the bundle.
 type DockerAppCustom struct {
-	Version string          `json:"version,omitempty"`
+	// Payload format version
+	Version string `json:"version,omitempty"`
+	// Custom payload format depends on version
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
@@ -28,7 +33,13 @@ type CustomPayloadCreated interface {
 	CreatedTime() time.Time
 }
 
+// CustomPayloadAppVersion is a custom payload with a docker app version
+type CustomPayloadAppVersion interface {
+	AppVersion() string
+}
+
 type payloadV1_0 struct {
+	Version string    `json:"app-version"`
 	Created time.Time `json:"created"`
 }
 
@@ -36,13 +47,37 @@ func (p payloadV1_0) CreatedTime() time.Time {
 	return p.Created
 }
 
+func (p payloadV1_0) AppVersion() string {
+	return p.Version
+}
+
 func newCustomPayload() (json.RawMessage, error) {
-	p := payloadV1_0{Created: time.Now().UTC()}
+	p := payloadV1_0{Created: time.Now().UTC(), Version: internal.Version}
 	j, err := json.Marshal(&p)
 	if err != nil {
 		return nil, err
 	}
 	return j, nil
+}
+
+// CheckAppVersion
+func CheckAppVersion(stderr io.Writer, bndl *bundle.Bundle) error {
+	payload, err := CustomPayload(bndl)
+	if err != nil {
+		return err
+	}
+	if payload == nil {
+		return nil
+	}
+
+	var version string
+	if versionPayload, ok := payload.(CustomPayloadAppVersion); ok {
+		version = versionPayload.AppVersion()
+	}
+	if version != internal.Version {
+		fmt.Fprintf(stderr, "WARNING: App Image has been built with a different version of docker app: %q\n", version)
+	}
+	return nil
 }
 
 // CustomPayload parses and returns the bundle's custom payload
@@ -53,7 +88,7 @@ func CustomPayload(b *bundle.Bundle) (interface{}, error) {
 	}
 
 	switch version := custom.Version; version {
-	case DockerAppCustomVersion1_0_0:
+	case DockerAppPayloadVersion1_0_0:
 		var payload payloadV1_0
 		if err := json.Unmarshal(custom.Payload, &payload); err != nil {
 			return nil, err

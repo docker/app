@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
@@ -46,7 +47,9 @@ func runPull(dockerCli command.Cli, name string) error {
 	if err != nil {
 		return errors.Wrap(err, name)
 	}
-
+	if err := packager.CheckAppVersion(dockerCli.Err(), bndl.Bundle); err != nil {
+		return err
+	}
 	fmt.Fprintf(os.Stdout, "Successfully pulled %q (%s) from %s\n", bndl.Name, bndl.Version, ref.String())
 
 	return nil

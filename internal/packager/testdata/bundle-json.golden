@@ -184,6 +184,7 @@
     "com.docker.app": {
       "version": "%s",
       "payload": {
+        "app-version": "%s",
         "created": "%s"
       }
     }
