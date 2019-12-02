@@ -36,7 +36,7 @@ func removeCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 		},
 	}
 	opts.credentialOptions.addFlags(cmd.Flags())
-	cmd.Flags().BoolVar(&opts.force, "force", false, "Force the removal of a running App")
+	cmd.Flags().BoolVarP(&opts.force, "force", "f", false, "Force the removal of a running App")
 
 	return cmd
 }
