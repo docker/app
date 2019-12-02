@@ -1,10 +1,8 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
@@ -17,6 +15,7 @@ import (
 	"github.com/deislabs/cnab-go/credentials"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
 
@@ -40,16 +39,13 @@ func removeCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 				return err
 			}
 
-			errs := []string{}
+			var failures *multierror.Error
 			for _, arg := range args {
 				if err := runRemove(dockerCli, arg, opts, installerContext, installationStore, credentialStore); err != nil {
-					errs = append(errs, fmt.Sprintf("Error: %s", err))
+					failures = multierror.Append(failures, err)
 				}
 			}
-			if len(errs) > 0 {
-				return errors.New(strings.Join(errs, "\n"))
-			}
-			return nil
+			return failures.ErrorOrNil()
 		},
 	}
 	opts.credentialOptions.addFlags(cmd.Flags())
