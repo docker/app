@@ -20,7 +20,7 @@ PKG_PATH := /go/src/$(PKG_NAME)
 
 
 CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(BUILD_TAG)
-CNAB_BASE_INVOCATION_IMAGE_PATH := _build/invocation-image.tar
+CNAB_BASE_INVOCATION_IMAGE_PATH := _build/invocation-image
 
 PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(TAG)
 
@@ -121,21 +121,36 @@ specification/bindata.go: specification/schemas/*.json build_dev_image
 schemas: specification/bindata.go ## generate specification/bindata.go from json schemas
 
 invocation-image:
-	docker build -f Dockerfile.invocation-image $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME) .
+	docker build -f Dockerfile.invocation-image $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME) -t $(CNAB_BASE_INVOCATION_IMAGE_NAME)-amd64 --platform=amd64 .
+
+invocation-image-arm64:
+	docker build -f Dockerfile.invocation-image $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME)-arm64 --platform=arm64 .
+
+invocation-image-cross: invocation-image invocation-image-arm64
 
 save-invocation-image-tag:
 	docker tag $(CNAB_BASE_INVOCATION_IMAGE_NAME) docker/cnab-app-base:$(INVOCATION_IMAGE_TAG)
 	docker save docker/cnab-app-base:$(INVOCATION_IMAGE_TAG) -o _build/$(OUTPUT)
 
-save-invocation-image: invocation-image
+save-invocation-image:
 	@$(call mkdir,_build)
-	docker save $(CNAB_BASE_INVOCATION_IMAGE_NAME) -o $(CNAB_BASE_INVOCATION_IMAGE_PATH)
+	docker save $(CNAB_BASE_INVOCATION_IMAGE_NAME) -o $(CNAB_BASE_INVOCATION_IMAGE_PATH).tar
+
+save-invocation-image-cross: save-invocation-image
+	docker save $(CNAB_BASE_INVOCATION_IMAGE_NAME)-arm64 -o $(CNAB_BASE_INVOCATION_IMAGE_PATH)-arm64.tar
 
 push-invocation-image:
+	# tag and push linux/amd64
 	docker tag $(CNAB_BASE_INVOCATION_IMAGE_NAME) $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)
 	docker push $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)
+	# tag and push linux/arm64
+	docker tag $(CNAB_BASE_INVOCATION_IMAGE_NAME)-arm64 $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)-arm64
+	docker push $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)-arm64
+	# create and push manifest list
+	docker manifest create $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME) $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME) $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)-arm64
+	docker manifest push $(PUSH_CNAB_BASE_INVOCATION_IMAGE_NAME)
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage coverage-run coverage-results shell build_dev_image tars vendor check-vendor schemas help invocation-image save-invocation-image save-invocation-image-tag push-invocation-image
+.PHONY: lint test-e2e test-unit test cli-cross cross e2e-cross coverage coverage-run coverage-results shell build_dev_image tars vendor check-vendor schemas help invocation-image invocation-image-arm64 invocation-image-cross save-invocation-image save-invocation-image-tag push-invocation-image

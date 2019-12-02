@@ -65,19 +65,21 @@ pipeline {
                         dir('src/github.com/docker/app') {
                             checkout scm
                             ansiColor('xterm') {
-                                sh 'make -f docker.Makefile save-invocation-image'
+                                sh 'make -f docker.Makefile invocation-image-cross save-invocation-image-cross'
                                 sh 'make -f docker.Makefile save-invocation-image-tag INVOCATION_IMAGE_TAG=$TAG-coverage OUTPUT=coverage-invocation-image.tar'
                             }
                             dir('_build') {
                                 stash name: 'invocation-image', includes: 'invocation-image.tar'
+                                stash name: 'invocation-image-arm64', includes: 'invocation-image-arm64.tar'
                                 stash name: 'coverage-invocation-image', includes: 'coverage-invocation-image.tar'
-                                archiveArtifacts 'invocation-image.tar'
+                                archiveArtifacts 'invocation-image*.tar'
                             }
                         }
                     }
                     post {
                         always {
                             sh 'docker rmi docker/cnab-app-base:$TAG'
+                            sh 'docker rmi docker/cnab-app-base:$TAG-arm64'
                             sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
                             deleteDir()
                         }
@@ -250,6 +252,8 @@ pipeline {
                     dir('_build') {
                         unstash "invocation-image"
                         sh 'docker load -i invocation-image.tar'
+                        unstash "invocation-image-arm64"
+                        sh 'docker load -i invocation-image-arm64.tar'
                     }
                     ansiColor('xterm') {
                         sh 'make -f docker.Makefile push-invocation-image'
@@ -264,6 +268,7 @@ pipeline {
             post {
                 always {
                     sh 'docker rmi docker/cnab-app-base:$TAG'
+                    sh 'docker rmi docker/cnab-app-base:$TAG-arm64'
                     deleteDir()
                 }
             }
