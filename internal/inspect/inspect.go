@@ -280,7 +280,7 @@ func printSection(out io.Writer, len int, printer func(io.Writer), headers ...st
 		return
 	}
 	fmt.Fprintln(out)
-	w := tabwriter.NewWriter(out, 0, 0, 1, ' ', 0)
+	w := tabwriter.NewWriter(out, 20, 1, 3, ' ', 0)
 	fmt.Fprintln(w, strings.Join(headers, "\t"))
 	printer(w)
 	w.Flush()

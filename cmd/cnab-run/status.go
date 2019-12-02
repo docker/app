@@ -179,7 +179,7 @@ func runningServices(cli command.Cli, instanceName string) ([]swarmtypes.Service
 }
 
 func printServices(out io.Writer, services []swarmtypes.Service) error {
-	w := tabwriter.NewWriter(out, 0, 0, 1, ' ', 0)
+	w := tabwriter.NewWriter(out, 20, 2, 3, ' ', 0)
 	printHeaders(w)
 
 	for _, service := range services {

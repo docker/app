@@ -106,7 +106,7 @@ func runList(dockerCli command.Cli, opts listOptions, installerContext *cliopts.
 		return tmpl.Execute(dockerCli.Out(), installations)
 	}
 
-	w := tabwriter.NewWriter(dockerCli.Out(), 0, 0, 1, ' ', 0)
+	w := tabwriter.NewWriter(dockerCli.Out(), 20, 1, 3, ' ', 0)
 	printHeaders(w)
 
 	for _, installation := range installations {
