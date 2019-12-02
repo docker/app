@@ -1,12 +1,15 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/store"
 
 	"github.com/deislabs/cnab-go/driver"
 
@@ -30,9 +33,23 @@ func removeCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 		Short:   "Remove a running App",
 		Aliases: []string{"remove"},
 		Example: `$ docker app rm myrunningapp`,
-		Args:    cli.ExactArgs(1),
+		Args:    cli.RequiresMinArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRemove(dockerCli, args[0], opts, installerContext)
+			_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
+			if err != nil {
+				return err
+			}
+
+			errs := []string{}
+			for _, arg := range args {
+				if err := runRemove(dockerCli, arg, opts, installerContext, installationStore, credentialStore); err != nil {
+					errs = append(errs, fmt.Sprintf("Error: %s", err))
+				}
+			}
+			if len(errs) > 0 {
+				return errors.New(strings.Join(errs, "\n"))
+			}
+			return nil
 		},
 	}
 	opts.credentialOptions.addFlags(cmd.Flags())
@@ -41,12 +58,12 @@ func removeCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 	return cmd
 }
 
-func runRemove(dockerCli command.Cli, installationName string, opts removeOptions, installerContext *cliopts.InstallerContextOptions) (mainErr error) {
-	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
-	if err != nil {
-		return err
-	}
-
+func runRemove(dockerCli command.Cli,
+	installationName string,
+	opts removeOptions,
+	installerContext *cliopts.InstallerContextOptions,
+	installationStore store.InstallationStore,
+	credentialStore store.CredentialStore) (mainErr error) {
 	installation, err := installationStore.Read(installationName)
 	if err != nil {
 		return err
