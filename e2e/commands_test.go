@@ -341,16 +341,8 @@ func TestDockerAppLifecycle(t *testing.T) {
 
 		// Install a Docker Application Package with an existing failed installation is fine
 		cmd.Command = dockerCli.Command("app", "run", appName, "--name", appName)
-		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
-			[]string{
-				fmt.Sprintf("WARNING: installing over previously failed installation %q", appName),
-				fmt.Sprintf("Creating network %s_back", appName),
-				fmt.Sprintf("Creating network %s_front", appName),
-				fmt.Sprintf("Creating service %s_db", appName),
-				fmt.Sprintf("Creating service %s_api", appName),
-				fmt.Sprintf("Creating service %s_web", appName),
-			})
-		assertAppLabels(t, &cmd, appName, "db")
+		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), expectedAppRunOutput(appName, true))
+		assertAppDbLabels(t, &cmd, appName)
 
 		// List the installed application
 		cmd.Command = dockerCli.Command("app", "ls")
@@ -375,19 +367,62 @@ func TestDockerAppLifecycle(t *testing.T) {
 				fmt.Sprintf("Updating service %s_api", appName),
 				fmt.Sprintf("Updating service %s_web", appName),
 			})
-		assertAppLabels(t, &cmd, appName, "db")
+		assertAppDbLabels(t, &cmd, appName)
 
 		// Uninstall the application
 		cmd.Command = dockerCli.Command("app", "rm", appName)
-		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(),
-			[]string{
-				fmt.Sprintf("Removing service %s_api", appName),
-				fmt.Sprintf("Removing service %s_db", appName),
-				fmt.Sprintf("Removing service %s_web", appName),
-				fmt.Sprintf("Removing network %s_front", appName),
-				fmt.Sprintf("Removing network %s_back", appName),
-			})
+		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), expectedAppRmOutput(appName))
 	})
+}
+
+func TestDockerAppLifecycleMultiRm(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		appName := strings.ToLower(strings.Replace(t.Name(), "/", "_", 1))
+		tmpDir := fs.NewDir(t, appName)
+		defer tmpDir.Remove()
+
+		cmd.Command = dockerCli.Command("app", "build", "--tag", appName, "testdata/simple")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		// Install multiple applications
+		cmd.Command = dockerCli.Command("app", "run", appName, "--name", appName)
+		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), expectedAppRunOutput(appName, false))
+		assertAppDbLabels(t, &cmd, appName)
+		appName2 := appName + "2"
+		cmd.Command = dockerCli.Command("app", "run", appName, "--name", appName2, "--set", "web_port=8083")
+		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), expectedAppRunOutput(appName2, false))
+		assertAppDbLabels(t, &cmd, appName2)
+
+		// Uninstall multiple applications
+		cmd.Command = dockerCli.Command("app", "rm", appName, appName2)
+		checkContains(t, icmd.RunCmd(cmd).Assert(t, icmd.Success).Combined(), append(expectedAppRmOutput(appName), expectedAppRmOutput(appName2)...))
+	})
+}
+
+func expectedAppRunOutput(appName string, prevFailed bool) []string {
+	expected := []string{}
+	if prevFailed {
+		expected = append(expected, fmt.Sprintf("WARNING: installing over previously failed installation %q", appName))
+	}
+	expected = append(expected,
+		fmt.Sprintf("Creating network %s_back", appName),
+		fmt.Sprintf("Creating network %s_front", appName),
+		fmt.Sprintf("Creating service %s_db", appName),
+		fmt.Sprintf("Creating service %s_api", appName),
+		fmt.Sprintf("Creating service %s_web", appName),
+	)
+	return expected
+}
+
+func expectedAppRmOutput(appName string) []string {
+	return []string{
+		fmt.Sprintf("Removing service %s_api", appName),
+		fmt.Sprintf("Removing service %s_db", appName),
+		fmt.Sprintf("Removing service %s_web", appName),
+		fmt.Sprintf("Removing network %s_front", appName),
+		fmt.Sprintf("Removing network %s_back", appName),
+	}
 }
 
 func TestCredentials(t *testing.T) {
@@ -499,8 +534,8 @@ func TestCredentials(t *testing.T) {
 	})
 }
 
-func assertAppLabels(t *testing.T, cmd *icmd.Cmd, appName, containerName string) {
-	cmd.Command = dockerCli.Command("inspect", fmt.Sprintf("%s_%s", appName, containerName))
+func assertAppDbLabels(t *testing.T, cmd *icmd.Cmd, appName string) {
+	cmd.Command = dockerCli.Command("inspect", fmt.Sprintf("%s_db", appName))
 	checkContains(t, icmd.RunCmd(*cmd).Assert(t, icmd.Success).Combined(),
 		[]string{
 			fmt.Sprintf(`"%s": "%s"`, internal.LabelAppNamespace, appName),
