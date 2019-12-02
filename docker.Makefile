@@ -39,6 +39,7 @@ shell: build_dev_image ## run a shell in the docker build image
 cross: create_bin ## cross-compile binaries (linux, darwin, windows)
 	docker build $(BUILD_ARGS) --output type=local,dest=./bin/ --target=cross -t $(CROSS_IMAGE_NAME) .
 	@$(call chmod,+x,bin/$(BIN_NAME)-linux)
+	@$(call chmod,+x,bin/$(BIN_NAME)-linux-arm64)
 	@$(call chmod,+x,bin/$(BIN_NAME)-darwin)
 	@$(call chmod,+x,bin/$(BIN_NAME)-windows.exe)
 
@@ -60,6 +61,7 @@ e2e-cross: create_bin
 tars:
 	tar --transform='flags=r;s|$(BIN_NAME)-linux|$(BIN_NAME)-plugin-linux|' -czf bin/$(BIN_NAME)-linux.tar.gz -C bin $(BIN_NAME)-linux
 	tar czf bin/$(BIN_NAME)-e2e-linux.tar.gz -C bin $(BIN_NAME)-e2e-linux
+	tar --transform='flags=r;s|$(BIN_NAME)-linux-arm64|$(BIN_NAME)-plugin-linux-arm64|' -czf bin/$(BIN_NAME)-linux-arm64.tar.gz -C bin $(BIN_NAME)-linux-arm64
 	tar --transform='flags=r;s|$(BIN_NAME)-darwin|$(BIN_NAME)-plugin-darwin|' -czf bin/$(BIN_NAME)-darwin.tar.gz -C bin $(BIN_NAME)-darwin
 	tar czf bin/$(BIN_NAME)-e2e-darwin.tar.gz -C bin $(BIN_NAME)-e2e-darwin
 	tar --transform='flags=r;s|$(BIN_NAME)-windows|$(BIN_NAME)-plugin-windows|' -czf bin/$(BIN_NAME)-windows.tar.gz -C bin $(BIN_NAME)-windows.exe
