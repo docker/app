@@ -79,12 +79,12 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  branch = "master"
-  digest = "1:da4daad2ec1737eec4ebeeed7afedb631711f96bbac0c361a17a4d0369d00c6d"
+  digest = "1:ad9bef47052721448e3f3a8bb56f333efbc6474c6744dd8c4670c378ee21c0bb"
   name = "github.com/containerd/console"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "0650fd9eeb50bab4fc99dceb9f2e14cf58f36e7f"
+  revision = "f652dc3e99a9f4aa760deb9b4b28edb7c4e5001a"
+  source = "github.com/ulyssessouza/console"
 
 [[projects]]
   digest = "1:a40540af5e9f6f578a0473156f6ddb554aba4e96de5527648cfcc4d074f3120a"
@@ -217,18 +217,20 @@
   version = "v0.7.1-beta1"
 
 [[projects]]
-  digest = "1:fdf76ff539694e8aba8e9c60e7cc1dead88d21c9dc09e5a330104adad0887440"
+  digest = "1:db6ae89e20ff371a1c7786d778abb9163bac50ba726bb2e5d2257d72eaf24885"
   name = "github.com/docker/buildx"
   packages = [
     "build",
     "driver",
     "driver/docker",
+    "store",
     "util/imagetools",
+    "util/platformutil",
     "util/progress",
   ]
   pruneopts = "NUT"
-  revision = "6db68d029599c6710a32aa7adcba8e5a344795a7"
-  version = "v0.3.1"
+  revision = "5941345e21ebda43723a475380135fe3741d6b3c"
+  source = "github.com/ulyssessouza/buildx"
 
 [[projects]]
   digest = "1:70c71dd9f1dc81872e11415441714469cd8231c85f26b709a4f48c0c3f81d4ae"
@@ -1415,6 +1417,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/containerd/console",
     "github.com/containerd/containerd/log",
     "github.com/containerd/containerd/platforms",
     "github.com/deislabs/cnab-go/action",
