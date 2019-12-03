@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/docker/app/internal/relocated"
 
@@ -84,10 +83,10 @@ func TestListCmd(t *testing.T) {
 	}{
 		{
 			name: "TestList",
-			expectedOutput: `REPOSITORY          TAG                 APP IMAGE ID        APP NAME            CREATED             
-foo/bar             <none>              3f825b2d0657        Digested App        N/A                 
-foo/bar             1.0                 9aae408ee04f        Foo App             N/A                 
-<none>              <none>              a855ac937f2e        Quiet App           N/A                 
+			expectedOutput: `REPOSITORY          TAG                 APP IMAGE ID        APP NAME            
+foo/bar             <none>              3f825b2d0657        Digested App        
+foo/bar             1.0                 9aae408ee04f        Foo App             
+<none>              <none>              a855ac937f2e        Quiet App           
 `,
 			options: imageListOption{format: "table"},
 		},
@@ -103,10 +102,10 @@ a855ac937f2e        sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc
 		{
 			name: "TestListWithDigests",
 			//nolint:lll
-			expectedOutput: `REPOSITORY          TAG                 DIGEST                                                                    APP IMAGE ID        APP NAME                                CREATED             
-foo/bar             <none>              sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865   3f825b2d0657        Digested App                            N/A                 
-foo/bar             1.0                 <none>                                                                    9aae408ee04f        Foo App                                 N/A                 
-<none>              <none>              sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087   a855ac937f2e        Quiet App                               N/A                 
+			expectedOutput: `REPOSITORY          TAG                 DIGEST                                                                    APP IMAGE ID        APP NAME                                
+foo/bar             <none>              sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865   3f825b2d0657        Digested App                            
+foo/bar             1.0                 <none>                                                                    9aae408ee04f        Foo App                                 
+<none>              <none>              sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087   a855ac937f2e        Quiet App                               
 `,
 			options: imageListOption{format: "table", digests: true},
 		},
@@ -125,22 +124,6 @@ a855ac937f2e
 			testRunList(t, refs, bundles, tc.options, tc.expectedOutput)
 		})
 	}
-}
-
-func TestSortImages(t *testing.T) {
-	images := []imageDesc{
-		{ID: "1", Created: time.Date(2016, time.August, 15, 0, 0, 0, 0, time.UTC)},
-		{ID: "2"},
-		{ID: "3"},
-		{ID: "4", Created: time.Date(2018, time.August, 15, 0, 0, 0, 0, time.UTC)},
-		{ID: "5", Created: time.Date(2017, time.August, 15, 0, 0, 0, 0, time.UTC)},
-	}
-	sortImages(images)
-	assert.Equal(t, "4", images[0].ID)
-	assert.Equal(t, "5", images[1].ID)
-	assert.Equal(t, "1", images[2].ID)
-	assert.Equal(t, "2", images[3].ID)
-	assert.Equal(t, "3", images[4].ID)
 }
 
 func parseReference(t *testing.T, s string) reference.Reference {

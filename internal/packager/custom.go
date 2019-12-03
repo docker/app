@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
@@ -28,23 +27,13 @@ type DockerAppCustom struct {
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
-// CustomPayloadCreated is a custom payload with a created time
-type CustomPayloadCreated interface {
-	CreatedTime() time.Time
-}
-
 // CustomPayloadAppVersion is a custom payload with a docker app version
 type CustomPayloadAppVersion interface {
 	AppVersion() string
 }
 
 type payloadV1_0 struct {
-	Version string    `json:"app-version"`
-	Created time.Time `json:"created"`
-}
-
-func (p payloadV1_0) CreatedTime() time.Time {
-	return p.Created
+	Version string `json:"app-version"`
 }
 
 func (p payloadV1_0) AppVersion() string {
@@ -52,7 +41,7 @@ func (p payloadV1_0) AppVersion() string {
 }
 
 func newCustomPayload() (json.RawMessage, error) {
-	p := payloadV1_0{Created: time.Now().UTC(), Version: internal.Version}
+	p := payloadV1_0{Version: internal.Version}
 	j, err := json.Marshal(&p)
 	if err != nil {
 		return nil, err
@@ -60,7 +49,7 @@ func newCustomPayload() (json.RawMessage, error) {
 	return j, nil
 }
 
-// CheckAppVersion
+// CheckAppVersion prints a warning if the bundle was built with a different version of docker app
 func CheckAppVersion(stderr io.Writer, bndl *bundle.Bundle) error {
 	payload, err := CustomPayload(bndl)
 	if err != nil {

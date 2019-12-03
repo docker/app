@@ -1,16 +1,13 @@
 package image
 
 import (
-	"time"
-
 	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/go-units"
 )
 
 const (
-	defaultImageTableFormat           = "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Name}}\t{{if .CreatedSince }}{{.CreatedSince}}{{else}}N/A{{end}}\t"
-	defaultImageTableFormatWithDigest = "table {{.Repository}}\t{{.Tag}}\t{{.Digest}}\t{{.ID}}\t{{.Name}}\t\t{{if .CreatedSince }}{{.CreatedSince}}{{else}}N/A{{end}}\t"
+	defaultImageTableFormat           = "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Name}}\t"
+	defaultImageTableFormatWithDigest = "table {{.Repository}}\t{{.Tag}}\t{{.Digest}}\t{{.ID}}\t{{.Name}}\t\t"
 
 	imageIDHeader    = "APP IMAGE ID"
 	repositoryHeader = "REPOSITORY"
@@ -69,12 +66,11 @@ type imageContext struct {
 func newImageContext() *imageContext {
 	imageCtx := imageContext{}
 	imageCtx.Header = formatter.SubHeaderContext{
-		"ID":           imageIDHeader,
-		"Name":         imageNameHeader,
-		"Repository":   repositoryHeader,
-		"Tag":          tagHeader,
-		"Digest":       digestHeader,
-		"CreatedSince": formatter.CreatedSinceHeader,
+		"ID":         imageIDHeader,
+		"Name":       imageNameHeader,
+		"Repository": repositoryHeader,
+		"Tag":        tagHeader,
+		"Digest":     digestHeader,
 	}
 	return &imageCtx
 }
@@ -116,11 +112,4 @@ func (c *imageContext) Digest() string {
 		return "<none>"
 	}
 	return c.i.Digest
-}
-
-func (c *imageContext) CreatedSince() string {
-	if c.i.Created.IsZero() {
-		return ""
-	}
-	return units.HumanDuration(time.Now().UTC().Sub(c.i.Created)) + " ago"
 }
