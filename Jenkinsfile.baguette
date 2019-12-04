@@ -71,6 +71,7 @@ pipeline {
                             dir('_build') {
                                 stash name: 'invocation-image', includes: 'invocation-image.tar'
                                 stash name: 'invocation-image-arm64', includes: 'invocation-image-arm64.tar'
+                                stash name: 'invocation-image-arm', includes: 'invocation-image-arm.tar'
                                 stash name: 'coverage-invocation-image', includes: 'coverage-invocation-image.tar'
                                 archiveArtifacts 'invocation-image*.tar'
                             }
@@ -80,6 +81,7 @@ pipeline {
                         always {
                             sh 'docker rmi docker/cnab-app-base:$TAG'
                             sh 'docker rmi docker/cnab-app-base:$TAG-arm64'
+                            sh 'docker rmi docker/cnab-app-base:$TAG-arm'
                             sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
                             deleteDir()
                         }
@@ -254,6 +256,8 @@ pipeline {
                         sh 'docker load -i invocation-image.tar'
                         unstash "invocation-image-arm64"
                         sh 'docker load -i invocation-image-arm64.tar'
+                        unstash "invocation-image-arm"
+                        sh 'docker load -i invocation-image-arm.tar'
                     }
                     ansiColor('xterm') {
                         sh 'make -f docker.Makefile push-invocation-image'
@@ -269,6 +273,7 @@ pipeline {
                 always {
                     sh 'docker rmi docker/cnab-app-base:$TAG'
                     sh 'docker rmi docker/cnab-app-base:$TAG-arm64'
+                    sh 'docker rmi docker/cnab-app-base:$TAG-arm'
                     deleteDir()
                 }
             }

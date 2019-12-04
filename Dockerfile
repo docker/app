@@ -14,6 +14,7 @@ RUN git clone https://github.com/docker/cli . && git checkout v${CLI_VERSION}
 RUN mkdir build
 RUN curl -fL https://download.docker.com/linux/static/${CLI_CHANNEL}/x86_64/docker-${CLI_VERSION}.tgz | tar xzO docker/docker > build/docker-linux-amd64 && chmod +x build/docker-linux-amd64
 RUN curl -fL https://download.docker.com/linux/static/${CLI_CHANNEL}/aarch64/docker-${CLI_VERSION}.tgz | tar xzO docker/docker > build/docker-linux-arm64 && chmod +x build/docker-linux-arm64
+RUN curl -fL https://download.docker.com/linux/static/${CLI_CHANNEL}/armhf/docker-${CLI_VERSION}.tgz | tar xzO docker/docker > build/docker-linux-arm && chmod +x build/docker-linux-arm
 RUN curl -fL https://download.docker.com/mac/static/${CLI_CHANNEL}/x86_64/docker-${CLI_VERSION}.tgz | tar xzO docker/docker > build/docker-darwin-amd64
 
 ARG GOPROXY
@@ -68,6 +69,7 @@ FROM scratch AS cross
 ARG PROJECT_PATH=/go/src/github.com/docker/app
 COPY --from=cross-build ${PROJECT_PATH}/bin/docker-app-linux docker-app-linux
 COPY --from=cross-build ${PROJECT_PATH}/bin/docker-app-linux-arm64 docker-app-linux-arm64
+COPY --from=cross-build ${PROJECT_PATH}/bin/docker-app-linux-arm docker-app-linux-arm
 COPY --from=cross-build ${PROJECT_PATH}/bin/docker-app-darwin docker-app-darwin
 COPY --from=cross-build ${PROJECT_PATH}/bin/docker-app-windows.exe docker-app-windows.exe
 
