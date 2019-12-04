@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/opencontainers/go-digest"
+
 	"github.com/docker/app/internal/relocated"
 	"github.com/docker/app/internal/store"
 
@@ -69,10 +71,20 @@ func runPush(dockerCli command.Cli, name string) error {
 		return err
 	}
 
-	cnabRef := reference.TagNameOnly(ref)
-
 	// Push the bundle
-	return pushBundle(dockerCli, bndl, cnabRef)
+	dg, err := pushBundle(dockerCli, bndl, ref)
+	if err != nil {
+		return errors.Wrapf(err, "could not push %q", ref)
+	}
+
+	// we can't just re-use bndl var here, as fixup did rewrite the bundle
+	bndl, err = resolveReferenceAndBundle(bundleStore, ref)
+	if err != nil {
+		return err
+	}
+	bndl.RepoDigest = dg
+	_, err = bundleStore.Store(bndl, ref)
+	return err
 }
 
 func resolveReferenceAndBundle(bundleStore store.BundleStore, ref reference.Reference) (*relocated.Bundle, error) {
@@ -88,10 +100,10 @@ func resolveReferenceAndBundle(bundleStore store.BundleStore, ref reference.Refe
 	return bndl, err
 }
 
-func pushBundle(dockerCli command.Cli, bndl *relocated.Bundle, cnabRef reference.Named) error {
+func pushBundle(dockerCli command.Cli, bndl *relocated.Bundle, cnabRef reference.Named) (digest.Digest, error) {
 	insecureRegistries, err := internal.InsecureRegistriesFromEngine(dockerCli)
 	if err != nil {
-		return errors.Wrap(err, "could not retrieve insecure registries")
+		return "", errors.Wrap(err, "could not retrieve insecure registries")
 	}
 	resolver := remotes.CreateResolver(dockerCli.ConfigFile(), insecureRegistries...)
 	var display fixupDisplay = &plainDisplay{out: os.Stdout}
@@ -107,17 +119,17 @@ func pushBundle(dockerCli command.Cli, bndl *relocated.Bundle, cnabRef reference
 	// bundle fixup
 	relocationMap, err := remotes.FixupBundle(context.Background(), bndl.Bundle, cnabRef, resolver, fixupOptions...)
 	if err != nil {
-		return errors.Wrapf(err, "fixing up %q for push", cnabRef)
+		return "", errors.Wrapf(err, "fixing up %q for push", cnabRef)
 	}
 	bndl.RelocationMap = relocationMap
 	// push bundle manifest
 	logrus.Debugf("Pushing the bundle %q", cnabRef)
 	descriptor, err := remotes.Push(log.WithLogContext(context.Background()), bndl.Bundle, bndl.RelocationMap, cnabRef, resolver, true, withAppAnnotations)
 	if err != nil {
-		return errors.Wrapf(err, "pushing to %q", cnabRef)
+		return "", errors.Wrapf(err, "pushing to %q", cnabRef)
 	}
 	fmt.Fprintf(os.Stdout, "Successfully pushed bundle to %s. Digest is %s.\n", cnabRef, descriptor.Digest)
-	return nil
+	return descriptor.Digest, nil
 }
 
 func withAppAnnotations(index *ocischemav1.Index) error {

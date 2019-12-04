@@ -73,16 +73,16 @@ func MakeCNABImageName(appName, appVersion, suffix string) (string, error) {
 }
 
 // PersistInBundleStore do store a bundle with optional reference and return it's ID
-func PersistInBundleStore(ref reference.Reference, bndl *bundle.Bundle) (reference.Digested, error) {
+func PersistInBundleStore(bndl *bundle.Bundle, ref reference.Named) (store.ID, error) {
 	appstore, err := store.NewApplicationStore(config.Dir())
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	bundleStore, err := appstore.BundleStore()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return bundleStore.Store(ref, relocated.FromBundle(bndl))
+	return bundleStore.Store(relocated.FromBundle(bndl), ref)
 }
 
 func GetNamedTagged(tag string) (reference.NamedTagged, error) {

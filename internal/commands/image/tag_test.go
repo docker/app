@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/docker/app/internal/store"
+
 	"github.com/docker/app/internal/relocated"
 
 	"gotest.tools/assert"
@@ -23,12 +25,12 @@ type bundleStoreStub struct {
 	ReadError    error
 	StoredBundle string
 	StoredError  error
-	StoredID     reference.Digested
+	StoredID     store.ID
 	LookUpRef    reference.Reference
 	LookUpError  error
 }
 
-func (b *bundleStoreStub) Store(ref reference.Reference, bndle *relocated.Bundle) (reference.Digested, error) {
+func (b *bundleStoreStub) Store(bndl *relocated.Bundle, ref reference.Named) (store.ID, error) {
 	defer func() {
 		b.StoredError = nil
 	}()

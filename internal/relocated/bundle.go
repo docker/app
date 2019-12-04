@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/opencontainers/go-digest"
+
 	"github.com/pkg/errors"
 
 	"github.com/deislabs/cnab-go/bundle"
@@ -15,11 +17,13 @@ import (
 type Bundle struct {
 	*bundle.Bundle
 	RelocationMap relocation.ImageRelocationMap
+	RepoDigest    digest.Digest
 }
 
 const (
 	BundleFilename        = "bundle.json"
 	RelocationMapFilename = "relocation-map.json"
+	DigestFilename        = "digest"
 )
 
 // FromBundle returns a RelocatedBundle with an empty relocation map.
@@ -43,9 +47,16 @@ func BundleFromFile(filename string) (*Bundle, error) {
 		return nil, errors.Wrapf(err, "failed to read relocation map")
 	}
 
+	digestFileName := filepath.Join(filepath.Dir(filename), DigestFilename)
+	dg, err := repoDigest(digestFileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read digest file")
+	}
+
 	return &Bundle{
 		Bundle:        bndl,
 		RelocationMap: relocationMap,
+		RepoDigest:    dg,
 	}, nil
 }
 
@@ -56,6 +67,21 @@ func (b *Bundle) writeRelocationMap(dest string, mode os.FileMode) error {
 		return err
 	}
 	return ioutil.WriteFile(dest, d, mode)
+}
+
+// writeRepoDigest store the repo digest to a file as plain text.
+func (b *Bundle) writeRepoDigest(dest string, mode os.FileMode) error {
+	if b.RepoDigest == "" {
+		return cleanRepoDigest(dest)
+	}
+	return ioutil.WriteFile(dest, []byte(b.RepoDigest), mode)
+}
+
+func cleanRepoDigest(dest string) error {
+	if _, err := os.Stat(dest); os.IsNotExist(err) {
+		return nil
+	}
+	return os.Remove(dest)
 }
 
 // Store a bundle with the relocation map as json files.
@@ -70,6 +96,12 @@ func (b *Bundle) Store(dir string) error {
 	relocationMapPath := filepath.Join(dir, RelocationMapFilename)
 	if err := b.writeRelocationMap(relocationMapPath, 0644); err != nil {
 		return errors.Wrapf(err, "failed to store relocation map")
+	}
+
+	// store repo digest
+	repoDigestPath := filepath.Join(dir, DigestFilename)
+	if err := b.writeRepoDigest(repoDigestPath, 0644); err != nil {
+		return errors.Wrapf(err, "failed to store digest")
 	}
 
 	return nil
@@ -114,4 +146,16 @@ func (b *Bundle) RelocatedImages() map[string]bundle.Image {
 	}
 
 	return images
+}
+
+func repoDigest(digestFileName string) (digest.Digest, error) {
+	_, err := os.Stat(digestFileName)
+	if os.IsNotExist(err) {
+		return "", nil
+	}
+	bytes, err := ioutil.ReadFile(digestFileName)
+	if err != nil {
+		return "", err
+	}
+	return digest.Parse(string(bytes))
 }

@@ -3,59 +3,24 @@ package image
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/docker/app/internal/relocated"
-
-	"gotest.tools/assert"
+	"github.com/docker/app/internal/store"
+	"gotest.tools/fs"
 
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/docker/app/internal/store"
+	"github.com/docker/app/internal/relocated"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/distribution/reference"
+	"gotest.tools/assert"
 )
 
-type bundleStoreStubForListCmd struct {
-	refMap map[reference.Reference]*relocated.Bundle
-	// in order to keep the reference in the same order between tests
-	refList []reference.Reference
-}
-
-func (b *bundleStoreStubForListCmd) Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error) {
-	b.refMap[ref] = bndl
-	b.refList = append(b.refList, ref)
-	return store.FromBundle(bndl)
-}
-
-func (b *bundleStoreStubForListCmd) Read(ref reference.Reference) (*relocated.Bundle, error) {
-	bndl, ok := b.refMap[ref]
-	if ok {
-		return bndl, nil
-	}
-	return nil, fmt.Errorf("Bundle not found")
-}
-
-func (b *bundleStoreStubForListCmd) List() ([]reference.Reference, error) {
-	return b.refList, nil
-}
-
-func (b *bundleStoreStubForListCmd) Remove(ref reference.Reference, force bool) error {
-	return nil
-}
-
-func (b *bundleStoreStubForListCmd) LookUp(refOrID string) (reference.Reference, error) {
-	return nil, nil
-}
-
 func TestListCmd(t *testing.T) {
-	ref, err := store.FromString("a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087")
-	assert.NilError(t, err)
-	refs := []reference.Reference{
+	refs := []reference.Named{
 		parseReference(t, "foo/bar@sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865"),
 		parseReference(t, "foo/bar:1.0"),
-		ref,
+		nil,
 	}
 	bundles := []relocated.Bundle{
 		{
@@ -85,18 +50,18 @@ func TestListCmd(t *testing.T) {
 		{
 			name: "TestList",
 			expectedOutput: `REPOSITORY          TAG                 APP IMAGE ID        APP NAME            CREATED             
-foo/bar             <none>              3f825b2d0657        Digested App        N/A                 
+<none>              <none>              ad2828ea5653        Quiet App           N/A                 
 foo/bar             1.0                 9aae408ee04f        Foo App             N/A                 
-<none>              <none>              a855ac937f2e        Quiet App           N/A                 
+foo/bar             <none>              3f825b2d0657        Digested App        N/A                 
 `,
 			options: imageListOption{format: "table"},
 		},
 		{
 			name: "TestTemplate",
 			expectedOutput: `APP IMAGE ID        DIGEST
-3f825b2d0657        sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865
+ad2828ea5653        <none>
 9aae408ee04f        <none>
-a855ac937f2e        sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087
+3f825b2d0657        sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865
 `,
 			options: imageListOption{format: "table {{.ID}}", digests: true},
 		},
@@ -104,17 +69,17 @@ a855ac937f2e        sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc
 			name: "TestListWithDigests",
 			//nolint:lll
 			expectedOutput: `REPOSITORY          TAG                 DIGEST                                                                    APP IMAGE ID        APP NAME                                CREATED             
-foo/bar             <none>              sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865   3f825b2d0657        Digested App                            N/A                 
+<none>              <none>              <none>                                                                    ad2828ea5653        Quiet App                               N/A                 
 foo/bar             1.0                 <none>                                                                    9aae408ee04f        Foo App                                 N/A                 
-<none>              <none>              sha256:a855ac937f2ed375ba4396bbc49c4093e124da933acd2713fb9bc17d7562a087   a855ac937f2e        Quiet App                               N/A                 
+foo/bar             <none>              sha256:b59492bb814012ca3d2ce0b6728242d96b4af41687cc82166a4b5d7f2d9fb865   3f825b2d0657        Digested App                            N/A                 
 `,
 			options: imageListOption{format: "table", digests: true},
 		},
 		{
 			name: "TestListWithQuiet",
-			expectedOutput: `3f825b2d0657
+			expectedOutput: `ad2828ea5653
 9aae408ee04f
-a855ac937f2e
+3f825b2d0657
 `,
 			options: imageListOption{format: "table", quiet: true},
 		},
@@ -143,27 +108,26 @@ func TestSortImages(t *testing.T) {
 	assert.Equal(t, "3", images[4].ID)
 }
 
-func parseReference(t *testing.T, s string) reference.Reference {
-	ref, err := reference.Parse(s)
+func parseReference(t *testing.T, s string) reference.Named {
+	ref, err := reference.ParseNormalizedNamed(s)
 	assert.NilError(t, err)
 	return ref
 }
 
-func testRunList(t *testing.T, refs []reference.Reference, bundles []relocated.Bundle, options imageListOption, expectedOutput string) {
+func testRunList(t *testing.T, refs []reference.Named, bundles []relocated.Bundle, options imageListOption, expectedOutput string) {
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 	dockerCli, err := command.NewDockerCli(command.WithOutputStream(w))
 	assert.NilError(t, err)
-	bundleStore := &bundleStoreStubForListCmd{
-		refMap:  make(map[reference.Reference]*relocated.Bundle),
-		refList: []reference.Reference{},
-	}
+	bundleStore, err := store.NewBundleStore(fs.NewDir(t, "store").Path())
+	assert.NilError(t, err)
 	for i, ref := range refs {
-		_, err = bundleStore.Store(ref, &bundles[i])
+		_, err = bundleStore.Store(&bundles[i], ref)
 		assert.NilError(t, err)
 	}
 	err = runList(dockerCli, options, bundleStore)
 	assert.NilError(t, err)
 	w.Flush()
-	assert.Equal(t, buf.String(), expectedOutput)
+	actualOutput := buf.String()
+	assert.Equal(t, actualOutput, expectedOutput)
 }

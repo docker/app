@@ -18,7 +18,7 @@ import (
 //
 type BundleStore interface {
 	// Store do store the bundle with optional reference, and return it's unique ID
-	Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error)
+	Store(bndl *relocated.Bundle, ref reference.Named) (ID, error)
 	Read(ref reference.Reference) (*relocated.Bundle, error)
 	List() ([]reference.Reference, error)
 	Remove(ref reference.Reference, force bool) error
@@ -63,27 +63,44 @@ func NewBundleStore(path string) (BundleStore, error) {
 //      \_ bundle.json
 //
 
-func (b *bundleStore) Store(ref reference.Reference, bndl *relocated.Bundle) (reference.Digested, error) {
+func (b *bundleStore) Store(bndl *relocated.Bundle, name reference.Named) (ID, error) {
 	id, err := FromBundle(bndl)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
+		return "", errors.Wrapf(err, "failed to store bundle %q", name)
 	}
-	if ref == nil {
-		ref = id
+	var r reference.Reference = id
+	if name != nil {
+		r = name
+		if dg, ok := name.(reference.Digested); ok {
+			bndl.RepoDigest = dg.Digest()
+		}
 	}
-	dir, err := b.storePath(ref)
+	dir, err := b.storePath(r)
 	if err != nil {
-		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
+		return id, errors.Wrapf(err, "failed to store bundle %q", name)
 	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
+		return id, errors.Wrapf(err, "failed to store bundle %q", name)
 	}
 
 	if err := bndl.Store(dir); err != nil {
-		return id, errors.Wrapf(err, "failed to store relocated bundle %q", ref)
+		return id, errors.Wrapf(err, "failed to store bundle %q", name)
 	}
 
-	b.refsMap.appendRef(id, ref)
+	if r != id {
+		// Check bundle was previously stored by ID, then cleanup
+		path, err := b.storePath(id)
+		if err != nil {
+			return id, errors.Wrapf(err, "failed to store bundle %q", name)
+		}
+		if _, err := os.Stat(path); err == nil {
+			if err := os.RemoveAll(path); err != nil {
+				return id, errors.Wrapf(err, "failed to store bundle %q", name)
+			}
+		}
+	}
+
+	b.refsMap.appendRef(id, r)
 	return id, nil
 }
 
@@ -227,7 +244,7 @@ func (b *bundleStore) referenceToID(ref reference.Reference) (ID, error) {
 			}
 		}
 	}
-	return ID{}, unknownReference(reference.FamiliarString(ref))
+	return "", unknownReference(reference.FamiliarString(ref))
 }
 
 func (b *bundleStore) storePaths(ref reference.Reference) ([]string, error) {
@@ -316,7 +333,7 @@ func (b *bundleStore) processBundleStoreFile(path string, info os.FileInfo, err 
 	if strings.HasPrefix(path, idRefPath) {
 		rel := path[len(idRefPath)+1:]
 		dg := strings.Split(filepath.ToSlash(rel), "/")[0]
-		id := ID{digest.NewDigestFromEncoded(digest.SHA256, dg)}
+		id := ID(digest.NewDigestFromEncoded(digest.SHA256, dg))
 		b.refsMap.appendRef(id, id)
 		return nil
 	}

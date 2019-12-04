@@ -45,7 +45,7 @@ func runTag(bundleStore store.BundleStore, srcAppImage, destAppImage string) err
 	if err != nil {
 		return err
 	}
-
+	srcRef.RepoDigest = ""
 	return storeBundle(srcRef, destAppImage, bundleStore)
 }
 
@@ -73,6 +73,6 @@ func storeBundle(bundle *relocated.Bundle, name string, bundleStore store.Bundle
 	if err != nil {
 		return err
 	}
-	_, err = bundleStore.Store(cnabRef, bundle)
+	_, err = bundleStore.Store(bundle, cnabRef)
 	return err
 }

@@ -123,7 +123,7 @@ func PullBundle(dockerCli command.Cli, bundleStore appstore.BundleStore, tagRef 
 		return nil, err
 	}
 	relocatedBundle := &relocated.Bundle{Bundle: bndl, RelocationMap: relocationMap}
-	if _, err := bundleStore.Store(tagRef, relocatedBundle); err != nil {
+	if _, err := bundleStore.Store(relocatedBundle, tagRef); err != nil {
 		return nil, err
 	}
 	return relocatedBundle, nil
