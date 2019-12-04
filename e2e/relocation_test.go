@@ -14,7 +14,7 @@ import (
 )
 
 func TestRelocationMapCreatedOnPull(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		cfg := getDockerConfigDir(t, cmd)
 
@@ -42,7 +42,7 @@ func TestRelocationMapCreatedOnPull(t *testing.T) {
 }
 
 func TestRelocationMapRun(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		cfg := getDockerConfigDir(t, cmd)
 
@@ -92,7 +92,7 @@ func TestRelocationMapRun(t *testing.T) {
 }
 
 func TestPushPulledApplication(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		cfg := getDockerConfigDir(t, cmd)
 
@@ -130,7 +130,7 @@ func TestPushPulledApplication(t *testing.T) {
 }
 
 func TestRelocationMapOnInspect(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		cfg := getDockerConfigDir(t, cmd)
 

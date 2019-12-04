@@ -20,7 +20,7 @@
     "custom": {
         "com.docker.app": {
             "payload": {
-                "created": "2019-11-18T08:22:31.570871111Z"
+                "app-version": "v0.9.0-zeta1-223-g012748d754"
             },
             "version": "1.0.0"
         }
@@ -83,26 +83,26 @@
     "description": "sample description",
     "images": {
         "backend": {
-            "contentDigest": "<digest-backend>",
+            "contentDigest": "sha256:469e3e749d7c78386f5c9886ad5cad158c70934bb782c00ef0e195bc74903db6",
             "description": "app-e2e/backend",
             "image": "app-e2e/backend",
             "imageType": "docker",
             "size": 7394886
         },
         "frontend": {
-            "contentDigest": "<digest-frontend>",
+            "contentDigest": "sha256:8299ba94a840aefc2763a426917aec6b9fbc7cbcba1f6195c6f226fe0efcae4f",
             "description": "app-e2e/frontend",
             "image": "app-e2e/frontend",
             "imageType": "docker",
-            "size": 21365920
+            "size": 21461559
         }
     },
     "invocationImages": [
         {
-            "contentDigest": "<digest-app-e2e-invoc>",
+            "contentDigest": "sha256:22bf63159a078013a073da8e9d21d58d17b749ab34407ebf1cc709a237cd5cba",
             "image": "app-e2e:0.1.0-invoc",
             "imageType": "docker",
-            "size": 47261342
+            "size": 47347352
         }
     ],
     "maintainers": [

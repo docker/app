@@ -11,7 +11,7 @@ func TestRunTwice(t *testing.T) {
 	// Test that we are indeed generating random app names
 	// We had a problem where the second run would fail with an error
 	// "Installation "gallant_poitras" already exists, use 'docker app update' instead"
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		contextPath := filepath.Join("testdata", "simple")
 

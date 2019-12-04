@@ -21,7 +21,7 @@ import (
 )
 
 func TestBuild(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		tmp := fs.NewDir(t, "TestBuild")
 
@@ -59,7 +59,7 @@ func TestBuild(t *testing.T) {
 }
 
 func TestBuildMultiTag(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		tmp := fs.NewDir(t, "TestBuild")
 		testDir := path.Join("testdata", "build")
@@ -96,7 +96,7 @@ func TestBuildMultiTag(t *testing.T) {
 }
 
 func TestQuietBuild(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		tmp := fs.NewDir(t, "TestBuild")
 
@@ -117,7 +117,7 @@ func TestQuietBuild(t *testing.T) {
 }
 
 func TestBuildWithoutTag(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		testDir := path.Join("testdata", "build")
@@ -148,7 +148,7 @@ func TestBuildWithoutTag(t *testing.T) {
 }
 
 func TestBuildWithArgs(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		testDir := path.Join("testdata", "build")
@@ -179,7 +179,7 @@ func TestBuildWithArgs(t *testing.T) {
 }
 
 func TestBuildWithArgsDefinedTwice(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		testDir := path.Join("testdata", "build")

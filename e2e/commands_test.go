@@ -91,7 +91,7 @@ func TestRenderAppNotFound(t *testing.T) {
 }
 
 func TestRenderFormatters(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		contextPath := filepath.Join("testdata", "simple")
@@ -239,7 +239,7 @@ func TestInitWithInvalidCompose(t *testing.T) {
 }
 
 func TestInspectApp(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		// cwd = e2e
@@ -284,7 +284,7 @@ func TestRunOnlyOne(t *testing.T) {
 }
 
 func TestRunWithLabels(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		contextPath := filepath.Join("testdata", "simple")
@@ -308,7 +308,7 @@ func TestRunWithLabels(t *testing.T) {
 }
 
 func TestDockerAppLifecycle(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		appName := strings.ToLower(strings.Replace(t.Name(), "/", "_", 1))
 		tmpDir := fs.NewDir(t, appName)
@@ -376,7 +376,7 @@ func TestDockerAppLifecycle(t *testing.T) {
 }
 
 func TestDockerAppLifecycleMultiRm(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		appName := strings.ToLower(strings.Replace(t.Name(), "/", "_", 1))
 		tmpDir := fs.NewDir(t, appName)
