@@ -3,7 +3,6 @@ package packager
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
@@ -11,7 +10,6 @@ import (
 )
 
 func TestNewCustomPayload(t *testing.T) {
-	start := time.Now().UTC()
 	payloadJSON, err := newCustomPayload()
 	assert.NilError(t, err)
 
@@ -19,9 +17,7 @@ func TestNewCustomPayload(t *testing.T) {
 	err = json.Unmarshal(payloadJSON, &payload)
 	assert.NilError(t, err)
 
-	end := time.Now().UTC()
-	assert.Assert(t, start.Before(payload.CreatedTime()) || start.Equal(payload.CreatedTime()))
-	assert.Assert(t, end.After(payload.CreatedTime()) || end.Equal(payload.CreatedTime()))
+	assert.Equal(t, internal.Version, payload.AppVersion())
 }
 
 func TestCustomPayloadNil(t *testing.T) {
@@ -57,13 +53,11 @@ func TestCustomPayloadNil(t *testing.T) {
 }
 
 func TestCustomPayloadV1_0_0(t *testing.T) {
-	now := time.Now().UTC()
-	b := createBundle(t, DockerAppPayloadVersion1_0_0, payloadV1_0{"version", now})
+	b := createBundle(t, DockerAppPayloadVersion1_0_0, payloadV1_0{"version"})
 	payload, err := CustomPayload(&b)
 	assert.NilError(t, err)
 	v1, ok := payload.(payloadV1_0)
 	assert.Assert(t, ok)
-	assert.Assert(t, now.Equal(v1.CreatedTime()))
 	assert.Equal(t, "version", v1.AppVersion())
 }
 

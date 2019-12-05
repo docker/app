@@ -1,10 +1,6 @@
 package image
 
 import (
-	"sort"
-	"time"
-
-	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/relocated"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
@@ -61,7 +57,6 @@ func runList(dockerCli command.Cli, options imageListOption, bundleStore store.B
 		Format: NewImageFormat(options.format, options.quiet, options.digests),
 	}
 
-	sortImages(images)
 	return Write(ctx, images)
 }
 
@@ -94,25 +89,12 @@ func getImageID(bundle *relocated.Bundle, ref reference.Reference) (string, erro
 	return stringid.TruncateID(id.String()), nil
 }
 
-func sortImages(images []imageDesc) {
-	sort.SliceStable(images, func(i, j int) bool {
-		if images[i].Created.IsZero() {
-			return false
-		}
-		if images[j].Created.IsZero() {
-			return true
-		}
-		return images[i].Created.After(images[j].Created)
-	})
-}
-
 type imageDesc struct {
-	ID         string    `json:"id,omitempty"`
-	Name       string    `json:"name,omitempty"`
-	Repository string    `json:"repository,omitempty"`
-	Tag        string    `json:"tag,omitempty"`
-	Digest     string    `json:"digest,omitempty"`
-	Created    time.Time `json:"created,omitempty"`
+	ID         string `json:"id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Repository string `json:"repository,omitempty"`
+	Tag        string `json:"tag,omitempty"`
+	Digest     string `json:"digest,omitempty"`
 }
 
 func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
@@ -130,18 +112,11 @@ func getImageDesc(bundle *relocated.Bundle, ref reference.Reference) imageDesc {
 	if t, ok := ref.(reference.Digested); ok {
 		digest = t.Digest().String()
 	}
-	var created time.Time
-	if payload, err := packager.CustomPayload(bundle.Bundle); err == nil {
-		if createdPayload, ok := payload.(packager.CustomPayloadCreated); ok {
-			created = createdPayload.CreatedTime()
-		}
-	}
 	return imageDesc{
 		ID:         id,
 		Name:       bundle.Name,
 		Repository: repository,
 		Tag:        tag,
 		Digest:     digest,
-		Created:    created,
 	}
 }
