@@ -138,7 +138,11 @@ func TestBackwardsCompatibilityV1(t *testing.T) {
 				output = info.execCmd("/usr/bin/wget", "-O", "-", url)
 				return strings.Contains(output, `Hi there, I love Docker!`), nil
 			})
-			assert.NilError(t, err)
+			output = ""
+			if err != nil {
+				output = info.dockerCmd("stack", "ps", appName)
+			}
+			assert.NilError(t, err, output)
 		}
 
 		// Check status on install
