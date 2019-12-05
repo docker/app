@@ -19,7 +19,7 @@ func TestPushUnknown(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "push", "unknown")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not push "unknown:latest": no such App image: failed to read bundle "docker.io/library/unknown:latest": unknown:latest: reference not found`,
+			Err:      `could not push "unknown": unknown: reference not found`,
 		})
 	})
 
@@ -27,7 +27,7 @@ func TestPushUnknown(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "push", "@")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `could not push "@": invalid reference format`,
+			Err:      `could not push "@": could not parse "@" as a valid reference: invalid reference format`,
 		})
 	})
 }

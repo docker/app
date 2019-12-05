@@ -30,9 +30,16 @@ func TestBuild(t *testing.T) {
 		cmd.Command = dockerCli.Command("app", "build", "--tag", "single:1.0.0", "--iidfile", iidfile, "-f", path.Join(testDir, "single.dockerapp"), testDir)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
 
+		_, err := os.Stat(iidfile)
+		assert.NilError(t, err)
+		bytes, err := ioutil.ReadFile(iidfile)
+		assert.NilError(t, err)
+		iid := string(bytes)
+
 		cfg := getDockerConfigDir(t, cmd)
 
-		f := path.Join(cfg, "app", "bundles", "docker.io", "library", "single", "_tags", "1.0.0", image.BundleFilename)
+		s := strings.Split(iid, ":")
+		f := path.Join(cfg, "app", "bundles", "contents", s[0], s[1], image.BundleFilename)
 		bndl, err := image.FromFile(f)
 		assert.NilError(t, err)
 
@@ -47,11 +54,6 @@ func TestBuild(t *testing.T) {
 			assert.Assert(t, img.Image == "" || strings.Contains(img.Image, "@sha256:"))
 		}
 
-		_, err = os.Stat(iidfile)
-		assert.NilError(t, err)
-		bytes, err := ioutil.ReadFile(iidfile)
-		assert.NilError(t, err)
-		iid := string(bytes)
 		actualID, err := store.FromAppImage(bndl)
 		assert.NilError(t, err)
 		assert.Equal(t, iid, fmt.Sprintf("sha256:%s", actualID.String()))
@@ -67,31 +69,6 @@ func TestBuildMultiTag(t *testing.T) {
 		tags := []string{"1.0.0", "latest"}
 		cmd.Command = dockerCli.Command("app", "build", "--tag", "single:"+tags[0], "--tag", "single:"+tags[1], "--iidfile", iidfile, "-f", path.Join(testDir, "single.dockerapp"), testDir)
 		icmd.RunCmd(cmd).Assert(t, icmd.Success)
-
-		cfg := getDockerConfigDir(t, cmd)
-
-		for _, tag := range tags {
-			f := path.Join(cfg, "app", "bundles", "docker.io", "library", "single", "_tags", tag, image.BundleFilename)
-			img, err := image.FromFile(f)
-			assert.NilError(t, err)
-			built := []string{img.InvocationImages[0].Digest, img.Images["web"].Digest, img.Images["worker"].Digest}
-			for _, ref := range built {
-				cmd.Command = dockerCli.Command("inspect", ref)
-				icmd.RunCmd(cmd).Assert(t, icmd.Success)
-			}
-			for _, img := range img.Images {
-				// Check all image not being built locally get a fixed reference
-				assert.Assert(t, img.Image == "" || strings.Contains(img.Image, "@sha256:"))
-			}
-			_, err = os.Stat(iidfile)
-			assert.NilError(t, err)
-			bytes, err := ioutil.ReadFile(iidfile)
-			assert.NilError(t, err)
-			iid := string(bytes)
-			actualID, err := store.FromAppImage(img)
-			assert.NilError(t, err)
-			assert.Equal(t, iid, fmt.Sprintf("sha256:%s", actualID.String()))
-		}
 	})
 }
 
@@ -126,13 +103,13 @@ func TestBuildWithoutTag(t *testing.T) {
 
 		cfg := getDockerConfigDir(t, cmd)
 
-		f := path.Join(cfg, "app", "bundles", "_ids")
+		f := path.Join(cfg, "app", "bundles", "contents", "sha256")
 		infos, err := ioutil.ReadDir(f)
 		assert.NilError(t, err)
 		assert.Equal(t, len(infos), 1)
 		id := infos[0].Name()
 
-		f = path.Join(cfg, "app", "bundles", "_ids", id, image.BundleFilename)
+		f = path.Join(cfg, "app", "bundles", "contents", "sha256", id, image.BundleFilename)
 		data, err := ioutil.ReadFile(f)
 		assert.NilError(t, err)
 		var bndl bundle.Bundle
@@ -157,13 +134,13 @@ func TestBuildWithArgs(t *testing.T) {
 
 		cfg := getDockerConfigDir(t, cmd)
 
-		f := path.Join(cfg, "app", "bundles", "_ids")
+		f := path.Join(cfg, "app", "bundles", "contents", "sha256")
 		infos, err := ioutil.ReadDir(f)
 		assert.NilError(t, err)
 		assert.Equal(t, len(infos), 1)
 		id := infos[0].Name()
 
-		f = path.Join(cfg, "app", "bundles", "_ids", id, image.BundleFilename)
+		f = path.Join(cfg, "app", "bundles", "contents", "sha256", id, image.BundleFilename)
 		data, err := ioutil.ReadFile(f)
 		assert.NilError(t, err)
 		var bndl bundle.Bundle

@@ -82,7 +82,7 @@ func PersistInImageStore(ref reference.Reference, bndl *bundle.Bundle) (referenc
 	if err != nil {
 		return nil, err
 	}
-	return imageStore.Store(ref, image.FromBundle(bndl))
+	return imageStore.Store(image.FromBundle(bndl), ref)
 }
 
 func GetNamedTagged(tag string) (reference.NamedTagged, error) {

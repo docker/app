@@ -28,7 +28,7 @@ type imageStoreStub struct {
 	LookUpError  error
 }
 
-func (b *imageStoreStub) Store(ref reference.Reference, bndle *image.AppImage) (reference.Digested, error) {
+func (b *imageStoreStub) Store(img *image.AppImage, ref reference.Reference) (reference.Digested, error) {
 	defer func() {
 		b.StoredError = nil
 	}()

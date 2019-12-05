@@ -59,17 +59,21 @@ func runPush(dockerCli command.Cli, name string) error {
 	}
 
 	// Get the bundle
-	ref, err := reference.ParseDockerRef(name)
+	ref, err := imageStore.LookUp(name)
 	if err != nil {
 		return errors.Wrapf(err, "could not push %q", name)
 	}
+	named, ok := ref.(reference.Named)
+	if !ok {
+		return fmt.Errorf("could not push by ID. first tag your app image")
+	}
 
-	bndl, err := resolveReferenceAndBundle(imageStore, ref)
+	bndl, err := resolveReferenceAndBundle(imageStore, named)
 	if err != nil {
 		return err
 	}
 
-	cnabRef := reference.TagNameOnly(ref)
+	cnabRef := reference.TagNameOnly(named)
 
 	// Push the bundle
 	return pushBundle(dockerCli, bndl, cnabRef)

@@ -148,7 +148,7 @@ Deleted: b-simple-app:latest`,
 		cmd.Command = dockerCli.Command("app", "image", "rm", "b-simple-app")
 		icmd.RunCmd(cmd).Assert(t, icmd.Expected{
 			ExitCode: 1,
-			Err:      `b-simple-app:latest: reference not found`,
+			Err:      `b-simple-app: reference not found`,
 		})
 
 		expectedOutput := "REPOSITORY          TAG                 APP IMAGE ID        APP NAME            \n"

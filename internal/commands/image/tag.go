@@ -73,6 +73,6 @@ func storeBundle(bundle *image.AppImage, name string, imageStore store.ImageStor
 	if err != nil {
 		return err
 	}
-	_, err = imageStore.Store(cnabRef, bundle)
+	_, err = imageStore.Store(bundle, cnabRef)
 	return err
 }
