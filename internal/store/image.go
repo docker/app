@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -10,15 +9,16 @@ import (
 
 	"github.com/docker/app/internal/image"
 	"github.com/docker/distribution/reference"
-	multierror "github.com/hashicorp/go-multierror"
-	digest "github.com/opencontainers/go-digest"
+	refstore "github.com/docker/docker/reference"
+	"github.com/hashicorp/go-multierror"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
 
 //
 type ImageStore interface {
 	// Store do store the bundle with optional reference, and return it's unique ID
-	Store(ref reference.Reference, bndl *image.AppImage) (reference.Digested, error)
+	Store(img *image.AppImage, ref reference.Reference) (reference.Digested, error)
 	Read(ref reference.Reference) (*image.AppImage, error)
 	List() ([]reference.Reference, error)
 	Remove(ref reference.Reference, force bool) error
@@ -32,16 +32,23 @@ type referencesMap map[ID][]reference.Reference
 type imageStore struct {
 	path    string
 	refsMap referencesMap
+	store   refstore.Store
 }
 
 // NewImageStore creates a new bundle store with the given path and initializes it
 func NewImageStore(path string) (ImageStore, error) {
+	err := os.MkdirAll(filepath.Join(path, "contents", "sha256"), 0755)
+	if err != nil {
+		return nil, err
+	}
+	store, err := refstore.NewReferenceStore(filepath.Join(path, "repositories.json"))
+	if err != nil {
+		return nil, err
+	}
 	imageStore := &imageStore{
 		path:    path,
 		refsMap: make(referencesMap),
-	}
-	if err := imageStore.scanAllBundles(); err != nil {
-		return nil, err
+		store:   store,
 	}
 	return imageStore, nil
 }
@@ -49,32 +56,19 @@ func NewImageStore(path string) (ImageStore, error) {
 // We store bundles either by image:tags, image:digest or by unique ID (actually, bundle's sha256).
 //
 // Within the bundle store, the file layout is
-// <registry>
-//  \_ <repo>
-//       \_ _tags
-//           \_ <tag>
-//                \_ bundle.json
-//       \_ _digests
-//            \_ <algorithm>
-//                \_ <digested-reference>
-//                     \_ bundle.json
-// _ids
+// contents
 //  \_ <bundle_id>
 //      \_ bundle.json
+//      \_ relocation-map.json
+// repositories.json  // managed by docker/reference
 //
 
-func (b *imageStore) Store(ref reference.Reference, img *image.AppImage) (reference.Digested, error) {
+func (b *imageStore) Store(img *image.AppImage, ref reference.Reference) (reference.Digested, error) {
 	id, err := FromAppImage(img)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
-	if ref == nil {
-		ref = id
-	}
-	dir, err := b.storePath(ref)
-	if err != nil {
-		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
-	}
+	dir := b.storePath(id.Digest())
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return id, errors.Wrapf(err, "failed to store bundle %q", ref)
 	}
@@ -83,25 +77,58 @@ func (b *imageStore) Store(ref reference.Reference, img *image.AppImage) (refere
 		return id, errors.Wrapf(err, "failed to store app image %q", ref)
 	}
 
-	b.refsMap.appendRef(id, ref)
+	if tag, ok := ref.(reference.NamedTagged); ok {
+		err = b.store.AddTag(reference.TagNameOnly(tag), id.Digest(), true)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if digest, ok := ref.(reference.Canonical); ok {
+		err = b.store.AddDigest(digest, id.Digest(), true)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return id, nil
 }
 
 func (b *imageStore) Read(ref reference.Reference) (*image.AppImage, error) {
-	paths, err := b.storePaths(ref)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read bundle %q", ref)
+	var dg digest.Digest
+	if id, ok := ref.(ID); ok {
+		dg = id.Digest()
 	}
-
-	return image.FromFile(filepath.Join(paths[0], image.BundleFilename))
+	if named, ok := ref.(reference.Named); ok {
+		resolved, err := b.store.Get(reference.TagNameOnly(named))
+		if err == refstore.ErrDoesNotExist {
+			return nil, unknownReference(ref.String())
+		}
+		if err != nil {
+			return nil, err
+		}
+		dg = resolved
+	}
+	path := b.storePath(dg)
+	return image.FromFile(filepath.Join(path, image.BundleFilename))
 }
 
 // Returns the list of all bundles present in the bundle store
 func (b *imageStore) List() ([]reference.Reference, error) {
-	var references []reference.Reference
+	ids, err := b.listIDs()
+	if err != nil {
+		return nil, err
+	}
 
-	for _, refAliases := range b.refsMap {
-		references = append(references, refAliases...)
+	references := []reference.Reference{}
+	for _, dg := range ids {
+		id := fromID(dg)
+		refs := b.store.References(id.Digest())
+		for _, r := range refs {
+			references = append(references, r)
+		}
+		if len(refs) == 0 {
+			references = append(references, id)
+		}
 	}
 
 	sort.Slice(references, func(i, j int) bool {
@@ -111,78 +138,66 @@ func (b *imageStore) List() ([]reference.Reference, error) {
 	return references, nil
 }
 
-// Remove removes a bundle from the bundle store.
-func (b *imageStore) Remove(ref reference.Reference, force bool) error {
-	if id, ok := ref.(ID); ok {
-		refs := b.refsMap[id]
-		if len(refs) == 0 {
-			return fmt.Errorf("no such image %q", reference.FamiliarString(ref))
-		} else if len(refs) > 1 {
-			if force {
-				var failures *multierror.Error
-				toDelete := append([]reference.Reference{}, refs...)
-				for _, r := range toDelete {
-					if err := b.doRemove(r); err != nil {
-						failures = multierror.Append(failures, err)
-					}
-				}
-				return failures.ErrorOrNil()
-			}
-			return fmt.Errorf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(ref))
-		}
-		ref = refs[0]
-	}
-	return b.doRemove(ref)
-}
-
-func (b *imageStore) doRemove(ref reference.Reference) error {
-	path, err := b.storePath(ref)
+func (b *imageStore) listIDs() ([]string, error) {
+	f, err := os.Open(filepath.Join(b.path, "contents", "sha256"))
 	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return errors.New("no such image " + reference.FamiliarString(ref))
-	}
-	b.refsMap.removeRef(ref)
-
-	if err := os.RemoveAll(path); err != nil {
-		return nil
-	}
-	return cleanupParentTree(path)
-}
-
-func cleanupParentTree(path string) error {
-	for {
-		path = filepath.Dir(path)
-		if empty, err := isEmpty(path); err != nil || !empty {
-			return err
-		}
-		if err := os.RemoveAll(path); err != nil {
-			return nil
-		}
-	}
-}
-
-func isEmpty(path string) (bool, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return false, err
+		return nil, err
 	}
 	defer f.Close()
-	if _, err = f.Readdir(1); err == io.EOF {
-		// dir is empty
-		return true, nil
+	ids, err := f.Readdirnames(-1)
+	if err != nil {
+		return nil, err
 	}
-	return false, nil
+	return ids, nil
+}
+
+// Remove removes a bundle from the bundle store.
+func (b *imageStore) Remove(ref reference.Reference, force bool) error {
+	if named, ok := ref.(reference.Named); ok {
+		named = reference.TagNameOnly(named)
+		id, err := b.store.Get(named)
+		if err != nil {
+			return err
+		}
+		_, err = b.store.Delete(named)
+		references := b.store.References(id)
+		if len(references) > 0 {
+			return err
+		}
+		// No tag left for ID, so also remove
+		ref = ID(id)
+	}
+	id := ref.(ID)
+	refs := b.store.References(id.Digest())
+	if len(refs) > 1 && !force {
+		return fmt.Errorf("unable to delete %q - App is referenced in multiple repositories", reference.FamiliarString(ref))
+	}
+	var failures *multierror.Error
+	for _, r := range refs {
+		if _, err := b.store.Delete(r); err != nil {
+			failures = multierror.Append(failures, err)
+		}
+	}
+	if failures != nil {
+		return failures.ErrorOrNil()
+	}
+
+	path := b.storePath(id.Digest())
+	_, err := os.Stat(b.storePath(id.Digest()))
+	if os.IsNotExist(err) {
+		return unknownReference(ref.String())
+	}
+	return os.RemoveAll(path)
 }
 
 func (b *imageStore) LookUp(refOrID string) (reference.Reference, error) {
-	ref, err := FromString(refOrID)
+	id, err := FromString(refOrID)
 	if err == nil {
-		if _, found := b.refsMap[ref]; !found {
+		_, err := os.Stat(b.storePath(id.Digest()))
+		if os.IsNotExist(err) {
 			return nil, unknownReference(refOrID)
 		}
-		return ref, nil
+		return id, err
 	}
 	if isShortID(refOrID) {
 		ref, err := b.matchShortID(refOrID)
@@ -195,174 +210,46 @@ func (b *imageStore) LookUp(refOrID string) (reference.Reference, error) {
 		return nil, err
 	}
 	if _, err = b.referenceToID(named); err != nil {
+		if err == refstore.ErrDoesNotExist {
+			return nil, unknownReference(refOrID)
+		}
 		return nil, err
 	}
 	return named, nil
 }
 
 func (b *imageStore) matchShortID(shortID string) (reference.Reference, error) {
-	var found reference.Reference
-	for id := range b.refsMap {
-		if strings.HasPrefix(id.String(), shortID) {
-			if found != nil && found != id {
+	var found string
+	ids, err := b.listIDs()
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		if strings.HasPrefix(id, shortID) {
+			if found != "" && found != id {
 				return nil, fmt.Errorf("ambiguous reference found")
 			}
 			found = id
 		}
 	}
-	if found == nil {
+	if found == "" {
 		return nil, unknownReference(shortID)
 	}
-	return found, nil
+	ref := fromID(found)
+	return ref, nil
 }
 
 func (b *imageStore) referenceToID(ref reference.Reference) (ID, error) {
 	if id, ok := ref.(ID); ok {
 		return id, nil
 	}
-	for id, refs := range b.refsMap {
-		for _, r := range refs {
-			if r == ref {
-				return id, nil
-			}
-		}
-	}
-	return ID{}, unknownReference(reference.FamiliarString(ref))
+	named := ref.(reference.Named)
+	digest, err := b.store.Get(reference.TagNameOnly(named))
+	return ID(digest), err
 }
 
-func (b *imageStore) storePaths(ref reference.Reference) ([]string, error) {
-	var paths []string
-
-	id, err := b.referenceToID(ref)
-	if err != nil {
-		return nil, err
-	}
-
-	if refs, exist := b.refsMap[id]; exist {
-		for _, rf := range refs {
-			path, err := b.storePath(rf)
-			if err != nil {
-				return nil, err
-			}
-			paths = append(paths, path)
-		}
-	}
-
-	if len(paths) == 0 {
-		return nil, unknownReference(reference.FamiliarString(ref))
-	}
-	return paths, nil
-}
-
-func (b *imageStore) storePath(ref reference.Reference) (string, error) {
-	named, ok := ref.(reference.Named)
-	if !ok {
-		return filepath.Join(b.path, "_ids", ref.String()), nil
-	}
-
-	name := strings.Replace(named.Name(), ":", "_", 1)
-	// A name is safe for use as a filesystem path (it is
-	// alphanumerics + "." + "/") except for the ":" used to
-	// separate domain from port which is not safe on Windows.
-	// Replace it with "_" which is not valid in the name.
-	//
-	// There can be at most 1 ":" in a valid reference so only
-	// replace one -- if there are more (and this wasn't caught
-	// when parsing the ref) then there will be errors when we try
-	// to use this as a path later.
-	storeDir := filepath.Join(b.path, filepath.FromSlash(name))
-
-	// We rely here on _ not being valid in a name meaning there can be no clashes due to nesting of repositories.
-	switch t := ref.(type) {
-	case reference.Digested:
-		digest := t.Digest()
-		storeDir = filepath.Join(storeDir, "_digests", digest.Algorithm().String(), digest.Encoded())
-	case reference.Tagged:
-		storeDir = filepath.Join(storeDir, "_tags", t.Tag())
-	default:
-		return "", errors.Errorf("%s: not tagged or digested", ref.String())
-	}
-
-	return storeDir, nil
-}
-
-// scanAllBundles scans the bundle store directories and creates the internal map of App image
-// references. This function must be called before any other public ImageStore interface method.
-func (b *imageStore) scanAllBundles() error {
-	if err := filepath.Walk(b.path, b.processImageStoreFile); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (b *imageStore) processImageStoreFile(path string, info os.FileInfo, err error) error {
-	if err != nil {
-		return err
-	}
-	idRefPath := filepath.Join(b.path, "_ids")
-
-	if info.IsDir() {
-		return nil
-	}
-
-	if info.Name() == image.RelocationMapFilename {
-		return nil
-	}
-
-	if !strings.HasSuffix(info.Name(), ".json") {
-		return nil
-	}
-
-	if strings.HasPrefix(path, idRefPath) {
-		rel := path[len(idRefPath)+1:]
-		dg := strings.Split(filepath.ToSlash(rel), "/")[0]
-		id := ID{digest.NewDigestFromEncoded(digest.SHA256, dg)}
-		b.refsMap.appendRef(id, id)
-		return nil
-	}
-
-	ref, err := b.pathToReference(path)
-	if err != nil {
-		return err
-	}
-	img, err := image.FromFile(path)
-	if err != nil {
-		return err
-	}
-	id, err := FromAppImage(img)
-	if err != nil {
-		return err
-	}
-	b.refsMap[id] = append(b.refsMap[id], ref)
-
-	return nil
-}
-
-func (b *imageStore) pathToReference(path string) (reference.Named, error) {
-	// Clean the path and remove the local bundle store path
-	cleanpath := filepath.ToSlash(path)
-	cleanpath = strings.TrimPrefix(cleanpath, filepath.ToSlash(b.path)+"/")
-
-	// get the hierarchy of directories, so we can get digest algorithm or tag
-	paths := strings.Split(cleanpath, "/")
-	if len(paths) < 3 {
-		return nil, fmt.Errorf("invalid path %q in the bundle store", path)
-	}
-
-	// path must point to a json file
-	if !strings.Contains(paths[len(paths)-1], ".json") {
-		return nil, fmt.Errorf("invalid path %q, not referencing a CNAB bundle in json format", path)
-	}
-
-	// remove the bundle.json filename
-	paths = paths[:len(paths)-1]
-
-	name, err := reconstructNamedReference(path, paths)
-	if err != nil {
-		return nil, err
-	}
-
-	return reference.ParseNamed(name)
+func (b *imageStore) storePath(ref digest.Digest) string {
+	return filepath.Join(b.path, "contents", ref.Algorithm().String(), ref.Encoded())
 }
 
 func (rm referencesMap) appendRef(id ID, ref reference.Reference) {
@@ -387,27 +274,6 @@ func (rm referencesMap) removeRef(ref reference.Reference) {
 			}
 		}
 	}
-}
-
-func reconstructNamedReference(path string, paths []string) (string, error) {
-	name, paths := strings.Replace(paths[0], "_", ":", 1), paths[1:]
-	for i, p := range paths {
-		switch p {
-		case "_tags":
-			if i != len(paths)-2 {
-				return "", fmt.Errorf("invalid path %q in the bundle store", path)
-			}
-			return fmt.Sprintf("%s:%s", name, paths[i+1]), nil
-		case "_digests":
-			if i != len(paths)-3 {
-				return "", fmt.Errorf("invalid path %q in the bundle store", path)
-			}
-			return fmt.Sprintf("%s@%s:%s", name, paths[i+1], paths[i+2]), nil
-		default:
-			name += "/" + p
-		}
-	}
-	return name, nil
 }
 
 func containsRef(list []reference.Reference, ref reference.Reference) bool {

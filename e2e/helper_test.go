@@ -122,9 +122,14 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 	todo(runner)
 }
 
-func build(t *testing.T, cmd icmd.Cmd, dockerCli dockerCliCommand, ref, path string) {
-	cmd.Command = dockerCli.Command("app", "build", "-t", ref, path)
+func build(t *testing.T, cmd icmd.Cmd, dockerCli dockerCliCommand, ref, path string) string {
+	iidfile := fs.NewFile(t, "iid")
+	defer iidfile.Remove()
+	cmd.Command = dockerCli.Command("app", "build", "--iidfile", iidfile.Path(), "-t", ref, path)
 	icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	bytes, err := ioutil.ReadFile(iidfile.Path())
+	assert.NilError(t, err)
+	return string(bytes)
 }
 
 // Container represents a docker container

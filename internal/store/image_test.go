@@ -2,10 +2,8 @@ package store
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"testing"
 
 	"github.com/docker/app/internal/image"
@@ -33,28 +31,21 @@ func TestStoreAndReadBundle(t *testing.T) {
 	testcases := []struct {
 		name string
 		ref  reference.Named
-		path string
 	}{
 		{
 			name: "tagged",
 			ref:  parseRefOrDie(t, "my-repo/my-bundle:my-tag"),
-			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag", image.BundleFilename),
 		},
 		{
 			name: "digested",
 			ref:  parseRefOrDie(t, "my-repo/my-bundle@sha256:"+testSha),
-			path: dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_digests", "sha256", testSha, image.BundleFilename),
 		},
 	}
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			// Store the bundle
-			_, err = imageStore.Store(testcase.ref, expectedBundle)
-			assert.NilError(t, err)
-
-			// Check the file exists
-			_, err = os.Stat(testcase.path)
+			_, err = imageStore.Store(expectedBundle, testcase.ref)
 			assert.NilError(t, err)
 
 			// Load it
@@ -70,139 +61,6 @@ func parseRefOrDie(t *testing.T, ref string) reference.Named {
 	named, err := reference.ParseNormalizedNamed(ref)
 	assert.NilError(t, err)
 	return named
-}
-
-func TestStorePath(t *testing.T) {
-	bs := &imageStore{path: "base-dir"}
-	for _, tc := range []struct {
-		Name            string
-		Ref             reference.Named
-		ExpectedSubpath string
-		ExpectedError   string
-	}{
-		// storePath expects a tagged or digested, i.e. the use of TagNameOnly to add :latest. Check that it rejects untagged refs
-		{
-			Name:          "untagged",
-			Ref:           parseRefOrDie(t, "foo"),
-			ExpectedError: "docker.io/library/foo: not tagged or digested",
-		},
-		// Variants of a tagged ref
-		{
-			Name:            "simple-tagged",
-			Ref:             parseRefOrDie(t, "foo:latest"),
-			ExpectedSubpath: "docker.io/library/foo/_tags/latest",
-		},
-		{
-			Name:            "deep-simple-tagged",
-			Ref:             parseRefOrDie(t, "user/foo/bar:latest"),
-			ExpectedSubpath: "docker.io/user/foo/bar/_tags/latest",
-		},
-		{
-			Name:            "host-and-tagged",
-			Ref:             parseRefOrDie(t, "my.registry.example.com/foo:latest"),
-			ExpectedSubpath: "my.registry.example.com/foo/_tags/latest",
-		},
-		{
-			Name:            "host-port-and-tagged",
-			Ref:             parseRefOrDie(t, "my.registry.example.com:5000/foo:latest"),
-			ExpectedSubpath: "my.registry.example.com_5000/foo/_tags/latest",
-		},
-		// Variants of a digested ref
-		{
-			Name:            "simple-digested",
-			Ref:             parseRefOrDie(t, "foo@sha256:"+testSha),
-			ExpectedSubpath: "docker.io/library/foo/_digests/sha256/" + testSha,
-		},
-		{
-			Name:            "deep-simple-digested",
-			Ref:             parseRefOrDie(t, "user/foo/bar@sha256:"+testSha),
-			ExpectedSubpath: "docker.io/user/foo/bar/_digests/sha256/" + testSha,
-		},
-		{
-			Name:            "host-and-digested",
-			Ref:             parseRefOrDie(t, "my.registry.example.com/foo@sha256:"+testSha),
-			ExpectedSubpath: "my.registry.example.com/foo/_digests/sha256/" + testSha,
-		},
-		{
-			Name:            "host-port-and-digested",
-			Ref:             parseRefOrDie(t, "my.registry.example.com:5000/foo@sha256:"+testSha),
-			ExpectedSubpath: "my.registry.example.com_5000/foo/_digests/sha256/" + testSha,
-		},
-		// If both then digest takes precedence (tag is ignored)
-		{
-			Name:            "simple-tagged-and-digested",
-			Ref:             parseRefOrDie(t, "foo:latest@sha256:"+testSha),
-			ExpectedSubpath: "docker.io/library/foo/_digests/sha256/" + testSha,
-		},
-		{
-			Name:            "deep-simple-tagged-and-digested",
-			Ref:             parseRefOrDie(t, "user/foo/bar:latest@sha256:"+testSha),
-			ExpectedSubpath: "docker.io/user/foo/bar/_digests/sha256/" + testSha,
-		},
-		{
-			Name:            "host-and-tagged-and-digested",
-			Ref:             parseRefOrDie(t, "my.registry.example.com/foo:latest@sha256:"+testSha),
-			ExpectedSubpath: "my.registry.example.com/foo/_digests/sha256/" + testSha,
-		},
-		{
-			Name:            "host-port-and-tagged-and-digested",
-			Ref:             parseRefOrDie(t, "my.registry.example.com:5000/foo:latest@sha256:"+testSha),
-			ExpectedSubpath: "my.registry.example.com_5000/foo/_digests/sha256/" + testSha,
-		},
-	} {
-		t.Run(tc.Name, func(t *testing.T) {
-			path, err := bs.storePath(tc.Ref)
-			if tc.ExpectedError == "" {
-				assert.NilError(t, err)
-				assert.Equal(t, filepath.Join("base-dir", filepath.FromSlash(tc.ExpectedSubpath)), path)
-			} else {
-				assert.Error(t, err, tc.ExpectedError)
-			}
-		})
-	}
-}
-
-func TestPathToReference(t *testing.T) {
-	imageStore := &imageStore{path: "base-dir"}
-
-	for _, tc := range []struct {
-		Name          string
-		Path          string
-		ExpectedError string
-		ExpectedName  string
-	}{
-		{
-			Name:          "error on invalid path",
-			Path:          "invalid",
-			ExpectedError: `invalid path "invalid" in the bundle store`,
-		}, {
-			Name:          "error if file is not json",
-			Path:          "registry/repo/name/_tags/file.xml",
-			ExpectedError: `invalid path "registry/repo/name/_tags/file.xml", not referencing a CNAB bundle in json format`,
-		}, {
-			Name:         "return a reference from tagged",
-			Path:         "docker.io/library/foo/_tags/latest/bundle.json",
-			ExpectedName: "docker.io/library/foo",
-		}, {
-			Name:         "return a reference from digested",
-			Path:         "docker.io/library/foo/_digests/sha256/" + testSha + "/bundle.json",
-			ExpectedName: "docker.io/library/foo",
-		},
-	} {
-		t.Run(tc.Name, func(t *testing.T) {
-			ref, err := imageStore.pathToReference(tc.Path)
-
-			if tc.ExpectedError != "" {
-				assert.Equal(t, err.Error(), tc.ExpectedError)
-			} else {
-				assert.NilError(t, err)
-			}
-
-			if tc.ExpectedName != "" {
-				assert.Equal(t, ref.Name(), tc.ExpectedName)
-			}
-		})
-	}
 }
 
 func TestList(t *testing.T) {
@@ -226,7 +84,7 @@ func TestList(t *testing.T) {
 
 	img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	for _, ref := range refs {
-		_, err = imageStore.Store(ref, img)
+		_, err = imageStore.Store(img, ref)
 		assert.NilError(t, err)
 	}
 
@@ -264,13 +122,13 @@ func TestRemove(t *testing.T) {
 
 	img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	for _, ref := range refs {
-		_, err = imageStore.Store(ref, img)
+		_, err = imageStore.Store(img, ref)
 		assert.NilError(t, err)
 	}
 
 	t.Run("error on unknown", func(t *testing.T) {
 		err := imageStore.Remove(parseRefOrDie(t, "my-repo/some-bundle:1.0.0"), false)
-		assert.Equal(t, err.Error(), "no such image my-repo/some-bundle:1.0.0")
+		assert.Equal(t, err.Error(), "reference does not exist")
 	})
 
 	t.Run("remove tagged and digested", func(t *testing.T) {
@@ -308,16 +166,18 @@ func TestRemoveById(t *testing.T) {
 		assert.NilError(t, err)
 
 		err = imageStore.Remove(idRef, false)
-		assert.Equal(t, err.Error(), fmt.Sprintf("no such image %q", reference.FamiliarString(idRef)))
+		assert.Equal(t, err.Error(), fmt.Sprintf("%s: reference not found", idRef.String()))
 	})
 
 	t.Run("error on multiple repositories", func(t *testing.T) {
 		img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 		idRef, err := FromAppImage(img)
 		assert.NilError(t, err)
-		_, err = imageStore.Store(idRef, img)
+		_, err = imageStore.Store(img, idRef)
 		assert.NilError(t, err)
-		_, err = imageStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), img)
+		_, err = imageStore.Store(img, parseRefOrDie(t, "my-repo/a-bundle:my-tag"))
+		assert.NilError(t, err)
+		_, err = imageStore.Store(img, parseRefOrDie(t, "my-repo/a-bundle:latest"))
 		assert.NilError(t, err)
 
 		err = imageStore.Remove(idRef, false)
@@ -328,9 +188,9 @@ func TestRemoveById(t *testing.T) {
 		img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 		idRef, err := FromAppImage(img)
 		assert.NilError(t, err)
-		_, err = imageStore.Store(idRef, img)
+		_, err = imageStore.Store(img, idRef)
 		assert.NilError(t, err)
-		_, err = imageStore.Store(parseRefOrDie(t, "my-repo/a-bundle:my-tag"), img)
+		_, err = imageStore.Store(img, parseRefOrDie(t, "my-repo/a-bundle:my-tag"))
 		assert.NilError(t, err)
 
 		err = imageStore.Remove(idRef, true)
@@ -340,7 +200,7 @@ func TestRemoveById(t *testing.T) {
 	t.Run("success when only one reference exists", func(t *testing.T) {
 		img := image.FromBundle(&bundle.Bundle{Name: "other-bundle-name"})
 		ref := parseRefOrDie(t, "my-repo/other-bundle:my-tag")
-		_, err = imageStore.Store(ref, img)
+		_, err = imageStore.Store(img, ref)
 
 		idRef, err := FromAppImage(img)
 		assert.NilError(t, err)
@@ -363,15 +223,15 @@ func TestLookUp(t *testing.T) {
 	assert.NilError(t, err)
 	img := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
 	// Adding the bundle referenced by id
-	id, err := imageStore.Store(nil, img)
+	id, err := imageStore.Store(img, nil)
 	assert.NilError(t, err)
 	// Adding the same bundle referenced by a tag
 	ref := parseRefOrDie(t, "my-repo/a-bundle:my-tag")
-	_, err = imageStore.Store(ref, img)
+	_, err = imageStore.Store(img, ref)
 	assert.NilError(t, err)
 	// Adding the same bundle referenced by tag prefixed by docker.io/library
 	dockerIoRef := parseRefOrDie(t, "docker.io/library/a-bundle:my-tag")
-	_, err = imageStore.Store(dockerIoRef, img)
+	_, err = imageStore.Store(img, dockerIoRef)
 	assert.NilError(t, err)
 
 	for _, tc := range []struct {
@@ -419,7 +279,7 @@ func TestLookUp(t *testing.T) {
 		{
 			Name:          "Unknown short ID",
 			refOrID:       "b4fcc3af",
-			ExpectedError: "b4fcc3af:latest: reference not found",
+			ExpectedError: "b4fcc3af: reference not found",
 			ExpectedRef:   nil,
 		},
 	} {
@@ -438,57 +298,6 @@ func TestLookUp(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestScanBundles(t *testing.T) {
-	dockerConfigDir := fs.NewDir(t, t.Name(), fs.WithMode(0755))
-	defer dockerConfigDir.Remove()
-
-	// Adding a bundle which should be referenced by id only
-	img1 := image.FromBundle(&bundle.Bundle{Name: "bundle-1"})
-	id1, err := FromAppImage(img1)
-	assert.NilError(t, err)
-	dir1 := dockerConfigDir.Join("app", "bundles", "_ids", id1.String())
-	assert.NilError(t, os.MkdirAll(dir1, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir1, image.BundleFilename), []byte(`{"name": "bundle-1"}`), 0644))
-
-	// Adding a bundle which should be referenced by id and tag
-	img2 := image.FromBundle(&bundle.Bundle{Name: "bundle-2"})
-	id2, err := FromAppImage(img2)
-	assert.NilError(t, err)
-	dir2 := dockerConfigDir.Join("app", "bundles", "_ids", id2.String())
-	assert.NilError(t, os.MkdirAll(dir2, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, image.BundleFilename), []byte(`{"name": "bundle-2"}`), 0644))
-	dir2 = dockerConfigDir.Join("app", "bundles", "docker.io", "my-repo", "my-bundle", "_tags", "my-tag")
-	assert.NilError(t, os.MkdirAll(dir2, 0755))
-	assert.NilError(t, ioutil.WriteFile(filepath.Join(dir2, image.BundleFilename), []byte(`{"name": "bundle-2"}`), 0644))
-
-	appstore, err := NewApplicationStore(dockerConfigDir.Path())
-	assert.NilError(t, err)
-	imageStore, err := appstore.ImageStore()
-	assert.NilError(t, err)
-
-	// Ensure List() and Read() function returns expected bundles
-	refs, err := imageStore.List()
-	assert.NilError(t, err)
-	expectedRefs := []string{id2.String(), "my-repo/my-bundle:my-tag", id1.String()}
-	refsAsString := func(references []reference.Reference) []string {
-		var rv []string
-		for _, r := range references {
-			rv = append(rv, reference.FamiliarString(r))
-		}
-		return rv
-	}
-	assert.DeepEqual(t, refsAsString(refs), expectedRefs)
-	img, err := imageStore.Read(id1)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, img, img1)
-	img, err = imageStore.Read(id2)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, img, img2)
-	img, err = imageStore.Read(parseRefOrDie(t, "my-repo/my-bundle:my-tag"))
-	assert.NilError(t, err)
-	assert.DeepEqual(t, img, img2)
 }
 
 func TestAppendRemoveReference(t *testing.T) {

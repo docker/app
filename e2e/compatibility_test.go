@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/opencontainers/go-digest"
+
 	"gotest.tools/assert"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -72,9 +74,13 @@ func TestBackwardsCompatibilityV1(t *testing.T) {
 		data, err := ioutil.ReadFile(filepath.Join("testdata", "compatibility", "bundle-v0.9.0.json"))
 		assert.NilError(t, err)
 		// update bundle
-		bundleDir := filepath.Join(info.configDir, "app", "bundles", "docker.io", "library", "app-e2e", "_tags", "v0.9.0")
+		dg := digest.SHA256.FromBytes(data)
+		bundleDir := filepath.Join(info.configDir, "app", "bundles", "contents", dg.Algorithm().String(), dg.Encoded())
 		assert.NilError(t, os.MkdirAll(bundleDir, os.FileMode(0777)))
 		assert.NilError(t, ioutil.WriteFile(filepath.Join(bundleDir, "bundle.json"), data, os.FileMode(0644)))
+		metadata := filepath.Join(info.configDir, "app", "bundles", "repositories.json")
+		json := fmt.Sprintf("{\"Repositories\":{\"app-e2e\":{\"app-e2e:v0.9.0\":\"%s\"}}}", dg.String())
+		assert.NilError(t, ioutil.WriteFile(metadata, []byte(json), 0777))
 
 		// load images build with an old Docker App version
 		assert.NilError(t, loadAndTagImage(info, info.tmpDir, "app-e2e:0.1.0-invoc", "https://github.com/docker/app-e2e/raw/master/images/v0.9.0/app-e2e-invoc.tar"))

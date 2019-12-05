@@ -22,7 +22,7 @@ type imageStoreStubForListCmd struct {
 	refList []reference.Reference
 }
 
-func (b *imageStoreStubForListCmd) Store(ref reference.Reference, bndl *image.AppImage) (reference.Digested, error) {
+func (b *imageStoreStubForListCmd) Store(bndl *image.AppImage, ref reference.Reference) (reference.Digested, error) {
 	b.refMap[ref] = bndl
 	b.refList = append(b.refList, ref)
 	return store.FromAppImage(bndl)
@@ -142,7 +142,7 @@ func testRunList(t *testing.T, refs []reference.Reference, bundles []image.AppIm
 		refList: []reference.Reference{},
 	}
 	for i, ref := range refs {
-		_, err = imageStore.Store(ref, &bundles[i])
+		_, err = imageStore.Store(&bundles[i], ref)
 		assert.NilError(t, err)
 	}
 	err = runList(dockerCli, options, imageStore)

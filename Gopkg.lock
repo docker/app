@@ -347,7 +347,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:61d8f5998565a7c687a03d7f93845975651a0e0a87a079b824a2905c125d9bd0"
+  digest = "1:2dc59dd841a809590c3b7d2366836870fb52d8cdd6c1943186fa05f8be4c8b9f"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -387,6 +387,7 @@
     "pkg/term",
     "pkg/term/windows",
     "pkg/urlutil",
+    "reference",
     "registry",
     "registry/resumable",
   ]
@@ -1448,6 +1449,7 @@
     "github.com/docker/cli/cli/context/kubernetes",
     "github.com/docker/cli/cli/context/store",
     "github.com/docker/cli/cli/flags",
+    "github.com/docker/cli/cli/streams",
     "github.com/docker/cli/opts",
     "github.com/docker/cli/templates",
     "github.com/docker/cnab-to-oci/relocation",
@@ -1463,6 +1465,7 @@
     "github.com/docker/docker/pkg/namesgenerator",
     "github.com/docker/docker/pkg/stringid",
     "github.com/docker/docker/pkg/term",
+    "github.com/docker/docker/reference",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/docker/go/canonical/json",
@@ -1491,6 +1494,7 @@
     "gotest.tools/icmd",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/util/wait",
     "k8s.io/client-go/kubernetes/typed/core/v1",
   ]
   solver-name = "gps-cdcl"

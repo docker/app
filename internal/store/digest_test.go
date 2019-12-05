@@ -21,21 +21,14 @@ func Test_storeByDigest(t *testing.T) {
 	assert.NilError(t, err)
 
 	bndl := image.FromBundle(&bundle.Bundle{Name: "bundle-name"})
-	ref := parseRefOrDie(t, "test/simple:1.0")
-	_, err = imageStore.Store(ref, bndl)
+	_, err = imageStore.Store(bndl, nil)
 	assert.NilError(t, err)
 
-	_, err = os.Stat(dockerConfigDir.Join("app", "bundles", "docker.io", "test", "simple", "_tags", "1.0", image.BundleFilename))
-	assert.NilError(t, err)
-
-	_, err = imageStore.Store(nil, bndl)
-	assert.NilError(t, err)
-
-	ids := dockerConfigDir.Join("app", "bundles", "_ids")
+	ids := dockerConfigDir.Join("app", "bundles", "contents", "sha256")
 	infos, err := ioutil.ReadDir(ids)
 	assert.NilError(t, err)
 	assert.Equal(t, len(infos), 1)
-	_, err = os.Stat(dockerConfigDir.Join("app", "bundles", "_ids", infos[0].Name(), image.BundleFilename))
+	_, err = os.Stat(dockerConfigDir.Join("app", "bundles", "contents", "sha256", infos[0].Name(), image.BundleFilename))
 	assert.NilError(t, err)
 }
 
