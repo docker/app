@@ -75,7 +75,7 @@
                         dir('src/github.com/docker/app') {
                             checkout scm
                             ansiColor('xterm') {
-                                sh 'make -f docker.Makefile save-invocation-image'
+                                sh 'make -f docker.Makefile invocation-image save-invocation-image'
                                 sh 'make -f docker.Makefile INVOCATION_IMAGE_TAG=$TAG-coverage OUTPUT=coverage-invocation-image.tar save-invocation-image-tag'
                             }
                             dir('_build') {

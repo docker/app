@@ -37,7 +37,7 @@ check_go_env:
 
 cross: cross-plugin ## cross-compile binaries (linux, darwin, windows)
 
-cross-plugin: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe
+cross-plugin: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe bin/$(BIN_NAME)-linux-arm64 bin/$(BIN_NAME)-linux-arm
 
 e2e-cross: bin/$(BIN_NAME)-e2e-linux bin/$(BIN_NAME)-e2e-darwin bin/$(BIN_NAME)-e2e-windows.exe
 
@@ -48,6 +48,14 @@ dynamic: bin/$(BIN_NAME)
 .PHONY: bin/$(BIN_NAME)-e2e-windows
 bin/$(BIN_NAME)-e2e-%.exe bin/$(BIN_NAME)-e2e-%: e2e bin/$(BIN_NAME)-%
 	GOOS=$* $(GO_TEST) -c -o $@ ./e2e/
+
+.PHONY: bin/$(BIN_NAME)-linux-arm64
+bin/$(BIN_NAME)-linux-arm64: cmd/$(BIN_NAME) check_go_env
+	GOOS=linux GOARCH=arm64 $(GO_BUILD) -o $@ ./$<
+
+.PHONY: bin/$(BIN_NAME)-linux-arm
+bin/$(BIN_NAME)-linux-arm: cmd/$(BIN_NAME) check_go_env
+	GOOS=linux GOARCH=arm $(GO_BUILD) -o $@ ./$<
 
 .PHONY: bin/$(BIN_NAME)-windows
 bin/$(BIN_NAME)-%.exe bin/$(BIN_NAME)-%: cmd/$(BIN_NAME) check_go_env
