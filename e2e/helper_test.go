@@ -62,7 +62,6 @@ func runWithDindSwarmAndRegistry(t *testing.T, todo func(dindSwarmAndRegistryInf
 		}
 		cmd := icmd.Command(params[0], params[1:]...)
 		result := icmd.RunCmd(cmd)
-		result.Assert(t, icmd.Success)
 		return result.Combined()
 	}
 	// Func to execute docker cli commands
