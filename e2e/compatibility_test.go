@@ -114,19 +114,19 @@ func TestBackwardsCompatibilityV1(t *testing.T) {
 		runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 			//expected_outputs
 			expectedOutput := map[string][]string{
-				"run": []string{
-					"Creating service app-e2e_backend",
-					"Creating service app-e2e_frontend",
-					"Creating network app-e2e_default",
+				"run": {
+					`Creating service app-e2e_backend`,
+					`Creating service app-e2e_frontend`,
+					`Creating network app-e2e_default`,
 				},
-				"upgrade": []string{
-					"Updating service app-e2e_backend",
-					"Updating service app-e2e_frontend",
+				"upgrade": {
+					`Updating service app-e2e_backend`,
+					`Updating service app-e2e_frontend`,
 				},
-				"rm": []string{
-					"Removing service app-e2e_backend",
-					"Removing service app-e2e_frontend",
-					"Removing network app-e2e_default",
+				"rm": {
+					`Removing service app-e2e_backend`,
+					`Removing service app-e2e_frontend`,
+					`Removing network app-e2e_default`,
 				}}
 			runAppE2E(t, info, expectedOutput)
 		})
@@ -135,17 +135,17 @@ func TestBackwardsCompatibilityV1(t *testing.T) {
 		runWithKindAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 			//expected_outputs
 			expectedOutput := map[string][]string{
-				"run": []string{
-					"backend: Ready",
-					"frontend: Ready",
-					"Stack app-e2e is stable and running",
+				"run": {
+					`backend: Ready`,
+					`frontend: Ready`,
+					`Stack app-e2e is stable and running`,
 				},
-				"upgrade": []string{
-					"Waiting for the stack to be stable and running...",
-					"backend: Ready",
-					"frontend: Ready",
+				"upgrade": {
+					`Waiting for the stack to be stable and running...`,
+					`backend: Ready`,
+					`frontend: Ready`,
 				},
-				"rm": []string{},
+				"rm": {},
 			}
 			runAppE2E(t, info, expectedOutput)
 		})

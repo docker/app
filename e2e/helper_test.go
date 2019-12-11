@@ -108,6 +108,36 @@ func (info *OrchestratorAndRegistryInfo) Download(filename string, url string) e
 	return err
 }
 
+func extractZIP(archive string, binary string, filename string) error {
+	zipReader, err := zip.OpenReader(archive)
+	if err != nil {
+		return err
+	}
+	for _, file := range zipReader.Reader.File {
+		if filename == file.Name {
+			zippedFile, err := file.Open()
+			if err != nil {
+				return err
+			}
+			defer zippedFile.Close()
+			binaryFile, err := os.OpenFile(
+				binary,
+				os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+				file.Mode(),
+			)
+			if err != nil {
+				return err
+			}
+			defer binaryFile.Close()
+			_, err = io.Copy(binaryFile, zippedFile)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (info *OrchestratorAndRegistryInfo) ExtractBinaryFromArchive(binary string, archive string, archiveFilename string) error {
 	f, err := os.Open(archive)
 	if err != nil {
@@ -116,33 +146,7 @@ func (info *OrchestratorAndRegistryInfo) ExtractBinaryFromArchive(binary string,
 	defer f.Close()
 
 	if strings.HasSuffix(archive, ".zip") {
-		zipReader, err := zip.OpenReader(archive)
-		if err != nil {
-			return err
-		}
-		for _, file := range zipReader.Reader.File {
-			if archiveFilename == file.Name {
-				zippedFile, err := file.Open()
-				if err != nil {
-					return err
-				}
-				defer zippedFile.Close()
-				binaryFile, err := os.OpenFile(
-					binary,
-					os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-					file.Mode(),
-				)
-				if err != nil {
-					return err
-				}
-				defer binaryFile.Close()
-				_, err = io.Copy(binaryFile, zippedFile)
-				if err != nil {
-					return err
-				}
-			}
-		}
-		return nil
+		return extractZIP(archive, binary, archiveFilename)
 	}
 
 	var fileReader io.ReadCloser = f
@@ -171,7 +175,10 @@ func (info *OrchestratorAndRegistryInfo) ExtractBinaryFromArchive(binary string,
 			if err != nil {
 				return err
 			}
-			io.Copy(writer, tarReader)
+			_, err = io.Copy(writer, tarReader)
+			if err != nil {
+				return err
+			}
 			err = os.Chmod(binary, os.FileMode(file.Mode))
 			if err != nil {
 				return err
@@ -297,8 +304,8 @@ func runWithKindAndRegistry(t *testing.T, todo func(OrchestratorAndRegistryInfo)
 	err := runner.Download(kind, fmt.Sprintf(`https://github.com/kubernetes-sigs/kind/releases/download/v0.6.0/kind-%s-amd64`, runtime.GOOS))
 	assert.NilError(t, err)
 	// make kind binary executable
-	os.Chmod(kind, os.FileMode(0111))
-
+	err = os.Chmod(kind, os.FileMode(0111))
+	assert.NilError(t, err)
 	//get hosts's ip address
 	ipaddress, err := getHostIPAddress()
 	assert.NilError(t, err)
@@ -322,15 +329,16 @@ containerdConfigPatches:
 	runner.configuredCmd.Env = append(runner.configuredCmd.Env, "KUBECONFIG="+runner.tmpDir.Join("kube.conf"))
 	runner.orchestratorName = "kindcluster-control-plane"
 	// download and install kubectl, helm and compose-on-kubernetes
-	runner.Download(kubectl, fmt.Sprintf(`https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/%s/amd64/kubectl%s`, runtime.GOOS, extension))
-	os.Chmod(kubectl, os.FileMode(0111))
-
+	err = runner.Download(kubectl, fmt.Sprintf(`https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/%s/amd64/kubectl%s`, runtime.GOOS, extension))
+	assert.NilError(t, err)
+	err = os.Chmod(kubectl, os.FileMode(0111))
+	assert.NilError(t, err)
 	time.Sleep(time.Second * 60)
 
 	output := runner.localCmd(kubectl, `create`, `namespace`, `compose`)
 	checkContains(t, output, []string{`namespace/compose created`})
 
-	// wait untill all containers are in running state
+	// wait until all containers are in running state
 	waitReady := func() {
 		areRunning := func(s []string) bool {
 			if len(s) == 0 {
@@ -348,7 +356,7 @@ containerdConfigPatches:
 		}
 		err := wait.Poll(time.Second*2, time.Second*240, func() (bool, error) {
 			output := runner.localCmd(kubectl, `get`, `pods`, `-o=jsonpath={.items[*].status.phase}`, `--all-namespaces`)
-			containerStatus := strings.Split(strings.Trim(output, ` \r\n`), ` `)
+			containerStatus := strings.Split(strings.Trim(output, `\n`), ` `)
 			return areRunning(containerStatus), nil
 		})
 		assert.NilError(t, err)
@@ -361,10 +369,13 @@ containerdConfigPatches:
 	checkContains(t, output, []string{`clusterrolebinding.rbac.authorization.k8s.io/tiller created`})
 	waitReady()
 	// download and install helm
-	runner.Download(runner.tmpDir.Join("helm"+archive), fmt.Sprintf(`https://get.helm.sh/helm-v2.16.1-%s-amd64%s`, runtime.GOOS, archive))
-	runner.ExtractBinaryFromArchive(helm, runner.tmpDir.Join("helm"+archive), fmt.Sprintf("%s-amd64/helm%s", runtime.GOOS, extension))
-	os.Chmod(helm, os.FileMode(0111))
-	output = runner.localCmd(helm, `init`, `--service-account`, `tiller`)
+	err = runner.Download(runner.tmpDir.Join("helm"+archive), fmt.Sprintf(`https://get.helm.sh/helm-v2.16.1-%s-amd64%s`, runtime.GOOS, archive))
+	assert.NilError(t, err)
+	err = runner.ExtractBinaryFromArchive(helm, runner.tmpDir.Join("helm"+archive), fmt.Sprintf("%s-amd64/helm%s", runtime.GOOS, extension))
+	assert.NilError(t, err)
+	err = os.Chmod(helm, os.FileMode(0111))
+	assert.NilError(t, err)
+	runner.localCmd(helm, `init`, `--service-account`, `tiller`)
 	time.Sleep(time.Second * 30)
 	waitReady()
 
@@ -386,7 +397,8 @@ containerdConfigPatches:
 	// download compose-on-kube binary
 	err = runner.Download(conk, fmt.Sprintf(`https://github.com/docker/compose-on-kubernetes/releases/download/v0.5.0-alpha1/installer-%s%s`, runtime.GOOS, extension))
 	assert.NilError(t, err)
-	os.Chmod(conk, os.FileMode(0111))
+	err = os.Chmod(conk, os.FileMode(0111))
+	assert.NilError(t, err)
 	// Install Compose on Kube
 	output = runner.localCmd(conk, `-namespace=compose`, `-etcd-servers=http://compose-etcd-client:2379`)
 	checkContains(t, output, []string{`Controller: image: `})
@@ -394,15 +406,17 @@ containerdConfigPatches:
 	waitReady()
 
 	// setup docker context
-	runner.dockerCmd("context", "create", "kind-context", "--docker", `"host=unix:///var/run/docker.sock"`, "--default-stack-orchestrator", "kubernetes", "--kubernetes", fmt.Sprintf(`"config-file=%s"`, runner.tmpDir.Join("kube.conf")))
+	runner.dockerCmd(`context`, `create`, `kind-context`, `--docker`, `"host=unix:///var/run/docker.sock"`, `--default-stack-orchestrator`,
+		`kubernetes`, `--kubernetes`, fmt.Sprintf(`"config-file=%s"`, runner.tmpDir.Join("kube.conf")))
 	runner.configuredCmd.Env = append(runner.configuredCmd.Env, "DOCKER_CONTEXT=kind-context", "DOCKER_INSTALLER_CONTEXT=kind-context")
 
 	cleanAll := func() {
-		runner.localCmd(kind, `delete`, `cluster`)
+		runner.dockerCmd(`rm`, `--force`, `--volumes`, runner.orchestratorName)
 		runner.cleanup()
 	}
 	defer cleanAll()
 	todo(*runner)
+
 }
 
 func build(t *testing.T, cmd icmd.Cmd, dockerCli dockerCliCommand, ref, path string) {
