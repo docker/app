@@ -21,14 +21,9 @@
 
 required = ["github.com/wadey/gocovmerge"]
 
-#[[constraint]]
-#  name = "github.com/docker/buildx"
-#  version = "=v0.3.1"
-
 [[override]]
   name = "github.com/docker/buildx"
-  source = "github.com/ulyssessouza/buildx"
-  revision = "5941345e21ebda43723a475380135fe3741d6b3c"
+  revision = "709ef36b4f10a9389fd9a806657c48a969909d85"
 
 [[override]]
   name = "github.com/moby/buildkit"
@@ -51,12 +46,7 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[override]]
   name = "github.com/containerd/containerd"
-  version = "v1.3.0"
-
-[[override]]
-  name = "github.com/containerd/console"
-  source = "github.com/ulyssessouza/console"
-  revision = "f652dc3e99a9f4aa760deb9b4b28edb7c4e5001a"
+  revision = "97712c8ad73dd302d5d226e0384b2d86e5de2989"
 
 [[override]]
   name = "github.com/docker/cli"
