@@ -107,6 +107,28 @@ Unable to find App "unknown": failed to resolve bundle manifest "docker.io/libra
 	})
 }
 
+func TestPushPullServiceImages(t *testing.T) {
+	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+		cmd := info.configuredCmd
+		ref := info.registryAddress + "/test/push-pull"
+		tag := ":v.0.0.1"
+		build(t, cmd, dockerCli, ref+tag, filepath.Join("testdata", "push-pull"))
+
+		cmd.Command = dockerCli.Command("app", "push", ref+tag)
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		// Make sure this image does not exist so that we can verify the pull works.
+		cmd.Command = dockerCli.Command("image", "rm", "busybox:1.30.1")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		cmd.Command = dockerCli.Command("app", "pull", "--service-images", ref+tag)
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+
+		cmd.Command = dockerCli.Command("image", "inspect", "busybox@sha256:4b6ad3a68d34da29bf7c8ccb5d355ba8b4babcad1f99798204e7abb43e54ee3d")
+		icmd.RunCmd(cmd).Assert(t, icmd.Success)
+	})
+}
+
 func TestPushInstallBundle(t *testing.T) {
 	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
 		cmd := info.configuredCmd
