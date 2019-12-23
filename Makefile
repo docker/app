@@ -1,17 +1,8 @@
 include vars.mk
 
-ifeq ($(BUILDTIME),)
-  BUILDTIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
-endif
-ifeq ($(BUILDTIME),)
-  BUILDTIME := unknown
-  $(warning unable to set BUILDTIME. Set the value manually)
-endif
-
 LDFLAGS := "-s -w \
   -X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
-  -X $(PKG_NAME)/internal.Version=$(TAG)      \
-  -X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
+  -X $(PKG_NAME)/internal.Version=$(TAG)"
 
 EXEC_EXT :=
 ifeq ($(OS),Windows_NT)

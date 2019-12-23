@@ -11,7 +11,6 @@ ifeq ($(SHELL),sh.exe)
   rm = del /F /Q $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
   rmdir = rmdir /S /Q $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
   chmod =
-  BUILDTIME ?= unknown
   NULL := nul
 else
   # The no-op redirection forces make to shell out the commands instead of spawning a process as
