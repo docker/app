@@ -8,11 +8,11 @@ import (
 
 	"github.com/docker/app/internal/image"
 
-	"github.com/deislabs/cnab-go/driver"
+	"github.com/cnabio/cnab-go/driver"
 	"github.com/docker/app/internal/cliopts"
 
-	"github.com/deislabs/cnab-go/action"
-	"github.com/deislabs/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/action"
+	"github.com/cnabio/cnab-go/credentials"
 	bdl "github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/store"

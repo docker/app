@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config/configfile"

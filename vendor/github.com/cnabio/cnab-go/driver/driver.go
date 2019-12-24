@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/go/canonical/json"
 )
 

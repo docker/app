@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/deislabs/cnab-go/action"
-	"github.com/deislabs/cnab-go/driver"
+	"github.com/cnabio/cnab-go/action"
+	"github.com/cnabio/cnab-go/driver"
 	"github.com/docker/app/internal"
 	bdl "github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cliopts"

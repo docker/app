@@ -12,9 +12,9 @@ import (
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/store"
 
-	"github.com/deislabs/cnab-go/claim"
-	"github.com/deislabs/cnab-go/driver"
-	dockerDriver "github.com/deislabs/cnab-go/driver/docker"
+	"github.com/cnabio/cnab-go/claim"
+	"github.com/cnabio/cnab-go/driver"
+	dockerDriver "github.com/cnabio/cnab-go/driver/docker"
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context/docker"

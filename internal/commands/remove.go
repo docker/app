@@ -9,10 +9,10 @@ import (
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/store"
 
-	"github.com/deislabs/cnab-go/driver"
+	"github.com/cnabio/cnab-go/driver"
 
-	"github.com/deislabs/cnab-go/action"
-	"github.com/deislabs/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/action"
+	"github.com/cnabio/cnab-go/credentials"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	multierror "github.com/hashicorp/go-multierror"

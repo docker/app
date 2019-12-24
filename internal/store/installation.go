@@ -8,8 +8,8 @@ import (
 
 	"github.com/docker/cnab-to-oci/relocation"
 
-	"github.com/deislabs/cnab-go/claim"
-	"github.com/deislabs/cnab-go/utils/crud"
+	"github.com/cnabio/cnab-go/claim"
+	"github.com/cnabio/cnab-go/utils/crud"
 )
 
 // InstallationStore is an interface to persist, delete, list and read installations.

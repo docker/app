@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/deislabs/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/credentials"
 	"github.com/docker/app/internal/store"
 	dockerConfigFile "github.com/docker/cli/cli/config/configfile"
 	"gotest.tools/assert"

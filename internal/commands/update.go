@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deislabs/cnab-go/driver"
+	"github.com/cnabio/cnab-go/driver"
 
-	"github.com/deislabs/cnab-go/action"
-	"github.com/deislabs/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/action"
+	"github.com/cnabio/cnab-go/credentials"
 	"github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"

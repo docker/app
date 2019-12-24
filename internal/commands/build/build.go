@@ -13,13 +13,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cnabio/cnab-go/bundle"
+	cnab "github.com/cnabio/cnab-go/driver"
+	"github.com/containerd/console"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types"
-
-	"github.com/containerd/console"
-	"github.com/deislabs/cnab-go/bundle"
-	cnab "github.com/deislabs/cnab-go/driver"
 	"github.com/docker/buildx/build"
 	"github.com/docker/buildx/driver"
 	_ "github.com/docker/buildx/driver/docker" // required to get default driver registered, see driver/docker/factory.go:14

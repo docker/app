@@ -9,7 +9,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/deislabs/cnab-go/action"
+	"github.com/cnabio/cnab-go/action"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"

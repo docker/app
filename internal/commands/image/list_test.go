@@ -10,7 +10,7 @@ import (
 
 	"gotest.tools/assert"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/distribution/reference"

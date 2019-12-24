@@ -3,9 +3,9 @@ package action
 import (
 	"errors"
 
-	"github.com/deislabs/cnab-go/claim"
-	"github.com/deislabs/cnab-go/credentials"
-	"github.com/deislabs/cnab-go/driver"
+	"github.com/cnabio/cnab-go/claim"
+	"github.com/cnabio/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/driver"
 )
 
 var (

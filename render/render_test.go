@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/parameters"
 	yaml "gopkg.in/yaml.v2"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/app/internal/image"
 	"github.com/docker/cnab-to-oci/relocation"
 )
