@@ -8,14 +8,16 @@ import (
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/docker/cli/cli"
+	"github.com/docker/cli/cli/command"
+	"github.com/spf13/cobra"
+
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/inspect"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/cli/cli"
-	"github.com/docker/cli/cli/command"
-	"github.com/spf13/cobra"
+	"github.com/docker/app/internal/store"
 )
 
 const inspectExample = `- $ docker app inspect my-running-app
@@ -43,7 +45,11 @@ func inspectCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContex
 }
 
 func runInspect(dockerCli command.Cli, appName string, inspectOptions inspectOptions, installerContext *cliopts.InstallerContextOptions) error {
-	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
+	orchestrator, err := store.GetOrchestrator(dockerCli)
+	if err != nil {
+		return err
+	}
+	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext(), orchestrator)
 	if err != nil {
 		return err
 	}

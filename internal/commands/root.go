@@ -6,16 +6,17 @@ import (
 	"os"
 
 	"github.com/deislabs/cnab-go/claim"
+	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/commands/build"
 	"github.com/docker/app/internal/commands/image"
 	"github.com/docker/app/internal/store"
 	appstore "github.com/docker/app/internal/store"
-	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/config"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 type mainOptions struct {
@@ -105,12 +106,12 @@ func muteDockerCli(dockerCli command.Cli) func() {
 	}
 }
 
-func prepareStores(targetContext string) (store.ImageStore, store.InstallationStore, store.CredentialStore, error) {
+func prepareStores(targetContext string, orchestrator command.Orchestrator) (store.ImageStore, store.InstallationStore, store.CredentialStore, error) {
 	appstore, err := store.NewApplicationStore(config.Dir())
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	installationStore, err := appstore.InstallationStore(targetContext)
+	installationStore, err := appstore.InstallationStore(targetContext, orchestrator)
 	if err != nil {
 		return nil, nil, nil, err
 	}
