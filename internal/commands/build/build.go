@@ -13,11 +13,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/deislabs/cnab-go/bundle"
-	cnab "github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/types"
+
+	"github.com/containerd/console"
+	"github.com/deislabs/cnab-go/bundle"
+	cnab "github.com/deislabs/cnab-go/driver"
 	"github.com/docker/buildx/build"
 	"github.com/docker/buildx/driver"
 	_ "github.com/docker/buildx/driver/docker" // required to get default driver registered, see driver/docker/factory.go:14
@@ -86,28 +88,43 @@ func Cmd(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-// FIXME: DO NOT SET THIS VARIABLE DIRECTLY! Use `getOutputFile`
-//  This global var prevents the file to be garbage collected and by that invalidated
-// A an alternative fix for this would be writing the output to a bytes buffer and flushing to stdout.
-// The impossibility here is that os.File is not an interface that a buffer can implement.
-// Maybe `progress.NewPrinter` should implement an "os.File-like" interface just for its needs.
-// See https://github.com/golang/go/issues/14106
-var _outputFile *os.File
+type File struct {
+	f *streams.Out
+}
 
-func getOutputFile(realOut *streams.Out, quiet bool) (*os.File, error) {
-	if _outputFile != nil {
-		return _outputFile, nil
-	}
+func NewFile(f *streams.Out) console.File {
+	return File{f: f}
+}
+
+func (f File) Fd() uintptr {
+	return f.f.FD()
+}
+
+func (f File) Name() string {
+	return os.Stdout.Name()
+}
+
+func (f File) Read(p []byte) (n int, err error) {
+	return 0, nil
+}
+
+func (f File) Write(p []byte) (n int, err error) {
+	return f.f.Write(p)
+}
+
+func (f File) Close() error {
+	return nil
+}
+
+func getOutputFile(realOut *streams.Out, quiet bool) (console.File, error) {
 	if quiet {
-		var err error
-		_outputFile, err = os.Create(os.DevNull)
+		nullFile, err := os.Create(os.DevNull)
 		if err != nil {
 			return nil, err
 		}
-		return _outputFile, nil
+		return nullFile, nil
 	}
-	_outputFile = os.NewFile(realOut.FD(), os.Stdout.Name())
-	return _outputFile, nil
+	return NewFile(realOut), nil
 }
 
 func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error {
@@ -212,7 +229,7 @@ func buildImageUsingBuildx(app *types.App, contextPath string, opt buildOptions,
 	ctx, cancel := context.WithCancel(appcontext.Context())
 	defer cancel()
 	const drivername = "buildx_buildkit_default"
-	d, err := driver.GetDriver(ctx, drivername, nil, dockerCli.Client(), nil, "", nil)
+	d, err := driver.GetDriver(ctx, drivername, nil, dockerCli.Client(), nil, nil, "", nil, "")
 	if err != nil {
 		return nil, err
 	}
