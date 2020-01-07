@@ -1,0 +1,21 @@
+apiVersion: "etcd.database.coreos.com/v1beta2"
+kind: "EtcdCluster"
+metadata:
+  name: "compose-etcd"
+  namespace: "compose"
+spec:
+  size: 3
+  version: "3.3.15"
+  pod:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: etcd_cluster
+                operator: In
+                values:
+                - compose-etcd
+            topologyKey: kubernetes.io/hostname

@@ -33,7 +33,7 @@ func TestPushUnknown(t *testing.T) {
 }
 
 func TestPushInsecureRegistry(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		path := filepath.Join("testdata", "local")
 		ref := info.registryAddress + "/test/push-insecure"
 
@@ -53,7 +53,7 @@ func TestPushInsecureRegistry(t *testing.T) {
 }
 
 func TestPushInstall(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		ref := info.registryAddress + "/test/push-pull"
 		build(t, cmd, dockerCli, ref, filepath.Join("testdata", "push-pull"))
@@ -69,7 +69,7 @@ func TestPushInstall(t *testing.T) {
 }
 
 func TestPushPullInstall(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		ref := info.registryAddress + "/test/push-pull"
 		tag := ":v.0.0.1"
@@ -108,7 +108,7 @@ Unable to find App "unknown": failed to resolve bundle manifest "docker.io/libra
 }
 
 func TestPushInstallBundle(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		ref := info.registryAddress + "/test/push-bundle"
 
@@ -159,7 +159,7 @@ func TestPushInstallBundle(t *testing.T) {
 			cmdIsolatedStore, cleanupIsolatedStore := dockerCli.createTestCmd()
 
 			// Enter the same context as `cmd` to run commands within the same environment
-			cmdIsolatedStore.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, info.swarmAddress))
+			cmdIsolatedStore.Command = dockerCli.Command("context", "create", "swarm-context", "--docker", fmt.Sprintf(`"host=tcp://%s"`, info.orchestratorAddress))
 			icmd.RunCmd(cmdIsolatedStore).Assert(t, icmd.Success)
 			cmdIsolatedStore.Env = append(cmdIsolatedStore.Env, "DOCKER_CONTEXT=swarm-context")
 

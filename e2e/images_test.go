@@ -60,7 +60,7 @@ func verifyImageIDListOutput(t *testing.T, cmd icmd.Cmd, expectedCount int) {
 }
 
 func TestImageList(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		insertBundles(t, cmd)
@@ -76,7 +76,7 @@ my.registry:5000/c-myapp   latest              [a-f0-9]{12}        push-pull
 }
 
 func TestImageListQuiet(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		insertBundles(t, cmd)
 		verifyImageIDListOutput(t, cmd, 3)
@@ -84,7 +84,7 @@ func TestImageListQuiet(t *testing.T) {
 }
 
 func TestImageListDigests(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		insertBundles(t, cmd)
 		expected := `REPOSITORY                 TAG                 DIGEST              APP IMAGE ID        APP NAME                                
@@ -97,7 +97,7 @@ my.registry:5000/c-myapp   latest              <none>              [a-f0-9]{12} 
 }
 
 func TestImageRmForce(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 		iidfile := fs.NewFile(t, "iid").Path()
 
@@ -127,7 +127,7 @@ func TestImageRmForce(t *testing.T) {
 }
 
 func TestImageRm(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		insertBundles(t, cmd)
@@ -157,7 +157,7 @@ Deleted: b-simple-app:latest`,
 }
 
 func TestImageTag(t *testing.T) {
-	runWithDindSwarmAndRegistry(t, func(info dindSwarmAndRegistryInfo) {
+	runWithDindSwarmAndRegistry(t, func(info OrchestratorAndRegistryInfo) {
 		cmd := info.configuredCmd
 
 		dockerAppImageTag := func(args ...string) {
