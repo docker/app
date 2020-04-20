@@ -170,7 +170,7 @@ Create a `prod` folder to store the parameters you would use for
 production. Create a new `prod-parameters.yml` file in the `prod` folder.
 
 ```shell
-$ mkdir parameters
+$ mkdir prod 
 $ tree
 .
 ├── docker-compose.yml
