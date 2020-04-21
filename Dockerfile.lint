@@ -6,10 +6,11 @@ RUN apk add --no-cache \
     curl \
     git \
     make \
-    coreutils
+    coreutils \
+    build-base
 
 RUN GO111MODULE=on go get \
-    github.com/golangci/golangci-lint/cmd/golangci-lint@v1.16.0 \
+    github.com/golangci/golangci-lint/cmd/golangci-lint@v1.23.0 \
     && rm -rf /go/src/* /go/pkg/*
 
 WORKDIR /go/src/github.com/docker/app
