@@ -35,7 +35,7 @@ ENV PATH=${PATH}:/go/src/github.com/docker/app/bin/
 ARG DEP_VERSION=v0.5.4
 RUN curl -o /usr/bin/dep -L https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 && \
   chmod +x /usr/bin/dep
-ARG GOTESTSUM_VERSION=v0.3.4
+ARG GOTESTSUM_VERSION=v0.4.2
 ARG GOPROXY
 RUN mkdir $GOPATH/src/gotest.tools && \
   git clone -q https://github.com/gotestyourself/gotestsum $GOPATH/src/gotest.tools/gotestsum && \
