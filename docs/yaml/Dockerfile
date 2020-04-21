@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine AS base
+FROM golang:1.13-alpine AS base
 
 ARG PROJECT=github.com/docker/app
 ARG PROJECT_PATH=/go/src/${PROJECT}

@@ -1,9 +1,9 @@
-FROM dockercore/golang-cross:1.12.9@sha256:3ea9dcef4dd2c46d80445c0b22d6177817f4cfce22c523cc12a5a1091cb37705 AS cli-build
+FROM dockercore/golang-cross:1.13.10@sha256:ad2725ac9af0273f1de9bb85e166084d5e8d915df334154fe9c8bd9af912a90d AS cli-build
 ENV DISABLE_WARN_OUTSIDE_CONTAINER=1
 ARG CLI_CHANNEL=stable
 ARG CLI_VERSION=19.03.5
 
-RUN apt-get install -y -q --no-install-recommends \
+RUN apt-get update && apt-get install -y -q --no-install-recommends \
   coreutils \
   util-linux \
   uuid-runtime
@@ -21,7 +21,7 @@ ARG GOPROXY
 RUN make binary-windows
 
 # main dev image
-FROM golang:1.13.3 AS dev
+FROM golang:1.13.10 AS dev
 
 RUN apt-get update && apt-get install -y -q --no-install-recommends \
   coreutils \
