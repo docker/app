@@ -67,7 +67,7 @@ test: test-unit test-e2e ## run all tests
 
 lint: ## run linter(s)
 	@echo "Linting..."
-	@golangci-lint run ./...
+	golangci-lint run --verbose --print-resources-usage --timeout 10m0s ./...
 
 test-e2e: bin/$(BIN_NAME) ## run end-to-end tests
 	@echo "Running e2e tests..."

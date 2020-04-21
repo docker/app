@@ -1,6 +1,6 @@
-ARG ALPINE_VERSION=3.10.3
+ARG ALPINE_VERSION=3.11.5
 
-FROM golang:1.13.2 AS build
+FROM golang:1.13.10 AS build
 
 RUN apt-get update -qq && apt-get install -y -q --no-install-recommends \
   coreutils \
