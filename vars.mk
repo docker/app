@@ -2,7 +2,7 @@ PKG_NAME := github.com/docker/app
 BIN_NAME ?= docker-app
 E2E_NAME := $(BIN_NAME)-e2e
 
-ALPINE_VERSION=3.10.3
+ALPINE_VERSION=3.11.5
 
 # Failing to resolve sh.exe to a full path denotes a windows vanilla shell.
 # Although 'simple' commands are still exec'ed, 'complex' ones are batch'ed instead of sh'ed.
