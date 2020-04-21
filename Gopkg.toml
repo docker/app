@@ -48,9 +48,10 @@ required = ["github.com/wadey/gocovmerge"]
   name = "github.com/containerd/containerd"
   revision = "97712c8ad73dd302d5d226e0384b2d86e5de2989"
 
+# docker/cli master branch, future 20.03 release
 [[override]]
   name = "github.com/docker/cli"
-  revision = "37f9a88c696ae81be14c1697bd083d6421b4933c"
+  revision = "abafad3df202a691bc07332ea166af548a6cd9a0"
 
 [[override]]
   name = "github.com/deislabs/cnab-go"

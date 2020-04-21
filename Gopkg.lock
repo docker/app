@@ -90,60 +90,31 @@
   revision = "8375c3424e4d7b114e8a90a4a40c8e1b40d1d4e6"
 
 [[projects]]
-  digest = "1:ffaaa35987ab212937221c9289cb383368cb4e3cefee9a6da316721e67d20a17"
+  digest = "1:7db14e0f0fa2f667b063c19e39774d924092655e4db20221c1d9aca0cd4caf49"
   name = "github.com/containerd/containerd"
   packages = [
-    ".",
-    "api/services/containers/v1",
     "api/services/content/v1",
-    "api/services/diff/v1",
-    "api/services/events/v1",
-    "api/services/images/v1",
-    "api/services/introspection/v1",
-    "api/services/leases/v1",
-    "api/services/namespaces/v1",
-    "api/services/snapshots/v1",
-    "api/services/tasks/v1",
-    "api/services/version/v1",
-    "api/types",
-    "api/types/task",
-    "archive",
     "archive/compression",
-    "cio",
     "containers",
     "content",
     "content/local",
     "content/proxy",
-    "defaults",
-    "diff",
     "errdefs",
-    "events",
-    "events/exchange",
     "filters",
     "identifiers",
     "images",
-    "images/archive",
     "labels",
-    "leases",
-    "leases/proxy",
     "log",
     "mount",
     "namespaces",
     "oci",
-    "pkg/dialer",
     "platforms",
-    "plugin",
     "reference",
-    "reference/docker",
     "remotes",
     "remotes/docker",
     "remotes/docker/schema1",
-    "rootfs",
-    "runtime/linux/runctypes",
-    "runtime/v2/runc/options",
     "services/content/contentserver",
     "snapshots",
-    "snapshots/proxy",
     "sys",
     "version",
   ]
@@ -164,27 +135,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8feb2b0ff2f34127576ba52dfbd0930dd6b0d25e51043bd02e188fe4169be661"
-  name = "github.com/containerd/fifo"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ff969a566b00877c63489baf6e8c35d60af6142c"
-
-[[projects]]
-  branch = "master"
   digest = "1:eb5fb97306cdb4c742502554fbb87d4318d2ca9b749aac48d4374eb9f8261929"
   name = "github.com/containerd/ttrpc"
   packages = ["."]
   pruneopts = "NUT"
   revision = "4f1b8fe65a5c6ab7ecd74a227d6cde85b519af35"
-
-[[projects]]
-  branch = "master"
-  digest = "1:f9c59daa1efe62e53fd728e45fc24f622039bc4681b663f33c8015cc1c853594"
-  name = "github.com/containerd/typeurl"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "5eb25027c9fdd675e1db2bd25af02f5db75027ab"
 
 [[projects]]
   digest = "1:c8937791e9fbfc12439274c5413891dd0e8de9e4c52abdb4fd4f04ceb41e481a"
@@ -235,14 +190,13 @@
   revision = "709ef36b4f10a9389fd9a806657c48a969909d85"
 
 [[projects]]
-  digest = "1:70c71dd9f1dc81872e11415441714469cd8231c85f26b709a4f48c0c3f81d4ae"
+  digest = "1:98c38caeb99733d12b856e3de98f7dcf345704996d9e9887950097bc605a22df"
   name = "github.com/docker/cli"
   packages = [
     "cli",
     "cli-plugins/manager",
     "cli-plugins/plugin",
     "cli/command",
-    "cli/command/bundlefile",
     "cli/command/formatter",
     "cli/command/idresolver",
     "cli/command/inspect",
@@ -281,16 +235,13 @@
     "cli/streams",
     "cli/trust",
     "cli/version",
-    "internal/containerizedengine",
-    "internal/versions",
     "kubernetes",
     "opts",
     "service/logs",
     "templates",
-    "types",
   ]
   pruneopts = "UT"
-  revision = "37f9a88c696ae81be14c1697bd083d6421b4933c"
+  revision = "abafad3df202a691bc07332ea166af548a6cd9a0"
 
 [[projects]]
   digest = "1:0e9b90a528fee13963349cafa370f9709e7f1ef0df9eea53f31659aff2385336"
@@ -607,14 +558,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:53a4ebb0e1eb24a4644a3eec9457ba6ead5476a9ea5af43bf2c8b8b1a8ce47f2"
-  name = "github.com/hashicorp/go-version"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ac23dc3fea5d1a983c43f6a0f6e2c13f0195d8bd"
-  version = "v1.2.0"
-
-[[projects]]
   digest = "1:ed860d2b2c1d066d36a89c982eefc7d019badd534f60e87ab65d3d94f0797ef0"
   name = "github.com/hashicorp/golang-lru"
   packages = [
@@ -785,10 +728,9 @@
   version = "v1.0.0-rc1"
 
 [[projects]]
-  digest = "1:70711188c19c53147099d106169d6a81941ed5c2658651432de564a7d60fd288"
+  digest = "1:11db38d694c130c800d0aefb502fb02519e514dc53d9804ce51d1ad25ec27db6"
   name = "github.com/opencontainers/image-spec"
   packages = [
-    "identity",
     "specs-go",
     "specs-go/v1",
   ]
