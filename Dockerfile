@@ -1,7 +1,7 @@
 FROM dockercore/golang-cross:1.13.10@sha256:ad2725ac9af0273f1de9bb85e166084d5e8d915df334154fe9c8bd9af912a90d AS cli-build
 ENV DISABLE_WARN_OUTSIDE_CONTAINER=1
 ARG CLI_CHANNEL=stable
-ARG CLI_VERSION=19.03.5
+ARG CLI_VERSION=19.03.8
 
 RUN apt-get update && apt-get install -y -q --no-install-recommends \
   coreutils \
