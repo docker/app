@@ -95,7 +95,7 @@ func TestInvalidDestinationReference(t *testing.T) {
 
 	err := runTag(mockedImageStore, "ref", badRef)
 
-	assert.ErrorContains(t, err, fmt.Sprintf("invalid reference format"))
+	assert.ErrorContains(t, err, "invalid reference format")
 }
 
 func TestBundleNotStored(t *testing.T) {

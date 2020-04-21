@@ -1,4 +1,9 @@
 linters:
+  run:
+    concurrency: 2
+    modules-download-mode: vendor
+  skip-dirs:
+    - vendor
   enable-all: false
   disable-all: true
   enable:

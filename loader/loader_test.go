@@ -35,7 +35,7 @@ func TestLoadFromDirectory(t *testing.T) {
 	app, err := LoadFromDirectory(dir.Path())
 	assert.NilError(t, err)
 	assert.Assert(t, app != nil)
-	assert.Assert(t, is.Equal(app.Path, dir.Path()))
+	assert.Assert(t, is.Equal(app.Path, dir.Path())) //nolint:staticcheck
 	assertAppContent(t, app)
 }
 
@@ -62,7 +62,7 @@ func TestLoadFromTar(t *testing.T) {
 	app, err := LoadFromTar(myapp.Path())
 	assert.NilError(t, err)
 	assert.Assert(t, app != nil)
-	assert.Assert(t, is.Equal(app.Path, myapp.Path()))
+	assert.Assert(t, is.Equal(app.Path, myapp.Path())) //nolint:staticcheck
 	assertAppContent(t, app)
 }
 
