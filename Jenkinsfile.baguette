@@ -83,7 +83,6 @@ pipeline {
                             sh 'docker rmi docker/cnab-app-base:$TAG-arm64'
                             sh 'docker rmi docker/cnab-app-base:$TAG-arm'
                             sh 'docker rmi docker/cnab-app-base:$TAG-coverage'
-                            deleteDir()
                         }
                     }
                 }
