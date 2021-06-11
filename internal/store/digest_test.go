@@ -7,7 +7,7 @@ import (
 
 	"github.com/docker/app/internal/image"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )

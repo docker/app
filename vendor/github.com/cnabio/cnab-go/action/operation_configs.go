@@ -1,7 +1,7 @@
 package action
 
 import (
-	"github.com/deislabs/cnab-go/driver"
+	"github.com/cnabio/cnab-go/driver"
 )
 
 // OperationConfigFunc is a configuration function that can be applied to an

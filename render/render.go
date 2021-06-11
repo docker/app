@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/parameters"

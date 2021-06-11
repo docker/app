@@ -3,7 +3,7 @@ package metadata
 import (
 	"strings"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 )
 
 // Maintainer represents one of the apps's maintainers

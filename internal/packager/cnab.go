@@ -3,8 +3,8 @@ package packager
 import (
 	"encoding/json"
 
-	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/cnab-go/bundle/definition"
+	"github.com/cnabio/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle/definition"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/compose"
 	"github.com/docker/app/types"

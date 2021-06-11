@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/containerd/containerd/images"
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/reference"
 	ocischema "github.com/opencontainers/image-spec/specs-go"

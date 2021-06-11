@@ -9,7 +9,7 @@ import (
 	"os"
 	unix_path "path"
 
-	"github.com/deislabs/cnab-go/driver"
+	"github.com/cnabio/cnab-go/driver"
 	"github.com/docker/cli/cli/command"
 	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/docker/distribution/reference"
@@ -231,10 +231,10 @@ func (d *Driver) exec(op *driver.Operation) (driver.OperationResult, error) {
 		}
 	}()
 
-	statusc, errc := cli.Client().ContainerWait(ctx, resp.ID, container.WaitConditionNextExit)
 	if err = cli.Client().ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return driver.OperationResult{}, fmt.Errorf("cannot start container: %v", err)
 	}
+	statusc, errc := cli.Client().ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 	select {
 	case err := <-errc:
 		if err != nil {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/deislabs/cnab-go/utils/crud"
+	"github.com/cnabio/cnab-go/utils/crud"
 )
 
 // ErrClaimNotFound represents a claim not found in claim storage

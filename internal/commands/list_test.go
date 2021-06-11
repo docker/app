@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deislabs/cnab-go/claim"
+	"github.com/cnabio/cnab-go/claim"
 	"github.com/docker/app/internal/store"
 	"gotest.tools/assert"
 )

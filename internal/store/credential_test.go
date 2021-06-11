@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/deislabs/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/credentials"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )

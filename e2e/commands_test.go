@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/credentials"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/image"
 	"github.com/docker/app/internal/yaml"

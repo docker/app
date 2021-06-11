@@ -7,11 +7,11 @@ import (
 	"math"
 	"strings"
 
-	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/cnab-go/bundle/definition"
-	"github.com/deislabs/cnab-go/claim"
-	"github.com/deislabs/cnab-go/credentials"
-	"github.com/deislabs/cnab-go/driver"
+	"github.com/cnabio/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle/definition"
+	"github.com/cnabio/cnab-go/claim"
+	"github.com/cnabio/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/driver"
 )
 
 // stateful is there just to make callers of opFromClaims more readable
@@ -213,7 +213,10 @@ func opFromClaim(action string, stateless bool, c *claim.Claim, ii bundle.Invoca
 	var outputs []string
 	if c.Bundle.Outputs != nil {
 		for _, v := range c.Bundle.Outputs {
-			outputs = append(outputs, v.Path)
+			// Only add to list if output applies to the provided action
+			if v.AppliesTo(action) {
+				outputs = append(outputs, v.Path)
+			}
 		}
 	}
 

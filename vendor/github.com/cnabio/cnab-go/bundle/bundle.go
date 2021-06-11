@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/deislabs/cnab-go/bundle/definition"
+	"github.com/cnabio/cnab-go/bundle/definition"
 	"github.com/docker/go/canonical/json"
 	pkgErrors "github.com/pkg/errors"
 )

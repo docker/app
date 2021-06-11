@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/cnab-go/credentials"
+	"github.com/cnabio/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/credentials"
 	"github.com/docker/app/internal"
 	appstore "github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli/command"

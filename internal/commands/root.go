@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/deislabs/cnab-go/claim"
+	"github.com/cnabio/cnab-go/claim"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/commands/build"

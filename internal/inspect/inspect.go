@@ -16,8 +16,8 @@ import (
 	"github.com/docker/app/types/metadata"
 	"github.com/docker/app/types/parameters"
 
-	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/cnab-go/claim"
+	"github.com/cnabio/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/claim"
 	composetypes "github.com/docker/cli/cli/compose/types"
 	"github.com/docker/go-units"
 	humanize "github.com/dustin/go-humanize"

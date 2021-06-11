@@ -82,6 +82,23 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:4169e92b0bf55fb75308fcd63671fcc04fb2ef2ec082d28e2b57e254f0db065c"
+  name = "github.com/cnabio/cnab-go"
+  packages = [
+    "action",
+    "bundle",
+    "bundle/definition",
+    "claim",
+    "credentials",
+    "driver",
+    "driver/docker",
+    "utils/crud",
+  ]
+  pruneopts = "NUT"
+  revision = "03423407b46b8c61ba8c82588c6cd9a61fc213ed"
+  version = "v0.8.2-beta1"
+
+[[projects]]
   branch = "master"
   digest = "1:286b2443cbc82d55d03cf5fc69fef67d65db764ada329165192bda3dfe133915"
   name = "github.com/containerd/console"
@@ -158,23 +175,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:e7719c3f4db444af314e43231f9bff4c4c9bcbb327faffe186bf2e026473abd9"
-  name = "github.com/deislabs/cnab-go"
-  packages = [
-    "action",
-    "bundle",
-    "bundle/definition",
-    "claim",
-    "credentials",
-    "driver",
-    "driver/docker",
-    "utils/crud",
-  ]
-  pruneopts = "NUT"
-  revision = "a1f17dcdaaff3e06c95ed85c3a34c21c35833831"
-  version = "v0.7.1-beta1"
-
-[[projects]]
   digest = "1:db6ae89e20ff371a1c7786d778abb9163bac50ba726bb2e5d2257d72eaf24885"
   name = "github.com/docker/buildx"
   packages = [
@@ -244,7 +244,7 @@
   revision = "abafad3df202a691bc07332ea166af548a6cd9a0"
 
 [[projects]]
-  digest = "1:0e9b90a528fee13963349cafa370f9709e7f1ef0df9eea53f31659aff2385336"
+  digest = "1:df6395cecd754ec152b433ebd39351bdf96375d9c9b5b4a34ccd4a197587991f"
   name = "github.com/docker/cnab-to-oci"
   packages = [
     "converter",
@@ -253,8 +253,8 @@
     "remotes",
   ]
   pruneopts = "NUT"
-  revision = "aee9731b9e2d6066455e601f249835b10d5f87b7"
-  version = "v0.3.0-beta2"
+  revision = "81855d300d912cf175d973d06252936b2f6209d3"
+  version = "v0.3.0-beta4"
 
 [[projects]]
   digest = "1:d29e07dc6fff1d592442bdf6b947f3a89d418ac6d65344d4e048c64a7cdd511c"
@@ -1373,17 +1373,17 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/cnabio/cnab-go/action",
+    "github.com/cnabio/cnab-go/bundle",
+    "github.com/cnabio/cnab-go/bundle/definition",
+    "github.com/cnabio/cnab-go/claim",
+    "github.com/cnabio/cnab-go/credentials",
+    "github.com/cnabio/cnab-go/driver",
+    "github.com/cnabio/cnab-go/driver/docker",
+    "github.com/cnabio/cnab-go/utils/crud",
     "github.com/containerd/console",
     "github.com/containerd/containerd/log",
     "github.com/containerd/containerd/platforms",
-    "github.com/deislabs/cnab-go/action",
-    "github.com/deislabs/cnab-go/bundle",
-    "github.com/deislabs/cnab-go/bundle/definition",
-    "github.com/deislabs/cnab-go/claim",
-    "github.com/deislabs/cnab-go/credentials",
-    "github.com/deislabs/cnab-go/driver",
-    "github.com/deislabs/cnab-go/driver/docker",
-    "github.com/deislabs/cnab-go/utils/crud",
     "github.com/docker/buildx/build",
     "github.com/docker/buildx/driver",
     "github.com/docker/buildx/driver/docker",

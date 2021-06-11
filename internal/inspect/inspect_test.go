@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/cnab-go/claim"
+	"github.com/cnabio/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/claim"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types"

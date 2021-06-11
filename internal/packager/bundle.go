@@ -8,7 +8,7 @@ import (
 
 	"github.com/docker/app/internal/image"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/app/types"
 	"github.com/docker/app/types/metadata"
