@@ -1,3 +1,5 @@
+### :warning: Deprecation Notice: This project and repository is now deprecated and is no longer in active development, see [the related roadmap issue](https://github.com/docker/roadmap/issues/209). If you'd like to continue using CNAB for packaging your applications, check out [Porter](https://porter.sh).
+
 # Docker App
 
 Docker App is a Cloud Native application packaging framework with which developers and devops can  build, share, and run a set of microservices as a single entity. Docker Apps are based on the [Compose format](https://docs.docker.com/compose/compose-file/), which permits [docker-compose](https://github.com/docker/compose) users to easily share their Compose-based multiservice applications via container registries. By leveraging containers, Docker App makes it possible to easily change parts of the application and to share the application through container registries.
