@@ -34,7 +34,11 @@ func removeCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 		Example: `$ docker app rm myrunningapp`,
 		Args:    cli.RequiresMinArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
+			orchestrator, err := store.GetOrchestrator(dockerCli)
+			if err != nil {
+				return err
+			}
+			_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext(), orchestrator)
 			if err != nil {
 				return err
 			}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/deislabs/cnab-go/claim"
+	"github.com/docker/cli/cli/command"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )
@@ -15,7 +16,7 @@ func TestStoreAndReadInstallation(t *testing.T) {
 	defer dockerConfigDir.Remove()
 	appstore, err := NewApplicationStore(dockerConfigDir.Path())
 	assert.NilError(t, err)
-	installationStore, err := appstore.InstallationStore("my-context")
+	installationStore, err := appstore.InstallationStore("my-context", command.OrchestratorSwarm)
 	assert.NilError(t, err)
 
 	expectedInstallation := &Installation{

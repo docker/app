@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deislabs/cnab-go/driver"
-
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
+	"github.com/deislabs/cnab-go/driver"
+	"github.com/docker/cli/cli/command"
+	"github.com/spf13/cobra"
+
 	"github.com/docker/app/internal/bundle"
 	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
 	"github.com/docker/app/internal/packager"
-	"github.com/docker/cli/cli/command"
-	"github.com/spf13/cobra"
+	"github.com/docker/app/internal/store"
 )
 
 type updateOptions struct {
@@ -41,7 +42,11 @@ func updateCmd(dockerCli command.Cli, installerContext *cliopts.InstallerContext
 }
 
 func runUpdate(dockerCli command.Cli, installationName string, opts updateOptions, installerContext *cliopts.InstallerContextOptions) error {
-	imageStore, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
+	orchestrator, err := store.GetOrchestrator(dockerCli)
+	if err != nil {
+		return err
+	}
+	imageStore, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext(), orchestrator)
 	if err != nil {
 		return err
 	}

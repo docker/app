@@ -5,9 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/deislabs/cnab-go/utils/crud"
+	cnabCrud "github.com/deislabs/cnab-go/utils/crud"
+	"github.com/docker/cli/cli/command"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+
+	appCrud "github.com/docker/app/internal/store/crud"
 )
 
 const (
@@ -51,12 +54,28 @@ func NewApplicationStore(configDir string) (*ApplicationStore, error) {
 }
 
 // InstallationStore initializes and returns a context based installation store
-func (a ApplicationStore) InstallationStore(context string) (InstallationStore, error) {
-	path := filepath.Join(a.path, InstallationStoreDirectory, makeDigestedDirectory(context))
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return nil, errors.Wrapf(err, "failed to create installation store directory for context %q", context)
+func (a ApplicationStore) InstallationStore(context string, orchestrator command.Orchestrator) (InstallationStore, error) {
+	switch {
+	// FIXME What if orchestrator.HasKubernetes() and still want to use local store?
+	case orchestrator.HasKubernetes():
+		// FIXME Get this namespace, labelKey and labelValue dynamically through cli opts
+		k8sStore, err := appCrud.NewKubernetesSecretsStore(
+			appCrud.DefaultKubernetesNamespace,
+			appCrud.LabelKV{
+				appCrud.DefaultSecretLabelKey,
+				appCrud.DefaultSecretLabelValue,
+			})
+		if err != nil {
+			return nil, err
+		}
+		return &installationStore{store: k8sStore}, nil
+	default:
+		path := filepath.Join(a.path, InstallationStoreDirectory, makeDigestedDirectory(context))
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return nil, errors.Wrapf(err, "failed to create installation store directory for context %q", context)
+		}
+		return &installationStore{store: cnabCrud.NewFileSystemStore(path, "json")}, nil
 	}
-	return &installationStore{store: crud.NewFileSystemStore(path, "json")}, nil
 }
 
 // CredentialStore initializes and returns a context based credential store

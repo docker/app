@@ -4,24 +4,22 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/docker/app/internal/packager"
-
-	"github.com/docker/app/internal/image"
-
-	"github.com/deislabs/cnab-go/driver"
-	"github.com/docker/app/internal/cliopts"
-
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
-	bdl "github.com/docker/app/internal/bundle"
-	"github.com/docker/app/internal/cnab"
-	"github.com/docker/app/internal/store"
+	"github.com/deislabs/cnab-go/driver"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	bdl "github.com/docker/app/internal/bundle"
+	"github.com/docker/app/internal/cliopts"
+	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/image"
+	"github.com/docker/app/internal/packager"
+	"github.com/docker/app/internal/store"
 )
 
 type runOptions struct {
@@ -103,7 +101,11 @@ func runBundle(dockerCli command.Cli, bndl *image.AppImage, opts runOptions, ins
 	if err := packager.CheckAppVersion(dockerCli.Err(), bndl.Bundle); err != nil {
 		return err
 	}
-	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext())
+	orchestrator, err := store.GetOrchestrator(dockerCli)
+	if err != nil {
+		return err
+	}
+	_, installationStore, credentialStore, err := prepareStores(dockerCli.CurrentContext(), orchestrator)
 	if err != nil {
 		return err
 	}

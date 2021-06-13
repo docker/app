@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/docker/app/internal/image"
-
-	"github.com/docker/cnab-to-oci/relocation"
-
 	"github.com/deislabs/cnab-go/claim"
 	"github.com/deislabs/cnab-go/utils/crud"
+	"github.com/docker/cnab-to-oci/relocation"
+
+	"github.com/docker/app/internal/image"
 )
 
 // InstallationStore is an interface to persist, delete, list and read installations.
@@ -74,7 +73,6 @@ func (i installationStore) Read(installationName string) (*Installation, error) 
 	if err != nil {
 		if err == crud.ErrRecordDoesNotExist {
 			return nil, fmt.Errorf("Installation %q not found", installationName)
-
 		}
 		return nil, err
 	}

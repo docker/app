@@ -3,6 +3,7 @@ package store
 import (
 	"testing"
 
+	"github.com/docker/cli/cli/command"
 	"gotest.tools/assert"
 	"gotest.tools/fs"
 )
@@ -17,7 +18,7 @@ func TestNewApplicationStoreInitializesDirectories(t *testing.T) {
 	assert.Equal(t, appstore.path, dockerConfigDir.Join("app"))
 
 	// an installation store is created per context
-	_, err = appstore.InstallationStore("my-context")
+	_, err = appstore.InstallationStore("my-context", command.OrchestratorSwarm)
 	assert.NilError(t, err)
 
 	// a credential store is created per context

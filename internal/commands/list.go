@@ -10,10 +10,6 @@ import (
 	"time"
 
 	"github.com/deislabs/cnab-go/action"
-	"github.com/docker/app/internal"
-	"github.com/docker/app/internal/cliopts"
-	"github.com/docker/app/internal/cnab"
-	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
@@ -22,6 +18,11 @@ import (
 	"github.com/docker/go/canonical/json"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+
+	"github.com/docker/app/internal"
+	"github.com/docker/app/internal/cliopts"
+	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/store"
 )
 
 var (
@@ -71,8 +72,12 @@ func runList(dockerCli command.Cli, opts listOptions, installerContext *cliopts.
 	if err != nil {
 		return err
 	}
+	orchestrator, err := store.GetOrchestrator(dockerCli)
+	if err != nil {
+		return err
+	}
 	targetContext := dockerCli.CurrentContext()
-	installationStore, err := appstore.InstallationStore(targetContext)
+	installationStore, err := appstore.InstallationStore(targetContext, orchestrator)
 	if err != nil {
 		return err
 	}
