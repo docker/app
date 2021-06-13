@@ -2,7 +2,7 @@
 
 # Docker App
 
-Docker App is a Cloud Native application packaging framework with which developers and devops can  build, share, and run a set of microservices as a single entity. Docker Apps are based on the [Compose format](https://docs.docker.com/compose/compose-file/), which permits [docker-compose](https://github.com/docker/compose) users to easily share their Compose-based multiservice applications via container registries. By leveraging containers, Docker App makes it possible to easily change parts of the application and to share the application through container registries.
+Docker App is a Cloud Native application packaging framework with which developers and DevOps can  build, share, and run a set of microservices as a single entity. Docker Apps are based on the [Compose format](https://docs.docker.com/compose/compose-file/), which permits [docker-compose](https://github.com/docker/compose) users to easily share their Compose-based multiservice applications via container registries. By leveraging containers, Docker App makes it possible to easily change parts of the application and to share the application through container registries.
 
 ### Table of Contents
 - **[What are the benefits offered by Docker App?](#what-are-the-benefits-offered-by-docker-app)**
