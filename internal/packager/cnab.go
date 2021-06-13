@@ -150,6 +150,20 @@ func ToCNAB(app *types.App, invocationImageName string) (*bundle.Bundle, error) 
 			Definition: name,
 		}
 	}
+	for name, secret := range app.Secrets() {
+		writeOnly := new(bool)
+		*writeOnly = true
+		definitions[internal.SecretsParameterPrefix+name] = &definition.Schema{
+			Type:      "string",
+			WriteOnly: writeOnly,
+		}
+		parameters[internal.SecretsParameterPrefix+name] = bundle.Parameter{
+			Destination: &bundle.Location{
+				Path: secret.NormalizeFilename(),
+			},
+			Definition: internal.SecretsParameterPrefix + name,
+		}
+	}
 	var maintainers []bundle.Maintainer
 	for _, m := range app.Metadata().Maintainers {
 		maintainers = append(maintainers, bundle.Maintainer{

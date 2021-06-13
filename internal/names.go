@@ -45,6 +45,10 @@ const (
 	CredentialRegistryName = Namespace + "registry-creds"
 	// CredentialRegistryPath is the name to the credential containing registry credentials
 	CredentialRegistryPath = "/cnab/app/registry-creds.json"
+	// SecretsPath is the directory where secret files are mounted
+	SecretsPath = "/cnab/app/secrets"
+	// SecretsParameterPrefix is the prefix used by WriteOnly parameters
+	SecretsParameterPrefix = Namespace + "secret."
 
 	// ParameterOrchestratorName is the name of the parameter containing the orchestrator
 	ParameterOrchestratorName = Namespace + "orchestrator"
